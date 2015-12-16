@@ -385,11 +385,11 @@ class ProfileUtils(object):
             return ProfileUtils.UNAVAILABLE_VALUE
 
     @staticmethod
-    def getEfficiencyPercent(dividend, delimiter):
+    def getEfficiencyPercent(dividend, delimiter, unavailableValue = UNAVAILABLE_VALUE):
         if delimiter != 0:
             return BigWorld.wg_getNiceNumberFormat(float(dividend) / delimiter * 100) + ProfileUtils.PERCENT_SYMBOL
         else:
-            return ProfileUtils.UNAVAILABLE_VALUE
+            return unavailableValue
 
     @staticmethod
     def packLditItemData(text, description, tooltip, icon, tooltipData = None):

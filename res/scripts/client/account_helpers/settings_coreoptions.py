@@ -1514,7 +1514,7 @@ class MouseSetting(ControlSetting):
         else:
             camera.setUserConfigValue(self.setting, value)
             if not self.__isControlModeAccessible():
-                camera._writeUserPreferences()
+                camera.writeUserPreferences()
             return
 
 

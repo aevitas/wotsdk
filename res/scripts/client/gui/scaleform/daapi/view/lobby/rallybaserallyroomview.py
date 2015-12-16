@@ -63,7 +63,8 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta, UnitListener):
 
     @process
     def canBeClosed(self, callback):
-        ctx = unit_ctx.LeaveUnitCtx(waitingID='prebattle/leave', flags=FUNCTIONAL_FLAG.SWITCH, entityType=self.unitFunctional.getEntityType())
+        flags = FUNCTIONAL_FLAG.SWITCH if self.unitFunctional.canSwitchToIntro() else FUNCTIONAL_FLAG.UNDEFINED
+        ctx = unit_ctx.LeaveUnitCtx(waitingID='prebattle/leave', flags=flags, entityType=self.unitFunctional.getEntityType())
         meta = self.unitFunctional.getConfirmDialogMeta(ctx)
         if meta:
             isConfirmed = yield DialogsInterface.showDialog(meta)

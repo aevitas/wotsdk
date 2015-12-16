@@ -2076,6 +2076,8 @@ class TOOLTIPS(object):
     CUSTOMIZATION_BONUSPANEL_BONUS_LOADER_BODY = '#tooltips:customization/bonusPanel/bonus/loader/body'
     CUSTOMIZATION_BONUSPANEL_BONUS_MASKING_BODY = '#tooltips:customization/bonusPanel/bonus/masking/body'
     CUSTOMIZATION_BONUSPANEL_BONUS_FOOTER = '#tooltips:customization/bonusPanel/bonus/footer'
+    CUSTOMIZATION_SLOTREVERT_HEADER = '#tooltips:customization/slotRevert/header'
+    CUSTOMIZATION_SLOTREVERT_BODY = '#tooltips:customization/slotRevert/body'
     CONTACT_STATUS_INBATTLE_ENUM = (CONTACT_STATUS_INBATTLE_UNKNOWN,
      CONTACT_STATUS_INBATTLE_RANDOM,
      CONTACT_STATUS_INBATTLE_TRAINING,

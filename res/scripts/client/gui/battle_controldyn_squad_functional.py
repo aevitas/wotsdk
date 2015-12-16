@@ -186,7 +186,7 @@ class DynSquadMessagesController(DynSquadArenaController):
             key = MESSENGER.CLIENT_DYNSQUAD_CREATED_OWNER_WITHOUTVOIP
         else:
             key = '#messenger:client/dynSquad/created/owner/disableVOIP' if g_settingsCore.getSetting(SOUND.VOIP_ENABLE) else '#messenger:client/dynSquad/created/owner/enableVOIP'
-            param['hotkey'] = 'ALT+Q'
+            param['hotkey'] = 'G'
         self.__sendMessage(key, **param)
 
     def _squadCreatedImRecruit(self, squadNum):
@@ -195,7 +195,7 @@ class DynSquadMessagesController(DynSquadArenaController):
             key = MESSENGER.CLIENT_DYNSQUAD_CREATED_RECRUIT_WITHOUTVOIP
         else:
             key = '#messenger:client/dynSquad/created/recruit/disableVOIP' if g_settingsCore.getSetting(SOUND.VOIP_ENABLE) else '#messenger:client/dynSquad/created/owner/enableVOIP'
-            param['hotkey'] = 'ALT+Q'
+            param['hotkey'] = 'G'
         self.__sendMessage(key, **param)
 
     def _squadCreatedByAllies(self, squadNum):
@@ -210,7 +210,7 @@ class DynSquadMessagesController(DynSquadArenaController):
             key = MESSENGER.CLIENT_DYNSQUAD_INVITEACCEPTED_MYSELF_WITHOUTVOIP
         else:
             key = '#messenger:client/dynSquad/inviteAccepted/myself/disableVOIP' if g_settingsCore.getSetting(SOUND.VOIP_ENABLE) else '#messenger:client/dynSquad/inviteAccepted/myself/enableVOIP'
-            param['hotkey'] = 'ALT+Q'
+            param['hotkey'] = 'G'
         self.__sendMessage(key, **param)
 
     def _someoneJoinedAlliedSquad(self, squadNum, receiver):

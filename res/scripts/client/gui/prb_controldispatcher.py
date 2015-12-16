@@ -313,7 +313,7 @@ class _PrebattleDispatcher(object):
                 self.__doSelect(result.newEntry)
             return True
         else:
-            entry = self.__factories.createEntryByAction(action.actionName)
+            entry = self.__factories.createEntryByAction(action)
             if entry is not None:
                 self.__doSelect(entry)
                 return True

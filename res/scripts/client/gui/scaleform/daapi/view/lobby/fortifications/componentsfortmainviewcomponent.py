@@ -299,7 +299,8 @@ class FortMainViewComponent(FortMainViewMeta, FortViewHelper, ClanListener):
 
     def onClanProfileClick(self):
         if self.clansCtrl.isEnabled():
-            shared_events.showClanProfileWindow(g_clanCtrl.getAccountProfile().getClanDbID())
+            clan = g_clanCtrl.getAccountProfile()
+            shared_events.showClanProfileWindow(clan.getClanDbID(), clan.getClanAbbrev())
         else:
             LOG_ERROR("Couldn't invoke Clan Profile Window. Functionality is Unavailable!")
 

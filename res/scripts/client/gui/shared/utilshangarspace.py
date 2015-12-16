@@ -96,6 +96,7 @@ class _HangarSpace(object):
         self.onSpaceCreate = Event.Event()
         self.onObjectSelected = Event.Event()
         self.onObjectUnselected = Event.Event()
+        self.onObjectClicked = Event.Event()
         from helpers.statistics import g_statistics
         g_statistics.subscribeToHangarSpaceCreate(self.onSpaceCreate)
         return
@@ -223,6 +224,9 @@ class _HangarSpace(object):
         else:
             self.refreshSpace(self.__delayedIsPremium, self.__delayedForceRefresh)
             return
+
+    def leftButtonClicked(self):
+        self.onObjectClicked()
 
 
 g_hangarSpace = _HangarSpace()

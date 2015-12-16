@@ -97,6 +97,8 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
         self.__pagiatorsController.getPanginator(CLANS_ALIASES.CLAN_PROFILE_INVITES_VIEW_ALIAS, CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED).reset()
 
     def _dispose(self):
+        if self.paginatorsController.isInProgress():
+            self.as_hideWaitingS()
         self.stopClanListening()
         self.__pagiatorsController.removeCallbacks()
         self._cooldown.stop()

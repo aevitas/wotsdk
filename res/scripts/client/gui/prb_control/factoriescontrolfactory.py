@@ -29,10 +29,11 @@ class ControlFactory(object):
     @staticmethod
     def _createEntryByAction(action, available):
         result = None
-        if action in available:
-            clazz, args = available[action]
+        if action.actionName in available:
+            clazz, args = available[action.actionName]
             if args:
                 result = clazz(*args)
             else:
                 result = clazz()
+            result.setAccountsToInvite(action.accountsToInvite)
         return result

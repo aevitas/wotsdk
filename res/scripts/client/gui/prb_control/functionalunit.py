@@ -99,14 +99,14 @@ class UnitEntry(interfaces.IPrbEntry):
     def select(self, ctx, callback = None):
         LOG_ERROR('Routine "select" can not be invoked for UnitEntry')
 
+    def setAccountsToInvite(self, accountsToInvite):
+        self._accountsToInvite = accountsToInvite
+
     def _doCreate(self, unitMgr, ctx):
         unitMgr.create()
 
 
 class SquadEntry(UnitEntry):
-
-    def __init__(self, accountsToInvite = None):
-        super(SquadEntry, self).__init__(accountsToInvite=accountsToInvite)
 
     def makeDefCtx(self):
         return unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', accountsToInvite=self._accountsToInvite)

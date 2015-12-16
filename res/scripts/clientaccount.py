@@ -319,7 +319,7 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             LOG_DEBUG('No any ClientSelectableObject to unselect')
 
     def targetFocus(self, entity):
-        if isinstance(entity, ClientSelectableObject):
+        if isinstance(entity, ClientSelectableObject) and entity.enabled:
             from gui.shared.utils.HangarSpace import g_hangarSpace
             g_hangarSpace.onObjectSelected(entity)
 

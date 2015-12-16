@@ -52,7 +52,7 @@ class _Subscription(Notifiable, ClubsListeners):
             self.__clubsCtrl = weakref.proxy(clubsCtrl)
         else:
             self.__clubsCtrl = None
-        self.addNotificator(PeriodicNotifier(lambda : _SET - 10.0, BoundMethodWeakref(self.__onSubscriptionUpdate), (_SET,)))
+        self.addNotificator(PeriodicNotifier(lambda : _SET - 10.0, BoundMethodWeakref(self._onSubscriptionUpdate), (_SET,)))
         self.__comparators = [SimpleTypeComparator('name', 'onClubNameChanged', 'getUserName'),
          SimpleTypeComparator('description', 'onClubDescriptionChanged', 'getUserDescription'),
          SimpleTypeComparator('owner', 'onClubOwnerChanged', 'getOwnerDbID'),
@@ -141,14 +141,14 @@ class _Subscription(Notifiable, ClubsListeners):
                 forEach(lambda c: c(self, oldClub, newClub), self.__comparators)
         return
 
-    def __checkState(self, *states):
-        return self.__state in states
-
-    def __onSubscriptionUpdate(self):
+    def _onSubscriptionUpdate(self):
         if not self.isEmpty():
             self.__doSubscribe()
         else:
             self.__doUnsubscribe()
+
+    def __checkState(self, *states):
+        return self.__state in states
 
     def __doSubscribe(self):
 

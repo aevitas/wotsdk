@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/profile/ProfileWindow.py
 from adisp import process
+from debug_utils import LOG_DEBUG
 from gui import SystemMessages
 from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
@@ -69,8 +70,9 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
             profile = self.clansCtrl.getAccountProfile()
             dossier = profile.getClanDossier()
             isEnabled = profile.getMyClanPermissions().canHandleClanInvites() and not dossier.isClanInviteSent(self.__databaseID) and not dossier.hasClanApplication(self.__databaseID)
+        userIsNotInClan = clanInfo is None
         self.as_addToClanAvailableS(isEnabled)
-        self.as_addToClanVisibleS(self.clansCtrl.isEnabled())
+        self.as_addToClanVisibleS(self.clansCtrl.isEnabled() and userIsNotInClan)
         return
 
     def __isEnabledInRoaming(self, dbID):

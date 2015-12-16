@@ -4,6 +4,7 @@ import operator
 from abc import ABCMeta, abstractmethod
 import BigWorld
 import constants
+from gui.shared.utils.requesters.ItemsRequester import RESEARCH_CRITERIA
 import nations
 import account_helpers
 from debug_utils import LOG_WARNING
@@ -253,7 +254,7 @@ class _VehsListParser(object):
         if fTypes is not None:
             criteria = REQ_CRITERIA.VEHICLE.SPECIFIC_BY_CD(fTypes)
         else:
-            criteria = ~REQ_CRITERIA.SECRET
+            criteria = self._getDefaultCriteria()
             if fNations is not None:
                 criteria |= REQ_CRITERIA.NATIONS(fNations)
             if fLevels is not None:
@@ -261,6 +262,9 @@ class _VehsListParser(object):
             if fClasses is not None:
                 criteria |= REQ_CRITERIA.VEHICLE.CLASSES(fClasses)
         return self._preProcessCriteria(criteria)
+
+    def _getDefaultCriteria(self):
+        return ~REQ_CRITERIA.SECRET
 
     def _getVehiclesList(self, data):
         if self.__vehsCache is None:
@@ -664,6 +668,9 @@ class VehiclesUnlocked(_VehsListRequirement):
 
     def _getLabelKey(self):
         return '#quests:details/requirements/vehiclesUnlocked'
+
+    def _getDefaultCriteria(self):
+        return RESEARCH_CRITERIA.VEHICLE_TO_UNLOCK
 
     def _formatVehsTable(self, event = None):
         return formatters.packVehiclesBlock(self._makeUniqueTableID(event), formatters.VEH_UNLOCKS_HEADER, disableChecker=lambda v: not v.isUnlocked, vehs=_prepareVehData(self._getVehiclesList(self._data)))

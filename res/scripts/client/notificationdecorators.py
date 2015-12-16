@@ -603,6 +603,9 @@ class ClanSingleInviteDecorator(_ClanSingleDecorator):
     def getClanID(self):
         return self._entity.getClanId()
 
+    def getClanAbbrev(self):
+        return self._entity.getClanTag()
+
     def getType(self):
         return NOTIFICATION_TYPE.CLAN_INVITE
 

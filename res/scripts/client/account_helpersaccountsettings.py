@@ -4,6 +4,7 @@ import copy
 import cPickle as pickle
 import constants
 import BigWorld
+import CommandMapping
 import Settings
 import Event
 from constants import FORT_BUILDING_TYPE as _FBT
@@ -243,7 +244,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 17
+    version = 18
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -448,6 +449,14 @@ class AccountSettings(object):
                             if key1 == FALLOUT_VEHICLES:
                                 accSettings.deleteSection(key1)
 
+            if currVersion < 18:
+                cmSection = AccountSettings.__readSection(Settings.g_instance.userPrefs, Settings.KEY_COMMAND_MAPPING)
+                for command, section in cmSection.items()[:]:
+                    fireKey = AccountSettings.__readSection(section, 'fireKey').asString
+                    if fireKey == 'KEY_G':
+                        cmSection.deleteSection(command)
+
+                CommandMapping.g_instance.restoreUserConfig()
             ads.writeInt('version', AccountSettings.version)
 
     @staticmethod

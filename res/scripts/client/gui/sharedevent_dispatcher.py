@@ -75,9 +75,10 @@ def showProfileWindow(databaseID, userName):
      'databaseID': databaseID}), EVENT_BUS_SCOPE.LOBBY)
 
 
-def showClanProfileWindow(clanDbID):
+def showClanProfileWindow(clanDbID, clanAbbrev):
     alias = CLANS_ALIASES.CLAN_PROFILE_MAIN_WINDOW_PY
-    g_eventBus.handleEvent(events.LoadViewEvent(alias, getViewName(alias, clanDbID), ctx={'clanDbID': clanDbID}), EVENT_BUS_SCOPE.LOBBY)
+    g_eventBus.handleEvent(events.LoadViewEvent(alias, getViewName(alias, clanDbID), ctx={'clanDbID': clanDbID,
+     'clanAbbrev': clanAbbrev}), EVENT_BUS_SCOPE.LOBBY)
 
 
 def showClanSearchWindow():
@@ -113,8 +114,9 @@ def showPremiumCongratulationWindow(award):
     g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.PREMIUM_CONGRATULATION_WINDOW, getViewName(VIEW_ALIAS.PREMIUM_CONGRATULATION_WINDOW), ctx={'award': award}), EVENT_BUS_SCOPE.LOBBY)
 
 
-def showPremiumWindow(arenaUniqueID = 0):
-    g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.PREMIUM_WINDOW, getViewName(VIEW_ALIAS.PREMIUM_WINDOW), ctx={'arenaUniqueID': arenaUniqueID}), EVENT_BUS_SCOPE.LOBBY)
+def showPremiumWindow(arenaUniqueID = 0, premiumBonusesDiff = None):
+    g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.PREMIUM_WINDOW, getViewName(VIEW_ALIAS.PREMIUM_WINDOW), ctx={'arenaUniqueID': arenaUniqueID,
+     'premiumBonusesDiff': premiumBonusesDiff}), EVENT_BUS_SCOPE.LOBBY)
 
 
 def showBoostersWindow():

@@ -853,7 +853,6 @@ class VehicleAppearance(object):
 
     def __updateRepaint(self):
         if not hasattr(self.__vehicle.typeDescriptor.type, 'repaintParameters'):
-            LOG_DEBUG("vehicle.typeDescriptor.type has no 'repaintParameters' defined")
             return
         else:
             repaintReferenceColor, repaintReplaceColor, repaintGlossRangeScale = RepaintParams.getRepaintParams(self.__vehicle.typeDescriptor)

@@ -7,9 +7,6 @@ from gui.Scaleform.locale.WAITING import WAITING
 from gui.clans import contexts as clan_ctx
 from gui.clans import formatters as clans_fmts
 from gui.clans.clan_helpers import ClanListener
-from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE
-from gui.shared.events import CoolDownEvent
-from gui.shared.view_helpers.CooldownHelper import CooldownHelper
 from gui.shared.view_helpers import UsersInfoHelper
 from helpers import i18n
 from messenger.m_constants import USER_TAG
@@ -20,16 +17,13 @@ class ClanSendInvitesWindow(SendInvitesWindow, UsersInfoHelper, ClanListener):
         super(ClanSendInvitesWindow, self).__init__(ctx)
         raise 'clanDbID' in ctx or AssertionError
         self.__clanDbID = ctx['clanDbID']
-        self._cooldownHelper = CooldownHelper((CLAN_REQUESTED_DATA_TYPE.CREATE_INVITES,), self._handleSetCoolDown, CoolDownEvent.CLAN)
-        self.__cooldown = None
-        return
 
     @process
     def sendInvites(self, accountsToInvite, comment):
         self.as_showWaitingS(WAITING.CLANS_INVITES_SEND, {})
         accountsToInvite = [ int(userDbID) for userDbID in accountsToInvite ]
         ctx = clan_ctx.CreateInviteCtx(self.__clanDbID, accountsToInvite, comment)
-        self.__cooldown = ctx.getCooldown()
+        self.as_onReceiveSendInvitesCooldownS(ctx.getCooldown())
         result = yield self.clansCtrl.sendRequest(ctx)
         successAccounts = [ item.getAccountDbID() for item in ctx.getDataObj(result.data) ]
         failedAccounts = set(accountsToInvite) - set(successAccounts)
@@ -43,7 +37,6 @@ class ClanSendInvitesWindow(SendInvitesWindow, UsersInfoHelper, ClanListener):
 
     def _populate(self):
         super(ClanSendInvitesWindow, self)._populate()
-        self._cooldownHelper.start()
         self.as_setInvalidUserTagsS([USER_TAG.IGNORED,
          USER_TAG.CURRENT,
          USER_TAG.CLAN_MEMBER,
@@ -51,7 +44,6 @@ class ClanSendInvitesWindow(SendInvitesWindow, UsersInfoHelper, ClanListener):
         self.as_enableMassSendS(False, CLANS.CLANPROFILE_SENDINVITESWINDOW_TOOLTIP_MASSSENDBLOCKED)
 
     def _dispose(self):
-        self._cooldownHelper.stop()
         super(ClanSendInvitesWindow, self)._dispose()
 
     def _initCooldown(self):
@@ -60,11 +52,8 @@ class ClanSendInvitesWindow(SendInvitesWindow, UsersInfoHelper, ClanListener):
     def _finiCooldown(self):
         pass
 
-    def _handleSetCoolDown(self, isInCooldown):
-        if not (isInCooldown and self.__cooldown is not None):
-            raise AssertionError
-            self.as_onReceiveSendInvitesCooldownS(self.__cooldown)
-        return
+    def _handleSetCoolDown(self, event):
+        pass
 
     def _getTitle(self):
         return i18n.makeString(CLANS.CLANPROFILE_SENDINVITESWINDOW_TITLE)

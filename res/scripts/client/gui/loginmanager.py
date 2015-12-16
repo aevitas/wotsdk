@@ -1,6 +1,9 @@
 # Embedded file name: scripts/client/gui/login/Manager.py
+import time
+import pickle
 import BigWorld
 import constants
+from debug_utils import LOG_DEBUG
 from gui import SystemMessages, makeHtmlString, GUI_SETTINGS
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.LobbyContext import g_lobbyContext
@@ -8,6 +11,8 @@ from ConnectionManager import connectionManager, CONNECTION_METHOD
 from Preferences import Preferences
 from Servers import Servers, DevelopmentServers
 from helpers.i18n import makeString as _ms
+from predefined_hosts import g_preDefinedHosts, AUTO_LOGIN_QUERY_ENABLED, AUTO_LOGIN_QUERY_URL
+_PERIPHERY_DEFAULT_LIFETIME = 900
 
 class Manager(object):
 
@@ -32,7 +37,12 @@ class Manager(object):
         return
 
     def initiateLogin(self, email, password, serverName, isSocialToken2Login, rememberUser):
-        authMethod = CONNECTION_METHOD.BASIC
+        isToken2Login = isSocialToken2Login or self._preferences['token2']
+        if isToken2Login:
+            authMethod = CONNECTION_METHOD.TOKEN2
+        else:
+            authMethod = CONNECTION_METHOD.BASIC
+        serverName = self._getHost(authMethod, serverName)
         self._preferences['session'] = BigWorld.wg_cpsalt(self._preferences['session'])
         self._preferences['password_length'] = len(password)
         self._preferences['remember_user'] = rememberUser
@@ -42,8 +52,7 @@ class Manager(object):
          'session': self._preferences['session'],
          'temporary': str(int(not rememberUser)),
          'auth_method': authMethod}
-        if isSocialToken2Login or self._preferences['token2']:
-            loginParams['auth_method'] = CONNECTION_METHOD.TOKEN2
+        if isToken2Login:
             loginParams['token2'] = self._preferences['token2']
         if isSocialToken2Login:
             self._preferences['login_type'] = self._preferences['login_type']
@@ -74,7 +83,7 @@ class Manager(object):
         if self._preferences['remember_user']:
             self._preferences['name'] = name
             self._preferences['token2'] = token2
-            if not constants.IS_DEVELOPMENT and 'server_name' in self._preferences:
+            if 'server_name' in self._preferences and AUTO_LOGIN_QUERY_ENABLED:
                 del self._preferences['server_name']
         else:
             email = self._preferences['login']
@@ -83,9 +92,10 @@ class Manager(object):
             self._preferences.clear()
             if not constants.IS_SINGAPORE and not GUI_SETTINGS.igrCredentialsReset:
                 self._preferences['login'] = email
-            if constants.IS_DEVELOPMENT:
+            if not AUTO_LOGIN_QUERY_ENABLED:
                 self._preferences['server_name'] = serverName
             self._preferences['session'] = session
+        self.__writePeripheryLifetime()
         self._preferences.writeLoginInfo()
         self._showSecurityMessage(responseData)
 
@@ -98,3 +108,38 @@ class Manager(object):
                  'linkType': 'securityLink'})
             SystemMessages.pushI18nMessage('#system_messages:securityMessage/%s' % securityWarningType, type=SystemMessages.SM_TYPE.Warning, link=securityLink)
         return
+
+    def __writePeripheryLifetime(self):
+        if AUTO_LOGIN_QUERY_ENABLED and connectionManager.peripheryID:
+            pickledData = self._preferences['peripheryLifetime']
+            try:
+                savedPeripheryID, savedExpiration = pickle.loads(pickledData)
+            except:
+                self._preferences['peripheryLifetime'] = pickle.dumps((connectionManager.peripheryID, time.time() + _PERIPHERY_DEFAULT_LIFETIME))
+                return None
+
+            if not (savedPeripheryID != connectionManager.peripheryID and savedExpiration > time.time()):
+                self._preferences['peripheryLifetime'] = pickle.dumps((connectionManager.peripheryID, time.time() + _PERIPHERY_DEFAULT_LIFETIME))
+        return None
+
+    def _getHost(self, authMethod, hostName):
+        if hostName != AUTO_LOGIN_QUERY_URL:
+            return hostName
+        pickledData = self._preferences['peripheryLifetime']
+        if pickledData:
+            try:
+                peripheryID, expirationTimestamp = pickle.loads(pickledData)
+            except:
+                LOG_DEBUG("Couldn't to read pickled periphery data. Connecting to {0}.".format(hostName))
+                return hostName
+
+            if expirationTimestamp > time.time():
+                host = g_preDefinedHosts.periphery(peripheryID, False)
+                if authMethod != CONNECTION_METHOD.BASIC and host.urlToken:
+                    return host.urlToken
+                else:
+                    return host.url
+            else:
+                return hostName
+        else:
+            return hostName

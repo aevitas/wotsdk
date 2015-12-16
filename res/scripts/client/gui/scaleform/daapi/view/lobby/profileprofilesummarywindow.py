@@ -38,9 +38,10 @@ class ProfileSummaryWindow(ProfileSummaryWindowMeta, ClubEmblemsHelper, ClanEmbl
 
     def openClanStatistic(self):
         if g_lobbyContext.getServerSettings().clanProfile.isEnabled():
-            clanID, _ = g_itemsCache.items.getClanInfo(self._userID)
+            clanID, clanInfo = g_itemsCache.items.getClanInfo(self._userID)
             if clanID != 0:
-                shared_events.showClanProfileWindow(clanID)
+                clanInfo = ClanInfo(*clanInfo)
+                shared_events.showClanProfileWindow(clanID, clanInfo.getClanAbbrev())
         elif self.__isFortClanProfileAvailable():
             self.fireEvent(events.LoadViewEvent(FORTIFICATION_ALIASES.FORT_CLAN_STATISTICS_WINDOW_ALIAS), EVENT_BUS_SCOPE.LOBBY)
         else:

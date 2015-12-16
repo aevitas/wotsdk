@@ -12,11 +12,8 @@ class CustomizationMainViewMeta(View):
     def installCustomizationElement(self, id):
         self._printOverrideError('installCustomizationElement')
 
-    def uninstallCustomizationElement(self, id):
-        self._printOverrideError('uninstallCustomizationElement')
-
-    def selectCustomizationElement(self, id):
-        self._printOverrideError('selectCustomizationElement')
+    def goToTask(self, id):
+        self._printOverrideError('goToTask')
 
     def removeFromShoppingBasket(self, slotId, groupId, id):
         self._printOverrideError('removeFromShoppingBasket')
@@ -32,6 +29,9 @@ class CustomizationMainViewMeta(View):
 
     def removeSlot(self, groupId, id):
         self._printOverrideError('removeSlot')
+
+    def revertSlot(self, groupId, id):
+        self._printOverrideError('revertSlot')
 
     def showGroup(self, groupId, id):
         self._printOverrideError('showGroup')

@@ -45,7 +45,8 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
 
     def openClanStatistic(self):
         if self.clansCtrl.isEnabled():
-            shared_events.showClanProfileWindow(self.clansCtrl.getAccountProfile().getClanDbID())
+            clan = self.clansCtrl.getAccountProfile()
+            shared_events.showClanProfileWindow(clan.getClanDbID(), clan.getClanAbbrev())
         else:
             self.fireEvent(events.LoadViewEvent(FORTIFICATION_ALIASES.FORT_CLAN_STATISTICS_WINDOW_ALIAS), EVENT_BUS_SCOPE.LOBBY)
         self.destroy()

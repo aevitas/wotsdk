@@ -283,6 +283,9 @@ class ClientHangarSpace():
     def handleKeyEvent(self, event):
         if event.key == Keys.KEY_LEFTMOUSE:
             self.__isMouseDown = event.isKeyDown()
+            if self.__isMouseDown:
+                from gui.shared.utils.HangarSpace import g_hangarSpace
+                g_hangarSpace.leftButtonClicked()
         return False
 
     def handleMouseEventGlobal(self, event):

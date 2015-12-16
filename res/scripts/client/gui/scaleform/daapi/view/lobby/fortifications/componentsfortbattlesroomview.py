@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/components/FortBattlesRoomView.py
 import BigWorld
+from debug_utils import LOG_DEBUG
+from gui.Scaleform.daapi.view.lobby.fortifications.components.sorties_dps import MIN_MAX_VEH_LVLS_MAPPING
 from helpers import i18n
 from UnitBase import UNIT_OP
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
@@ -162,10 +164,11 @@ class FortBattlesRoomView(FortRoomMeta, FortViewHelper, UnitListener):
 
     def _getDivisionLvls(self):
         _, unit = self.unitFunctional.getUnit(self.unitFunctional.getUnitIdx())
-        division = getDivisionNameByType(unit.getRosterTypeID())
-        level = getDivisionLevel(division)
-        minLevel = fort_formatters.getTextLevel(1)
-        maxLevel = fort_formatters.getTextLevel(level)
+        type_id = unit.getRosterTypeID()
+        division = getDivisionNameByType(type_id)
+        minLvl, maxLvl = MIN_MAX_VEH_LVLS_MAPPING[getDivisionLevel(division)].DEFAULT_LEVELS
+        minLevel = fort_formatters.getTextLevel(minLvl)
+        maxLevel = fort_formatters.getTextLevel(maxLvl)
         return (minLevel, maxLevel)
 
     def _getVehicleSelectorDescription(self):

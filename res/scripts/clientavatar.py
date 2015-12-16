@@ -610,7 +610,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                         if newVoIPState:
                             message = makeString(MESSENGER.CLIENT_DYNSQUAD_ENABLEVOIP)
                         else:
-                            message = makeString(MESSENGER.CLIENT_DYNSQUAD_DISABLEVOIP, hotkey='ALT+Q')
+                            message = makeString(MESSENGER.CLIENT_DYNSQUAD_DISABLEVOIP, hotkey='G')
                         MessengerEntry.g_instance.gui.addClientMessage(g_settings.htmlTemplates.format('battleErrorMessage', ctx={'error': message}))
                     return True
                 if cmdMap.isFired(CommandMapping.CMD_VEHICLE_MARKERS_SHOW_INFO, key):

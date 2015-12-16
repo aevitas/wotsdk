@@ -21,7 +21,7 @@ class BaseClanCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         self.__clanAbbrev = ctx.clanAbbrev
 
     def showClanProfile(self):
-        event_dispatcher.showClanProfileWindow(self.__clanDbID)
+        event_dispatcher.showClanProfileWindow(self.__clanDbID, self.__clanAbbrev)
 
     def copyToClipboard(self):
         utils.copyToClipboard(clans_fmts.getClanFullName(self.__clanName, self.__clanAbbrev))

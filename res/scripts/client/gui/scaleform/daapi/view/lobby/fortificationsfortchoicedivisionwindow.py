@@ -1,9 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/FortChoiceDivisionWindow.py
+from gui.Scaleform.daapi.view.lobby.fortifications.components.sorties_dps import makeDivisionData
 from helpers import i18n
 from UnitBase import SORTIE_DIVISION
 from constants import PREBATTLE_TYPE
 from adisp import process
-from gui.Scaleform.daapi.view.lobby.fortifications.components.sorties_dps import makeDivisionData
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils import fort_formatters
 from gui.Scaleform.daapi.view.meta.FortChoiceDivisionWindowMeta import FortChoiceDivisionWindowMeta
 from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS as I18N_FORTIFICATIONS
@@ -13,6 +13,10 @@ from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.events import FortEvent
 from gui.shared.formatters.text_styles import main, standard, highTitle
 from gui.prb_control.context import unit_ctx
+
+def _getTextLevels(lvl):
+    return main(fort_formatters.getTextLevel(lvl))
+
 
 class FortChoiceDivisionWindow(FortChoiceDivisionWindowMeta):
 
@@ -73,7 +77,7 @@ class FortChoiceDivisionWindow(FortChoiceDivisionWindowMeta):
             data['applyBtnLbl'] = I18N_FORTIFICATIONS.CHOICEDIVISION_APPLYBTNLBL
             data['windowTitle'] = I18N_FORTIFICATIONS.CHOICEDIVISION_WINDOWTITLE
         data['cancelBtnLbl'] = I18N_FORTIFICATIONS.CHOICEDIVISION_CANCELBTNLBL
-        list = makeDivisionData(I18N_FORTIFICATIONS.sortie_division_name)
+        list = makeDivisionData()
         autoSelectDivision = None
         for item in list:
             if item['level'] == SORTIE_DIVISION.MIDDLE:
@@ -94,17 +98,15 @@ class FortChoiceDivisionWindow(FortChoiceDivisionWindowMeta):
             divisionType = {}
             title = i18n.makeString(item['label'])
             profit = fort_formatters.getDefRes(item['profit'])
-            minLevel = 1
-            maxLevel = item['level']
+            divisionID = item['level']
             divisionType['divisionName'] = highTitle(i18n.makeString(I18N_FORTIFICATIONS.CHOICEDIVISION_DIVISIONFULLNAME, divisionType=title))
             divisionType['divisionProfit'] = standard(i18n.makeString(I18N_FORTIFICATIONS.CHOICEDIVISION_DIVISIONPROFIT, defResCount=profit))
-            minLevelStr = main(fort_formatters.getTextLevel(minLevel))
-            maxLevelStr = main(fort_formatters.getTextLevel(maxLevel))
-            divisionType['vehicleLevel'] = standard(i18n.makeString(I18N_FORTIFICATIONS.CHOICEDIVISION_VEHICLELEVEL, minLevel=minLevelStr, maxLevel=maxLevelStr))
-            divisionType['divisionID'] = maxLevel
-            if maxLevel == SORTIE_DIVISION.MIDDLE:
+            minVehLvl, maxVehLvl = item['vehLvls']
+            divisionType['vehicleLevel'] = standard(i18n.makeString(I18N_FORTIFICATIONS.CHOICEDIVISION_VEHICLELEVEL, minLevel=_getTextLevels(minVehLvl), maxLevel=_getTextLevels(maxVehLvl)))
+            divisionType['divisionID'] = divisionID
+            if divisionID == SORTIE_DIVISION.MIDDLE:
                 minCount, maxCount = self.playersRange[0]
-            elif maxLevel == SORTIE_DIVISION.CHAMPION:
+            elif divisionID == SORTIE_DIVISION.CHAMPION:
                 minCount, maxCount = self.playersRange[1]
             else:
                 minCount, maxCount = self.playersRange[2]

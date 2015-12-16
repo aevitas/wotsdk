@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/PremiumWindow.py
 import BigWorld
+from debug_utils import LOG_DEBUG
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.settings import BUTTON_LINKAGES
 from gui.Scaleform.daapi.view.meta.PremiumWindowMeta import PremiumWindowMeta
@@ -9,6 +10,7 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared import g_itemsCache
 from gui.shared.events import LobbySimpleEvent
 from gui.shared.gui_items.processors.common import PremiumAccountBuyer
+from gui.shared.notifications import NotificationPriorityLevel
 from gui.shared.tooltips import ACTION_TOOLTIPS_STATE, ACTION_TOOLTIPS_TYPE
 from gui import makeHtmlString, game_control, SystemMessages
 from gui.shared.utils.decorators import process
@@ -22,10 +24,11 @@ class PremiumWindow(PremiumWindowMeta):
         super(PremiumWindow, self).__init__()
         self._items = g_itemsCache.items
         self._actualPremiumCost = None
+        self._arenaUniqueID = 0
+        self._premiumBonusesDiff = None
         if ctx is not None:
             self._arenaUniqueID = ctx.get('arenaUniqueID', 0)
-        else:
-            self._arenaUniqueID = 0
+            self._premiumBonusesDiff = ctx.get('premiumBonusesDiff', None)
         return
 
     def onBtnClick(self, action):
@@ -74,10 +77,13 @@ class PremiumWindow(PremiumWindowMeta):
         if len(result.userMsg):
             SystemMessages.g_instance.pushI18nMessage(result.userMsg, type=result.sysMsgType)
         if result.success:
+            if arenaUniqueID and self._premiumBonusesDiff:
+                LOG_DEBUG('self._premiumBonusesDiff!!!', self._premiumBonusesDiff)
+                SystemMessages.g_instance.pushI18nMessage('#system_messages:premium/post_battle_premium', type=SystemMessages.SM_TYPE.Information, priority=NotificationPriorityLevel.MEDIUM, **self._premiumBonusesDiff)
             becomePremium = g_itemsCache.items.stats.isPremium and not wasPremium
-            self.onWindowClose()
             self.fireEvent(LobbySimpleEvent(LobbySimpleEvent.PREMIUM_BOUGHT, ctx={'arenaUniqueID': arenaUniqueID,
              'becomePremium': becomePremium}))
+            self.onWindowClose()
 
     def __populateData(self):
         self.as_setImageS(RES_ICONS.MAPS_ICONS_WINDOWS_PREM_PREMHEADER, 0)

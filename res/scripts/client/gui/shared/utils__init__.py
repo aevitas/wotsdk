@@ -233,7 +233,7 @@ def getPlayerName():
 
 def avg(devidend, devider):
     if devider > 0:
-        return devidend / devider
+        return float(devidend) / devider
     return 0
 
 

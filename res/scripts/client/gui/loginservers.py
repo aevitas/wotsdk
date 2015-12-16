@@ -35,7 +35,7 @@ class Servers(object):
         self._selectedServerIdx = 0
         serverName = self._loginPreferences['server_name']
         for idx, (hostName, friendlyName, csisStatus, peripheryID) in enumerate(baseServerList):
-            if serverName == hostName and IS_DEVELOPMENT:
+            if serverName == hostName:
                 self._selectedServerIdx = idx
             self._serverList.append({'label': friendlyName,
              'data': hostName,

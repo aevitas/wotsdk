@@ -2,6 +2,7 @@
 import BigWorld
 from collections import namedtuple
 from datetime import datetime
+from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import ProfileUtils
 from helpers import time_utils
 from messenger.ext import passCensor
 from shared_utils import makeTupleByDict
@@ -9,7 +10,6 @@ from predefined_hosts import g_preDefinedHosts
 from debug_utils import LOG_WARNING
 from gui.clans import formatters as clans_fmts
 from gui.clans.settings import MAX_CLAN_MEMBERS_COUNT, CLAN_INVITE_STATES_SORT_RULES, CLAN_INVITE_STATES
-from gui.shared.utils import avg
 from debug_utils import LOG_ERROR
 from helpers.time_utils import getTimeDeltaTilNow, ONE_DAY
 
@@ -370,7 +370,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won', 'battles_played'))
     def getWinsEfficiency(self):
-        return avg(self.battles_won, self.battles_played)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won, self.battles_played, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
     @fmtUnavailableValue(fields=('battles_lost',))
     def getLoosesCount(self):
@@ -398,7 +398,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won_on_6_level', 'battles_played_on_6_level'))
     def getWins6LevelEfficiency(self):
-        return avg(self.battles_won_on_6_level, self.battles_played_on_6_level)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won_on_6_level, self.battles_played_on_6_level, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
     @fmtUnavailableValue(fields=('battles_played_on_8_level',))
     def getBattles8LevelCount(self):
@@ -410,7 +410,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won_on_8_level', 'battles_played_on_8_level'))
     def getWins8LevelEfficiency(self):
-        return avg(self.battles_won_on_8_level, self.battles_played_on_8_level)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won_on_8_level, self.battles_played_on_8_level, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
     @fmtUnavailableValue(fields=('battles_played_on_10_level',))
     def getBattles10LevelCount(self):
@@ -422,7 +422,7 @@ class ClanGlobalMapStatsData(_ClanGlobalMapStatsData, FieldsCheckerMixin):
 
     @fmtUnavailableValue(fields=('battles_won_on_10_level', 'battles_played_on_10_level'))
     def getWins10LevelEfficiency(self):
-        return avg(self.battles_won_on_10_level, self.battles_played_on_10_level)
+        return ProfileUtils.getEfficiencyPercent(self.battles_won_on_10_level, self.battles_played_on_10_level, clans_fmts.DUMMY_UNAVAILABLE_DATA)
 
 
 Building = namedtuple('Building', 'type direction level position')
@@ -947,7 +947,8 @@ _ClanInviteData = namedtuple('_ClanInviteData', ['account_id',
  'id',
  'sender_id',
  'status',
- 'updated_at'])
+ 'updated_at',
+ 'status_changer_id'])
 _ClanInviteData.__new__.__defaults__ = (0,
  0,
  '',
@@ -956,8 +957,7 @@ _ClanInviteData.__new__.__defaults__ = (0,
  0,
  '',
  _defDateTime,
- '',
- '')
+ 0)
 
 class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
 
@@ -972,6 +972,14 @@ class ClanInviteData(_ClanInviteData, FieldsCheckerMixin):
     @fmtUnavailableValue(fields=('sender_id',))
     def getSenderDbID(self):
         return self.sender_id
+
+    @fmtUnavailableValue(fields=('status_changer_id',))
+    def getChangerDbID(self):
+        return self.status_changer_id
+
+    @fmtUnavailableValue(fields=('status_changer_id',))
+    def getChangedBy(self):
+        return self.status_changer_id
 
     @fmtUnavailableValue(fields=('clan_id',))
     def getClanDbID(self):
@@ -1054,13 +1062,14 @@ class ClanADInviteData(_ClanADInviteData, FieldsCheckerMixin):
 
 class ClanInviteWrapper(object):
 
-    def __init__(self, invite, account, accountName, sender, senderName):
+    def __init__(self, invite, account, accountName, sender, senderName, changerName):
         super(ClanInviteWrapper, self).__init__()
         self.__invite = invite or ClanInviteData()
         self.__account = account or AccountClanRatingsData()
         self.__sender = sender or AccountClanRatingsData()
         self.__accountName = accountName
         self.__senderName = senderName
+        self.__changerName = changerName
 
     @property
     def status(self):
@@ -1120,6 +1129,10 @@ class ClanInviteWrapper(object):
     def getClanDbID(self):
         return self.__invite.getClanDbID()
 
+    @fmtDelegat(path='invite.getClanDbID')
+    def getClanDbID(self):
+        return self.__invite.getClanDbID()
+
     @fmtDelegat(path='invite.getCreatedAt')
     def getCreatedAt(self):
         return self.__invite.getCreatedAt()
@@ -1128,11 +1141,21 @@ class ClanInviteWrapper(object):
     def getUpdatedAt(self):
         return self.__invite.getUpdatedAt()
 
+    @fmtDelegat(path='invite.getAccountDbID')
     def getAccountDbID(self):
         return self.__invite.getAccountDbID()
 
+    @fmtDelegat(path='invite.getSenderDbID')
     def getSenderDbID(self):
         return self.__invite.getSenderDbID()
+
+    @fmtDelegat(path='invite.getChangedBy')
+    def getChangedBy(self):
+        return self.__invite.getChangedBy()
+
+    @fmtDelegat(path='invite.getChangerDbID')
+    def getChangerDbID(self):
+        return self.__invite.getChangerDbID()
 
     @formatter(formatter=_formatString)
     def getAccountName(self):
@@ -1141,6 +1164,10 @@ class ClanInviteWrapper(object):
     @formatter(formatter=_formatString)
     def getSenderName(self):
         return self.__senderName
+
+    @formatter(formatter=_formatString)
+    def getChangerName(self):
+        return self.__changerName
 
     @fmtDelegat(path='account.getGlobalRating')
     def getPersonalRating(self):
@@ -1174,6 +1201,9 @@ class ClanInviteWrapper(object):
 
     def setSenderName(self, name):
         self.__senderName = name
+
+    def setChangerName(self, name):
+        self.__changerName = name
 
     def setUserName(self, name):
         self.__accountName = name
@@ -1242,6 +1272,14 @@ class ClanPersonalInviteWrapper(object):
 
     def getDbID(self):
         return self.__invite.getDbID()
+
+    @fmtDelegat(path='invite.getChangerDbID')
+    def getChangerDbID(self):
+        return self.__invite.getChangerDbID()
+
+    @fmtDelegat(path='invite.getChangedBy')
+    def getChangedBy(self):
+        return self.__invite.getChangedBy()
 
     @fmtDelegat(path='invite.getStatus')
     def getStatus(self):

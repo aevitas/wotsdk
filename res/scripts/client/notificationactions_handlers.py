@@ -257,7 +257,8 @@ class _ShowClanProfileHandler(_ActionHandler):
 
     def handleAction(self, model, entityID, action):
         super(_ShowClanProfileHandler, self).handleAction(model, entityID, action)
-        shared_events.showClanProfileWindow(model.getNotification(self.getNotType(), entityID).getClanID())
+        clan = model.getNotification(self.getNotType(), entityID)
+        shared_events.showClanProfileWindow(clan.getClanID(), clan.getClanAbbrev())
 
 
 class ShowBattleResultsHandler(_ShowArenaResultHandler):

@@ -72,7 +72,6 @@ class SniperCamera(ICamera, CallbackDelayer):
         self.disable()
         self.__onChangeControlMode = None
         self.__cam = None
-        self._writeUserPreferences()
         self.__aimingSystem.destroy()
         self.__aimingSystem = None
         self.__aim = None
@@ -392,7 +391,7 @@ class SniperCamera(ICamera, CallbackDelayer):
         self.__accelerationSmoother = AccelerationSmoother(accelerationFilter, maxAccelerationDuration)
         return
 
-    def _writeUserPreferences(self):
+    def writeUserPreferences(self):
         ds = Settings.g_instance.userPrefs
         if not ds.has_key(Settings.KEY_CONTROL_MODE):
             ds.write(Settings.KEY_CONTROL_MODE, '')

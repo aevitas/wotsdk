@@ -20,6 +20,9 @@ class IPrbEntry(object):
     def select(self, ctx, callback = None):
         pass
 
+    def setAccountsToInvite(self, accountsToInvite):
+        pass
+
 
 class IPrbListUpdater(object):
 

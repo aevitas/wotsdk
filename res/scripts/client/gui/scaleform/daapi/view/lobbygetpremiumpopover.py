@@ -25,7 +25,8 @@ class GetPremiumPopover(GetPremiumPopoverMeta):
         return
 
     def onActionBtnClick(self, clientUniqueID):
-        event_dispatcher.showPremiumWindow(g_lobbyContext.getArenaUniqueIDByClientID(clientUniqueID))
+        event_dispatcher.showPremiumWindow(arenaUniqueID=g_lobbyContext.getArenaUniqueIDByClientID(clientUniqueID), premiumBonusesDiff={'xpDiff': self.__context.xpDiff,
+         'creditDiff': self.__context.creditsDiff})
         self.destroy()
 
     def __makeVO(self, data):

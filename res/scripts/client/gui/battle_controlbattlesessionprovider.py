@@ -11,6 +11,7 @@ from gui.battle_control.RespawnsController import RespawnsController
 from gui.battle_control.NotificationsController import NotificationsController
 from gui.battle_control.arena_info import getClientArena
 from gui.battle_control.avatar_getter import leaveArena
+from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE
 from gui.battle_control.battle_feedback import createFeedbackAdaptor
 from gui.battle_control.battle_msgs_ctrl import createBattleMessagesCtrl
 from gui.battle_control.battle_period_ctrl import createPeriodCtrl
@@ -269,6 +270,9 @@ class BattleSessionProvider(object):
 
     def invalidateVehicleState(self, state, value, vehicleID = 0):
         self.__vehicleStateCtrl.invalidate(state, value, vehicleID)
+        if state == VEHICLE_VIEW_STATE.DESTROYED:
+            self.__ammoCtrl.clear(False)
+            self.__equipmentsCtrl.clear(False)
 
     def repairPointAction(self, repairPointIndex, action, nextActionTime):
         self.__repairCtrl.action(repairPointIndex, action, nextActionTime)
