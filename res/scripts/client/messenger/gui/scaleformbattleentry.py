@@ -226,7 +226,7 @@ class BattleEntry(IGUIEntry):
     def __downHistory(self, *args):
         parser = CommandArgsParser(self.__downHistory.__name__, 1, [bool])
         toLastMessage, = parser.parse(*args)
-        if toLastMessage == False:
+        if toLastMessage is False:
             self.__sharedHistory.syncCursor(False)
             self.__sharedHistory.next()
         else:
@@ -243,14 +243,14 @@ class BattleEntry(IGUIEntry):
         if len(args) > 0:
             parser = CommandArgsParser(self.__getLatestHistory.__name__, 1, [bool])
             toLastMessage, = parser.parse(*args)
-        if toLastMessage is not None and toLastMessage == True:
+        if toLastMessage is not None and toLastMessage is True:
             self.__sharedHistory.syncCursor(True)
             self.__updateHistoryControls()
         historyList = self.__sharedHistory.getHistory()
         if len(historyList) == 0:
             return
         else:
-            if toLastMessage is not None and toLastMessage == True:
+            if toLastMessage is not None and toLastMessage is True:
                 self.__flashCall(BTMS_COMMANDS.ClearMessages(), [])
             numberOfMessages = self.__sharedHistory.numberOfMessages()
             idx = len(historyList)

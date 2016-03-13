@@ -6,6 +6,7 @@ from gui.prb_control.context.prb_ctx import TrainingSettingsCtx
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 from gui.Scaleform.daapi.view.meta.TrainingWindowMeta import TrainingWindowMeta
 from gui.prb_control.prb_helpers import prbFunctionalProperty
+from gui.prb_control.settings import TRAINING_MAX_DURATION_TIME
 from helpers import i18n
 from gui.shared import events, EVENT_BUS_SCOPE
 
@@ -52,6 +53,10 @@ class TrainingSettingsWindow(TrainingWindowMeta):
     def onWindowClose(self):
         self.destroy()
 
+    def _populate(self):
+        super(TrainingSettingsWindow, self)._populate()
+        self.as_setDataS(self.getInfo(), self.getMapsData())
+
     def getMapsData(self):
         return self.__arenasCache.cache
 
@@ -66,7 +71,8 @@ class TrainingSettingsWindow(TrainingWindowMeta):
          'create': self.__isCreateRequest,
          'canMakeOpenedClosed': True,
          'canChangeComment': True,
-         'canChangeArena': True}
+         'canChangeArena': True,
+         'maxBattleTime': TRAINING_MAX_DURATION_TIME}
         if not self.__isCreateRequest:
             permissions = self.prbFunctional.getPermissions()
             info['canMakeOpenedClosed'] = permissions.canMakeOpenedClosed()

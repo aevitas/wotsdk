@@ -42,7 +42,7 @@ class ContactItem(object):
         return self.getItemType() != XMPP_ITEM_TYPE.EMPTY_ITEM and not self._trusted and _TAG.CACHED in tags
 
     def isOnline(self, isOnlineInBW = False):
-        return isOnlineInBW or self.getPresence() not in [PRESENCE.UNAVAILABLE, PRESENCE.UNKNOWN]
+        return isOnlineInBW or self.getPresence() not in PRESENCE.OFFLINE
 
     def getPresence(self):
         resource = self._resources.getHighestPriority()

@@ -22,7 +22,7 @@ class _ItemsData(object):
         if dumper is not None and isinstance(dumper, _BaseDumper):
             self._dumper = dumper
         else:
-            raise Exception, 'Dumper is invalid.'
+            raise Exception('Dumper is invalid.')
         self._nodes = []
         self._nodesIdx = {}
         self._items = g_itemsCache.items
@@ -86,7 +86,7 @@ class _ItemsData(object):
         return self._items.getItemByCD(itemCD)
 
     def getRootItem(self):
-        raise NotImplementedError, 'Must be overridden in subclass'
+        raise NotImplementedError('Must be overridden in subclass')
 
     def getInventoryVehicles(self):
         nodeCDs = map(lambda node: node['id'], self._getNodesToInvalidate())
@@ -226,10 +226,8 @@ class _ItemsData(object):
     def _canBuy(self, nodeCD):
         item = self.getItem(nodeCD)
         canBuy, reason = item.mayPurchase(self._stats.money)
-        if not canBuy and reason == 'credit_error':
-            return item.mayPurchaseWithExchange(self._stats.money, self._items.shop.exchangeRate)
-        else:
-            return canBuy
+        result = canBuy or reason == 'credit_error' and item.mayPurchaseWithExchange(self._stats.money, self._items.shop.exchangeRate)
+        return result
 
     def _canRentOrBuy(self, nodeCD):
         item = self.getItem(nodeCD)
@@ -237,11 +235,7 @@ class _ItemsData(object):
         canBuy, buyReason = item.mayPurchase(money)
         canRentOrBuy, rentReason = item.mayRentOrBuy(money)
         canBuyWithExchange = item.mayPurchaseWithExchange(money, g_itemsCache.items.shop.exchangeRate)
-        if not canRentOrBuy:
-            if not canBuy and buyReason == 'credit_error':
-                return canBuyWithExchange
-            return canBuy
-        return canRentOrBuy
+        return canRentOrBuy or canBuy or canBuyWithExchange and buyReason == 'credit_error'
 
     def _canSell(self, nodeCD):
         raise NotImplementedError
@@ -326,7 +320,7 @@ class ResearchItemsData(_ItemsData):
         return self._rootCD in unlocks
 
     def getRootStatusString(self):
-        status = ''
+        status = None
         item = self.getRootItem()
         if item.isInInventory:
             lockReason = item.lock
@@ -336,6 +330,8 @@ class ResearchItemsData(_ItemsData):
                 status = 'inPrebattle'
             elif item.repairCost > 0:
                 status = 'destroyed'
+            elif item.isTelecomDealOver:
+                status = 'dealIsOver'
         return status
 
     def isInstallItemsEnabled(self):
@@ -477,13 +473,15 @@ class ResearchItemsData(_ItemsData):
                 state |= NODE_STATE.ELITE
             if guiItem.isPremium:
                 state |= NODE_STATE.PREMIUM
-            if guiItem.isRented and not guiItem.isPremiumIGR:
+            if guiItem.isRented and not guiItem.isPremiumIGR and not guiItem.isTelecom:
                 state = self._checkExpiredRent(state, guiItem)
                 state = self._checkMoneyForRentOrBuy(state, nodeCD)
-            if guiItem.isRentable and not guiItem.isInInventory:
+            if guiItem.isRentable and not guiItem.isInInventory and not guiItem.isTelecom:
                 state = self._checkMoneyForRentOrBuy(state, nodeCD)
             if self._isVehicleCanBeChanged():
                 state |= NODE_STATE.VEHICLE_CAN_BE_CHANGED
+            if guiItem.isDisabledForBuy:
+                state |= NODE_STATE.PURCHASE_DISABLED
             renderer = 'root' if self._rootCD == nodeCD else 'vehicle'
         else:
             renderer = 'item'

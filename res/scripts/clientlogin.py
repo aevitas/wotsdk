@@ -16,11 +16,11 @@ class PlayerLogin(BigWorld.Entity):
         pass
 
     def onKickedFromServer(self, checkoutPeripheryID):
-        LOG_MX('onKickedFromServer', checkoutPeripheryID)
+        LOG_DEBUG('onKickedFromServer', checkoutPeripheryID)
         g_playerEvents.onKickWhileLoginReceived(checkoutPeripheryID)
 
     def receiveLoginQueueNumber(self, queueNumber):
-        LOG_MX('receiveLoginQueueNumber', queueNumber)
+        LOG_DEBUG('receiveLoginQueueNumber', queueNumber)
         g_playerEvents.onLoginQueueNumberReceived(queueNumber)
 
     def handleKeyEvent(self, event):

@@ -92,9 +92,9 @@ def translate_field_names(response, field_mapping, requested_fields = None):
 
 
 def generate_docstring_mapping(field_mapping):
-    result = ['\n\t\t.. list-table::\n\t\t\t:widths: 50 50\n\t\t\t:header-rows: 1\n\n\t\t\t* - client_request_lib\n\t\t\t- Backend\n\t']
+    result = ['\n        .. list-table::\n            :widths: 50 50\n            :header-rows: 1\n\n            * - client_request_lib\n            - Backend\n    ']
     for our, their in field_mapping.iteritems():
-        row = '\n\t\t\t* - ``{our}``\n\t\t\t- ``{their}``\n\t\t'.format(our=our, their=their)
+        row = '\n            * - ``{our}``\n            - ``{their}``\n        '.format(our=our, their=their)
         result.append(row)
 
     return ''.join(result)
@@ -400,7 +400,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from SPA backend using `account id/name mappings API method`_
         
-                .. _account id/name mappings API method: https://confluence.wargaming.net/display/WEBDEV/%5BWGNSPA%5D+-+SPA+HTTP+API+Examples#id-[WGNSPA]-SPAHTTPAPIExamples-Byids
+                .. _account id/name mappings API method: https://confluence.wargaming.net/display/
+                WEBDEV/%5BWGNSPA%5D+-+SPA+HTTP+API+Examples#id-[WGNSPA]-SPAHTTPAPIExamples-Byids
         """
         get_params = {'id': account_ids}
         url = '/spa/accounts/names/?%s' % urlencode(get_params, doseq=True)
@@ -422,7 +423,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `clan members API method`_
         
-                .. _clan members API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/clans_id_members.html
+                .. _clan members API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/api-common/
+                clans_id_members.html
         """
         get_params = {'fields': ','.join(fields)}
         url = '/clans/%s/members?%s' % (clan_id, urlencode(get_params))
@@ -438,7 +440,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCBE backend using `favorite_attributes API method`_
         
-                .. _favorite_attributes API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/statistics/favorite_attributes.html
+                .. _favorite_attributes API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/statistics/
+                favorite_attributes.html
         """
         url = '/gm/clans/%s/favorite_attributes' % clan_id
 
@@ -575,7 +578,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def create_applications(self, callback, clan_ids, comment, fields = None):
         """
         create applications for accounts into clan using `create applications API method`_
-                .. _create applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications.html
+                .. _create applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/
+                applications.html
         """
         url = '/applications/'
         data = {'account_id': self._account,
@@ -595,7 +599,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def accept_application(self, callback, application_id, fields = None):
         """
         accept application for accounts into clan using `accept applications API method`_
-                .. _accept applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications_id.html
+                .. _accept applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/
+                applications_id.html
         """
         url = '/applications/%s/' % application_id
         data = {'initiator_id': self._account,
@@ -617,7 +622,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
     def decline_application(self, callback, application_id, fields = None):
         """
         decline application for accounts into clan using `decline applications API method`_
-                .. _decline applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/applications_id.html
+                .. _decline applications API method: http://rtd.wargaming.net/docs/wgccbe/en/latest/wotx/
+                applications_id.html
         """
         url = '/applications/%s/' % application_id
         data = {'initiator_id': self._account,
@@ -833,7 +839,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from exporter backend using `accounts detailed information`_
         
-                .. _accounts detailed information: http://rtd.wargaming.net/docs/exporter/en/latest/api_wot.html#accounts-detailed-information
+                .. _accounts detailed information: http://rtd.wargaming.net/docs/exporter/en/latest/
+                api_wot.html#accounts-detailed-information
         """
         fields = [ i.split('.', 1) for i in fields if i != 'account_id' ]
         grouped = groupby(sorted(fields), key=lambda x: x[0])
@@ -853,7 +860,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
 
         return self._request_data(inner_callback, 'exporter', url)
 
-    @convert_data({'prime_time': lambda x: x and datetime.strptime(x, '%H:%M').time()})
+    @convert_data({'pillage_end_datetime': from_iso,
+     'prime_time': lambda x: x and datetime.strptime(x, '%H:%M').time()})
     @mapped_fields({'front_name': 'frontname',
      'province_id': 'province_id',
      'front_name_localized': 'frontname_localized',
@@ -863,12 +871,15 @@ class StagingDataAccessor(base.BaseDataAccessor):
      'prime_time': 'primetime',
      'game_map': 'game_map',
      'periphery': 'periphery_id',
-     'turns_owned': 'turns_owned'})
+     'turns_owned': 'turns_owned',
+     'pillage_cooldown': 'pillage_cooldown',
+     'pillage_end_datetime': 'pillage_end_datetime'})
     def get_clan_provinces(self, callback, clan_id, fields = None):
         """
         return data from WGCW backend using `clans provinces API method`_
         
-                .. _clans provinces API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/wgapi.html?highlight=stats#clans-provinces
+                .. _clans provinces API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/
+                wgapi.html?highlight=stats#clans-provinces
         """
         get_params = {'clans': ','.join(map(str, [clan_id]))}
         url = '/clans/provinces/?%s' % urlencode(get_params)
@@ -900,7 +911,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCW backend using `clans stats API method`_
         
-                .. _clans stats API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/wgapi.html?highlight=stats#clans-stats
+                .. _clans stats API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/
+                wgapi.html?highlight=stats#clans-stats
         """
         get_params = {'clans': ','.join(map(str, [clan_id]))}
         url = '/clans/stats?%s' % urlencode(get_params)
@@ -919,7 +931,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCW backend using `fronts info API method`_
         
-                .. _fronts info API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/wgapi.html?highlight=stats#id1
+                .. _fronts info API method: http://rtd.wargaming.net/docs/wgcw/en/latest/api/
+                wgapi.html?highlight=stats#id1
         """
         url = '/fronts/'
 
@@ -970,7 +983,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCFE backend using `stronghold info API method`_
         
-                .. _stronghold info API method: http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/strongholds.html#strongholds-clan-id
+                .. _stronghold info API method: http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/
+                strongholds.html#strongholds-clan-id
         """
         get_params = urlencode({'performer_id': self._account})
         try:
@@ -1016,7 +1030,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCFE backend using `stronghold statistics API method`_
         
-                .. _stronghold statistics API method: http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/strongholds.html#strongholds-statistics-clan-id
+                .. _stronghold statistics API method: http://rtd.wargaming.net/docs/wgccfe/en/
+                latest/rst/strongholds.html#strongholds-statistics-clan-id
         """
         get_params = urlencode({'performer_id': self._account})
         try:
@@ -1042,7 +1057,8 @@ class StagingDataAccessor(base.BaseDataAccessor):
         """
         return data from WGCCFE backend using `stronghold state API method`_
         
-                .. _stronghold state API method: http://rtd.wargaming.net/docs/wgccfe/en/latest/rst/strongholds.html#strongholds-state
+                .. _stronghold state API method: http://rtd.wargaming.net/docs/wgccfe/en/latest/
+                rst/strongholds.html#strongholds-state
         """
         get_params = {'clan_id': clan_id}
         try:

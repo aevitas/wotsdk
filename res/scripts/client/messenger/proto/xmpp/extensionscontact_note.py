@@ -143,7 +143,7 @@ class SetNotesQuery(PyQuery):
         for item in items:
             raise len(item) == 2 or AssertionError
             dbID = item[0]
-            raise type(dbID) is types.LongType or AssertionError
+            raise isinstance(dbID, types.LongType) or AssertionError
             text = item[1]
             raise type(text) in types.StringTypes or AssertionError
             converted.append(NoteItem(dbID, text))
@@ -162,7 +162,7 @@ class RemoveNotesQuery(PyQuery):
     def __init__(self, dbIDs):
         converted = []
         for dbID in dbIDs:
-            raise type(dbID) is types.LongType or AssertionError
+            raise isinstance(dbID, types.LongType) or AssertionError
             converted.append(NoteItem(dbID))
 
         super(RemoveNotesQuery, self).__init__(IQ_TYPE.SET, NoteQuery(items=converted))

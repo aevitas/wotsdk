@@ -5,7 +5,7 @@ try:
     import _Scaleform
     SCALEFORM_SUPPORT = True
 except ImportError:
-    raise NotImplementedError, 'Client not support Scaleform'
+    raise NotImplementedError('Client not support Scaleform')
 
 SCALEFORM_SWF_PATH = 'gui/scaleform'
 SCALEFORM_SWF_PATH_V3 = 'gui/flash'

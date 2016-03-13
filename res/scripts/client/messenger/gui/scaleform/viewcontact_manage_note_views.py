@@ -14,7 +14,7 @@ class ContactManageNoteView(ContactNoteManageViewMeta):
 
     def __init__(self):
         super(ContactManageNoteView, self).__init__()
-        self._dbID = 0L
+        self._dbID = 0
         self._note = ''
 
     @proto_getter(PROTO_TYPE.MIGRATION)

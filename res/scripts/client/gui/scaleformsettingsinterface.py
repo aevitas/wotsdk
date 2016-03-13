@@ -32,7 +32,8 @@ class SettingsInterface(UIInterface):
                   'backward': 'CMD_MOVE_BACKWARD',
                   'left': 'CMD_ROTATE_LEFT',
                   'right': 'CMD_ROTATE_RIGHT',
-                  'auto_rotation': 'CMD_CM_VEHICLE_SWITCH_AUTOROTATION'},
+                  'auto_rotation': 'CMD_CM_VEHICLE_SWITCH_AUTOROTATION',
+                  'block_tracks': 'CMD_BLOCK_TRACKS'},
      'cruis_control': {'forward': 'CMD_INCREMENT_CRUISE_MODE',
                        'backward': 'CMD_DECREMENT_CRUISE_MODE',
                        'stop_fire': 'CMD_STOP_UNTIL_FIRE'},
@@ -61,7 +62,8 @@ class SettingsInterface(UIInterface):
                 'camera_down': 'CMD_CM_CAMERA_ROTATE_DOWN',
                 'camera_left': 'CMD_CM_CAMERA_ROTATE_LEFT',
                 'camera_right': 'CMD_CM_CAMERA_ROTATE_RIGHT'},
-     'voicechat': {'pushToTalk': 'CMD_VOICECHAT_MUTE'},
+     'voicechat': {'pushToTalk': 'CMD_VOICECHAT_MUTE',
+                   'voicechat_enable': 'CMD_VOICECHAT_ENABLE'},
      'logitech_keyboard': {'switch_view': 'CMD_LOGITECH_SWITCH_VIEW'},
      'minimap': {'sizeUp': 'CMD_MINIMAP_SIZE_UP',
                  'sizeDown': 'CMD_MINIMAP_SIZE_DOWN',
@@ -70,7 +72,8 @@ class SettingsInterface(UIInterface):
                   'backward',
                   'left',
                   'right',
-                  'auto_rotation'),
+                  'auto_rotation',
+                  'block_tracks'),
      'cruis_control': ('forward', 'backward', 'stop_fire'),
      'firing': ('fire',
                 'lock_target',
@@ -96,7 +99,7 @@ class SettingsInterface(UIInterface):
                 'camera_down',
                 'camera_left',
                 'camera_right'),
-     'voicechat': ('pushToTalk',),
+     'voicechat': ('pushToTalk', 'voicechat_enable'),
      'logitech_keyboard': ('switch_view',),
      'minimap': ('sizeUp', 'sizeDown', 'visible')}
     KEYBOARD_MAPPING_BLOCKS_ORDER = ('movement',
@@ -301,9 +304,11 @@ class SettingsInterface(UIInterface):
          'customAA': {'current': self.resolutions.customAAModeIndex,
                       'options': self.resolutions.customAAModesList},
          'gamma': self.resolutions.gamma,
+         'masterVolumeToggle': g_settingsCore.getSetting(SOUND.MASTER_TOGGLE),
+         'soundQuality': g_settingsCore.getSetting(SOUND.SOUND_QUALITY),
+         'soundQualityVisible': g_settingsCore.getSetting(SOUND.SOUND_QUALITY_VISIBLE),
          'masterVolume': round(SoundGroups.g_instance.getMasterVolume() * 100),
          'musicVolume': round(SoundGroups.g_instance.getVolume('music') * 100),
-         'voiceVolume': round(SoundGroups.g_instance.getVolume('voice') * 100),
          'vehiclesVolume': round(SoundGroups.g_instance.getVolume('vehicles') * 100),
          'effectsVolume': round(SoundGroups.g_instance.getVolume('effects') * 100),
          'guiVolume': round(SoundGroups.g_instance.getVolume('gui') * 100),
@@ -311,6 +316,7 @@ class SettingsInterface(UIInterface):
          'masterVivoxVolume': round(SoundGroups.g_instance.getVolume('masterVivox') * 100),
          'micVivoxVolume': round(SoundGroups.g_instance.getVolume('micVivox') * 100),
          'masterFadeVivoxVolume': round(SoundGroups.g_instance.getVolume('masterFadeVivox') * 100),
+         'dynamicRange': g_settingsCore.options.getSetting('dynamicRange').pack(),
          'captureDevice': g_settingsCore.options.getSetting(SOUND.CAPTURE_DEVICES).pack(),
          'voiceChatNotSupported': not g_settingsCore.getSetting(SOUND.VOIP_SUPPORTED),
          'datetimeIdx': datetimeIdx,
@@ -338,6 +344,10 @@ class SettingsInterface(UIInterface):
          'showVectorOnMap': g_settingsCore.getSetting('showVectorOnMap'),
          'showSectorOnMap': g_settingsCore.getSetting('showSectorOnMap'),
          'showVehModelsOnMap': g_settingsCore.options.getSetting('showVehModelsOnMap').pack(),
+         'minimapViewRange': g_settingsCore.getSetting('minimapViewRange'),
+         'minimapMaxViewRange': g_settingsCore.getSetting('minimapMaxViewRange'),
+         'minimapDrawRange': g_settingsCore.getSetting('minimapDrawRange'),
+         'battleLoadingInfo': g_settingsCore.options.getSetting('battleLoadingInfo').pack(),
          'vibroIsConnected': vManager.connect(),
          'vibroGain': vManager.getGain() * 100,
          'vibroEngine': vEffGroups.get('engine', vEffDefGroup).gain * 100,
@@ -363,7 +373,8 @@ class SettingsInterface(UIInterface):
                     'options': SettingsInterface.SNIPER_VALUES},
          'markers': {'values': markers,
                      'options': SettingsInterface.MARKER_VALUES,
-                     'types': SettingsInterface.MARKER_TYPES}}
+                     'types': SettingsInterface.MARKER_TYPES},
+         'keyboardImportantBinds': g_settingsCore.getSetting('keyboardImportantBinds')}
         if self.__altVoiceSetting.isOptionEnabled():
             altVoices = []
             for idx, desc in enumerate(self.__altVoiceSetting.getOptions()):
@@ -483,13 +494,14 @@ class SettingsInterface(UIInterface):
         return
 
     def onApplySettings(self, callbackId, settings):
-        monitorIndex, presetIndex, settingsList, fullscreen = settings
+        monitorIndex, presetIndex, settingsList, fullscreen, masterVolumeToggle, soundQuality = settings
         if (not self.resolutions.isVideoWindowed or fullscreen) and (monitorIndex != self.resolutions.realMonitorIndex or self.resolutions.monitorChanged):
             self.call('SettingsDialog.ApplySettings', ['restartNeeded'])
             return
+        isSoundChanged = masterVolumeToggle is not g_settingsCore.getSetting(SOUND.MASTER_TOGGLE) or soundQuality is not g_settingsCore.getSetting(SOUND.SOUND_QUALITY)
         applyMethod = g_settingsCore.options.getApplyMethod(settingsList)
         method = 'apply'
-        if applyMethod == APPLY_METHOD.RESTART:
+        if applyMethod == APPLY_METHOD.RESTART or isSoundChanged:
             method = 'restartNeeded'
         elif applyMethod == APPLY_METHOD.DELAYED:
             method = 'hasPendingSettings'
@@ -509,6 +521,7 @@ class SettingsInterface(UIInterface):
         restartClient = False
         interfaceScaled = False
         g_settingsCore.isDeviseRecreated = False
+        isSoundChanged = settings[SOUND.MASTER_TOGGLE] is not g_settingsCore.getSetting(SOUND.MASTER_TOGGLE) or settings[SOUND.SOUND_QUALITY] is not g_settingsCore.getSetting(SOUND.SOUND_QUALITY)
         import VOIP
         if (not self.resolutions.isVideoWindowed or settings['fullScreen']) and (settings['monitor'] != self.resolutions.realMonitorIndex or self.resolutions.monitorChanged):
             restartClient = True
@@ -530,6 +543,10 @@ class SettingsInterface(UIInterface):
         g_settingsCore.applySetting('showVectorOnMap', settings['showVectorOnMap'])
         g_settingsCore.applySetting('showSectorOnMap', settings['showSectorOnMap'])
         g_settingsCore.applySetting('showVehModelsOnMap', settings['showVehModelsOnMap'])
+        g_settingsCore.applySetting('minimapViewRange', settings['minimapViewRange'])
+        g_settingsCore.applySetting('minimapMaxViewRange', settings['minimapMaxViewRange'])
+        g_settingsCore.applySetting('minimapDrawRange', settings['minimapDrawRange'])
+        g_settingsCore.applySetting('battleLoadingInfo', settings['battleLoadingInfo'])
         arcade = g_settingsCore.options.getSetting('arcade').fromAccountSettings(settings['arcade'])
         sniper = g_settingsCore.options.getSetting('sniper').fromAccountSettings(settings['sniper'])
         g_settingsCore.applySetting('arcade', arcade)
@@ -617,9 +634,11 @@ class SettingsInterface(UIInterface):
             VOIP.getVOIPManager().setMasterVolume(settings['masterVivoxVolume'])
         if round(SoundGroups.g_instance.getVolume('micVivox') * 100) != settings['micVivoxVolume']:
             VOIP.getVOIPManager().setMicrophoneVolume(settings['micVivoxVolume'])
+        for s in (SOUND.MASTER_TOGGLE, SOUND.SOUND_QUALITY):
+            g_settingsCore.applySetting(s, settings[s])
+
         SoundGroups.g_instance.setMasterVolume(float(settings['masterVolume']) / 100)
         SoundGroups.g_instance.setVolume('music', float(settings['musicVolume']) / 100)
-        SoundGroups.g_instance.setVolume('voice', float(settings['voiceVolume']) / 100)
         SoundGroups.g_instance.setVolume('vehicles', float(settings['vehiclesVolume']) / 100)
         SoundGroups.g_instance.setVolume('effects', float(settings['effectsVolume']) / 100)
         SoundGroups.g_instance.setVolume('gui', float(settings['guiVolume']) / 100)
@@ -627,6 +646,7 @@ class SettingsInterface(UIInterface):
         SoundGroups.g_instance.setVolume('masterVivox', float(settings['masterVivoxVolume']) / 100)
         SoundGroups.g_instance.setVolume('micVivox', float(settings['micVivoxVolume']) / 100)
         SoundGroups.g_instance.setVolume('masterFadeVivox', float(settings['masterFadeVivoxVolume']) / 100)
+        g_settingsCore.applySetting('dynamicRange', settings['dynamicRange'])
         g_settingsCore.applySetting('showDateMessage', settings['datetimeIdx'] & 1)
         g_settingsCore.applySetting('showTimeMessage', settings['datetimeIdx'] & 2)
         g_settingsCore.applySetting('enableOlFilter', settings['enableOlFilter'])
@@ -634,6 +654,7 @@ class SettingsInterface(UIInterface):
         g_windowsStoredData.start()
         g_settingsCore.applySetting('receiveFriendshipRequest', settings['receiveFriendshipRequest'])
         g_settingsCore.applySetting('receiveInvitesInBattle', settings.get('receiveInvitesInBattle'))
+        g_settingsCore.applySetting('receiveClanInvitesNotifications', settings.get('receiveClanInvitesNotifications'))
         g_windowsStoredData.stop()
         g_settingsCore.applySetting('invitesFromFriendsOnly', settings['invitesFromFriendsOnly'])
         g_settingsCore.applySetting('storeReceiverInBattle', settings['storeReceiverInBattle'])
@@ -651,7 +672,7 @@ class SettingsInterface(UIInterface):
                 g_settingsCore.applySetting(key, value)
 
         g_settingsCore.applySetting('dynamicRenderer', settings['dynamicRenderer'])
-        if applyMethod == APPLY_METHOD.RESTART:
+        if applyMethod == APPLY_METHOD.RESTART or isSoundChanged:
             BigWorld.commitPendingGraphicsSettings()
             restartClient = True
         elif applyMethod == APPLY_METHOD.DELAYED:

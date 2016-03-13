@@ -1,10 +1,12 @@
 # Embedded file name: scripts/client/ClientArena.py
 import Math
-import BigWorld, ResMgr
+import BigWorld
+import ResMgr
 import ArenaType
 from items import vehicles
 import constants
-import cPickle, zlib
+import cPickle
+import zlib
 import Event
 from constants import ARENA_PERIOD, ARENA_UPDATE, FLAG_STATE
 from PlayerEvents import g_playerEvents
@@ -212,7 +214,7 @@ class ClientArena(object):
     def __onRespawnAvailableVehicles(self, argStr):
         vehsList = cPickle.loads(zlib.decompress(argStr))
         self.onRespawnAvailableVehicles(vehsList)
-        LOG_TU('[RESPAWN] onRespawnAvailableVehicles', vehsList)
+        LOG_DEBUG_DEV('[RESPAWN] onRespawnAvailableVehicles', vehsList)
 
     def __onRespawnCooldowns(self, argStr):
         cooldowns = cPickle.loads(zlib.decompress(argStr))
@@ -259,7 +261,7 @@ class ClientArena(object):
     def __onInteractiveStats(self, argStr):
         stats = cPickle.loads(zlib.decompress(argStr))
         self.onInteractiveStats(stats)
-        LOG_TU('[RESPAWN] onInteractiveStats', stats)
+        LOG_DEBUG_DEV('[RESPAWN] onInteractiveStats', stats)
 
     def __rebuildIndexToId(self):
         vehicles = self.__vehicles

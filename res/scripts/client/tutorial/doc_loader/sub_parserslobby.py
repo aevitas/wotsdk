@@ -2,7 +2,7 @@
 from helpers.html import translation
 from items import _xml
 from tutorial.control.lobby import triggers
-from tutorial.data import chapter
+from tutorial.data import chapter, effects
 from tutorial.doc_loader import sub_parsers
 
 def readBonusTriggerSection(xmlCtx, section, chapter, triggerID):
@@ -40,6 +40,10 @@ def readFreeVehicleSlotTriggerSection(xmlCtx, section, chapter, triggerID):
     return triggers.FreeVehicleSlotChangedTrigger(triggerID)
 
 
+def readVehicleSlotDiscountUseTriggerSection(xmlCtx, section, chapter, triggerID):
+    return triggers.PersonalSlotDiscountsUseTrigger(triggerID)
+
+
 def readCurrentVehicleChangedTriggerSection(xmlCtx, section, chapter, triggerID):
     return triggers.CurrentVehicleChangedTrigger(triggerID)
 
@@ -54,6 +58,10 @@ def readPremiumDiscountsUseTriggerSection(xmlCtx, section, chapter, triggerID):
 
 def readFreeXPChangedTriggerSection(xmlCtx, section, chapter, triggerID):
     return triggers.FreeXPChangedTrigger(triggerID)
+
+
+def readSwitchToRandomSection(xmlCtx, section, flags, conditions):
+    return effects.SimpleEffect(effects.EFFECT_TYPE.ENTER_QUEUE, conditions=conditions)
 
 
 def _readBonusSection(xmlCtx, section, content):

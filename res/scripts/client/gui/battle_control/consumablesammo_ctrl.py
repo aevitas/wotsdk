@@ -138,6 +138,9 @@ class AmmoController(MethodsRules):
         self._order = []
         self.__currShellCD = None
         self.__nextShellCD = None
+        reloadEffect = self.__gunSettings.reloadEffect
+        if reloadEffect is not None:
+            reloadEffect.stop()
         self.__gunSettings = _GunSettings.default()
         self.__reloadTime = 0.0
         self.__baseTime = 0.0
@@ -185,8 +188,7 @@ class AmmoController(MethodsRules):
     @MethodsRules.delayable('setCurrentShellCD')
     def setGunReloadTime(self, timeLeft, baseTime):
         interval = self.__gunSettings.clip.interval
-        if timeLeft == baseTime and self.__gunSettings.reloadEffect is not None:
-            self.__gunSettings.reloadEffect.start(baseTime)
+        self.triggerReloadEffect(timeLeft, baseTime)
         if interval > 0:
             if self.__ammo[self.__currShellCD][1] != 1:
                 baseTime = interval
@@ -199,6 +201,10 @@ class AmmoController(MethodsRules):
         self.__baseTime = baseTime
         if not isIgnored:
             self.onGunReloadTimeSet(self.__currShellCD, timeLeft, baseTime)
+
+    def triggerReloadEffect(self, timeLeft, baseTime):
+        if timeLeft == baseTime and self.__gunSettings.reloadEffect is not None:
+            self.__gunSettings.reloadEffect.start(baseTime)
         return
 
     def getGunReloadTime(self):
@@ -355,7 +361,7 @@ class AmmoReplayPlayer(AmmoController):
         return
 
     def clear(self, leave = True):
-        if leave:
+        if leave and self.__replayCtrl is not None:
             if self.__callbackID is not None:
                 BigWorld.cancelCallback(self.__callbackID)
                 self.__callbackID = None
@@ -367,6 +373,7 @@ class AmmoReplayPlayer(AmmoController):
 
     def setGunReloadTime(self, timeLeft, baseTime):
         self.__percent = None
+        self.triggerReloadEffect(timeLeft, baseTime)
         if not self.__isActivated:
             self.__isActivated = True
             self.__timeGetter = self.__replayCtrl.getGunReloadAmountLeft

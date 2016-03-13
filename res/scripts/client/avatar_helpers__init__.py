@@ -1,8 +1,9 @@
 # Embedded file name: scripts/client/avatar_helpers/__init__.py
 import BigWorld
+from shared_utils.avatar_helpers import VehicleTelemetry
 
 def getAvatarDatabaseID():
-    dbID = 0L
+    dbID = 0
     player = BigWorld.player()
     arena = getattr(player, 'arena', None)
     if arena is not None:

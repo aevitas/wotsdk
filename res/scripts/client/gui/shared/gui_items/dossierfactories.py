@@ -200,6 +200,7 @@ _ACHIEVEMENTS_BY_NAME = {(_AB.TOTAL, 'tankExpert'): _NationAchieveFactory.get(_a
  (_AB.UNIQUE, 'histBattle6_historyLessons'): _AchieveFactory.get(_abstract_achievements.HistoricalAchievement),
  (_AB.FALLOUT, 'stormLord'): _CustomAchieveFactory.get(_as.StormLordAchievement),
  (_AB.FALLOUT, 'winnerLaurels'): _CustomAchieveFactory.get(_as.WinnerLaurelsAchievement),
+ (_AB.FALLOUT, 'sauronEye'): _CustomAchieveFactory.get(_as.SauronsEyeAchievement),
  WHITE_TIGER_RECORD: _CustomAchieveFactory.get(_as.WhiteTigerAchievement),
  RARE_STORAGE_RECORD: _RareAchievesFactory.get()}
 for _nID, _ in enumerate(nations.NAMES):

@@ -56,6 +56,7 @@ class GameEvent(HasCtxEvent):
     SHOW_CURSOR = 'game/showCursor'
     HIDE_CURSOR = 'game/hideCursor'
     PLAYING_TIME_ON_ARENA = 'game/playingTimeOnArena'
+    CHANGE_APP_RESOLUTION = 'game/changeAppResolution'
 
 
 class GUICommonEvent(SharedEvent):
@@ -171,7 +172,6 @@ class HideWindowEvent(HasCtxEvent):
     HIDE_ROSTER_SLOT_SETTINGS_WINDOW = 'showRosterSlotSettingsWindow'
     HIDE_LEGAL_INFO_WINDOW = 'showLegalInfoWindow'
     HIDE_SANDBOX_QUEUE_DIALOG = 'hideSandboxQueueDialog'
-    HIDE_FALLOUT_WINDOW = 'hideFalloutWindow'
 
 
 class HidePopoverEvent(HasCtxEvent):
@@ -316,11 +316,15 @@ class ChannelCarouselEvent(SharedEvent):
     MINIMIZE_ALL_CHANNELS = 'minimizeAllChannels'
     CLOSE_ALL_EXCEPT_CURRENT = 'closeAllExceptCurrent'
     CLOSE_BUTTON_CLICK = 'closeButtonClick'
+    ON_WINDOW_CHANGE_FOCUS = 'onWindowChangeFocus'
+    ON_WINDOW_CHANGE_OPEN_STATE = 'onWindowChangeOpenState'
 
-    def __init__(self, target, eventType = None, clientID = None):
+    def __init__(self, target, eventType = None, clientID = None, wndType = None, flag = False):
         super(ChannelCarouselEvent, self).__init__(eventType)
         self.target = target
         self.clientID = clientID
+        self.wndType = wndType
+        self.flag = flag
 
 
 class AutoInviteEvent(SharedEvent):
@@ -355,6 +359,7 @@ class FortEvent(HasCtxEvent):
     TRANSPORTATION_STEP = 'transportationStep'
     CHOICE_DIVISION = 'testChoiceDivision'
     REQUEST_TRANSPORTATION = 'requestTransportation'
+    IS_IN_TRANSPORTING_MODE = 'isInTransportingMode'
 
     class TRANSPORTATION_STEPS(CONST_CONTAINER):
         NONE = 0

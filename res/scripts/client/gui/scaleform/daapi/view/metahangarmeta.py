@@ -6,9 +6,6 @@ class HangarMeta(View):
     def onEscape(self):
         self._printOverrideError('onEscape')
 
-    def checkMoney(self):
-        self._printOverrideError('checkMoney')
-
     def showHelpLayout(self):
         self._printOverrideError('showHelpLayout')
 

@@ -1,6 +1,10 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/formatters.py
+from gui import makeHtmlString
+from debug_utils import LOG_ERROR
 from gui.Scaleform.genConsts.BATTLE_RESULT_TYPES import BATTLE_RESULT_TYPES
 from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
+from gui.shared.formatters import text_styles
+from gui.shared.gui_items.Vehicle import Vehicle
 TXT_GAP_FOR_BIG_TITLE = 2
 TXT_GAP_FOR_SMALL_TITLE = 3
 
@@ -30,6 +34,12 @@ def packTextBlockData(text, useHtml = True, linkage = BLOCKS_TOOLTIP_TYPES.TOOLT
      'useHtml': useHtml}, padding)
 
 
+def packAlignedTextBlockData(text, align, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_TEXT_BLOCK_LINKAGE, padding = None):
+    return packBlockDataItem(linkage, {'text': makeHtmlString('html_templates:lobby/textStyle', 'alignText', {'align': align,
+              'message': text}),
+     'useHtml': True}, padding)
+
+
 def packHeadBlockData(title, icon):
     return packBlockDataItem(BATTLE_RESULT_TYPES.TOOLTIP_HEAD_BLOCK_LINKAGE, {'title': title,
      'icon': icon})
@@ -51,8 +61,20 @@ def packTextParameterBlockData(name, value, linkage = BLOCKS_TOOLTIP_TYPES.TOOLT
     return packBlockDataItem(linkage, data, padding)
 
 
-def packBuildUpBlockData(blocks, gap = 0, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_LINKAGE, padding = None):
-    data = {'blocksData': blocks}
+def packTextParameterWithIconBlockData(name, value, icon, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_TEXT_PARAMETER_WITH_ICON_BLOCK_LINKAGE, valueWidth = -1, gap = 5, padding = None):
+    data = {'name': name,
+     'value': value,
+     'icon': icon}
+    if valueWidth != -1:
+        data['valueWidth'] = valueWidth
+    if gap != -1:
+        data['gap'] = gap
+    return packBlockDataItem(linkage, data, padding)
+
+
+def packBuildUpBlockData(blocks, gap = 0, linkage = BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_LINKAGE, padding = None, stretchBg = True):
+    data = {'blocksData': blocks,
+     'stretchBg': stretchBg}
     if gap != 0:
         data['gap'] = gap
     return packBlockDataItem(linkage, data, padding)

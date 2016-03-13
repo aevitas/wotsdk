@@ -132,7 +132,6 @@ class _HangarSpace(object):
             if self.__lastUpdatedVehicle is not None:
                 self.updateVehicle(self.__lastUpdatedVehicle)
             game_control.g_instance.gameSession.onPremiumNotify += self.onPremiumChanged
-        self.playHangarMusic()
         return
 
     def refreshSpace(self, isPremium, forceRefresh = False):
@@ -195,11 +194,6 @@ class _HangarSpace(object):
                 self.__space.removeVehicle()
             self.__changeDone()
             self.__lastUpdatedVehicle = None
-        return
-
-    def playHangarMusic(self, restart = False):
-        if self.__space is not None:
-            self.__space.playHangarMusic(restart)
         return
 
     def onPremiumChanged(self, isPremium, attrs, premiumExpiryTime):

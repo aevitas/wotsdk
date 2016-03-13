@@ -13,7 +13,7 @@ from gui.prb_control.functional import interfaces
 from gui.prb_control.restrictions.permissions import PreQueuePermissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE
 from gui.prb_control.settings import REQUEST_TYPE
-from gui.shared.utils.ListenersCollection import ListenersCollection
+from gui.shared.utils.listeners_collection import ListenersCollection
 from helpers import isPlayerAccount
 __all__ = ('PreQueueEntry', 'PlayersEventsSubscriber', 'NoPreQueueFunctional', 'AccountQueueFunctional')
 
@@ -59,7 +59,7 @@ class PlayersEventsSubscriber(object):
         raise NotImplementedError
 
 
-class NoPreQueueFunctional(interfaces.IPreQueueFunctional):
+class NoPreQueueFunctional(ListenersCollection, interfaces.IPreQueueFunctional):
 
     def getFunctionalFlags(self):
         return FUNCTIONAL_FLAG.NO_QUEUE
@@ -68,7 +68,7 @@ class NoPreQueueFunctional(interfaces.IPreQueueFunctional):
         return (True, '')
 
 
-class PreQueueFunctional(ListenersCollection, interfaces.IPreQueueFunctional):
+class PreQueueFunctional(NoPreQueueFunctional):
 
     def __init__(self, queueType, subscriber, flags = FUNCTIONAL_FLAG.UNDEFINED):
         super(PreQueueFunctional, self).__init__()
@@ -91,12 +91,9 @@ class PreQueueFunctional(ListenersCollection, interfaces.IPreQueueFunctional):
     def fini(self, woEvents = False):
         self._hasEntity = False
         if isPlayerAccount():
-            for listener in self._listeners:
-                listener.onPreQueueFunctionalFinished()
-
-        self._setListenerClass(None)
+            self._invokeListeners('onPreQueueFunctionalFinished')
+        self.clear()
         self._subscriber.unsubscribe(self)
-        return
 
     def getFunctionalFlags(self):
         return self._flags

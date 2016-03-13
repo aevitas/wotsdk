@@ -33,7 +33,8 @@ class FlagSummary(object):
             initial = {}
         self.__flags = {}
         initialGetter = initial.get
-        for name in flagNames:
+        flagNames.extend(initial.keys())
+        for name in set(flagNames):
             self.__flags[name] = _Flag(name, initialGetter(name, False))
 
         return

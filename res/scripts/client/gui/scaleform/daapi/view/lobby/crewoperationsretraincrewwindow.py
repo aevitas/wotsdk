@@ -7,6 +7,9 @@ from gui.shared.gui_items.processors.tankman import TankmanCrewRetraining
 from gui.shared.utils import decorators
 from gui import SystemMessages
 from items import tankmen
+from gui.shared.formatters import text_styles
+from helpers.i18n import makeString as _ms
+from gui.Scaleform.locale.RETRAIN_CREW import RETRAIN_CREW
 
 class RetrainCrewWindow(RetrainCrewWindowMeta):
     AVAILABLE_OPERATIONS = range(3)
@@ -27,14 +30,13 @@ class RetrainCrewWindow(RetrainCrewWindowMeta):
                 elif tMan.efficiencyRoleLevel < tankmen.MAX_SKILL_LEVEL:
                     crewInfo.append(self.__getTankmanRoleInfo(tMan))
 
-        vo = {'nationID': vehicle.nationID,
+        self.as_setVehicleDataS({'nationID': vehicle.nationID,
          'vType': vehicle.type,
          'vIntCD': vehicle.intCD,
          'vLevel': vehicle.level,
          'vName': vehicle.shortUserName,
-         'vIconSmall': vehicle.iconSmall}
-        self.as_setCommonDataS({'vehicle': vo,
-         'crew': crewInfo})
+         'vIconSmall': vehicle.iconSmall})
+        self.as_setAllCrewDataS({'crew': crewInfo})
         self.__updateDataCallBack()
         return
 
@@ -45,7 +47,7 @@ class RetrainCrewWindow(RetrainCrewWindowMeta):
          'gold': items.stats.gold,
          'actionPrc': actionPrc,
          'tankmanCost': shopPrices}
-        self.as_updateDataS(data)
+        self.as_setCrewOperationDataS(data)
 
     def __getTankmanRoleInfo(self, tankman):
         vehicle = g_itemsCache.items.getItemByCD(tankman.vehicleNativeDescr.type.compactDescr)
@@ -57,10 +59,9 @@ class RetrainCrewWindow(RetrainCrewWindowMeta):
          'nationID': tankman.nationID,
          'iconPath': '../maps/icons/tankmen/roles/medium/%s' % tankman.iconRole}
 
-    def submit(self, data):
-        operationId = int(data.operationId)
+    def submit(self, operationId):
         if operationId in self.AVAILABLE_OPERATIONS:
-            self.__processCrewRetrianing(data.operationId)
+            self.__processCrewRetrianing(operationId)
             self.destroy()
 
     @decorators.process('crewRetraining')
@@ -100,9 +101,11 @@ class RetrainCrewWindow(RetrainCrewWindowMeta):
                     crewInfo.append(self.__getTankmanRoleInfo(tMan))
 
         crewSize = len(crewInfo)
-        price = (crewSize * currentSelection['gold'], crewSize * currentSelection['credits'])
-        return {'price': price,
-         'crew': crewInfo}
+        price = (crewSize * currentSelection['credits'], crewSize * currentSelection['gold'])
+        self.as_setCrewDataS({'price': price,
+         'crew': crewInfo,
+         'crewMembersText': text_styles.concatStylesWithSpace(_ms(RETRAIN_CREW.LABEL_CREWMEMBERS), text_styles.middleTitle(crewSize))})
+        return
 
     def _dispose(self):
         g_clientUpdateManager.removeObjectCallbacks(self)

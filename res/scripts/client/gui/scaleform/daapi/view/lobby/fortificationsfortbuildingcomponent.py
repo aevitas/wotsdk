@@ -9,6 +9,8 @@ from gui.shared import EVENT_BUS_SCOPE
 from gui.Scaleform.daapi.view.meta.FortBuildingComponentMeta import FortBuildingComponentMeta
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from gui.shared.events import FortEvent
+from helpers.i18n import makeString as _ms
+from gui.Scaleform.locale.FORTIFICATIONS import FORTIFICATIONS
 
 class FortBuildingComponent(FortBuildingComponentMeta, FortTransportationViewHelper):
 
@@ -55,8 +57,11 @@ class FortBuildingComponent(FortBuildingComponentMeta, FortTransportationViewHel
             self.fortCtrl.addUpgradeVisitedBuildings(buildingID)
 
     def requestBuildingToolTipData(self, uid, type):
-        buildingDescr = self.fortCtrl.getFort().getBuilding(self.getBuildingIDbyUID(uid))
-        self.as_setBuildingToolTipDataS(uid, type, self.getCommonBuildTooltipData(buildingDescr))
+        fort = self.fortCtrl.getFort()
+        if fort:
+            buildingDescr = fort.getBuilding(self.getBuildingIDbyUID(uid))
+            header = _ms(FORTIFICATIONS.buildings_buildingname(uid))
+            self.as_setBuildingToolTipDataS(uid, type, header, self.getCommonBuildTooltipData(buildingDescr))
 
     def onUpdated(self, isFullUpdate):
         if self._animation is not None or isFullUpdate:

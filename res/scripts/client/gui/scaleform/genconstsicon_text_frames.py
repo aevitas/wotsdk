@@ -5,6 +5,8 @@ class ICON_TEXT_FRAMES(object):
     EMPTY = 'empty'
     CREDITS = 'credits'
     GOLD = 'gold'
+    CREDITS_BIG = 'creditsBig'
+    GOLD_BIG = 'goldBig'
     GOLD_DISCOUNT = 'goldDiscount'
     XP = 'xp'
     ELITE_XP = 'eliteXp'

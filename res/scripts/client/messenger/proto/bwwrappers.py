@@ -16,7 +16,7 @@ _ChannelData = namedtuple('_ChannelData', ['id',
 
 class ChannelDataWrapper(_ChannelData):
 
-    def __new__(cls, id = 0, channelName = 'Unknown', owner = -1L, ownerName = '', isReadOnly = False, isSystem = False, isSecured = False, greeting = '', flags = 0, notifyFlags = 0, **kwargs):
+    def __new__(cls, id = 0, channelName = 'Unknown', owner = -1, ownerName = '', isReadOnly = False, isSystem = False, isSecured = False, greeting = '', flags = 0, notifyFlags = 0, **kwargs):
         return _ChannelData.__new__(cls, id, unicode(channelName, 'utf-8', errors='ignore'), owner, unicode(ownerName, 'utf-8', errors='ignore'), isReadOnly, isSystem, isSecured, greeting, flags, notifyFlags)
 
 
@@ -57,7 +57,7 @@ class ServiceChannelMessage(_ServiceChannelData):
     """
 
     @staticmethod
-    def __new__(cls, messageID = -1L, user_id = -1L, type = -1, importance = SYS_MESSAGE_IMPORTANCE.normal.index(), active = True, personal = False, sentTime = _time.time(), started_at = None, finished_at = None, created_at = None, data = None, **kwargs):
+    def __new__(cls, messageID = -1, user_id = -1, type = -1, importance = SYS_MESSAGE_IMPORTANCE.normal.index(), active = True, personal = False, sentTime = _time.time(), started_at = None, finished_at = None, created_at = None, data = None, **kwargs):
         return _ServiceChannelData.__new__(cls, messageID, user_id, type, importance, active, personal, sentTime, started_at, finished_at, created_at, data)
 
     @property

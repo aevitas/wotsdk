@@ -83,6 +83,9 @@ class CompanyMainWindow(CompanyMainWindowMeta, PrbListener):
     def showFAQWindow(self):
         self.fireEvent(events.LoadViewEvent(MESSENGER_VIEW_ALIAS.FAQ_WINDOW), scope=EVENT_BUS_SCOPE.LOBBY)
 
+    def getClientID(self):
+        return self.__clientID
+
     def canSendInvite(self):
         return self.prbFunctional.getPermissions().canSendInvite()
 

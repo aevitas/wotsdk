@@ -2,11 +2,11 @@
 import weakref
 import math
 from debug_utils import LOG_ERROR
+from gui.clans import formatters as clans_fmts
 from gui.clans.settings import CLAN_INVITE_STATES, ACTIVE_INVITE_LIFE_TIME
 from gui.clans.items import isValueAvailable, formatField
 from gui.Scaleform.daapi.view.meta.ClanInvitesViewWithTableMeta import ClanInvitesViewWithTableMeta
 from gui.Scaleform.framework.entities.DAAPIDataProvider import SortableDAAPIDataProvider
-from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.shared.formatters import text_styles
 from helpers import time_utils
@@ -47,8 +47,7 @@ class ClanInvitesViewWithTable(ClanInvitesViewWithTableMeta):
         return
 
     def _makeData(self):
-        return {'tableHeaders': self._makeHeaders(),
-         'texts': self._makeTexts()}
+        return {'tableHeaders': self._makeHeaders()}
 
     def _getDefaultSortFields(self):
         return tuple()
@@ -59,24 +58,27 @@ class ClanInvitesViewWithTable(ClanInvitesViewWithTableMeta):
     def _makeHeaders(self):
         raise NotImplementedError
 
-    def _makeTexts(self):
-        return [{'alias': CLANS_ALIASES.INVITE_WINDOW_DUMMY_SERVER_ERROR,
-          'title': CLANS.CLANINVITESWINDOW_DUMMY_SERVERERROR_TITLE,
-          'text': CLANS.CLANINVITESWINDOW_DUMMY_SERVERERROR_TEXT}]
-
     @staticmethod
-    def _packHeaderColumnData(headerId, label, buttonWidth, tooltip, icon = '', sortOrder = -1, showSeparator = True, textAlign = 'center', enabled = True):
+    def _packHeaderColumnData(headerId, label, buttonWidth, tooltip, icon = '', sortOrder = -1, showSeparator = True, textAlign = 'center', enabled = True, defaultSortDirection = 'descending'):
         return {'id': headerId,
          'label': _ms(label),
          'iconSource': icon,
          'buttonWidth': buttonWidth,
          'toolTip': tooltip,
          'sortOrder': sortOrder,
-         'defaultSortDirection': 'ascending',
+         'defaultSortDirection': defaultSortDirection,
          'buttonHeight': 34,
          'showSeparator': showSeparator,
          'textAlign': textAlign,
          'enabled': enabled}
+
+    def _showDummy(self, header, body = '', icon = None, btnVisible = False, btnLabel = '', btnTooltip = '', alignCenter = True):
+        self.as_showDummyS({'iconSource': icon,
+         'htmlText': str().join((text_styles.middleTitle(header), clans_fmts.getHtmlLineDivider(3), text_styles.main(body))),
+         'alignCenter': alignCenter,
+         'btnVisible': btnVisible,
+         'btnLabel': btnLabel,
+         'btnTooltip': btnTooltip})
 
 
 class ClanInvitesAbstractDataProvider(SortableDAAPIDataProvider):

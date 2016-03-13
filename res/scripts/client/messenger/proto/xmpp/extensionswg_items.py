@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/messenger/proto/xmpp/extensions/wg_items.py
+from debug_utils import LOG_CURRENT_EXCEPTION
 from shared_utils import findFirst
 from messenger.proto.xmpp.extensions import PyExtension, SimpleExtension, PyHandler
 from messenger.proto.xmpp.extensions.ext_constants import XML_NAME_SPACE as _NS
@@ -30,7 +31,7 @@ class WgSharedExtension(PyExtension):
         tag = findFirst(None, pyGlooxTag.filterXPath(self.getXPath(suffix='userid')))
         if tag:
             info['dbID'] = long(tag.getCData())
-        clanDBID, clanAbbrev = (0L, '')
+        clanDBID, clanAbbrev = (0, '')
         tag = findFirst(None, pyGlooxTag.filterXPath(self.getXPath(suffix='clanid')))
         if tag:
             clanDBID = tag.getCData()
@@ -101,6 +102,19 @@ class WgClientHandler(PyHandler):
 
 
 def makeWGInfoFromPresence(info):
+    if 'userId' in info:
+        try:
+            dbID = long(info['userId'])
+        except TypeError:
+            LOG_CURRENT_EXCEPTION()
+            dbID = 0
+
+    else:
+        dbID = 0
+    if 'nickname' in info:
+        nickname = info['nickname']
+    else:
+        nickname = ''
     if 'extsClientTag' in info:
         clientInfo = WgClientHandler().handleTag(info['extsClientTag'])
     else:
@@ -113,4 +127,4 @@ def makeWGInfoFromPresence(info):
         banInfo = makeBanInfo(*info['banInfo'])
     else:
         banInfo = None
-    return WGExtsInfo(clientInfo, clanInfo, banInfo)
+    return WGExtsInfo(dbID, nickname, clientInfo, clanInfo, banInfo)

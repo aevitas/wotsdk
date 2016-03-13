@@ -7,6 +7,7 @@ import GUI
 import Keys
 import Math
 import ResMgr
+import WWISE
 import sys
 import math
 from functools import partial
@@ -54,6 +55,7 @@ def _offlineLoadCheck():
     if BigWorld.spaceLoadStatus() > 0.5:
         BigWorld.worldDrawEnabled(True)
         _clearGUI()
+        WWISE.LSstartAll()
     else:
         BigWorld.callback(1.0, _offlineLoadCheck)
 
@@ -92,6 +94,7 @@ def launch(spaceName):
     game.handleKeyEvent = handleKeyEvent
     game.handleMouseEvent = handleMouseEvent
     BigWorld.player = lambda : g_fakeAvatar
+    WWISE.WG_loadBanks('', False)
     return
 
 

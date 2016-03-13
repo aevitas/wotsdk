@@ -6,7 +6,6 @@ import BattleReplay
 from functools import partial
 from debug_utils import *
 import SoundGroups
-import FMOD
 
 class IngameSoundNotifications(object):
     __CFG_SECTION_PATH = 'gui/sound_notifications.xml'
@@ -56,7 +55,7 @@ class IngameSoundNotifications(object):
         replayCtrl = BattleReplay.g_replayCtrl
         if replayCtrl.isPlaying and replayCtrl.isTimeWarpInProgress:
             return
-        elif not self.__isEnabled or BigWorld.isWindowVisible() == False:
+        elif not self.__isEnabled or BigWorld.isWindowVisible() is False:
             return
         else:
             event = self.__events.get(eventName, None)
@@ -126,7 +125,6 @@ class IngameSoundNotifications(object):
 
     def __clearQueue(self, category):
         if self.__activeEvents[category] is not None:
-            self.__activeEvents[category]['sound'].stop()
             self.__activeEvents[category] = None
         self.__soundQueues[category] = []
         return
@@ -135,7 +133,7 @@ class IngameSoundNotifications(object):
         if self.__activeEvents is None:
             return
         else:
-            if sound.state.find('playing') != -1:
+            if sound.isPlaying:
                 BigWorld.callback(0.01, lambda : self.__onSoundEnd(category, sound))
             else:
                 self.__activeEvents[category] = None
@@ -149,6 +147,7 @@ class IngameSoundNotifications(object):
             queue = self.__soundQueues[category]
             succes = False
             time = BigWorld.time()
+            soundPath = ''
             while not succes and len(queue) > 0:
                 soundPath, timeout, minTimeBetweenEvents, vehicleIdToBind, checkFn = queue[0]
                 del queue[0]
@@ -162,25 +161,15 @@ class IngameSoundNotifications(object):
                 if time > timeout:
                     continue
                 succes = True
-                if FMOD.enabled:
-                    try:
-                        sound = SoundGroups.g_instance.playSound2D(soundPath)
-                        if sound is None:
-                            succes = False
-                    except:
-                        succes = False
-
+                sound = SoundGroups.g_instance.getSound2D(soundPath)
                 if not succes:
                     LOG_ERROR('Failed to load sound %s' % soundPath)
 
-            if FMOD.enabled and succes:
-                if sound.duration == 0:
-                    LOG_WARNING('Sound notification %s has zero duration and was skipped' % soundPath)
-                    BigWorld.callback(0.01, partial(self.__playFirstFromQueue, category))
-                else:
-                    sound.setCallback('EVENTFINISHED', partial(self.__onSoundEnd, category))
-                    self.__activeEvents[category] = {'sound': sound,
-                     'soundPath': soundPath}
+            if succes:
+                sound.setCallback(partial(self.__onSoundEnd, category))
+                sound.play()
+                self.__activeEvents[category] = {'sound': sound,
+                 'soundPath': soundPath}
             return
 
     def __readConfig(self):
@@ -191,7 +180,7 @@ class IngameSoundNotifications(object):
             for category in ('fx', 'voice'):
                 soundSec = eventSec[category]
                 if soundSec is not None:
-                    event[category] = {'sound': soundSec.readString('sound') if FMOD.enabled else soundSec.readString('wwsound'),
+                    event[category] = {'sound': soundSec.readString('wwsound'),
                      'playRules': soundSec.readInt('playRules'),
                      'timeout': soundSec.readFloat('timeout', 3.0),
                      'minTimeBetweenEvents': soundSec.readFloat('minTimeBetweenEvents', 0),

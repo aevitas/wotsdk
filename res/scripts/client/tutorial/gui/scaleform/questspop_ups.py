@@ -1,8 +1,10 @@
 # Embedded file name: scripts/client/tutorial/gui/Scaleform/quests/pop_ups.py
+from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardWindow
 from gui.server_events.awards import FormattedAward
 from gui.server_events.bonuses import getTutorialBonusObj
 from gui.shared import events, g_eventBus
+from gui.shared.ItemsCache import g_itemsCache
 from helpers import i18n
 
 class TutorialQuestAwardWindow(AwardWindow):
@@ -36,7 +38,12 @@ class _TutorialQuestAward(FormattedAward):
         return i18n.makeString(self.__content['header'])
 
     def getDescription(self):
-        return i18n.makeString(self.__content['description'])
+        vehicleCD = self.__content.get('vehicle')
+        description = self.__content['description']
+        if vehicleCD:
+            vehicle = g_itemsCache.items.getItemByCD(vehicleCD)
+            return i18n.makeString('#tutorial:%s' % description, vehName=vehicle.userName)
+        return i18n.makeString(description)
 
     def getBodyButtonText(self):
         return i18n.makeString('#tutorial:tutorialQuest/awardWindow/nextQuest')

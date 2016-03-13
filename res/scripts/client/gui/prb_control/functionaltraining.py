@@ -139,7 +139,7 @@ class TrainingIntroFunctional(default.IntroPrbFunctional):
 class TrainingFunctional(default.PrbFunctional):
     __loadEvents = (VIEW_ALIAS.LOBBY_HANGAR,
      VIEW_ALIAS.LOBBY_INVENTORY,
-     VIEW_ALIAS.LOBBY_SHOP,
+     VIEW_ALIAS.LOBBY_STORE,
      VIEW_ALIAS.LOBBY_TECHTREE,
      VIEW_ALIAS.LOBBY_BARRACKS,
      VIEW_ALIAS.LOBBY_PROFILE,
@@ -188,6 +188,8 @@ class TrainingFunctional(default.PrbFunctional):
                 g_eventDispatcher.removeTrainingFromCarousel(False)
                 g_eventDispatcher.updateUI()
             self.storage.suspend()
+        else:
+            g_eventDispatcher.removeTrainingFromCarousel(False)
         g_eventDispatcher.requestToDestroyPrbChannel(PREBATTLE_TYPE.TRAINING)
         return FUNCTIONAL_FLAG.UNDEFINED
 

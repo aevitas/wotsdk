@@ -55,9 +55,9 @@ class stored_window(object):
 
     def __call__(self, clazz):
         if not hasattr(clazz, '__mro__'):
-            raise Exception, 'First argument is not class'
+            raise Exception('First argument is not class')
         if WindowViewMeta not in clazz.__mro__:
-            raise Exception, 'Class must be extends WindowViewMeta'
+            raise Exception('Class must be extends WindowViewMeta')
 
         def wrapPopulate(func):
 

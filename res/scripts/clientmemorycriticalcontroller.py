@@ -42,17 +42,17 @@ class MemoryCriticalController:
         terrainMinQuality = len(terrainSettings) - 1
         if textureSettings[textureMinQuality][0] == 'OFF':
             textureMinQuality -= 1
-        while textureSettings[textureMinQuality][1] == False or pipelineType == 1 and textureSettings[textureMinQuality][2] == True:
+        while textureSettings[textureMinQuality][1] is False or pipelineType == 1 and textureSettings[textureMinQuality][2] is True:
             textureMinQuality -= 1
 
         if textureMinQuality < texQuality:
             textureMinQuality = texQuality
-        while floraSettings[floraMinQuality][1] == False or pipelineType == 1 and floraSettings[floraMinQuality][2] == True:
+        while floraSettings[floraMinQuality][1] is False or pipelineType == 1 and floraSettings[floraMinQuality][2] is True:
             floraMinQuality -= 1
 
         if floraMinQuality < floraQuality:
             floraMinQuality = floraQuality
-        while terrainSettings[terrainMinQuality][1] == False or pipelineType == 1 and terrainSettings[terrainMinQuality][2] == True:
+        while terrainSettings[terrainMinQuality][1] is False or pipelineType == 1 and terrainSettings[terrainMinQuality][2] is True:
             terrainMinQuality -= 1
 
         if terrainMinQuality < terrainQuality:

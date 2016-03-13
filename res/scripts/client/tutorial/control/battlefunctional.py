@@ -31,24 +31,6 @@ class _IMarker(object):
         pass
 
 
-class IDirectionIndicator(object):
-
-    def track(self, position):
-        pass
-
-    def setShape(self, shape):
-        pass
-
-    def setDistance(self, distance):
-        pass
-
-    def setPosition(self, position):
-        pass
-
-    def remove(self):
-        pass
-
-
 class _DirectionIndicatorCtrl(_IMarker):
 
     def __init__(self, indicator, shapes, position):
@@ -238,7 +220,7 @@ class _VehicleMarker(_IMarker):
     def update(self, manager):
         minimap = self.__minimapRef()
         vehicle = BigWorld.entities.get(self.__vehicleID)
-        if vehicle is not None and vehicle.isStarted and not vehicle.isPlayer:
+        if vehicle is not None and vehicle.isStarted and not vehicle.isPlayerVehicle:
             if self.__nextTime <= BigWorld.time():
                 if minimap is not None:
                     minimap.showActionMarker(self.__vehicleID, 'attack')

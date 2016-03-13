@@ -21,7 +21,7 @@ class ModelHitTester(object):
         if dataSection is not None:
             self.__bspModelName = dataSection.readString('collisionModel')
             if not self.__bspModelName:
-                raise Exception, '<collisionModel> is missing or wrong'
+                raise Exception('<collisionModel> is missing or wrong')
         return
 
     def getBspModel(self):
@@ -36,7 +36,7 @@ class ModelHitTester(object):
         else:
             bspModel = BigWorld.WGBspCollisionModel()
             if not bspModel.setModelName(self.bspModelName):
-                raise Exception, "wrong collision model '%s'" % self.bspModelName
+                raise Exception("wrong collision model '%s'" % self.bspModelName)
             self.__bspModel = bspModel
             self.bbox = bspModel.getBoundingBox()
             return

@@ -17,6 +17,7 @@ from gui.Scaleform.daapi.view.meta.ShopMeta import ShopMeta
 from items import ITEM_TYPE_INDICES
 from gui.shared.gui_items.items_actions import factory as ItemsActionsFactory
 from gui.shared.gui_items.Vehicle import Vehicle
+import WWISE
 
 class Shop(ShopMeta):
 

@@ -89,6 +89,8 @@ import time
 import urlparse
 import bisect
 import warnings
+import weakref
+from functools import partial
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -985,7 +987,10 @@ class AbstractHTTPHandler(BaseHandler):
             except TypeError:
                 r = h.getresponse()
 
-        r.recv = r.read
+        def _read(o, amt = None):
+            return o.read(amt)
+
+        r.recv = partial(_read, weakref.proxy(r))
         fp = socket._fileobject(r, close=True)
         resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status

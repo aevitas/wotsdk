@@ -75,7 +75,7 @@ class WeatherSystem():
             except ValueError:
                 self.skyBoxModels.append(BigWorld.Model(''))
 
-        if callback != None:
+        if callback is not None:
             callback()
         return
 
@@ -84,7 +84,7 @@ class WeatherSystem():
             BigWorld.delSkyBox(i, self.fader)
 
         self.skyBoxModels = []
-        if self.fx != None:
+        if self.fx is not None:
             self.fx.detach()
             self.fx = None
         self.loaded = False
@@ -97,7 +97,7 @@ class WeatherSystem():
             callback()
 
     def _onLoadFX(self, callback, resourceRef):
-        if self.fx != None:
+        if self.fx is not None:
             self.fx.detach()
             self.fx = None
         if self.loaded:
@@ -109,7 +109,7 @@ class WeatherSystem():
         return
 
     def _fadeOutFX(self):
-        if self.fx != None:
+        if self.fx is not None:
             return self.fx.stop()
         else:
             return 0.0
@@ -128,11 +128,12 @@ class WeatherSystem():
         curr = self.fader.value
         if fadingIn:
             if not self.loaded:
-                print "calling fadeIn on a weather system that isn't loaded.  please call prepareResources() first", self.name
+                print "calling fadeIn on a weather system that isn't loaded. please call prepareResources() first",
+                print self.name
                 traceback.print_stack()
                 return
             for sb in self.skyBoxModels:
-                if sb != None:
+                if sb is not None:
                     BigWorld.addSkyBox(sb, self.fader)
 
             f = self._fogAmount(self.fog[3])
@@ -193,7 +194,7 @@ class WeatherSystem():
         This method unsets all sky boxes used by this weather system.
         """
         for sb in self.skyBoxModels:
-            if sb != None:
+            if sb is not None:
                 BigWorld.delSkyBox(sb, self.fader)
 
         return
@@ -238,13 +239,13 @@ class Weather(Listenable):
         """
         This method chooses a random weather system every 60 seconds.
         """
-        if force != None:
+        if force is not None:
             turningOff = not force
         else:
-            turningOff = self.randomWeatherCallback != None
+            turningOff = self.randomWeatherCallback is not None
         stateChanged = False
-        wasOn = self.randomWeatherCallback != None
-        if turningOff and self.randomWeatherCallback != None:
+        wasOn = self.randomWeatherCallback is not None
+        if turningOff and self.randomWeatherCallback is not None:
             BigWorld.cancelCallback(self.randomWeatherCallback)
             self.randomWeatherCallback = None
             stateChanged = wasOn
@@ -259,17 +260,17 @@ class Weather(Listenable):
         """
         This method returns whether or not random weather is currently enabled.
         """
-        return self.randomWeatherCallback != None
+        return self.randomWeatherCallback is not None
 
     def nextWeatherSystem(self, direction, immediate = False):
         """
         This method summons the next weather system that is available
         for the current space.  If direction is False however, the
-        previous weather system will be summoned instead. 
+        previous weather system will be summoned instead.
         """
         systems = self._weatherSystemsForCurrentSpace()
         idx = 0
-        if self.system != None:
+        if self.system is not None:
             for s in systems:
                 if s.name == self.system.name:
                     break
@@ -284,7 +285,7 @@ class Weather(Listenable):
         return
 
     def _randomWeather(self, initial = False):
-        if initial or self.randomWeatherCallback != None:
+        if initial or self.randomWeatherCallback is not None:
             self.randomWeatherCallback = BigWorld.callback(60.0, self._randomWeather)
             systems = self._weatherSystemsForCurrentSpace()
             ds = random.choice(systems)
@@ -309,7 +310,7 @@ class Weather(Listenable):
         This method implements a callback for when the camera space has
         changed.  When the space is changed, appropriate weather is chosen
         for the new space.  This is chosen by either the last known
-        weather system for the space, or the default from the weather xml file.         
+        weather system for the space, or the default from the weather xml file.
         """
         self.currentSpaceID = spaceID
         m = Math.Vector4Morph()
@@ -350,7 +351,7 @@ class Weather(Listenable):
         will be informed of the change and this will be propogated to other
         clients.
         """
-        if self.localOverride != None:
+        if self.localOverride is not None:
             self.overridenWeather = systemName
             systemName = self.localOverride
         if not resummon and self.system and self.system.name == systemName:
@@ -392,7 +393,7 @@ class Weather(Listenable):
         Calling this method with and empty string, or None as the systemName, will remove
         the existing override, and restore the last requested system.
         """
-        if systemName == None or systemName == '':
+        if systemName is None or systemName == '':
             self.localOverride = None
             self.summon(self.overridenWeather, immediate, serverSync=False, resummon=False)
             self.overridenWeather = None
@@ -406,7 +407,7 @@ class Weather(Listenable):
         if self.system:
             self.system.fadeIn(False, self.fadeSpeed, immediate)
             self.system = None
-        if system != None:
+        if system is not None:
             self.system = system
             self.system.fadeIn(True, self.fadeSpeed)
             self.windSpeed(system.windSpeed)
@@ -419,7 +420,7 @@ class Weather(Listenable):
     def _onSystemSummoned(self):
         self.listeners.weather(system=self.system)
         self.summoning = False
-        if self.pendingWeatherChange != None:
+        if self.pendingWeatherChange is not None:
             self.summon(self.pendingWeatherChange)
             self.pendingWeatherChange = None
         return

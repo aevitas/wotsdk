@@ -51,18 +51,13 @@ class CybersportSlotSelectedToolTipData(CybersportToolTipData):
         dispatcher = g_prbLoader.getDispatcher()
         if dispatcher is not None:
             functional = dispatcher.getUnitFunctional()
-            try:
-                _, unit = functional.getUnit(unitIdx)
-            except ValueError:
-                LOG_ERROR('Unit is not exists')
-                return {}
-
-            accountDBID = unit._members[index]['accountDBID']
-            vehicle = g_itemsCache.items.getItemByCD(unit._vehicles[accountDBID]['vehTypeCompDescr'])
-            return vo_converters.makeVehicleVO(vehicle, functional.getRosterSettings().getLevelsRange())
-        else:
-            super(CybersportSlotSelectedToolTipData, self).getDisplayableData(index, unitIdx)
-            return
+            _, unit = functional.getUnit(unitIdx)
+            accountDBID = unit.getMembers()[index]['accountDBID']
+            vehicles = unit.getVehicles()[accountDBID]
+            if vehicles:
+                vehicle = g_itemsCache.items.getItemByCD(vehicles[0].vehTypeCompDescr)
+                return vo_converters.makeVehicleVO(vehicle, functional.getRosterSettings().getLevelsRange())
+        return super(CybersportSlotSelectedToolTipData, self).getDisplayableData(index, unitIdx)
 
 
 class SquadSlotSelectedToolTipData(CybersportToolTipData):

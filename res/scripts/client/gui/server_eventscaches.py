@@ -1,7 +1,9 @@
 # Embedded file name: scripts/client/gui/server_events/caches.py
 from collections import namedtuple
 from debug_utils import LOG_ERROR
+from shared_utils import first
 from gui import nationCompareByIndex, getNationIndex
+from gui.LobbyContext import g_lobbyContext
 from gui.shared.utils.decorators import ReprInjector
 from gui.shared.gui_items.Vehicle import VEHICLE_TYPES_ORDER_INDICES
 from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES as _QA
@@ -39,6 +41,15 @@ def clearVehiclesData():
 
 
 PQ_TABS = (_QA.SEASON_VIEW_TAB_RANDOM, _QA.SEASON_VIEW_TAB_FALLOUT)
+
+def getEnabledPQTabs():
+    tabs = list(PQ_TABS)
+    if not g_lobbyContext.getServerSettings().isRegularQuestEnabled():
+        tabs.remove(_QA.SEASON_VIEW_TAB_RANDOM)
+    if not g_lobbyContext.getServerSettings().isFalloutQuestEnabled():
+        tabs.remove(_QA.SEASON_VIEW_TAB_FALLOUT)
+    return tabs
+
 
 class QuestInfo(object):
     __slots__ = ('questID',)
@@ -87,13 +98,15 @@ class _NavigationInfo(object):
 
     @property
     def selectedPQ(self):
-        if self.__selectedPQType == _QA.SEASON_VIEW_TAB_RANDOM:
+        if self.selectedPQType == _QA.SEASON_VIEW_TAB_RANDOM:
             return self.random
         else:
             return self.falloutQuests
 
     @property
     def selectedPQType(self):
+        if self.__selectedPQType not in getEnabledPQTabs():
+            self.__selectedPQType = first(getEnabledPQTabs(), None)
         return self.__selectedPQType
 
     def setPQTypeByTabID(self, tabID):
@@ -135,6 +148,10 @@ class _NavigationInfo(object):
     def selectTutorialQuest(self, questID):
         self.tabID = _QA.TAB_BEGINNER_QUESTS
         self.tutorial = self.tutorial.update(questID=questID)
+
+    def selectLadderQuest(self, questID):
+        self.tabID = _QA.TAB_LADDER_QUESTS
+        self.common = self.common.update(questID=questID)
 
 
 _g_navInfo = None

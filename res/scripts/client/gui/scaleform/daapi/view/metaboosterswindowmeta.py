@@ -9,6 +9,9 @@ class BoostersWindowMeta(AbstractWindowView):
     def onBoosterActionBtnClick(self, boosterID, questID):
         self._printOverrideError('onBoosterActionBtnClick')
 
+    def onFiltersChange(self, filters):
+        self._printOverrideError('onFiltersChange')
+
     def as_setDataS(self, data):
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)

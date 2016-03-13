@@ -8,7 +8,6 @@ from gui.battle_control import arena_info
 from tutorial.control import context
 from tutorial.control.context import ClientCtx, GlobalStorage
 from tutorial.logger import LOG_DEBUG, LOG_ERROR, LOG_WARNING
-import FMOD
 BATTLE_RECORDS = ('completed', 'failed', 'accCompleted', 'startedAt', 'chapterIdx')
 EXTENDED_BATTLE_RECORDS = ('playerTeam', 'winnerTeam', 'finishReason', 'vTypeCD', 'arenaTypeID', 'arenaUniqueID')
 ALL_BATTLE_RECORDS = BATTLE_RECORDS + EXTENDED_BATTLE_RECORDS
@@ -189,10 +188,9 @@ class BattleBonusesRequester(context.BonusesRequester):
 
 
 class BattleSoundPlayer(context.SoundPlayer):
-    if FMOD.enabled:
-        __guiSounds = {context.SOUND_EVENT.TASK_FAILED: '/GUI/notifications_FX/task_new',
-         context.SOUND_EVENT.TASK_COMPLETED: '/GUI/notifications_FX/task_complete',
-         context.SOUND_EVENT.NEXT_CHAPTER: '/GUI/notifications_FX/task_part_complete'}
+    __guiSounds = {context.SOUND_EVENT.TASK_FAILED: 'task_new',
+     context.SOUND_EVENT.TASK_COMPLETED: 'task_complete',
+     context.SOUND_EVENT.NEXT_CHAPTER: 'task_part_complete'}
 
     def __init__(self):
         super(BattleSoundPlayer, self).__init__()
@@ -245,8 +243,6 @@ class BattleSoundPlayer(context.SoundPlayer):
 
     def _clear(self):
         if self.__speakSnd is not None:
-            if FMOD.enabled:
-                self.__speakSnd.setCallback('EVENTFINISHED', None)
             self.__speakSnd.stop()
             self.__speakSnd = None
         return
@@ -269,8 +265,7 @@ class BattleSoundPlayer(context.SoundPlayer):
             self.__nextSndID = None
             self.__speakSnd = sound
             self.__prevSpeaks.add(sndID)
-            if FMOD.enabled:
-                sound.setCallback('EVENTFINISHED', self.__onSpeakingStop)
+            sound.setCallback(self.__onSpeakingStop)
             sound.play()
             return
 

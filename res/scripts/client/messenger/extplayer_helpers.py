@@ -13,7 +13,7 @@ def _getInfo4AccountPlayer():
 
 
 def _getInfo4AvatarPlayer():
-    dbID, name, clanAbbrev = (0L, '', None)
+    dbID, name, clanAbbrev = (0, '', None)
     player = BigWorld.player()
     arena = getattr(player, 'arena', None)
     if arena is not None:

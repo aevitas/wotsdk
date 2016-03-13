@@ -2,7 +2,7 @@
 from FortifiedRegionBase import FORT_CLIENT_METHOD, makeDirPosByte, SECONDS_PER_DAY, SECONDS_PER_HOUR, ALL_DIRS
 from ClientFortifiedRegion import ClientFortifiedRegion
 import Event
-from debug_utils import LOG_DAN, LOG_DEBUG, LOG_ERROR
+from debug_utils import LOG_DEBUG, LOG_DEBUG, LOG_ERROR
 import time
 import fortified_regions
 
@@ -22,8 +22,8 @@ class ClientFortMgr(object):
 
     def __callFortMethod(self, *args):
         requestID = self.__getNextRequestID()
-        LOG_DAN('base.callFortMethod', requestID, args)
-        self.__account.base.callFortMethod(requestID, *args)
+        LOG_DEBUG('base.callFortMethod', requestID, args)
+        self.__account.base.accountFortConnector_callFortMethod(requestID, *args)
         return requestID
 
     def callCustomFortMethod(self, *args):
@@ -44,11 +44,11 @@ class ClientFortMgr(object):
         return self.__requestID
 
     def onFortReply(self, reqID, resultCode, resultString):
-        LOG_DAN('onFortReply: reqID=%s, resultCode=%s, resultString=%r' % (reqID, resultCode, resultString))
+        LOG_DEBUG('onFortReply: reqID=%s, resultCode=%s, resultString=%r' % (reqID, resultCode, resultString))
         self.onFortResponseReceived(reqID, resultCode, resultString)
 
     def onFortUpdate(self, packedOps, packedUpdate):
-        LOG_DAN('onFortUpdate: packedOps len=%s, packedUpdate len=%s' % (len(packedOps), len(packedUpdate)))
+        LOG_DEBUG('onFortUpdate: packedOps len=%s, packedUpdate len=%s' % (len(packedOps), len(packedUpdate)))
         isFullUpdate = False
         if packedUpdate:
             self._fort.unpack(packedUpdate)
@@ -57,10 +57,10 @@ class ClientFortMgr(object):
             self._fort.unpackOps(packedOps)
         self._fort.refresh()
         self.onFortUpdateReceived(isFullUpdate)
-        LOG_DAN('after onFortUpdate:', self._fort)
+        LOG_DEBUG('after onFortUpdate:', self._fort)
 
     def onFortStateDiff(self, newState):
-        LOG_DAN('onFortStateDiff: state %s (was %s)' % (newState, self.state))
+        LOG_DEBUG('onFortStateDiff: state %s (was %s)' % (newState, self.state))
         self.state = newState
         self.onFortStateChanged()
 

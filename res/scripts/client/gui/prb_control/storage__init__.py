@@ -17,7 +17,7 @@ def _makeUniqueName(ctrlName, entityName):
 
 
 def _makePreQueueName(queueType):
-    if queueType not in _Q_TYPE.ALL:
+    if queueType not in _Q_NAMES:
         raise ValueError('Queue type is invalid {}'.format(queueType))
     return _makeUniqueName(_C_NAMES[_C_TYPE.PREQUEUE], _Q_NAMES[queueType])
 
@@ -29,7 +29,7 @@ def _makePrbName(prbType):
 
 
 _PRB_STORAGE = {_makePrbName(_P_TYPE.TRAINING): TrainingStorage(),
- _makePreQueueName(_Q_TYPE.EVENT_BATTLES): FalloutLocalStorage(),
+ _makePreQueueName(_Q_TYPE.FALLOUT): FalloutLocalStorage(),
  _makePreQueueName(_Q_TYPE.SANDBOX): SandboxStorage()}
 
 class _storage_getter(object):

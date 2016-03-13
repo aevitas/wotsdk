@@ -61,7 +61,7 @@ class FontConfigMap(object):
                     fontStyle |= FONT_STYLE_NAMES[name]
                 except KeyError:
                     LOG_NOTE('Available font style flags are:', FONT_STYLE_NAMES.keys())
-                    raise Exception, "Flag isn't correct: {0:>s}.".format(name)
+                    raise Exception("Flag isn't correct: {0:>s}.".format(name))
 
         scaleFactor = section.readFloat('scaleFactor', 1.0)
         aliases[embedded] = (runtime, fontStyle, scaleFactor)
@@ -69,18 +69,18 @@ class FontConfigMap(object):
     def __readXml(self):
         dataSection = ResMgr.openSection(SCALEFORM_FONT_CONFIG_PATH)
         if dataSection is None:
-            raise IOError, 'can not open <%s>.' % SCALEFORM_FONT_CONFIG_PATH
+            raise IOError('can not open <%s>.' % SCALEFORM_FONT_CONFIG_PATH)
         for tag, fontconfig in dataSection.items():
             if tag == 'config':
                 aliases = dict()
                 if fontconfig.has_key('name'):
                     configName = fontconfig.readString('name')
                 else:
-                    raise Exception, 'You must specify the name of the configuration'
+                    raise Exception('You must specify the name of the configuration')
                 if fontconfig.has_key('fontlib'):
                     fontlib = fontconfig.readString('fontlib')
                 else:
-                    raise Exception, 'You must specify the font library file'
+                    raise Exception('You must specify the font library file')
                 if fontconfig.has_key('map'):
                     map = fontconfig['map']
                     for tag, alias in map.items():

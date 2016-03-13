@@ -289,8 +289,8 @@ class BaseRallyRoomView(BaseRallyRoomViewMeta, UnitListener):
     def __getRosterSlotCtx(self, item):
         if item is None:
             return unit_ctx.RosterSlotCtx()
-        elif type(item) == long:
-            return unit_ctx.RosterSlotCtx(item)
+        elif item.selectedVehicle > 0:
+            return unit_ctx.RosterSlotCtx(item.selectedVehicle)
         else:
             settings = self.unitFunctional.getRosterSettings()
             levels = (settings.getMinLevel(), settings.getMaxLevel())

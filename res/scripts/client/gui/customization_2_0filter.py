@@ -35,10 +35,10 @@ class Filter(object):
         self.__currentGroup = 'all_groups'
         self.__showInDossier = True
         self.__purchaseType = PURCHASE_TYPE.PURCHASE
-        self.__rules = [self.__isInDossier,
-         self.__hasSelectedBonus,
-         self.__isInSelectedGroup,
-         self.__hasPurchaseType]
+        self.__rules = {FILTER_TYPE.SHOW_IN_DOSSIER: self.__isInDossier,
+         FILTER_TYPE.QUALIFIER: self.__hasSelectedBonus,
+         FILTER_TYPE.GROUP: self.__isInSelectedGroup,
+         FILTER_TYPE.PURCHASE_TYPE: self.__hasPurchaseType}
         self.__selectedBonuses = {QUALIFIER_TYPE.ALL: False,
          QUALIFIER_TYPE.COMMANDER: False,
          QUALIFIER_TYPE.GUNNER: False,
@@ -90,8 +90,18 @@ class Filter(object):
     def currentGroup(self):
         return self.__currentGroup
 
-    def check(self, item):
-        for rule in self.__rules:
+    def check(self, item, filterExceptions = None):
+        """ Check if item should be shown.
+        
+        :param item: customization item to be checked
+        :param filterExceptions: dict with exceptions for each rule (format: FILTER_TYPE: items)
+        :return: True if item should be shown, False otherwise.
+        """
+        for filterType, rule in self.__rules.items():
+            if filterExceptions is not None and filterType in filterExceptions:
+                excludedIDs = map(lambda item: item.getID(), filterExceptions[filterType])
+                if item.getID() in excludedIDs:
+                    return True
             if not rule(item):
                 return False
 

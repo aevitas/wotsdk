@@ -35,7 +35,7 @@ def _isObserver(tags):
 class PlayerInfoVO(object):
     __slots__ = ('accountDBID', 'name', 'clanAbbrev', 'igrType', 'potapovQuestIDs', 'isPrebattleCreator', 'forbidInBattleInvitations', 'tags')
 
-    def __init__(self, accountDBID = 0L, name = None, clanAbbrev = '', igrType = IGR_TYPE.NONE, potapovQuestIDs = None, isPrebattleCreator = False, forbidInBattleInvitations = False, vehicleType = None, **kwargs):
+    def __init__(self, accountDBID = 0, name = None, clanAbbrev = '', igrType = IGR_TYPE.NONE, potapovQuestIDs = None, isPrebattleCreator = False, forbidInBattleInvitations = False, vehicleType = None, **kwargs):
         super(PlayerInfoVO, self).__init__()
         self.accountDBID = accountDBID
         self.name = name
@@ -56,7 +56,7 @@ class PlayerInfoVO(object):
     def __cmp__(self, other):
         return cmp(self.name, other.name)
 
-    def update(self, invalidate = _INVALIDATE_OP.NONE, name = None, accountDBID = 0L, clanAbbrev = '', isPrebattleCreator = False, igrType = IGR_TYPE.NONE, forbidInBattleInvitations = False, **kwargs):
+    def update(self, invalidate = _INVALIDATE_OP.NONE, name = None, accountDBID = 0, clanAbbrev = '', isPrebattleCreator = False, igrType = IGR_TYPE.NONE, forbidInBattleInvitations = False, **kwargs):
         if self.name != name:
             self.name = name
             invalidate = _INVALIDATE_OP.addIfNot(invalidate, _INVALIDATE_OP.SORTING)

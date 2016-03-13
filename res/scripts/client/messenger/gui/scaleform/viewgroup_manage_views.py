@@ -84,7 +84,7 @@ class GroupRenameView(GroupManageView):
         return defData
 
     def as_setLabelS(self, msg):
-        if self.__isInited == False:
+        if self.__isInited is False:
             self.__isInited = True
             return None
         else:

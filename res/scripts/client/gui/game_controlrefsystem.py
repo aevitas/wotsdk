@@ -43,6 +43,7 @@ def _getMaxNumberOfReferrals():
 class CreditsAward(AwardAbstract):
 
     def __init__(self, creditsValue):
+        super(CreditsAward, self).__init__()
         self.__creditsValue = long(creditsValue)
 
     def getWindowTitle(self):
@@ -65,6 +66,7 @@ class CreditsAward(AwardAbstract):
 class VehicleAward(AwardAbstract):
 
     def __init__(self, vehicle, boughtVehicle, achievedXp):
+        super(VehicleAward, self).__init__()
         self.__vehicle = vehicle
         self.__boughtVehicle = boughtVehicle
         self.__achievedXp = achievedXp
@@ -101,6 +103,7 @@ class VehicleAward(AwardAbstract):
 class TankmanAward(AwardAbstract):
 
     def __init__(self, tankman, achievedXp, nextXp):
+        super(TankmanAward, self).__init__()
         self.__tankman = tankman
         self.__achievedXp = achievedXp
         self.__nextXp = nextXp
@@ -112,16 +115,23 @@ class TankmanAward(AwardAbstract):
         return RES_ICONS.MAPS_ICONS_REFERRAL_AWARDBACK
 
     def getAwardImage(self):
-        return RES_ICONS.MAPS_ICONS_REFERRAL_TANKMANMALE
+        if self.__tankman.isFemale:
+            return RES_ICONS.MAPS_ICONS_QUESTS_TANKMANFEMALEORANGE
+        else:
+            return RES_ICONS.MAPS_ICONS_REFERRAL_TANKMANMALE
 
     def getHeader(self):
         return text_styles.highTitle(_ms(MENU.AWARDWINDOW_REFERRAL_TANKMAN_HEADER))
 
     def getDescription(self):
-        if self.__achievedXp is not None:
-            description = _ms(MENU.AWARDWINDOW_REFERRAL_TANKMAN_DESCRIPTION_NORMAL, expCount=BigWorld.wg_getIntegralFormat(self.__achievedXp), tankman=self.__tankman.roleUserName)
+        if self.__tankman.isFemale:
+            tankman = '%s %s' % (_ms('#quests:bonuses/item/tankwoman'), self.__tankman.roleUserName)
         else:
-            description = _ms(MENU.AWARDWINDOW_REFERRAL_TANKMAN_DESCRIPTION_NOXP, tankman=self.__tankman.roleUserName)
+            tankman = self.__tankman.roleUserName
+        if self.__achievedXp is not None:
+            description = _ms(MENU.AWARDWINDOW_REFERRAL_TANKMAN_DESCRIPTION_NORMAL, expCount=BigWorld.wg_getIntegralFormat(self.__achievedXp), tankman=tankman)
+        else:
+            description = _ms(MENU.AWARDWINDOW_REFERRAL_TANKMAN_DESCRIPTION_NOXP, tankman=tankman)
         return text_styles.main(description)
 
     def getAdditionalText(self):
@@ -418,7 +428,7 @@ class _RefItem(object):
                 periodTime = 0
                 for period, bonus in _getRefSystemPeriods():
                     periodTime += period * time_utils.ONE_HOUR
-                    if delta <= periodTime and self.__xpPool < maxXPPool:
+                    if delta < periodTime and self.__xpPool < maxXPPool:
                         timeLeft = 0
                         if periodTime <= time_utils.ONE_YEAR:
                             timeLeft = periodTime - delta

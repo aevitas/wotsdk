@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/ScopeTemplates.py
-__author__ = 'd_trofimov'
 from gui.Scaleform.framework import ViewTypes
 
 class SCOPE_TYPE:

@@ -28,7 +28,7 @@ from gui.LobbyContext import g_lobbyContext
 from gui.shared.tooltips import efficiency
 from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter, makeClanFullName, makeClubFullName, makeContactStatusDescription
 from predefined_hosts import g_preDefinedHosts
-from constants import PREBATTLE_TYPE, WG_GAMES
+from constants import PREBATTLE_TYPE, WG_GAMES, VISIBILITY
 from debug_utils import LOG_WARNING
 from helpers import i18n, time_utils, html, int2roman
 from helpers.i18n import makeString as ms, makeString
@@ -55,6 +55,7 @@ from gui.Scaleform.daapi.view.lobby.fortifications.components.FortBattlesSortieL
 from items import vehicles
 from messenger.storage import storage_getter
 from messenger.m_constants import USER_TAG
+from gui.shared.tooltips import formatters
 
 class FortOrderParamField(ToolTipParameterField):
 
@@ -234,6 +235,8 @@ class ContactTooltipData(ToolTipBaseData):
             else:
                 statusDescription = makeString('#tooltips:Contact/resource/%s' % resourceID)
             commonGuiData['statusDescription'] = statusDescription
+            if defaultName and USER_TAG.INVALID_NAME in tags:
+                commonGuiData['userProps']['userName'] = defaultName
             units = []
             currentUnit = ''
             region = g_lobbyContext.getRegionCode(userEntity.getID())
@@ -347,27 +350,6 @@ class MapTooltipData(ToolTipBaseData):
          'gameplayName': i18n.makeString('#arenas:type/%s/name' % arenaType.gameplayName),
          'imageURL': '../maps/icons/map/%s.png' % arenaType.geometryName,
          'description': i18n.makeString('#arenas:%s/description' % arenaType.geometryName)}
-
-
-class HistoricalAmmoTooltipData(ToolTipBaseData):
-
-    def __init__(self, context):
-        super(HistoricalAmmoTooltipData, self).__init__(context, TOOLTIP_TYPE.HISTORICAL_AMMO)
-
-    def getDisplayableData(self, battleID, vehicleID):
-        return {'price': '0',
-         'shells': []}
-
-
-class HistoricalModulesTooltipData(ToolTipBaseData):
-
-    def __init__(self, context):
-        super(HistoricalModulesTooltipData, self).__init__(context, TOOLTIP_TYPE.HISTORICAL_MODULES)
-
-    def getDisplayableData(self, battleID):
-        vehicle = g_currentVehicle.item
-        return {'tankName': vehicle.userName,
-         'modules': []}
 
 
 class SettingsControlTooltipData(ToolTipBaseData):
@@ -718,16 +700,15 @@ class ToolTipRefSysAwards(ToolTipBaseData):
         icon = ''
         awardDescrPars = []
         isCompleted = True
-        for quest in quests.itervalues():
-            for bonusName in self.BONUSES_PRIORITY:
+        for bonusName in self.BONUSES_PRIORITY:
+            for quest in quests.itervalues():
                 bonuses = quest.getBonuses(bonusName)
                 if bonuses:
                     awardDescrPars.append(', '.join(map(methodcaller('getDescription'), bonuses)))
                     if not icon:
                         icon = bonuses[0].getTooltipIcon()
-
-            if isCompleted and not quest.isCompleted():
-                isCompleted = False
+                if isCompleted and not quest.isCompleted():
+                    isCompleted = False
 
         awardDescr = ', '.join(awardDescrPars)
         return {'iconSource': icon,
@@ -935,7 +916,7 @@ class ActionTooltipData(ToolTipBaseData):
                 actionNames = map(lambda x: x[1], actions)
                 if key == 'freeXPToTManXPRate':
                     newPriceCurrency = oldPriceCurrency = 'freeXp'
-        if type == ACTION_TOOLTIPS_TYPE.RENT:
+        elif type == ACTION_TOOLTIPS_TYPE.RENT:
             item = g_itemsCache.items.getItemByCD(int(key))
             actions = g_eventsCache.getRentAction(item, rentPackage)
             if actions:
@@ -1189,6 +1170,44 @@ class FortSortieTooltipData(ToolTipBaseData):
          'isInBattle': data.isInBattle}
 
 
+class SettingsMinimapCircles(BlocksTooltipData):
+
+    def __init__(self, context):
+        super(SettingsMinimapCircles, self).__init__(context, TOOLTIP_TYPE.CONTROL)
+        self._setContentMargin(top=15, left=19, bottom=6, right=20)
+        self._setMargins(afterBlock=14)
+        self._setWidth(364)
+
+    def _packBlocks(self, *args):
+        tooltipBlocks = super(SettingsMinimapCircles, self)._packBlocks()
+        headerBlock = formatters.packTitleDescBlock(text_styles.middleTitle(TOOLTIPS.SETTINGS_MINIMAPCIRCLES_TITLE))
+        lineBreak = '<br/>'
+        imgBlock = formatters.packImageTextBlockData(img=RES_ICONS.MAPS_ICONS_SETTINGS_MINIMAPCIRCLESTOOLTIP, imgPadding={'top': -5,
+         'left': 74})
+        tooltipBlocks.append(formatters.packBuildUpBlockData([headerBlock, imgBlock], padding={'bottom': -20}))
+        textBlocks = []
+        templateName = 'html_templates:lobby/tooltips/settings_minimap_circles'
+        viewRangeTitle = text_styles.bonusAppliedText(TOOLTIPS.SETTINGS_MINIMAPCIRCLES_VIEWRANGE_TITLE)
+        viewRangeBody = text_styles.main(TOOLTIPS.SETTINGS_MINIMAPCIRCLES_VIEWRANGE_BODY)
+        textBlocks.extend(self.getTextBlocksForCircleDescr(viewRangeTitle, viewRangeBody))
+        maxViewRangeHtml = makeHtmlString(templateName, 'max_view_range_title') + lineBreak
+        maxViewRangeTitle = maxViewRangeHtml % i18n.makeString(TOOLTIPS.SETTINGS_MINIMAPCIRCLES_MAXVIEWRANGE_TITLE)
+        maxViewRangeBody = text_styles.main(TOOLTIPS.SETTINGS_MINIMAPCIRCLES_MAXVIEWRANGE_AS3_BODY) % VISIBILITY.MAX_RADIUS
+        textBlocks.extend(self.getTextBlocksForCircleDescr(maxViewRangeTitle, maxViewRangeBody))
+        drawRangeHtml = makeHtmlString(templateName, 'draw_range_title') + lineBreak
+        drawRangeTitle = drawRangeHtml % i18n.makeString(TOOLTIPS.SETTINGS_MINIMAPCIRCLES_DRAWRANGE_TITLE)
+        drawRangeBody = text_styles.main(TOOLTIPS.SETTINGS_MINIMAPCIRCLES_DRAWRANGE_BODY)
+        textBlocks.extend(self.getTextBlocksForCircleDescr(drawRangeTitle, drawRangeBody))
+        tooltipBlocks.append(formatters.packBuildUpBlockData(textBlocks, padding={'top': -1}))
+        return tooltipBlocks
+
+    def getTextBlocksForCircleDescr(self, title, body):
+        blocks = []
+        blocks.append(formatters.packTextBlockData(title, padding={'bottom': 3}))
+        blocks.append(formatters.packTextBlockData(body, padding={'bottom': 9}))
+        return blocks
+
+
 class LadderRegulations(ToolTipBaseData):
 
     def __init__(self, context):
@@ -1198,9 +1217,10 @@ class LadderRegulations(ToolTipBaseData):
         _ms = i18n.makeString
         forbiddenPeriods = availabilityCtrl.getForbiddenPeriods(serverID)
         if not availabilityCtrl.isServerAvailable(serverID):
-            text = _ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_SCHEDULE_BAN, server=text_styles.stats(serverName))
             if isHeader:
                 text = _ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_HEADER_BAN, server=text_styles.alert(serverName))
+            else:
+                text = _ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_SCHEDULE_BAN, server=text_styles.stats(serverName))
         elif forbiddenPeriods:
             if isHeader:
                 text = text_styles.main(_ms(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_HEADER_LIMITATION, server=text_styles.alert(serverName), time=text_styles.alert(self.getForbiddenHoursText(forbiddenPeriods))))
@@ -1224,15 +1244,16 @@ class LadderRegulations(ToolTipBaseData):
         from ConnectionManager import connectionManager
         availabilityCtrl = g_clubsCtrl.getAvailabilityCtrl()
         allRules = []
-        currServerName = ''
+        currServerName = connectionManager.serverUserName
         currPeripheryID = connectionManager.peripheryID
         for url, name, status, peripheryID in g_preDefinedHosts.getSimpleHostsList(g_preDefinedHosts.hostsWithRoaming()):
             allRules.append(self.getTextForPeriphery(peripheryID, name, availabilityCtrl))
-            if peripheryID == currPeripheryID:
-                currServerName = name
 
-        return {'name': text_styles.highTitle(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_NAME),
+        data = {'name': text_styles.highTitle(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_NAME),
          'thisRules': self.getTextForPeriphery(currPeripheryID, currServerName, availabilityCtrl, True),
-         'rulesName': text_styles.middleTitle(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_SCHEDULE_NAME),
-         'allRules': '\n'.join(allRules),
          'info': text_styles.main(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_INFO)}
+        if not connectionManager.isStandalone():
+            data.update({'rulesName': text_styles.middleTitle(CYBERSPORT.LADDERREGULATIONS_TOOLTIP_SCHEDULE_NAME),
+             'allRules': '\n'.join(allRules),
+             'hasRules': len(allRules) != 0})
+        return data

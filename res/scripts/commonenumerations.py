@@ -1,6 +1,7 @@
 # Embedded file name: scripts/common/enumerations.py
 from debug_utils import deprecated, LOG_DEBUG
-import types, exceptions
+import types
+import exceptions
 
 class EnumException(exceptions.Exception):
     pass
@@ -46,7 +47,7 @@ class AttributeEnumItem(EnumItem):
 
     def __getattr__(self, attr):
         if not self.__data.has_key(attr):
-            raise AttributeError, 'Must be %s' % ', '.join(self.__data)
+            raise AttributeError('Must be %s' % ', '.join(self.__data))
         return self.__data[attr]
 
 
@@ -59,16 +60,16 @@ class Enumeration:
         uniqueNames = []
 
         def appendEnumItem(idx, enumItem):
-            if type(enumItem) == types.TupleType:
+            if isinstance(enumItem, types.TupleType):
                 x, = enumItem[0:1]
             else:
                 x = enumItem
-            if type(x) != types.StringType:
-                raise EnumException, 'enum name is not a string: ' + x
+            if not isinstance(x, types.StringType):
+                raise EnumException('enum name is not a string: ' + x)
             if x in uniqueNames:
-                raise EnumException, 'enum name is not unique: ' + x
+                raise EnumException('enum name is not unique: ' + x)
             if idx in idxLookup:
-                raise EnumException, 'index %s is not unique: ' % (idx,)
+                raise EnumException('index %s is not unique: ' % (idx,))
             uniqueNames.append(x)
             args = (x, idx) + tuple(enumItem[1:])
             item = instance(*args)
@@ -90,7 +91,7 @@ class Enumeration:
 
     def __getattr__(self, attr):
         if attr not in self.__lookup:
-            raise AttributeError, "Attr '%s' must be in (%s)" % (attr, ', '.join(self.__lookup))
+            raise AttributeError("Attr '%s' must be in (%s)" % (attr, ', '.join(self.__lookup)))
         return self.__lookup[attr]
 
     def __getitem__(self, idx):

@@ -57,7 +57,7 @@ class _StringPrepProfile(object):
         self._bidi = bidi
 
     def prepare(self, data):
-        if type(data) is not types.UnicodeType:
+        if not isinstance(data, types.UnicodeType):
             data = unicode(data, 'utf8')
         result = self._doMapping(data)
         result = self._doNormalization(result)

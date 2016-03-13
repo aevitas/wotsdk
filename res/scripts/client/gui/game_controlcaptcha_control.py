@@ -10,7 +10,7 @@ from debug_utils import LOG_ERROR, LOG_WARNING
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.game_control.controllers import Controller
 from helpers.aop import Aspect, Weaver, Pointcut
-from helpers import i18n
+from helpers import i18n, isPlayerAccount
 from PlayerEvents import g_playerEvents
 CAPTCHA_TRIES_LEFT_NOTIFY_THESHOLD = 1
 
@@ -42,13 +42,17 @@ class CaptchaController(Controller):
         super(CaptchaController, self).fini()
 
     def onLobbyInited(self, event):
-        self.__weaver = Weaver()
-        BigWorld.player().stats.get('battlesTillCaptcha', self.__pc_onReceiveBattlesTillCaptcha)
-        BigWorld.player().stats.get('captchaTriesLeft', self.__pc_onReceiveCaptchaTriesLeft)
-        g_playerEvents.onEnqueueRandomFailure += self.__pe_onEnqueueRandomFailure
-        g_playerEvents.onEnqueueEventBattlesFailure += self.__pe_onEnqueueEventBattlesFailure
-        g_clientUpdateManager.addCallbacks({'stats.battlesTillCaptcha': self.__onBattlesTillCaptcha,
-         'stats.captchaTriesLeft': self.__onCaptchaTriesLeft})
+        if not isPlayerAccount():
+            return None
+        else:
+            self.__weaver = Weaver()
+            BigWorld.player().stats.get('battlesTillCaptcha', self.__pc_onReceiveBattlesTillCaptcha)
+            BigWorld.player().stats.get('captchaTriesLeft', self.__pc_onReceiveCaptchaTriesLeft)
+            g_playerEvents.onEnqueueRandomFailure += self.__pe_onEnqueueRandomFailure
+            g_playerEvents.onEnqueueEventBattlesFailure += self.__pe_onEnqueueEventBattlesFailure
+            g_clientUpdateManager.addCallbacks({'stats.battlesTillCaptcha': self.__onBattlesTillCaptcha,
+             'stats.captchaTriesLeft': self.__onCaptchaTriesLeft})
+            return None
 
     def onDisconnected(self):
         self.__stop()
@@ -209,4 +213,4 @@ class ShowCaptchaAspect(Aspect):
 class ShowCaptchaPointcut(Pointcut):
 
     def __init__(self):
-        super(ShowCaptchaPointcut, self).__init__('Account', 'PlayerAccount', '^(enqueueRandom|enqueueTutorial|prb_createTraining|prb_createSquad|enqueueHistorical|enqueueEventBattles|prb_createCompany|prb_join|prb_ready|prb_teamReady|prb_acceptInvite)$')
+        super(ShowCaptchaPointcut, self).__init__('Account', 'PlayerAccount', '^(enqueueRandom|enqueueTutorial|prb_createTraining|prb_createSquad|enqueueHistorical|enqueueFallout|prb_createCompany|prb_join|prb_ready|prb_teamReady|prb_acceptInvite)$')

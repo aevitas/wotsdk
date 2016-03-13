@@ -27,6 +27,9 @@ class TimeInterval(object):
             self.__callbackID = None
         return
 
+    def isStarted(self):
+        return self.__callbackID is not None
+
     def __invoke(self):
         self.__callbackID = None
         self.__callbackID = BigWorld.callback(self.__interval, self.__invoke)

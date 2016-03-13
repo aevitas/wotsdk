@@ -231,7 +231,7 @@ class _QuestsTileChainsView(QuestsTileChainsViewMeta):
                 break
 
         else:
-            result = yield events_helpers.getPotapovQuestsRewardProcessor(quest).request()
+            result = yield events_helpers.getPotapovQuestsRewardProcessor()(quest).request()
         callback(result)
         return
 

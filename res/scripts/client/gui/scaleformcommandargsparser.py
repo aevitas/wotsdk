@@ -25,7 +25,7 @@ class CommandArgsParser(object):
                     result.append(args[index])
 
             return result
-        raise ValueError, 'Callback %s takes %d arguments' % (self.__callbackName, self.__count)
+        raise ValueError('Callback %s takes %d arguments' % (self.__callbackName, self.__count))
 
     def addArgs(self, values, converters = None):
         if converters is None:

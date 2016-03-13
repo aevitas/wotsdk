@@ -21,6 +21,7 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
 from gui.Scaleform.genConsts.CYBER_SPORT_ALIASES import CYBER_SPORT_ALIASES
 from gui.game_control.battle_availability import isHourInForbiddenList
+from predefined_hosts import g_preDefinedHosts
 _ACCEPTED_VEH_TYPES = (_VCN.LIGHT_TANK, _VCN.MEDIUM_TANK, _VCN.HEAVY_TANK)
 
 class _IntroViewVO(object):
@@ -200,16 +201,18 @@ class CyberSportIntroView(CyberSportIntroMeta, MyClubListener):
     def _populate(self):
         super(CyberSportIntroView, self)._populate()
         self.addListener(CSVehicleSelectEvent.VEHICLE_SELECTED, self.__updateSelectedVehicles)
-        self.as_setTextsS({'titleLblText': text_styles.promoTitle(CYBERSPORT.WINDOW_INTRO_TITLE),
+        data = {'titleLblText': text_styles.promoTitle(CYBERSPORT.WINDOW_INTRO_TITLE),
          'descrLblText': text_styles.main(CYBERSPORT.WINDOW_INTRO_DESCRIPTION),
          'listRoomTitleLblText': text_styles.promoSubTitle(CYBERSPORT.WINDOW_INTRO_SEARCH_TITLE),
          'listRoomDescrLblText': text_styles.main(CYBERSPORT.WINDOW_INTRO_SEARCH_DESCRIPTION),
          'listRoomBtnLabel': _ms(CYBERSPORT.WINDOW_INTRO_SEARCH_BTN),
          'autoTitleLblText': text_styles.middleTitle(CYBERSPORT.WINDOW_INTRO_AUTO_TITLE),
          'autoDescrLblText': text_styles.main(CYBERSPORT.WINDOW_INTRO_AUTO_DESCRIPTION),
-         'vehicleBtnTitleTfText': text_styles.standard(CYBERSPORT.BUTTON_CHOOSEVEHICLES_SELECTED),
-         'regulationsInfoText': '{0}{1}'.format(icons.info(), text_styles.main(CYBERSPORT.LADDERREGULATIONS_INFO)),
-         'regulationsInfoTooltip': TOOLTIPS_CONSTANTS.LADDER_REGULATIONS})
+         'vehicleBtnTitleTfText': text_styles.standard(CYBERSPORT.BUTTON_CHOOSEVEHICLES_SELECTED)}
+        if self.__isLadderRegulated():
+            data.update({'regulationsInfoText': '{0}{1}'.format(icons.info(), text_styles.main(CYBERSPORT.LADDERREGULATIONS_INFO)),
+             'regulationsInfoTooltip': TOOLTIPS_CONSTANTS.LADDER_REGULATIONS})
+        self.as_setTextsS(data)
         self.__updateClubData()
         self.__updateAutoSearchVehicle(self.__getSelectedVehicles())
         self.startMyClubListening()
@@ -275,7 +278,8 @@ class CyberSportIntroView(CyberSportIntroMeta, MyClubListener):
         else:
             resultVO.fillDefault()
             resultVO.acceptNavigationByChevron(False)
-        if isHourInForbiddenList(self.clubsCtrl.getAvailabilityCtrl().getForbiddenHours()):
+        isBattlesAvailable, _ = self.clubsCtrl.getAvailabilityCtrl().getStatus()
+        if not isBattlesAvailable:
             resultVO.setClubDescriptionTooltip(TOOLTIPS_CONSTANTS.LADDER_REGULATIONS)
             resultVO.setClubDescription('{0}{1}'.format(icons.alert(), text_styles.main(CYBERSPORT.LADDERREGULATIONS_WARNING)), True)
         self.as_setStaticTeamDataS(resultVO.getData())
@@ -307,3 +311,16 @@ class CyberSportIntroView(CyberSportIntroMeta, MyClubListener):
 
     def __getSelectedVehicles(self):
         return self.unitFunctional.getSelectedVehicles(self._section)
+
+    def __isLadderRegulated(self):
+        """Check if ladder regulation label should be shown.
+        
+        Method returns True if there are some regulation on the peripheries, or
+        if some peripheries are unavailable. Returns False otherwise.
+        """
+        availabilityCtrl = self.clubsCtrl.getAvailabilityCtrl()
+        for hostItem in g_preDefinedHosts.hosts():
+            if availabilityCtrl.getForbiddenPeriods(hostItem.peripheryID) or not availabilityCtrl.isServerAvailable(hostItem.peripheryID):
+                return True
+
+        return False

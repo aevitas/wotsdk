@@ -47,7 +47,7 @@ class FortClanListWindow(FortClanListWindowMeta, FortViewHelper):
          'toolTip': toolTip,
          'textAlign': textAlign,
          'sortType': sortType,
-         'defaultSortDirection': 'ascending'}
+         'defaultSortDirection': 'descending'}
 
     def _getClanMembers(self):
         clanMembers = []

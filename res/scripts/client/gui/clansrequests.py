@@ -4,7 +4,6 @@ import types
 import weakref
 from debug_utils import LOG_WARNING, LOG_DEBUG
 from gui.clans.contexts import GetFrontsCtx
-from shared_utils import makeTupleByDict
 from client_request_lib.exceptions import ResponseCodes
 from gui.clans import formatters as clan_fmts, contexts, items
 from gui.clans.settings import DEFAULT_COOLDOWN, CLAN_REQUESTED_DATA_TYPE
@@ -82,6 +81,9 @@ class ClanCooldownManager(RequestCooldownManager):
 
     def getDefaultCoolDown(self):
         return DEFAULT_COOLDOWN
+
+    def adjust(self, rqTypeID, coolDown = None):
+        self.process(rqTypeID, coolDown)
 
 
 class ClanRequestsController(RequestsController):

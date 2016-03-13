@@ -2,7 +2,8 @@
 from functools import partial
 import math
 import ResMgr
-import random, struct
+import random
+import struct
 import nations
 from items import _xml, vehicles, ITEM_TYPES
 from vehicles import VEHICLE_CLASS_TAGS
@@ -387,13 +388,13 @@ class TankmanDescr(object):
 
     def addSkill(self, skillName):
         if skillName in self.skills:
-            raise ValueError, skillName
+            raise ValueError(skillName)
         if skillName not in ACTIVE_SKILLS:
-            raise ValueError, skillName
+            raise ValueError(skillName)
         if self.roleLevel != MAX_SKILL_LEVEL:
-            raise ValueError, self.roleLevel
+            raise ValueError(self.roleLevel)
         if self.__skills and self.__lastSkillLevel != MAX_SKILL_LEVEL:
-            raise ValueError, self.__lastSkillLevel
+            raise ValueError(self.__lastSkillLevel)
         self.__skills.append(skillName)
         self.__lastSkillLevel = 0
         self.__levelUpLastSkill()
@@ -410,7 +411,7 @@ class TankmanDescr(object):
             raise AssertionError
             if len(self.__skills) == 0:
                 if throwIfNoChange:
-                    raise Exception, 'attempt to reset empty skills'
+                    raise Exception('attempt to reset empty skills')
                 return
             prevTotalXP = self.totalXP()
             if self.numLevelsToNextRank != 0:
@@ -418,7 +419,7 @@ class TankmanDescr(object):
                 numSkills = self.lastSkillNumber - self.freeSkillsNumber
                 if numSkills < 1:
                     if throwIfNoChange:
-                        raise Exception, 'attempt to reset free skills'
+                        raise Exception('attempt to reset free skills')
                     return
                 if numSkills > 1:
                     self.numLevelsToNextRank += MAX_SKILL_LEVEL * (numSkills - 1)
@@ -552,9 +553,9 @@ class TankmanDescr(object):
                 self.__vehicleTags = vehicles.g_list.getList(nationID)[self.vehicleTypeID]['tags']
                 self.role = SKILL_NAMES[roleID]
                 if self.role not in ROLES:
-                    raise KeyError, self.role
+                    raise KeyError(self.role)
                 if self.roleLevel > MAX_SKILL_LEVEL:
-                    raise ValueError, self.roleLevel
+                    raise ValueError(self.roleLevel)
                 self.__skills = []
                 if numSkills == 0:
                     self.__lastSkillLevel = 0
@@ -562,12 +563,12 @@ class TankmanDescr(object):
                     for skillID in unpack(str(numSkills) + 'B', cd[:numSkills]):
                         skillName = SKILL_NAMES[skillID]
                         if skillName not in ACTIVE_SKILLS:
-                            raise KeyError, (skillName, self.role)
+                            raise KeyError(skillName, self.role)
                         self.__skills.append(skillName)
 
                     self.__lastSkillLevel = ord(cd[numSkills])
                     if self.__lastSkillLevel > MAX_SKILL_LEVEL:
-                        raise ValueError, self.__lastSkillLevel
+                        raise ValueError(self.__lastSkillLevel)
                 cd = cd[numSkills + 1:]
                 flags = unpack('<B', cd[:1])[0]
                 self.isFemale = bool(flags & 1)
@@ -586,10 +587,10 @@ class TankmanDescr(object):
                 self.numLevelsToNextRank = rank >> 5
                 self.rankID = nationConfig['roleRanks'][self.role][self.__rankIdx]
                 if self.firstNameID not in nationConfig['firstNames']:
-                    raise KeyError, self.firstNameID
+                    raise KeyError(self.firstNameID)
                 if self.lastNameID not in nationConfig['lastNames']:
-                    raise KeyError, self.lastNameID
-                raise self.iconID not in nationConfig['icons'] and KeyError, self.iconID
+                    raise KeyError(self.lastNameID)
+                raise self.iconID not in nationConfig['icons'] and KeyError(self.iconID)
         except Exception:
             LOG_ERROR('(compact description to XML mismatch?)', compactDescr)
             raise
@@ -625,28 +626,28 @@ class TankmanDescr(object):
 def makeTmanDescrByTmanData(tmanData):
     nationID = tmanData['nationID']
     if not 0 <= nationID < len(nations.AVAILABLE_NAMES):
-        raise Exception, 'Invalid nation'
+        raise Exception('Invalid nation')
     vehicleTypeID = tmanData['vehicleTypeID']
     if vehicleTypeID not in vehicles.g_list.getList(nationID):
-        raise Exception, 'Invalid vehicle'
+        raise Exception('Invalid vehicle')
     role = tmanData['role']
     if role not in ROLES:
-        raise Exception, 'Invalid role'
+        raise Exception('Invalid role')
     roleLevel = tmanData.get('roleLevel', 50)
     if not 50 <= roleLevel <= MAX_SKILL_LEVEL:
-        raise Exception, 'Wrong tankman level'
+        raise Exception('Wrong tankman level')
     skills = tmanData.get('skills', [])
     freeSkills = tmanData.get('freeSkills', [])
-    if skills == None:
+    if skills is None:
         skills = []
-    if freeSkills == None:
+    if freeSkills is None:
         freeSkills = []
     __validateSkills(skills)
     __validateSkills(freeSkills)
     if not set(skills).isdisjoint(set(freeSkills)):
-        raise Exception, 'Free skills and skills must be disjoint.'
+        raise Exception('Free skills and skills must be disjoint.')
     if len(freeSkills) > MAX_FREE_SKILLS_SIZE:
-        raise Exception, 'Free skills count is too big.'
+        raise Exception('Free skills count is too big.')
     isFemale = tmanData.get('isFemale', False)
     isPremium = tmanData.get('isPremium', False)
     fnGroupID = tmanData.get('fnGroupID', 0)
@@ -657,33 +658,33 @@ def makeTmanDescrByTmanData(tmanData):
     iconID = tmanData.get('iconID', None)
     groups = getNationConfig(nationID)['normalGroups' if not isPremium else 'premiumGroups']
     if fnGroupID >= len(groups):
-        raise Exception, 'Invalid group fn ID'
+        raise Exception('Invalid group fn ID')
     group = groups[fnGroupID]
     if bool(group['isFemales']) != bool(isFemale):
-        raise Exception, 'Invalid group sex'
+        raise Exception('Invalid group sex')
     if firstNameID is not None:
         if firstNameID not in group['firstNamesList']:
-            raise Exception, 'firstNameID is not in valid group'
+            raise Exception('firstNameID is not in valid group')
     else:
         firstNameID = random.choice(group['firstNamesList'])
     if lnGroupID >= len(groups):
-        raise Exception, 'Invalid group ln ID'
+        raise Exception('Invalid group ln ID')
     group = groups[lnGroupID]
     if bool(group['isFemales']) != bool(isFemale):
-        raise Exception, 'Invalid group sex'
+        raise Exception('Invalid group sex')
     if lastNameID is not None:
         if lastNameID not in group['lastNamesList']:
-            raise Exception, 'lastNameID is not in valid group'
+            raise Exception('lastNameID is not in valid group')
     else:
         lastNameID = random.choice(group['lastNamesList'])
     if iGroupID >= len(groups):
-        raise Exception, 'Invalid group ln ID'
+        raise Exception('Invalid group ln ID')
     group = groups[iGroupID]
     if bool(group['isFemales']) != bool(isFemale):
-        raise Exception, 'Invalid group sex'
+        raise Exception('Invalid group sex')
     if iconID is not None:
         if iconID not in group['iconsList']:
-            raise Exception, 'iconID is not in valid group'
+            raise Exception('iconID is not in valid group')
     else:
         iconID = random.choice(group['iconsList'])
     passport = (nationID,
@@ -703,10 +704,10 @@ def makeTmanDescrByTmanData(tmanData):
 
 def __validateSkills(skills):
     if len(set(skills)) != len(skills):
-        raise Exception, 'Duplicate tankman skills'
+        raise Exception('Duplicate tankman skills')
     for skill in skills:
         if skill not in SKILL_INDICES:
-            raise Exception, 'Wrong tankman skill'
+            raise Exception('Wrong tankman skill')
 
 
 def _readNationConfig(xmlPath):

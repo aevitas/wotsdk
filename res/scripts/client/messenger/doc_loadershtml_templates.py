@@ -13,7 +13,7 @@ class _MessageTemplate(templates.Template):
 
     def format(self, ctx = None, data = None):
         vo = self.data.copy()
-        if type(data) is types.DictionaryType:
+        if isinstance(data, types.DictionaryType):
             for key, value in data.iteritems():
                 if key in vo:
                     vo[key] = value

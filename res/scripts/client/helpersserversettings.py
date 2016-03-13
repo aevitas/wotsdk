@@ -137,16 +137,13 @@ class _ESportCurrentSeason(namedtuple('_ESportSeason', ['eSportSeasonID', 'eSpor
 class _ClanProfile(namedtuple('_ClanProfile', ['enabled', 'url', 'type'])):
 
     def isEnabled(self):
-        return bool(self.enabled and len(self.getSettingsJSON()))
+        return self.enabled
 
     def getAccessorType(self):
         return self.type
 
     def getGateUrl(self):
         return self.url
-
-    def getSettingsJSON(self):
-        return '{"type": "%s", "accessor_config": "%s"}' % (self.getAccessorType(), self.getGateUrl())
 
     @classmethod
     def defaults(cls):
@@ -210,7 +207,19 @@ class ServerSettings(object):
         return self.__clanProfile
 
     def isPotapovQuestEnabled(self):
-        return self.__getGlobalSetting('isPotapovQuestEnabled', False)
+        return self.isFalloutQuestEnabled() or self.isRegularQuestEnabled()
+
+    def isRegularQuestEnabled(self):
+        return self.__getGlobalSetting('isRegularQuestEnabled', True)
+
+    def isFalloutQuestEnabled(self):
+        return self.__getGlobalSetting('isFalloutQuestEnabled', True)
+
+    def isBuyPotapovQuestTileEnabled(self):
+        return self.__getGlobalSetting('isBuyPotapovQuestTileEnabled', False)
+
+    def isBuyPotapovQuestSlotEnabled(self):
+        return self.__getGlobalSetting('isBuyPotapovQuestSlotEnabled', False)
 
     def isFortBattlesEnabled(self):
         return not self.__getGlobalSetting('isFortBattlesDisabled', True)

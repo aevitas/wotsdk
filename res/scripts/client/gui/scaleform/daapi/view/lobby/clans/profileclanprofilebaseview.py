@@ -45,6 +45,13 @@ class ClanProfileBaseView(ClanProfileBaseViewMeta, ClanEmblemsHelper, ClanListen
     def onClanStateChanged(self, oldStateID, newStateID):
         self._updateDummy()
 
+    def onAccountWebVitalInfoChanged(self, fieldName, value):
+        self._updateHeaderState()
+
+    def onClanWebVitalInfoChanged(self, clanDbID, fieldName, value):
+        if clanDbID == self._clanDossier.getDbID():
+            self._updateHeaderState()
+
     def _dispose(self):
         self._clanDossier = None
         self.stopClanListening()

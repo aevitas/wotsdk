@@ -3,8 +3,9 @@ from collections import namedtuple
 import nations
 import constants
 import resource_helper
-from debug_utils import *
+from debug_utils import LOG_NOTE, LOG_CURRENT_EXCEPTION
 from helpers import getClientLanguage, time_utils
+from gui import macroses
 GUI_SETTINGS_FILE_PATH = 'gui/gui_settings.xml'
 VIDEO_SETTINGS_FILE_PATH = 'gui/video_settings.xml'
 MovingTextProps = namedtuple('MovingTextProps', 'show internalBrowser')
@@ -12,6 +13,25 @@ LoginRssFeedProps = namedtuple('LoginRssFeedProps', 'show url internalBrowser')
 EULAProps = namedtuple('EULAProps', 'full url')
 BrowserProps = namedtuple('BrowserProps', 'url params')
 PostBattleExchangeProps = namedtuple('PostBattleExchangeProps', 'enabled url')
+_MacrosValue = namedtuple('MacrosValue', 'macros dictValue')
+
+def _readMacros(xmlCtx, section, valueName = 'value'):
+    result = {}
+    name = resource_helper.readItemName(xmlCtx, section)
+    macros = _readItemMacros(xmlCtx, section)
+    subCtx, subSection = resource_helper.getSubSection(xmlCtx, section, valueName)
+    for nextCtx, nextSection in resource_helper.getIterator(subCtx, subSection):
+        item = resource_helper.readItem(nextCtx, nextSection)
+        if not item.name:
+            raise resource_helper.ResourceError(nextCtx, '{0}: name is required in each item'.format(name))
+        result[item.name] = item.value
+
+    return resource_helper.ResourceItem('macros', name, _MacrosValue(macros, result))
+
+
+def _readItemMacros(xmlCtx, section, keys = None):
+    return resource_helper.readItemAttr(xmlCtx, section, 'macros', default='', keys=keys)
+
 
 def _convertVector4ToTuple(_, item):
     return item.value.tuple()
@@ -85,10 +105,13 @@ _DEFAULT_SETTINGS = {'registrationURL': '',
  'imageCache': [],
  'postBattleExchange': PostBattleExchangeProps(False, ''),
  'actionComeToEnd': time_utils.QUARTER_HOUR,
+ 'useAS3Battle': False,
  'goldFishActionShowCooldown': 86400,
  'guiScale': [],
  'playerFeedbackDelay': 0.75,
- 'allowedNotSupportedGraphicSettings': {}}
+ 'allowedNotSupportedGraphicSettings': {},
+ 'userRoomsService': '',
+ 'cryptLoginInfo': True}
 
 class GuiSettings(object):
 
@@ -97,10 +120,8 @@ class GuiSettings(object):
         constructs GuiSettings instance using values from guiPresetsResource
         """
         self.__settings = _DEFAULT_SETTINGS.copy()
-        ctx, section = resource_helper.getRoot(GUI_SETTINGS_FILE_PATH)
         settings = {}
-        for ctx, subSection in resource_helper.getIterator(ctx, section):
-            item = resource_helper.readItem(ctx, subSection, name='setting')
+        for item in resource_helper.root_iterator(GUI_SETTINGS_FILE_PATH, customReaders={'macros': _readMacros}):
             if item.name in _SETTING_CONVERTERS:
                 setting = _DEFAULT_SETTINGS[item.name]
                 converter = _SETTING_CONVERTERS[item.name]
@@ -117,7 +138,7 @@ class GuiSettings(object):
 
     def __getattr__(self, name):
         if name in self.__settings:
-            return self.__settings[name]
+            return self.__applyMacros(self.__settings[name])
         raise AttributeError('Setting not found in {0}: {1}'.format(self.__class__, name))
 
     def __setattr__(self, name, value):
@@ -143,7 +164,7 @@ class GuiSettings(object):
     def isEmpty(self, name):
         value = None
         if name in self.__settings:
-            value = self.__settings[name]
+            value = self.__applyMacros(self.__settings[name])
         return not value
 
     def isGuiEnabled(self):
@@ -152,5 +173,26 @@ class GuiSettings(object):
     def lookup(self, name):
         settings = None
         if name in self.__settings:
-            settings = self.__settings[name]
+            settings = self.__applyMacros(self.__settings[name])
         return settings
+
+    def __applyMacros(self, value):
+        if isinstance(value, _MacrosValue):
+            macros = value.macros
+            dictValue = value.dictValue
+            simpleMacroses = macroses.getSyncMacroses()
+            if macros in simpleMacroses:
+                macrosKey = simpleMacroses[macros]()
+            else:
+                if macros == 'MACROS_DICT':
+                    value = {}
+                    for key, mValue in dictValue.iteritems():
+                        value[key] = self.__applyMacros(mValue)
+
+                    return value
+                raise AttributeError("Unsupported macros '{0}', not found in {1}".format(macros, simpleMacroses))
+            if macrosKey in dictValue or 'default' in dictValue:
+                value = dictValue.get(macrosKey, None) or dictValue['default']
+                return self.__applyMacros(value)
+            raise AttributeError("Incorrect section in {0}, dict {1} with macros '{2}' should contains item '{3}' or 'default'".format(GUI_SETTINGS_FILE_PATH, dictValue, macros, macrosKey))
+        return value

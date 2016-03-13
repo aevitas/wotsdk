@@ -397,7 +397,7 @@ class ClubsDataProvider(BaseRallyListDataProvider, UsersInfoHelper):
              'joinBtnTooltip': buttonTooltip,
              'joinBtnDisabled': isButtonDisabled,
              'noAwardsText': CYBERSPORT.WINDOW_STATICRALLYINFO_NOAWARDS,
-             'achievements': AchievementsUtils.packAchievementList(clubTotalStats.getSignificantAchievements(), dossier.getDossierType(), dumpDossier(dossier), False, False),
+             'achievements': AchievementsUtils.packAchievementList(clubTotalStats.getTopAchievements(3), dossier.getDossierType(), dumpDossier(dossier), False, False),
              'rallyInfo': {'icon': None,
                            'name': text_styles.highTitle(club.getUserName()),
                            'profileBtnLabel': CYBERSPORT.RALLYINFO_PROFILEBTN_LABEL,

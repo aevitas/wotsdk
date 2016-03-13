@@ -21,7 +21,7 @@ def vehicleAmmoCheck(func):
 
 class falloutQueueAmmoCheck(object):
 
-    @prequeue_storage_getter(QUEUE_TYPE.EVENT_BATTLES)
+    @prequeue_storage_getter(QUEUE_TYPE.FALLOUT)
     def storage(self):
         return None
 

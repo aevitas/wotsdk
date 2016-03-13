@@ -202,12 +202,12 @@ class _CTFManager():
     def getFlagInfo(self, flagID):
         return self.__flags[flagID]
 
-    def isFlagBearer(self, vehicleID):
-        for flag in self.__flags.itervalues():
+    def getVehicleCarriedFlagID(self, vehicleID):
+        for flagID, flag in self.__flags.iteritems():
             if flag['vehicle'] == vehicleID:
-                return True
+                return flagID
 
-        return False
+        return None
 
     def getFlagMinimapPos(self, flagID):
         if flagID not in self.__flags:
@@ -492,7 +492,7 @@ class _CTFCheckPoint():
         self.__radiusModelName = None
         return
 
-    def _createTerrainSelectedArea(self, position, size, overTerrainHeight, color):
+    def _createTerrainSelectedArea(self, position, size, overTerrainHeight, color, terrainSelected = True):
         if self.__radiusModelName is None:
             return
         elif g_ctfManager.isNeedHideAll:
@@ -504,7 +504,7 @@ class _CTFCheckPoint():
             self.__fakeModel.addMotor(BigWorld.Servo(Math.Matrix(self.__fakeModel.matrix)))
             rootNode = self.__fakeModel.node('')
             self.__terrainSelectedArea = BigWorld.PyTerrainSelectedArea()
-            self.__terrainSelectedArea.setup(self.__radiusModelName, Vector2(size, size), overTerrainHeight, color)
+            self.__terrainSelectedArea.setup(self.__radiusModelName, Vector2(size, size), overTerrainHeight, color, terrainSelected)
             rootNode.attach(self.__terrainSelectedArea)
             self.__hideListener = _GlobalHideListener(self.__hideCheckPoint)
             return

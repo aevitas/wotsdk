@@ -1,7 +1,11 @@
 # Embedded file name: scripts/common/goodies/Goodies.py
+import collections
 from WeakMethod import WeakMethod
 from goodie_constants import GOODIE_STATE, MAX_ACTIVE_GOODIES
-import collections
+
+class GoodieException(Exception):
+    pass
+
 
 class ActualGoodiesDict(collections.MutableMapping, dict):
 
@@ -178,7 +182,11 @@ class Goodies(object):
         return set(self.actualGoodies.iterkeys())
 
     def load(self, goodieID, state, expiration, counter):
-        goodieDefinition = self.definedGoodies[goodieID]
+        try:
+            goodieDefinition = self.definedGoodies[goodieID]
+        except KeyError:
+            raise GoodieException('Goodie is not found', goodieID)
+
         self.__append(goodieDefinition, state, expiration, counter)
 
     def extend(self, goodieID, state, expiration, counter):

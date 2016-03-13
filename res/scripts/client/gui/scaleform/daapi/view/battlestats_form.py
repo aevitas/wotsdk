@@ -6,6 +6,7 @@ from gui import makeHtmlString
 from gui.Scaleform.daapi.view.battle import getColorValue, findHTMLFormat
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
 from gui.battle_control.arena_info import hasResourcePoints
+from gui.battle_control import g_sessionProvider
 
 class _StatsForm(object):
 
@@ -22,6 +23,7 @@ class _StatsForm(object):
 
     def getFormattedStrings(self, vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName):
         format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
+        formatPanels = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager, True)
         fullPlayerName = self._trimLongName(fullPlayerName, ctx.playerLabelMaxLength)
         vehicleName = self._trimLongName(vInfoVO.vehicleType.shortName, ctx.vehicleLabelMaxLength)
         fragsString = format % ' '
@@ -30,10 +32,11 @@ class _StatsForm(object):
         return (format % fullPlayerName,
          fragsString,
          format % vehicleName,
-         ())
+         (),
+         formatPanels % fullPlayerName)
 
-    def _findPlayerHTMLFormat(self, item, ctx, csManager):
-        return findHTMLFormat(item, ctx, csManager)
+    def _findPlayerHTMLFormat(self, item, ctx, csManager, panels = False):
+        return findHTMLFormat(item, ctx, csManager, panels)
 
     def _trimLongName(self, name, maxLength):
         unicodeStr, _ = unicode_from_utf8(name)
@@ -47,6 +50,28 @@ class _FalloutStatsForm(_StatsForm):
     def __init__(self, parentUI, swf):
         super(_FalloutStatsForm, self).__init__(parentUI, swf)
         self._colorCache = {0: '%s'}
+        self._statsDialog = None
+        self._formatedNames = None
+        self._ui.addExternalCallbacks({'battle.onStatsDialogLoaded': self.onStatsDialogLoaded})
+        return
+
+    def onStatsDialogLoaded(self, *args):
+        self._statsDialog = self._ui.movie._root.statsDialogContainer.main
+        playersData = []
+        arenaDP = g_sessionProvider.getArenaDP()
+        for index, (vInfoVO, vStatsVO, viStatsVO) in enumerate(arenaDP.getTeamIterator(arenaDP.getNumberOfTeam())):
+            playerVO = vInfoVO.player
+            curPlayerData = {'dbID': playerVO.accountDBID,
+             'userName': playerVO.getPlayerLabel(),
+             'clanAbbrev': playerVO.clanAbbrev,
+             'region': None,
+             'igrType': playerVO.igrType}
+            playersData.append(curPlayerData)
+
+        self._formatedNames = self._statsDialog.as_getFormatedPlayerNames(playersData)
+        if self._formatedNames is not None:
+            self._formatedNames = self._formatedNames.toDict()
+        return
 
     def populate(self):
         super(_FalloutStatsForm, self).populate()
@@ -54,6 +79,8 @@ class _FalloutStatsForm(_StatsForm):
 
     def destroy(self):
         self._colorCache = None
+        self._statsDialog = None
+        self._ui.removeExternalCallbacks('battle.onStatsDialogLoaded')
         super(_FalloutStatsForm, self).destroy()
         return
 
@@ -62,22 +89,27 @@ class _FalloutStatsForm(_StatsForm):
         format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
         formatWithPadding = format + padding
         maxLabelLength = ctx.playerLabelMaxLength
-        isIGR = vInfoVO.player.isIGR()
+        playerVO = vInfoVO.player
+        isIGR = playerVO.isIGR()
         if isIGR:
             maxLabelLength = maxLabelLength - 2
         fullPlayerName = self._trimLongName(fullPlayerName, maxLabelLength)
         fragsString = formatWithPadding % ' '
         if vStatsVO.frags or viStatsVO.equipmentKills:
             fragsString = formatWithPadding % str(vStatsVO.frags + viStatsVO.equipmentKills)
-        pName = format % fullPlayerName
+        accountDBIDStr = str(playerVO.accountDBID)
+        if self._formatedNames is not None and accountDBIDStr in self._formatedNames:
+            pName = format % self._formatedNames[accountDBIDStr]
+        else:
+            pName = format % fullPlayerName
         frags = fragsString
-        vName = formatWithPadding % vInfoVO.vehicleType.shortName
+        vName = formatWithPadding % vInfoVO.vehicleType.guiName
         if isIGR:
-            igrType = vInfoVO.player.igrType
+            igrType = playerVO.igrType
             icon = makeHtmlString('html_templates:igr/iconSmall', 'premium' if igrType == IGR_TYPE.PREMIUM else 'basic')
             pName += icon
         pName += padding
-        scoreFormat = self._getHTMLString('textColorGold', self._ui.colorManager) + padding
+        scoreFormat = self._getHTMLString('falloutSelfGold', self._ui.colorManager) + padding
         regularFormat = self._getHTMLString('textColorFalloutRegular', self._ui.colorManager) + padding
         highlightedDeaths = viStatsVO.stopRespawn
         deathsFormatStyle = 'textColorFalloutHighlightedDeaths' if highlightedDeaths else 'textColorFalloutRegularDeaths'
@@ -99,7 +131,8 @@ class _FalloutStatsForm(_StatsForm):
          (scoreString,
           damageString,
           deathsString,
-          specialPointsString))
+          specialPointsString),
+         '')
 
     def _getHTMLString(self, colorScheme, csManager):
         color = getColorValue(colorScheme, csManager)
@@ -109,13 +142,13 @@ class _FalloutStatsForm(_StatsForm):
             return colorStr
         return self._colorCache[color]
 
-    def _findPlayerHTMLFormat(self, item, ctx, csManager):
+    def _findPlayerHTMLFormat(self, item, ctx, csManager, _ = False):
         if ctx.isTeamKiller(item):
             return self._getHTMLString('teamkiller', csManager)
         elif ctx.isPlayerSelected(item):
-            return self._getHTMLString('textColorGold', csManager)
+            return self._getHTMLString('falloutSelfGold', csManager)
         elif ctx.isSquadMan(item):
-            return self._getHTMLString('textColorGold', csManager)
+            return self._getHTMLString('falloutSelfGold', csManager)
         else:
             return self._getHTMLString('textColorFalloutName', csManager)
 
@@ -123,7 +156,7 @@ class _FalloutStatsForm(_StatsForm):
 class _MultiteamFalloutStatsForm(_FalloutStatsForm):
 
     def getFormattedStrings(self, vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName):
-        pName, frags, vName, (scoreString, damageString, deathsString, _) = super(_MultiteamFalloutStatsForm, self).getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName)
+        pName, frags, vName, (scoreString, damageString, deathsString, _), _ = super(_MultiteamFalloutStatsForm, self).getFormattedStrings(vInfoVO, vStatsVO, viStatsVO, ctx, fullPlayerName)
         padding = makeHtmlString('html_templates:battle', 'multiteamPadding', {})
         format = self._findPlayerHTMLFormat(vInfoVO, ctx, self._ui.colorManager)
         formatWithPadding = format + padding
@@ -137,15 +170,16 @@ class _MultiteamFalloutStatsForm(_FalloutStatsForm):
          (scoreString,
           damageString,
           deathsString,
-          flagsString))
+          flagsString),
+         '')
 
     def getTeamScoreFormat(self):
         padding = makeHtmlString('html_templates:battle', 'multiteamPadding', {})
-        return self._getHTMLString('textColorGold', self._ui.colorManager) + padding
+        return self._getHTMLString('falloutSelfGold', self._ui.colorManager) + padding
 
 
-def statsFormFactory(parentUI, isEvent = False, isMutlipleTeams = False):
-    if isEvent:
+def statsFormFactory(parentUI, isFallout = False, isMutlipleTeams = False):
+    if isFallout:
         if isMutlipleTeams:
             return _MultiteamFalloutStatsForm(parentUI, 'FalloutMultiteamStatisticForm.swf')
         return _FalloutStatsForm(parentUI, 'FalloutStatisticForm.swf')

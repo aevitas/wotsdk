@@ -21,9 +21,9 @@ class ClanInvitesViewWithTableMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_updateDefaultSortField(defaultSortField, defaultSortDirection)
 
-    def as_showDummyS(self, dummyAlias):
+    def as_showDummyS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_showDummy(dummyAlias)
+            return self.flashObject.as_showDummy(data)
 
     def as_hideDummyS(self):
         if self._isDAAPIInited():

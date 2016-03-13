@@ -10,7 +10,7 @@ from gui.shared.fortifications import controls, states, getClientFortMgr, getCla
 from gui.shared.fortifications.fort_ext import FortSubscriptionKeeper
 from gui.shared.fortifications.interfaces import IFortListener
 from gui.shared.fortifications.settings import FORT_PROVIDER_INITIAL_FLAGS, CLIENT_FORT_STATE
-from gui.shared.utils.ListenersCollection import ListenersCollection
+from gui.shared.utils.listeners_collection import ListenersCollection
 from helpers import i18n
 
 class _ClientFortListeners(ListenersCollection):
@@ -24,10 +24,6 @@ class _ClientFortListeners(ListenersCollection):
 
     def notify(self, eventType, *args):
         self._invokeListeners(eventType, *args)
-
-    def clear(self):
-        while len(self._listeners):
-            self._listeners.pop()
 
 
 def getFortErrorMessage(errorCode, errorString):

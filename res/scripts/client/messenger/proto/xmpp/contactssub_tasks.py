@@ -17,7 +17,7 @@ class AskSubscriptionTask(SyncSubscriptionTask):
         client.askSubscription(self._jid)
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.RQ_FRIENDSHIP, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.RQ_FRIENDSHIP, pyGlooxTag)
 
 
 class _ChangeSubscriptionTask(SyncSubscriptionTask):
@@ -39,7 +39,7 @@ class ApproveSubscriptionTask(_ChangeSubscriptionTask):
         return self._tasks
 
     def sync(self, name, groups, sub = None, clanInfo = None):
-        if sub[1] == _SUB.ON:
+        if sub is not None and sub[1] == _SUB.ON:
             user = self._getUser()
             self._result = TASK_RESULT.REMOVE
             if user and not self._auto:
@@ -59,7 +59,7 @@ class ApproveSubscriptionTask(_ChangeSubscriptionTask):
         client.approveSubscription(self._jid)
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.APPROVE_FRIENDSHIP, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.APPROVE_FRIENDSHIP, pyGlooxTag)
 
 
 class CancelSubscriptionTask(_ChangeSubscriptionTask):

@@ -110,10 +110,6 @@ def showPersonalCase(tankmanInvID, tabIndex, scope = EVENT_BUS_SCOPE.DEFAULT):
      'page': tabIndex}), scope)
 
 
-def showPremiumCongratulationWindow(award):
-    g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.PREMIUM_CONGRATULATION_WINDOW, getViewName(VIEW_ALIAS.PREMIUM_CONGRATULATION_WINDOW), ctx={'award': award}), EVENT_BUS_SCOPE.LOBBY)
-
-
 def showPremiumWindow(arenaUniqueID = 0, premiumBonusesDiff = None):
     g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.PREMIUM_WINDOW, getViewName(VIEW_ALIAS.PREMIUM_WINDOW), ctx={'arenaUniqueID': arenaUniqueID,
      'premiumBonusesDiff': premiumBonusesDiff}), EVENT_BUS_SCOPE.LOBBY)
@@ -130,6 +126,12 @@ def showChangeDivisionWindow(division):
 
 def runTutorialChain(id):
     g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.START_TRAINING, settingsID='TRIGGERS_CHAINS', initialChapter=id, restoreIfRun=True))
+
+
+def changeAppResolution(width, height, scale):
+    g_eventBus.handleEvent(events.GameEvent(events.GameEvent.CHANGE_APP_RESOLUTION, ctx={'width': width,
+     'height': height,
+     'scale': scale}), scope=EVENT_BUS_SCOPE.GLOBAL)
 
 
 @process

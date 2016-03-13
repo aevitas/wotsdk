@@ -2,18 +2,26 @@
 from datetime import datetime
 from adisp import async, process
 import Event
+from client_request_lib.exceptions import ResponseCodes
+from gui import SystemMessages
+from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta
+from gui.Scaleform.locale.DIALOGS import DIALOGS
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
+from gui.shared.formatters import icons, text_styles
+from helpers import i18n
+from gui.awards.event_dispatcher import showClanJoinAward
 from helpers.local_cache import FileLocalCache
 from gui.shared.utils import sortByFields
 from collections import namedtuple
 from debug_utils import LOG_DEBUG, LOG_WARNING
-from gui.clans import interfaces, items
+from gui.clans import interfaces, items, formatters
 from gui.clans.contexts import SearchClansCtx, GetRecommendedClansCtx, AccountInvitesCtx, ClanRatingsCtx
 from gui.clans.contexts import ClansInfoCtx, AcceptInviteCtx, DeclineInviteCtx, DeclineInvitesCtx
 from gui.clans.items import ClanInviteWrapper, ClanPersonalInviteWrapper
-from gui.clans.settings import COUNT_THRESHOLD, PERSONAL_INVITES_COUNT_THRESHOLD, showAcceptClanInviteDialog
+from gui.clans.settings import COUNT_THRESHOLD, PERSONAL_INVITES_COUNT_THRESHOLD
 from gui.clans.settings import CLAN_INVITE_STATES, DATA_UNAVAILABLE_PLACEHOLDER
 from gui.shared.utils.ListPaginator import ListPaginator
-from gui.shared.utils import getPlayerDatabaseID
+from gui.shared.utils import getPlayerDatabaseID, getPlayerName
 from gui.shared.view_helpers import UsersInfoHelper
 from helpers import time_utils
 from shared_utils import CONST_CONTAINER
@@ -22,6 +30,30 @@ _RequestData = namedtuple('_RequestData', ['pattern',
  'count',
  'isReset',
  'isRecommended'])
+
+def showClanInviteSystemMsg(userName, isSuccess, code):
+    if isSuccess:
+        msg = formatters.getInvitesSentSysMsg((userName,))
+        msgType = SystemMessages.SM_TYPE.Information
+    else:
+        error = None
+        if code == ResponseCodes.ACCOUNT_ALREADY_INVITED:
+            error = 'clans/request/errors/Account already invited'
+        if code == ResponseCodes.ACCOUNT_ALREADY_IN_CLAN:
+            error = 'clans/request/errors/Account is in clan already'
+        msg = formatters.getInviteNotSentSysMsg(userName, error)
+        msgType = SystemMessages.SM_TYPE.Error
+    SystemMessages.pushMessage(msg, msgType)
+    return
+
+
+@async
+def showAcceptClanInviteDialog(clanName, clanAbbrev, callback):
+    from gui import DialogsInterface
+    DialogsInterface.showDialog(I18nConfirmDialogMeta('clanConfirmJoining', messageCtx={'icon': icons.makeImageTag(RES_ICONS.MAPS_ICONS_LIBRARY_ATTENTIONICON, 16, 16, -4, 0),
+     'clanName': text_styles.stats(i18n.makeString(DIALOGS.CLANCONFIRMJOINING_MESSAGE_CLANNAME, clanAbbr=clanAbbrev, clanName=clanName)),
+     'clanExit': text_styles.standard(i18n.makeString(DIALOGS.CLANCONFIRMJOINING_MESSAGE_CLANEXIT))}), callback)
+
 
 class ClanListener(interfaces.IClanListener):
 
@@ -302,6 +334,10 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
             result = self.__invitesCache[offset:]
         return result
 
+    def getUserName(self, userDbID):
+        if userDbID:
+            return super(ClanInvitesPaginator, self).getUserName(userDbID)
+
     @async
     @process
     def __requestInvites(self, offset, count, isReset, callback):
@@ -347,7 +383,7 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
         self.__cacheMapping = dict(((invite.getDbID(), index) for index, invite in enumerate(self.__invitesCache)))
 
     @process
-    def __sendRequest(self, invite, context, sucessStatus):
+    def __sendRequest(self, invite, context, successStatus):
         self.__sentRequestCount += 1
         userDbID = getPlayerDatabaseID()
         temp = self.__accountNameMapping.get(userDbID, set())
@@ -355,23 +391,28 @@ class ClanInvitesPaginator(ListPaginator, UsersInfoHelper):
         self.__accountNameMapping[userDbID] = temp
         result = yield self._requester.sendRequest(context, allowDelay=True)
         if result.isSuccess():
-            status = sucessStatus
+            status = (successStatus, None)
         else:
-            status = CLAN_INVITE_STATES.ERROR
+            status = (CLAN_INVITE_STATES.ERROR, result.getCode())
         result, users = yield self._requester.requestUsers([userDbID])
         sender = users.get(userDbID, items.AccountClanRatingsData(userDbID))
         senderName = self.getUserName(userDbID)
-        item = self.__updateInvite(invite, status, sender, senderName)
+        changerName = getPlayerName()
+        item = self.__updateInvite(invite, status, sender, senderName, changerName)
         self.syncUsersInfo()
         self.__sentRequestCount -= 1
         self.onListItemsUpdated(self, [item])
+        return
 
-    def __updateInvite(self, inviteWrapper, status, sender, senderName):
+    def __updateInvite(self, inviteWrapper, statusData, sender, senderName, changerName):
+        status, code = statusData
         utc = datetime.utcnow()
         invite = inviteWrapper.invite.update(status=status, status_changer_id=sender.getAccountDbID(), updated_at=utc)
         inviteWrapper.setInvite(invite)
         inviteWrapper.setSender(sender)
         inviteWrapper.setSenderName(senderName)
+        inviteWrapper.setChangerName(changerName)
+        inviteWrapper.setStatusCode(code)
         return inviteWrapper
 
     def __checkUserName(self, name):
@@ -456,9 +497,16 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         inviteWrapper = self.getInviteByDbID(inviteID)
         if inviteWrapper:
             clanInfo = inviteWrapper.clanInfo
-            result = yield showAcceptClanInviteDialog(clanInfo.getClanName(), clanInfo.getTag())
+            clanName = clanInfo.getClanName()
+            clanTag = clanInfo.getTag()
+            result = yield showAcceptClanInviteDialog(clanName, clanTag)
             if result:
-                self.__sendADRequest(AcceptInviteCtx(inviteID), CLAN_INVITE_STATES.ACCEPTED)
+
+                def __acceptedResponseCallback(result):
+                    if result.isSuccess():
+                        showClanJoinAward(clanTag, clanName, clanInfo.getDbID())
+
+                self.__sendADRequest(AcceptInviteCtx(inviteID), CLAN_INVITE_STATES.ACCEPTED, __acceptedResponseCallback)
         else:
             LOG_WARNING("Couldn't find invite by id = " + str(inviteID))
 
@@ -570,7 +618,7 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
         self.__cacheMapping = dict(((invite.getDbID(), index) for index, invite in enumerate(self.__invitesCache)))
 
     @process
-    def __sendADRequest(self, context, sucessStatus):
+    def __sendADRequest(self, context, sucessStatus, callback = None):
         self.__sentRequestCount += 1
         result = yield self._requester.sendRequest(context, allowDelay=True)
         inviteDbID = context.getInviteDbID()
@@ -580,6 +628,8 @@ class ClanPersonalInvitesPaginator(ListPaginator, UsersInfoHelper):
             status = CLAN_INVITE_STATES.ERROR
         self.__sentRequestCount -= 1
         self.__updateInvitesStatus([inviteDbID], status)
+        if callback:
+            callback(result)
 
     @process
     def __sendADListRequest(self, context, sucessStatus):

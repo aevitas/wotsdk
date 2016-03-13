@@ -36,12 +36,12 @@ class DestructiblesCache():
         if IS_CLIENT:
             sec = ResMgr.openSection(DESTRUCTIBLES_EFFECTS_FILE)
             if not sec:
-                raise Exception, "Fail to read '%s'" % DESTRUCTIBLES_EFFECTS_FILE
+                raise Exception("Fail to read '%s'" % DESTRUCTIBLES_EFFECTS_FILE)
             self.__effects = _readDestructiblesEffects(sec)
             ResMgr.purge(DESTRUCTIBLES_EFFECTS_FILE, True)
         sec = ResMgr.openSection(DESTRUCTIBLES_CONFIG_FILE)
         if not sec:
-            raise Exception, "Fail to read '%s'" % DESTRUCTIBLES_CONFIG_FILE
+            raise Exception("Fail to read '%s'" % DESTRUCTIBLES_CONFIG_FILE)
         self.__defaultLifetimeEffectChance = sec.readFloat('defaultLifetimeEffectChance')
         self.__unitVehicleMass = sec.readFloat('unitVehicleMass')
         if not IS_CLIENT or IS_DEVELOPMENT:
@@ -280,7 +280,7 @@ class DestructiblesCache():
             if tag in CUSTOM_DESTRUCTIBLE_TAGS:
                 desc['achievementTag'] = tag
             else:
-                raise Exception, "Wrong achievement tag '%s' in destructible '%s'" % (tag, section.readString('filename'))
+                raise Exception("Wrong achievement tag '%s' in destructible '%s'" % (tag, section.readString('filename')))
 
     def _getEffect(self, effectName, effectCategory, needLogErrors = True):
         if not effectName:
@@ -403,7 +403,7 @@ def _readProjectilePiercingPowerReduction(section):
             minReduction = float(val[1])
             raise reductionFactor >= 0.0 and minReduction >= 0.0 or AssertionError
         except:
-            raise Exception, 'Wrong of missing value of %s/%s' % (section.name, matName)
+            raise Exception('Wrong of missing value of %s/%s' % (section.name, matName))
 
         res.append((reductionFactor, minReduction))
 
@@ -414,7 +414,7 @@ def _readFloatArray(sec, count = None):
     arrayStr = sec.readString('')
     strArr = arrayStr.split()
     if count is not None and len(strArr) != count:
-        raise Exception, 'Error reading float array from section %s' % sec.name
+        raise Exception('Error reading float array from section %s' % sec.name)
     return tuple(map(float, strArr))
 
 
@@ -422,7 +422,7 @@ def _readIntArray(sec, count):
     arrayStr = sec.readString('')
     strArr = arrayStr.split()
     if len(strArr) != count:
-        raise Exception, 'Error reading int array from section %s' % sec.name
+        raise Exception('Error reading int array from section %s' % sec.name)
     return tuple(map(int, strArr))
 
 
@@ -430,7 +430,7 @@ def _readStringArray(sec, count):
     arrayStr = sec.readString('')
     strArr = arrayStr.split()
     if len(strArr) != count:
-        raise Exception, 'Error reading int array from section %s' % sec.name
+        raise Exception('Error reading int array from section %s' % sec.name)
     return strArr
 
 

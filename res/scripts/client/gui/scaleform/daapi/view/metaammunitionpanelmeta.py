@@ -33,10 +33,6 @@ class AmmunitionPanelMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setVehicleHasTurret(hasTurret)
 
-    def as_setHistoricalBattleS(self, value):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setHistoricalBattle(value)
-
     def as_setModulesEnabledS(self, value):
         if self._isDAAPIInited():
             return self.flashObject.as_setModulesEnabled(value)

@@ -199,9 +199,10 @@ class _PaginatorsController(object):
         for v in self.__paginators.itervalues():
             v.reset()
 
-    def markPanginatorsAsUnSynced(self):
-        for v in self.__paginators.itervalues():
-            v.markAsUnSynced()
+    def markPanginatorsAsUnSynced(self, viewAlias):
+        for (alias, filter), paginator in self.__paginators.iteritems():
+            if alias == viewAlias:
+                paginator.markAsUnSynced()
 
     def isInProgress(self):
         inProgress = False

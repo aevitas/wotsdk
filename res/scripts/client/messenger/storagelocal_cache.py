@@ -3,7 +3,7 @@ import types
 import Event
 from account_helpers.settings_core.SettingsCache import g_settingsCache
 from helpers.local_cache import FileLocalCache, PickleIO, CryptIO
-_MESSENGER_CACHE_VERSION = 2
+_MESSENGER_CACHE_VERSION = 3
 _MESSENGER_CACHE_MIN_REV = 1
 _MESSENGER_CACHE_MAX_REV = 32767
 _MESSENGER_CACHE_DIR = 'messenger_cache'
@@ -25,11 +25,14 @@ class SimpleCachedStorage(object):
     def clear(self):
         pass
 
+    def switch(self, scope):
+        pass
+
     def makeRecordInCache(self):
         return self._getCachedData()
 
     def restoreFromCache(self, record):
-        if type(record) is not types.ListType:
+        if not isinstance(record, types.ListType):
             return
         restored = self._setCachedData(record)
         self.onRestoredFromCache(restored)
@@ -66,7 +69,7 @@ class RevCachedStorage(SimpleCachedStorage):
         return record
 
     def restoreFromCache(self, record):
-        if type(record) is not types.ListType:
+        if not isinstance(record, types.ListType):
             return
         else:
             self.__rev = self.__getServerRev()

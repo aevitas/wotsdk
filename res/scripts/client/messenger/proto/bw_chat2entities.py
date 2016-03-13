@@ -79,8 +79,11 @@ class BWClubChannelEntity(_BWChannelEntity):
 
 class BWMemberEntity(MemberEntity):
 
-    def __init__(self, memberID, nickName, status = None):
-        super(BWMemberEntity, self).__init__(memberID, nickName, status)
+    def __init__(self, jid, nickName, status = None):
+        super(BWMemberEntity, self).__init__(jid, nickName, status)
+
+    def getDatabaseID(self):
+        return self.getID()
 
     def getProtoType(self):
         return PROTO_TYPE.BW_CHAT2

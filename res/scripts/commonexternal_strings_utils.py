@@ -3,6 +3,7 @@ import re
 import unicodedata
 from debug_utils import LOG_CURRENT_EXCEPTION
 from constants import CREDENTIALS_RESTRICTION, CREDENTIALS_RESTRICTION_SET
+_MAX_NORMALIZED_NAME_BYTES = 96
 
 class TextRestrictionsBasic(object):
     __slots__ = ('ACCOUNT_NAME_RE', 'ACCOUNT_NAME_MIN_LENGTH', 'ACCOUNT_NAME_MAX_LENGTH', 'ACCOUNT_NAME_MIN_LENGTH_REG', 'LOGIN_NAME_RE', 'LOGIN_NAME_MIN_LENGTH', 'LOGIN_NAME_MAX_LENGTH', 'PASSWORD_RE', 'PASSWORD_MIN_LENGTH', 'PASSWORD_MAX_LENGTH', 'UPPERCASE_CLAN_ABBREV', 'REQUIRE_NORMALIZED_CLAN_ABBREV', 'CLAN_ABBREV_RE', 'CLAN_NAME_MAX_LENGTH', 'CLAN_ABBREV_MAX_LENGTH', 'CLAN_DESCR_MAX_LENGTH', 'CLAN_MOTTO_MAX_LENGTH')
@@ -103,9 +104,12 @@ def unicode_from_utf8(utf8str, unicodeNormalForm = 'NFKC'):
     return (unicodedata.normalize(unicodeNormalForm, unicodeStr), unicodeStr)
 
 
-def utf8_accepted(utf8str, re, minLen, maxLen, unicodeNormalForm = 'NFKC', checkBeforeNormalisation = True):
+def utf8_accepted(utf8str, regExp, minLen, maxLen, unicodeNormalForm = 'NFKC', checkBeforeNormalisation = True):
     nfkc, plain = unicode_from_utf8(utf8str, unicodeNormalForm)
-    matchFn = lambda uniStr: re.match(uniStr) and minLen <= len(uniStr) <= maxLen
+
+    def matchFn(uniStr):
+        return regExp.match(uniStr) and minLen <= len(uniStr) <= maxLen
+
     if checkBeforeNormalisation and not matchFn(plain):
         return False
     return matchFn(nfkc)
@@ -164,6 +168,11 @@ def normalizedAccountLogin(text):
         return None
 
     return None
+
+
+def forgeAccountNormalizedName(origNormalizedName, centerID):
+    ext = '\x01' + str(centerID)
+    return origNormalizedName[:_MAX_NORMALIZED_NAME_BYTES - len(ext)] + ext
 
 
 def isClanNameValid(text):

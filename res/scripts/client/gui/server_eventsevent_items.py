@@ -728,6 +728,30 @@ class ClubsQuest(Quest):
     def getDescription(self):
         return i18n.makeString(Quest.getDescription(self))
 
+    def getType(self):
+        return constants.EVENT_TYPE.CLUBS_QUEST
+
+
+class MotiveQuest(Quest):
+
+    def getUserName(self):
+        return i18n.makeString(Quest.getUserName(self))
+
+    def getDescription(self):
+        return i18n.makeString(Quest.getDescription(self))
+
+    def getParents(self):
+        return {}
+
+    def getTips(self):
+        return getLocalizedData(self._data, 'advice')
+
+    def getAwardMsg(self):
+        return getLocalizedData(self._data, 'congratulation')
+
+    def getRequirementsStr(self):
+        return getLocalizedData(self._data, 'requirements')
+
 
 class CompanyBattles(namedtuple('CompanyBattles', ['startTime', 'finishTime', 'peripheryIDs'])):
     DELTA = 1
@@ -838,6 +862,8 @@ def createQuest(questType, qID, data, progress = None, expiryTime = None):
         return PersonalQuest(qID, data, progress, expiryTime)
     if questType == constants.EVENT_TYPE.GROUP:
         return Group(qID, data)
+    if questType == constants.EVENT_TYPE.MOTIVE_QUEST:
+        return MotiveQuest(qID, data, progress)
     return Quest(qID, data, progress)
 
 

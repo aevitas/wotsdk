@@ -131,6 +131,9 @@ class FunctionalBonusReceivedCondition(FunctionalCondition):
     def isConditionOk(self, condition):
         chapter = self._descriptor.getChapter(condition.getID())
         if chapter is None:
+            chapterID = self._tutorial.getVars().get(condition.getID())
+            chapter = self._descriptor.getChapter(chapterID)
+        if chapter is None:
             LOG_ERROR('Chapter is not found', condition.getID())
             return False
         else:
@@ -226,7 +229,7 @@ class FunctionalEffect(TutorialProxyHolder):
         self._effect = effect
 
     def triggerEffect(self):
-        raise NotImplementedError, 'method triggerEffect is not implemented'
+        raise NotImplementedError('method triggerEffect is not implemented')
 
     def getEffect(self):
         return self._effect

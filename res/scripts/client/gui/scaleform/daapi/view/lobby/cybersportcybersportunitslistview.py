@@ -47,16 +47,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
         self._isBackButtonClicked = True
         callback(True)
 
-    def updateSelectedVehicles(self):
-        maxLevel = self.unitFunctional.getRosterSettings().getMaxLevel()
-        vehiclesCount = len(self._selectedVehicles)
-        availableVehiclesCount = len([ k for k, v in g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY).items() if v.level <= maxLevel ])
-        if vehiclesCount > 0 and vehiclesCount != availableVehiclesCount:
-            infoText = makeHtmlString('html_templates:lobby/cyberSport/vehicle', 'selectedValid', {'count': vehiclesCount})
-        else:
-            infoText = CYBERSPORT.BUTTON_CHOOSEVEHICLES_SELECT
-        self.as_setSelectedVehiclesInfoS(infoText, vehiclesCount)
-
     def setTeamFilters(self, showOnlyStatic):
         self._unitTypeFlags = UNIT_BROWSER_TYPE.RATED_CLUBS if showOnlyStatic else UNIT_BROWSER_TYPE.ALL
         self.__recenterList()
@@ -106,7 +96,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
         self.startUnitListening()
         if self.unitFunctional.getEntityType() != PREBATTLE_TYPE.NONE:
             self.unitFunctional.setEntityType(PREBATTLE_TYPE.UNIT)
-        self.updateSelectedVehicles()
         unit_ext.initListReq(self._unitTypeFlags).start(self.__onUnitsListUpdated)
         g_clientUpdateManager.addCallbacks({'inventory.1': self.__onVehiclesChanged})
         self.as_setSearchResultTextS(_ms(CYBERSPORT.WINDOW_UNITLISTVIEW_FOUNDTEAMS), '', self.__getFiltersData())
@@ -183,7 +172,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
 
     def __onVehiclesSelectedTeams(self, event):
         self._selectedVehicles = event.ctx
-        self.updateSelectedVehicles()
         self.unitFunctional.setSelectedVehicles(self._section, self._selectedVehicles)
         self.__recenterList()
 
@@ -241,7 +229,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
 
     def __onVehiclesChanged(self, *args):
         self._selectedVehicles = self.unitFunctional.getSelectedVehicles(self._section)
-        self.updateSelectedVehicles()
         self.unitFunctional.setSelectedVehicles(self._section, self._selectedVehicles)
 
     def __recenterList(self):

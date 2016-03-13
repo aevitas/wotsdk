@@ -58,7 +58,7 @@ def isShootPositionInsideOtherVehicle(vehicle, turretPosition, shootPosition):
             arenaVehicles = BigWorld.player().arena.vehicles
             for id in arenaVehicles.iterkeys():
                 v = BigWorld.entities.get(id)
-                if v and not v.isPlayer:
+                if v and not v.isPlayerVehicle:
                     nearVehicles.append(v)
 
             return nearVehicles

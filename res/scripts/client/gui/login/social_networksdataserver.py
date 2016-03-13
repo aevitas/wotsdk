@@ -15,8 +15,8 @@ class DataServer(HttpServer):
         HttpServer.__init__(self, name, RequestHandler)
         self.dataReceived = Event()
 
-    def keepData(self, token, spaID):
-        self.dataReceived(token, spaID)
+    def keepData(self, token, spaID, socialNetwork):
+        self.dataReceived(token, spaID, socialNetwork)
 
     def _logStatus(self):
         LOG_DEBUG(self._currentStatus)
@@ -28,10 +28,10 @@ class EncryptingDataServer(DataServer):
         DataServer.__init__(self, name)
         self._tokenSecret = hashlib.sha1(os.urandom(128)).hexdigest()[:16]
 
-    def keepData(self, token, spaID):
+    def keepData(self, token, spaID, socialNetwork):
         cipher = AES.new(self._tokenSecret, AES.MODE_CTR, counter=Counter.new(128))
         token = cipher.decrypt(base64.urlsafe_b64decode(token))
-        DataServer.keepData(self, token, spaID)
+        DataServer.keepData(self, token, spaID, socialNetwork)
 
     @property
     def tokenSecret(self):

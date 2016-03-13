@@ -16,6 +16,7 @@ import Settings
 import constants
 from debug_utils import LOG_WARNING, LOG_DEBUG
 from AvatarInputHandler.DynamicCameras import CameraDynamicConfig
+from account_helpers.settings_core.SettingsCore import g_settingsCore
 
 def getCameraAsSettingsHolder(settingsDataSec):
     return SniperCamera(settingsDataSec, None, None)
@@ -65,15 +66,22 @@ class SniperCamera(ICamera, CallbackDelayer):
             self.__autoUpdateDxDyDz = Vector3(0, 0, 0)
             return
 
+    def __onSettingsChanged(self, diff):
+        if 'fov' in diff:
+            self.delayCallback(0.01, self.__applyZoom, self.__cfg['zoom'])
+
     def create(self, onChangeControlMode = None):
         self.__onChangeControlMode = onChangeControlMode
+        g_settingsCore.onSettingsChanged += self.__onSettingsChanged
 
     def destroy(self):
+        g_settingsCore.onSettingsChanged -= self.__onSettingsChanged
         self.disable()
         self.__onChangeControlMode = None
         self.__cam = None
-        self.__aimingSystem.destroy()
-        self.__aimingSystem = None
+        if self.__aimingSystem is not None:
+            self.__aimingSystem.destroy()
+            self.__aimingSystem = None
         self.__aim = None
         CallbackDelayer.destroy(self)
         return

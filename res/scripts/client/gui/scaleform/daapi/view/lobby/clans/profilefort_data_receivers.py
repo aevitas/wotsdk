@@ -115,7 +115,8 @@ class ClanDataReceiver(_BaseDataReceiver, FortViewHelper):
         sInfo = yield clanDossier.requestStrongholdInfo()
         if sInfo.hasFort():
             sStats = yield clanDossier.requestStrongholdStatistics()
-            buildings = self._makeBuildingsList(sInfo.getBuildings(), sStats)
+            buildingsList = sInfo.getBuildings()
+            buildings = self._makeBuildingsList(buildingsList, sStats)
             dossierDescriptor = _UserDossierAdapter(sInfo)
             defModeParams = None
             if sInfo.isDefenceModeActivated():
@@ -125,7 +126,7 @@ class ClanDataReceiver(_BaseDataReceiver, FortViewHelper):
                     hour = time_utils.getTimeTodayForUTC(defence_hour.hour)
                     dHours = (hour, hour + time_utils.ONE_HOUR)
                 defModeParams = (sStats.getOffDay(), dHours, sStats.getVacationInfo())
-            data = _getFortBuildingsVO(FortSortiesStatisticsVO(FortRegionSortiesStats(dossierDescriptor), sStats.getFsBattlesCount28d(), sStats.getFsWinsCount28d()), FortBattlesStatisticsVO(FortRegionBattlesStats(dossierDescriptor), sInfo.getFbBattlesCount8(), sInfo.getFbBattlesCount10()), buildings, _getFortSortiesSchemaTexts(defModeParams, sStats.getPeripheryID(), len(buildings), sStats.getDirectionsCount()))
+            data = _getFortBuildingsVO(FortSortiesStatisticsVO(FortRegionSortiesStats(dossierDescriptor), sStats.getFsBattlesCount28d(), sStats.getFsWinsCount28d()), FortBattlesStatisticsVO(FortRegionBattlesStats(dossierDescriptor), sInfo.getFbBattlesCount8(), sInfo.getFbBattlesCount10()), buildings, _getFortSortiesSchemaTexts(defModeParams, sStats.getPeripheryID(), len(buildingsList), sStats.getDirectionsCount()))
         else:
             data = _getNoFortBuildingsVO()
         callback(data)

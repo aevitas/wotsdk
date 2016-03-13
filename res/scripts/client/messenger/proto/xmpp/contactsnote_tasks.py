@@ -76,7 +76,7 @@ class SetNoteTask(_NoteTask):
         self._iqID = client.sendIQ(contact_note.SetNoteQuery(self._jid.getDatabaseID(), self._text))
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.SET_NOTE, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.SET_NOTE, pyGlooxTag)
 
 
 class RemoveNoteTask(_NoteTask):
@@ -89,7 +89,7 @@ class RemoveNoteTask(_NoteTask):
         self._iqID = client.sendIQ(contact_note.RemoveNoteQuery(self._jid.getDatabaseID()))
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.REMOVE_NOTE, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.REMOVE_NOTE, pyGlooxTag)
 
 
 class RemoveNotesTask(SeqTask):

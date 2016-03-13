@@ -29,7 +29,7 @@ class BattleSessionListEntry(PrbEntry):
         return prb_ctx.JoinModeCtx(PREBATTLE_TYPE.CLAN)
 
     def create(self, ctx, callback = None):
-        raise Exception, 'BattleSession can be created through the web only'
+        raise Exception('BattleSession can be created through the web only')
 
     def join(self, ctx, callback = None):
         g_eventDispatcher.loadBattleSessionList()
@@ -43,7 +43,7 @@ class BattleSessionListEntry(PrbEntry):
 class BattleSessionEntry(PrbEntry):
 
     def create(self, ctx, callback = None):
-        raise Exception, 'BattleSession can be created through the web only'
+        raise Exception('BattleSession can be created through the web only')
 
     def join(self, ctx, callback = None):
         prbID = ctx.getID()

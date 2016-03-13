@@ -21,6 +21,7 @@ import ArenaType
 from constants import CONTENT_TYPE
 from gui.GraphicsPresets import GraphicsPresets
 from gui.app_loader.decorators import sf_lobby
+from gui.shared import event_dispatcher
 from helpers import isPlayerAccount, isPlayerAvatar
 import nations
 import CommandMapping
@@ -40,6 +41,7 @@ from account_helpers.settings_core.settings_constants import GRAPHICS
 from shared_utils import CONST_CONTAINER
 from gui import GUI_SETTINGS
 from gui.clans.clan_controller import g_clanCtrl
+from gui.sounds import g_soundsCtrl
 from gui.shared.utils import graphics, functions
 from gui.shared.utils.graphics import g_monitorSettings
 from gui.shared.utils.key_mapping import getScaleformKey, getBigworldKey, getBigworldNameFromKey
@@ -49,7 +51,6 @@ from gui.battle_control import g_sessionProvider
 from ConnectionManager import connectionManager
 from gui.Scaleform.locale.SETTINGS import SETTINGS
 from gui.shared.formatters import icons
-import FMOD
 
 class APPLY_METHOD:
     NORMAL = 'normal'
@@ -103,6 +104,9 @@ class SettingAbstract(ISetting):
         pass
 
     def init(self):
+        pass
+
+    def fini(self):
         pass
 
     def getApplyMethod(self, value):
@@ -229,6 +233,13 @@ class SettingsContainer(ISetting):
         for _ in self.__forEach(settings, lambda n, p: p.init()):
             pass
 
+    def fini(self):
+        for _, param in self.settings:
+            param.fini()
+
+        self.settings = ()
+        self.indices.clear()
+
     def refresh(self, names = None):
         settings = self.__filter(self.indices.keys(), names)
         for _ in self.__forEach(settings, lambda n, p: p.refresh()):
@@ -245,6 +256,11 @@ class ReadOnlySetting(SettingAbstract):
     def __init__(self, readerDelegate, isPreview = False):
         super(ReadOnlySetting, self).__init__(isPreview)
         self.readerDelegate = readerDelegate
+
+    def fini(self):
+        super(ReadOnlySetting, self).fini()
+        self.readerDelegate = None
+        return
 
     def _get(self):
         return self.readerDelegate()
@@ -272,6 +288,43 @@ class SoundSetting(SettingAbstract):
         if self.group == 'master':
             return SoundGroups.g_instance.setMasterVolume(self.__toSysVolume(value))
         return SoundGroups.g_instance.setVolume(self.group, self.__toSysVolume(value))
+
+
+class SoundEnableSetting(SettingAbstract):
+    """
+    Enable/disable sound system in general
+    """
+
+    def getApplyMethod(self, value):
+        return APPLY_METHOD.RESTART
+
+    def _get(self):
+        return g_soundsCtrl.isEnabled()
+
+    def _set(self, value):
+        if bool(value):
+            g_soundsCtrl.enable()
+        else:
+            g_soundsCtrl.disable()
+
+
+class SoundQualitySetting(SettingAbstract):
+    """
+    Sounds high quality setting
+    """
+
+    def getApplyMethod(self, value):
+        return APPLY_METHOD.RESTART
+
+    @classmethod
+    def isAvailable(cls):
+        return g_soundsCtrl.system.isMSR()
+
+    def _get(self):
+        return g_soundsCtrl.system.isHQEnabled()
+
+    def _set(self, value):
+        g_soundsCtrl.system.setHQEnabled(bool(value))
 
 
 class VOIPMasterSoundSetting(SoundSetting):
@@ -1439,6 +1492,27 @@ class MinimapVehModelsSetting(StorageDumpSetting):
         return 0
 
 
+class BattleLoadingTipSetting(AccountDumpSetting):
+
+    class OPTIONS(CONST_CONTAINER):
+        TEXT = 'textTip'
+        VISUAL = 'visualTip'
+        MINIMAP = 'minimap'
+        TIPS_TYPES = (TEXT, VISUAL, MINIMAP)
+
+    def getSettingID(self, isInSandbox = False, isFallout = False):
+        if isInSandbox:
+            return self.OPTIONS.VISUAL
+        settingID = self.OPTIONS.TIPS_TYPES[self._get()]
+        if isFallout and settingID == BattleLoadingTipSetting.OPTIONS.VISUAL:
+            settingID = BattleLoadingTipSetting.OPTIONS.TEXT
+        return settingID
+
+    def _getOptions(self):
+        settingsKey = '#settings:game/%s/%s'
+        return [ settingsKey % (self.settingName, type) for type in self.OPTIONS.TIPS_TYPES ]
+
+
 class ShowMarksOnGunSetting(StorageAccountSetting):
 
     def _get(self):
@@ -1706,7 +1780,8 @@ class KeyboardSettings(SettingsContainer):
        ('backward', 'CMD_MOVE_BACKWARD'),
        ('left', 'CMD_ROTATE_LEFT'),
        ('right', 'CMD_ROTATE_RIGHT'),
-       ('auto_rotation', 'CMD_CM_VEHICLE_SWITCH_AUTOROTATION'))),
+       ('auto_rotation', 'CMD_CM_VEHICLE_SWITCH_AUTOROTATION'),
+       ('block_tracks', 'CMD_BLOCK_TRACKS'))),
      ('cruis_control', (('forward_cruise', 'CMD_INCREMENT_CRUISE_MODE'), ('backward_cruise', 'CMD_DECREMENT_CRUISE_MODE'), ('stop_fire', 'CMD_STOP_UNTIL_FIRE'))),
      ('firing', (('fire', 'CMD_CM_SHOOT'),
        ('lock_target', 'CMD_CM_LOCK_TARGET'),
@@ -1732,9 +1807,10 @@ class KeyboardSettings(SettingsContainer):
        ('camera_down', 'CMD_CM_CAMERA_ROTATE_DOWN'),
        ('camera_left', 'CMD_CM_CAMERA_ROTATE_LEFT'),
        ('camera_right', 'CMD_CM_CAMERA_ROTATE_RIGHT'))),
-     ('voicechat', (('pushToTalk', 'CMD_VOICECHAT_MUTE'),)),
+     ('voicechat', (('pushToTalk', 'CMD_VOICECHAT_MUTE'), ('voicechat_enable', 'CMD_VOICECHAT_ENABLE'))),
      ('logitech_keyboard', (('switch_view', 'CMD_LOGITECH_SWITCH_VIEW'),)),
      ('minimap', (('sizeUp', 'CMD_MINIMAP_SIZE_UP'), ('sizeDown', 'CMD_MINIMAP_SIZE_DOWN'), ('visible', 'CMD_MINIMAP_VISIBLE'))))
+    IMPORTANT_BINDS = ('forward', 'backward', 'left', 'right', 'fire', 'item01', 'item02', 'item03', 'item04', 'item05', 'item06', 'item07', 'item08')
 
     def __init__(self, storage):
         settings = [('keysLayout', ReadOnlySetting(lambda : self._getLayout()))]
@@ -1743,6 +1819,9 @@ class KeyboardSettings(SettingsContainer):
                 settings.append((setting['key'], KeyboardSetting(setting['cmd'], storage)))
 
         super(KeyboardSettings, self).__init__(tuple(settings))
+
+    def fini(self):
+        super(KeyboardSettings, self).fini()
 
     @classmethod
     def _getLayout(cls, isFull = False):
@@ -1759,6 +1838,10 @@ class KeyboardSettings(SettingsContainer):
              'values': [ cls.__mapValues(*x) for x in groupValues ]})
 
         return layout
+
+    @classmethod
+    def getKeyboardImportantBinds(cls):
+        return cls.IMPORTANT_BINDS
 
     def apply(self, values, names = None):
         super(KeyboardSettings, self).apply(values, names)
@@ -1815,9 +1898,39 @@ class FPSPerfomancerSetting(StorageDumpSetting):
             LOG_CURRENT_EXCEPTION()
 
 
+class DynamicSoundPresetSetting(AccountDumpSetting):
+
+    def __init__(self, settingName, key, subKey = None):
+        super(DynamicSoundPresetSetting, self).__init__(settingName, key, subKey)
+        self.__maxSupportedValue = 1
+
+    def apply(self, value, applyUnchanged = False):
+        return super(DynamicSoundPresetSetting, self).apply(value, applyUnchanged)
+
+    def setSystemValue(self, value):
+        if value == 0:
+            g_soundsCtrl.system.enableDynamicPreset()
+        elif value == 1:
+            g_soundsCtrl.system.disableDynamicPreset()
+        else:
+            LOG_ERROR('Unsupported DynamicRange value: %s' % value)
+
+    def _set(self, value):
+        if value <= self.__maxSupportedValue:
+            super(DynamicSoundPresetSetting, self)._set(value)
+            self.setSystemValue(value)
+
+    def _save(self, value):
+        if value <= self.__maxSupportedValue:
+            super(DynamicSoundPresetSetting, self)._save(value)
+
+    def _getOptions(self):
+        settingsKey = '#settings:sound/dynamicRange/%s'
+        return [ settingsKey % sName for sName in ('broad', 'narrow') ]
+
+
 class AltVoicesSetting(StorageDumpSetting):
-    if FMOD.enabled:
-        ALT_VOICES_PREVIEW = itertools.cycle(('sound_mode_preview01', 'sound_mode_preview02', 'sound_mode_preview03'))
+    ALT_VOICES_PREVIEW = itertools.cycle(('wwsound_mode_preview01', 'wwsound_mode_preview02', 'wwsound_mode_preview03'))
     DEFAULT_IDX = 0
     PREVIEW_SOUNDS_COUNT = 3
 
@@ -1833,23 +1946,42 @@ class AltVoicesSetting(StorageDumpSetting):
         self._handlers = {self.SOUND_MODE_TYPE.UNKNOWN: lambda *args: False,
          self.SOUND_MODE_TYPE.REGULAR: self.__applyRegularMode,
          self.SOUND_MODE_TYPE.NATIONAL: self.__applyNationalMode}
+        self.__previewNations = []
         return
 
     @sf_lobby
     def app(self):
         return None
 
+    def fini(self):
+        super(AltVoicesSetting, self).fini()
+        self._handlers.clear()
+
     def playPreviewSound(self, soundMgr = None):
         if self.isSoundModeValid():
-            self.__clearPreviewSound()
+            self.clearPreviewSound()
             sndMgr = soundMgr or self.app.soundManager
             sndPath = sndMgr.sounds.getEffectSound(next(self.ALT_VOICES_PREVIEW))
             if SoundGroups.g_instance.soundModes.currentNationalPreset[1]:
                 g = functions.rnd_choice(*nations.AVAILABLE_NAMES)
-                SoundGroups.g_instance.soundModes.setCurrentNation(next(g))
-            SoundGroups.g_instance.playSound2D(sndPath)
+                self.__previewNations = [next(g), next(g), next(g)]
+                self.__previewSound = SoundGroups.g_instance.getSound2D(sndPath)
+                if self.__previewSound is not None:
+                    self.__previewSound.setCallback(self.playPreview)
+                    self.playPreview(self.__previewSound)
+                return True
+            self.__previewSound = SoundGroups.g_instance.getSound2D(sndPath)
+            if self.__previewSound is not None:
+                self.__previewSound.play()
             return True
-        return False
+        else:
+            return False
+
+    def playPreview(self, sound):
+        if len(self.__previewNations) and self.__previewSound == sound:
+            nation = self.__previewNations.pop()
+            SoundGroups.g_instance.soundModes.setCurrentNation(nation)
+            sound.play()
 
     def isOptionEnabled(self):
         return len(self.__getSoundModesList()) > 1
@@ -1866,12 +1998,12 @@ class AltVoicesSetting(StorageDumpSetting):
             value = int(value)
         super(AltVoicesSetting, self).preview(value)
         self.__lastPreviewedValue = value
-        self.__clearPreviewSound()
+        self.clearPreviewSound()
 
     def revert(self):
         super(AltVoicesSetting, self).revert()
         self.__lastPreviewedValue = self._get()
-        self.__clearPreviewSound()
+        self.clearPreviewSound()
 
     def _getOptions(self):
         return [ sm.description for sm in self.__getSoundModesList() ]
@@ -1937,10 +2069,11 @@ class AltVoicesSetting(StorageDumpSetting):
         result.extend(soundModes.nationalPresets.values())
         return result
 
-    def __clearPreviewSound(self):
+    def clearPreviewSound(self):
         if self.__previewSound is not None:
             self.__previewSound.stop()
             self.__previewSound = None
+        SoundGroups.g_instance.soundModes.setCurrentNation(SoundGroups.g_instance.soundModes.DEFAULT_NATION)
         return
 
 
@@ -1991,10 +2124,6 @@ class InterfaceScaleSetting(UserPrefsFloatSetting):
         connectionManager.onDisconnected += self.onDisconnected
         connectionManager.onConnected += self.onConnected
 
-    @sf_lobby
-    def app(self):
-        return None
-
     def get(self):
         self.__checkAndCorrectScaleValue(self.__interfaceScale)
         return self.__interfaceScale
@@ -2005,13 +2134,9 @@ class InterfaceScaleSetting(UserPrefsFloatSetting):
     def setSystemValue(self, value):
         self.__interfaceScale = value
         scale = g_settingsCore.interfaceScale.getScaleByIndex(value)
-        app = self.app
-        if app is not None:
-            params = list(GUI.screenResolution()[:2])
-            params.append(scale)
-            app.updateStage(*params)
+        width, height = GUI.screenResolution()[:2]
+        event_dispatcher.changeAppResolution(width, height, scale)
         g_monitorSettings.setGlyphCache(scale)
-        return
 
     def onConnected(self):
         self.setSystemValue(super(InterfaceScaleSetting, self).get())

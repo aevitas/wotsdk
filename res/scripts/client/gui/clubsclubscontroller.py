@@ -362,6 +362,7 @@ class ClubsController(subscriptions.ClubsListeners):
             clubsMgr.onClientClubsNotification += self.__onClientClubsNotification
             clubsMgr.onClientClubsUnitInfoChanged += self.__onClientClubsUnitInfoChanged
         g_playerEvents.onCenterIsLongDisconnected += self.__onCenterIsLongDisconnected
+        g_playerEvents.onIGRTypeChanged += self.__onIGRTypeChanged
         g_clientUpdateManager.addCallbacks({'cache.relatedToClubs': self.__onSpaAttrChanged,
          'cache.eSportSeasonState': self.__onSeasonStateChanged})
         self._accountProfile.resync(firstInit=True, callback=lambda : self._seasonsCache.start())
@@ -375,6 +376,7 @@ class ClubsController(subscriptions.ClubsListeners):
             clearInvitesIDs()
         g_clientUpdateManager.removeObjectCallbacks(self)
         g_playerEvents.onCenterIsLongDisconnected -= self.__onCenterIsLongDisconnected
+        g_playerEvents.onIGRTypeChanged -= self.__onIGRTypeChanged
         clubsMgr = getClientClubsMgr()
         if clubsMgr is not None:
             clubsMgr.onClientClubsNotification -= self.__onClientClubsNotification
@@ -534,6 +536,9 @@ class ClubsController(subscriptions.ClubsListeners):
         self._accountProfile.resync()
         if seasonState.isFinished():
             self._seasonsCache.updateCompletedSeasons(force=True)
+
+    def __onIGRTypeChanged(self, *args):
+        self.notify('onIGRTypeChanged')
 
     def __onClientClubsUnitInfoChanged(self, clubDbID, unit):
         if clubDbID in self.__subscriptions:

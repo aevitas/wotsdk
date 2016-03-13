@@ -1158,7 +1158,7 @@ class ClanCardItem(IClanFortInfo):
     def __setAttacksAndDefenses(self):
         clanID = self.itemData.clanDBID
         currentUserTime = time_utils.getCurrentLocalServerTimestamp()
-        self.__upcomingAttacks = self.__fort.getAttacks(clanID, lambda item: item.isPlanned())
+        self.__upcomingAttacks = self.__fort.getAttacks(clanID, lambda item: not item.isEnded())
         self.__attacksInCooldown = self.__fort.getAttacks(clanID, lambda item: currentUserTime < item.getStartTime() + fortified_regions.g_cache.attackCooldownTime and item.isEnded())
         self.__defencesInCooldown = self.__fort.getDefences(clanID, lambda item: currentUserTime > item.getStartTime() and item.isEnded())
 

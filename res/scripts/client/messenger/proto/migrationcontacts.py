@@ -1,13 +1,11 @@
 # Embedded file name: scripts/client/messenger/proto/migration/contacts.py
 from messenger.m_constants import CLIENT_ERROR_ID, CLIENT_ACTION_ID
 from messenger.proto.events import g_messengerEvents
+from messenger.proto.migration.proxy import MigrationProxy
 from messenger.proto.shared_errors import ClientActionError
 
-class IContactsManagerProxy(object):
-    __slots__ = []
-
-    def clear(self):
-        pass
+class ContactsManagerProxy(MigrationProxy):
+    __slots__ = ()
 
     def isGroupSupported(self):
         return False
@@ -71,40 +69,31 @@ def _showClientActionError(actionID, errorID = CLIENT_ERROR_ID.NOT_SUPPORTED):
     g_messengerEvents.onErrorReceived(ClientActionError(actionID, errorID))
 
 
-class BWContactsManagerProxy(IContactsManagerProxy):
-    __slots__ = ('__bwProto',)
-
-    def __init__(self, bwProto):
-        super(BWContactsManagerProxy, self).__init__()
-        self.__bwProto = bwProto
-
-    def clear(self):
-        self.__bwProto = None
-        super(BWContactsManagerProxy, self).clear()
-        return
+class BWContactsManagerProxy(ContactsManagerProxy):
+    __slots__ = ()
 
     def addFriend(self, dbID, name, group = None):
-        self.__bwProto.users.addFriend(dbID, name)
+        self._proto.users.addFriend(dbID, name)
         return True
 
     def removeFriend(self, dbID):
-        self.__bwProto.users.removeFriend(dbID)
+        self._proto.users.removeFriend(dbID)
         return True
 
     def addIgnored(self, dbID, name):
-        self.__bwProto.users.addIgnored(dbID, name)
+        self._proto.users.addIgnored(dbID, name)
         return True
 
     def removeIgnored(self, dbID):
-        self.__bwProto.users.removeIgnored(dbID)
+        self._proto.users.removeIgnored(dbID)
         return True
 
     def setMuted(self, dbID, name):
-        self.__bwProto.users.setMuted(dbID, name)
+        self._proto.users.setMuted(dbID, name)
         return True
 
     def unsetMuted(self, dbID):
-        self.__bwProto.users.unsetMuted(dbID)
+        self._proto.users.unsetMuted(dbID)
         return True
 
     def addGroup(self, name):
@@ -136,7 +125,7 @@ class BWContactsManagerProxy(IContactsManagerProxy):
         return False
 
     def createPrivateChannel(self, uid, name):
-        self.__bwProto.users.createPrivateChannel(uid, name)
+        self._proto.users.createPrivateChannel(uid, name)
         return True
 
     def setNote(self, dbID, note):
@@ -148,19 +137,8 @@ class BWContactsManagerProxy(IContactsManagerProxy):
         return False
 
 
-class XMPPContactsManagerProxy(IContactsManagerProxy):
-    __slots__ = ('__bwProto', '__xmppProto')
-
-    def __init__(self, bwProto, xmppProto):
-        super(XMPPContactsManagerProxy, self).__init__()
-        self.__bwProto = bwProto
-        self.__xmppProto = xmppProto
-
-    def clear(self):
-        self.__bwProto = None
-        self.__xmppProto = None
-        super(XMPPContactsManagerProxy, self).clear()
-        return
+class XMPPContactsManagerProxy(ContactsManagerProxy):
+    __slots__ = ()
 
     def isGroupSupported(self):
         return True
@@ -172,95 +150,95 @@ class XMPPContactsManagerProxy(IContactsManagerProxy):
         return True
 
     def addFriend(self, dbID, name, group = None):
-        result, error = self.__xmppProto.contacts.addFriend(dbID, name, group)
+        result, error = self._proto.contacts.addFriend(dbID, name, group)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def approveFriendship(self, dbID):
-        result, error = self.__xmppProto.contacts.approveFriendship(dbID)
+        result, error = self._proto.contacts.approveFriendship(dbID)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def removeFriend(self, dbID):
-        result, error = self.__xmppProto.contacts.removeFriend(dbID)
+        result, error = self._proto.contacts.removeFriend(dbID)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def addIgnored(self, dbID, name):
-        result, error = self.__xmppProto.contacts.addIgnored(dbID, name)
+        result, error = self._proto.contacts.addIgnored(dbID, name)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def removeIgnored(self, dbID):
-        result, error = self.__xmppProto.contacts.removeIgnored(dbID)
+        result, error = self._proto.contacts.removeIgnored(dbID)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def setMuted(self, dbID, name):
-        result, error = self.__xmppProto.contacts.setMuted(dbID, name)
+        result, error = self._proto.contacts.setMuted(dbID, name)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def unsetMuted(self, dbID):
-        result, error = self.__xmppProto.contacts.unsetMuted(dbID)
+        result, error = self._proto.contacts.unsetMuted(dbID)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def addGroup(self, name):
-        result, error = self.__xmppProto.contacts.addGroup(name)
+        result, error = self._proto.contacts.addGroup(name)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def renameGroup(self, oldName, newName):
-        result, error = self.__xmppProto.contacts.renameGroup(oldName, newName)
+        result, error = self._proto.contacts.renameGroup(oldName, newName)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def removeGroup(self, name, isForced = False):
-        result, error = self.__xmppProto.contacts.removeGroup(name, isForced)
+        result, error = self._proto.contacts.removeGroup(name, isForced)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def moveFriendToGroup(self, dbID, add, exclude = None):
-        result, error = self.__xmppProto.contacts.moveFriendToGroup(dbID, add, exclude)
+        result, error = self._proto.contacts.moveFriendToGroup(dbID, add, exclude)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def requestFriendship(self, dbID):
-        result, error = self.__xmppProto.contacts.requestFriendship(dbID)
+        result, error = self._proto.contacts.requestFriendship(dbID)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def cancelFriendship(self, dbID):
-        result, error = self.__xmppProto.contacts.cancelFriendship(dbID)
+        result, error = self._proto.contacts.cancelFriendship(dbID)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def createPrivateChannel(self, dbID, name):
-        result, error = self.__xmppProto.messages.startChatSession(dbID, name)
+        result, error = self._proto.messages.startChatSession(dbID, name)
         return result
 
     def setNote(self, dbID, note):
-        result, error = self.__xmppProto.contacts.setNote(dbID, note)
+        result, error = self._proto.contacts.setNote(dbID, note)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
 
     def removeNote(self, dbID):
-        result, error = self.__xmppProto.contacts.removeNote(dbID)
+        result, error = self._proto.contacts.removeNote(dbID)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result

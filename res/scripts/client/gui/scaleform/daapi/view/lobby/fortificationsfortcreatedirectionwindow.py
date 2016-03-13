@@ -12,6 +12,7 @@ from gui.shared.ClanCache import g_clanCache
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.events import FortEvent
 from gui.shared.fortifications.context import DirectionCtx
+from gui.shared.utils.functions import makeTooltip
 from helpers import i18n
 from shared_utils import findFirst
 from gui import makeHtmlString, DialogsInterface, SystemMessages
@@ -94,7 +95,8 @@ class FortCreateDirectionWindow(FortCreateDirectionWindowMeta, FortViewHelper):
             playersLabel = makeHtmlString('html_templates:lobby/fortifications/playersCount', template, {'count': requiredPlayersCount})
             description = i18n.makeString(FORTIFICATIONS.FORTDIRECTIONSWINDOW_DESCR_REQUIREMENTS, count=playersLabel)
         self.as_setDescriptionS(description)
-        self.as_setupButtonS(canOpenDirections, not isAllDirctnsOpened, ttHeader, ttDescr)
+        tooltip = makeTooltip(ttHeader, ttDescr)
+        self.as_setupButtonS(canOpenDirections, not isAllDirctnsOpened, tooltip)
 
     def onWindowClose(self):
         self.destroy()

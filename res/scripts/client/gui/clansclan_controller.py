@@ -3,7 +3,6 @@ from collections import defaultdict
 import BigWorld
 from client_request_lib.exceptions import ResponseCodes
 from PlayerEvents import g_playerEvents
-from debug_utils import LOG_DEBUG
 from gui.clans import contexts
 from gui.clans.clan_account_profile import MyClanAccountProfile
 from gui.clans.settings import CLAN_INVITE_STATES, CLAN_REQUESTED_DATA_TYPE
@@ -351,12 +350,9 @@ class _ClanDossier(object):
                 self.__changeWebInfo(SYNC_KEYS.INVITES, count - 1, 'onClanInvitesCountReceived')
 
     def processClanMembersListChange(self, memberIDs):
-        from debug_utils import LOG_DEBUG
-        LOG_DEBUG('IHAR processClanMembersListChange: memberIDs', memberIDs)
         cachedValue = self.__webCache.get(CLAN_REQUESTED_DATA_TYPE.CLAN_INFO, None)
         if cachedValue is not None:
             needResync = cachedValue.getCachedValue().getMembersCount() != len(memberIDs)
-            LOG_DEBUG('IHAR Will clear cache: current member count-', cachedValue.getCachedValue().getMembersCount())
         else:
             needResync = True
         if needResync:
@@ -565,7 +561,7 @@ class _ClanController(ClansListeners):
         memberIDs = getattr(BigWorld.player(), 'clanMembers', {}).keys()
         if self.__profile is not None:
             self.__profile.processClanMembersListChange(memberIDs)
-        self.notify('onClanMembersListChanged', memberIDs)
+        self.notify('onMembersListChanged', memberIDs)
         return
 
     def _onClanCacheRead(self):

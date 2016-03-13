@@ -69,6 +69,9 @@ class View(AbstractViewMeta):
     def uniqueName(self):
         return self.__uniqueName
 
+    def getUniqueName(self):
+        return self.uniqueName or self.alias
+
     def setUniqueName(self, name):
         if name is not None:
             self.__uniqueName = name

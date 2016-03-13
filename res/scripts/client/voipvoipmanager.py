@@ -238,10 +238,10 @@ class VOIPManager(VOIPHandler):
         self.setMicrophoneVolume(int(round(SoundGroups.g_instance.getVolume(KEY_VOIP_MIC) * 100)))
 
     def __muffleMasterVolume(self):
-        SoundGroups.g_instance.muffleFMODVolume()
+        SoundGroups.g_instance.muffleVolume()
 
     def __restoreMasterVolume(self):
-        SoundGroups.g_instance.restoreFMODVolume()
+        SoundGroups.g_instance.restoreVolume()
 
     def setVoiceActivation(self, enabled):
         LOG_VOIP_INT('VOIPManager.SetVoiceActivation: %s' % str(enabled))

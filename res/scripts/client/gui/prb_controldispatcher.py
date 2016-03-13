@@ -1,12 +1,11 @@
 # Embedded file name: scripts/client/gui/prb_control/dispatcher.py
 import types
-import weakref
 import time
 from functools import partial
 import BigWorld
 from CurrentVehicle import g_currentVehicle
 from adisp import async, process
-from constants import IGR_TYPE, QUEUE_TYPE
+from constants import IGR_TYPE
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from FortifiedRegionBase import FORT_ERROR
 from gui import SystemMessages, DialogsInterface, GUI_SETTINGS, game_control
@@ -32,8 +31,10 @@ from PlayerEvents import g_playerEvents
 from gui.server_events import g_eventsCache
 from gui.shared import actions
 from gui.shared.fortifications import getClientFortMgr
+from gui.shared.utils.listeners_collection import ListenersCollection
+from UnitBase import UNIT_ERROR
 
-class _PrebattleDispatcher(object):
+class _PrebattleDispatcher(ListenersCollection):
 
     def __init__(self):
         super(_PrebattleDispatcher, self).__init__()
@@ -41,7 +42,7 @@ class _PrebattleDispatcher(object):
         self.__collection = FunctionalCollection()
         self.__factories = ControlFactoryDecorator()
         self.__nextPrbFunctional = None
-        self._globalListeners = set()
+        self._setListenerClass(IGlobalListener)
         return
 
     def __del__(self):
@@ -179,7 +180,17 @@ class _PrebattleDispatcher(object):
     def unlock(self, unlockCtx, callback = None):
         state = self.getFunctionalState()
         result = True
-        if not state.isIntroMode or not unlockCtx.hasFlags(FUNCTIONAL_FLAG.SWITCH):
+        if not state.isIntroMode:
+            canDoLeave = True
+        elif unlockCtx.hasFlags(FUNCTIONAL_FLAG.SWITCH):
+            if state.ctrlTypeID == unlockCtx.getCtrlType() and state.entityTypeID != unlockCtx.getEntityType():
+                canDoLeave = True
+                unlockCtx.removeFlags(FUNCTIONAL_FLAG.SWITCH)
+            else:
+                canDoLeave = False
+        else:
+            canDoLeave = True
+        if canDoLeave:
             factory = self.__factories.get(state.ctrlTypeID)
             result = False
             if factory:
@@ -259,8 +270,7 @@ class _PrebattleDispatcher(object):
     def canPlayerDoAction(self):
         canDo, restriction = self.__collection.canPlayerDoAction(False)
         if canDo:
-            isEventBattles = self.getFunctionalState().isQueueSelected(QUEUE_TYPE.EVENT_BATTLES)
-            if not g_currentVehicle.isReadyToFight() and not isEventBattles:
+            if not g_currentVehicle.isReadyToFight():
                 if not g_currentVehicle.isPresent():
                     canDo = False
                     restriction = PREBATTLE_RESTRICTION.VEHICLE_NOT_PRESENT
@@ -329,25 +339,6 @@ class _PrebattleDispatcher(object):
         if isConfirmed:
             yield self.leave(ctx)
         return
-
-    def addGlobalListener(self, listener):
-        if isinstance(listener, IGlobalListener):
-            listenerRef = weakref.ref(listener)
-            if listenerRef not in self._globalListeners:
-                self._globalListeners.add(listenerRef)
-                self.__collection.addListener(listener)
-            else:
-                LOG_ERROR('Listener already added', listener)
-        else:
-            LOG_ERROR('Object is not extend IPrbListener', listener)
-
-    def removeGlobalListener(self, listener):
-        listenerRef = weakref.ref(listener)
-        if listenerRef in self._globalListeners:
-            self._globalListeners.remove(listenerRef)
-        else:
-            LOG_ERROR('Listener not found', listener)
-        self.__collection.removeListener(listener)
 
     def getGUIPermissions(self):
         return self.__collection.getGUIPermissions()
@@ -510,6 +501,11 @@ class _PrebattleDispatcher(object):
             unitFunctional.setLastError(errorCode)
             if errorCode in RETURN_INTRO_UNIT_MGR_ERRORS and unitFunctional.canSwitchToIntro():
                 self.__requestCtx.addFlags(FUNCTIONAL_FLAG.SWITCH)
+            if errorCode == UNIT_ERROR.CANT_PICK_LEADER:
+                self.__requestCtx.removeFlags(FUNCTIONAL_FLAG.SWITCH)
+            elif errorCode == UNIT_ERROR.REMOVED_PLAYER:
+                if self.__requestCtx.getCtrlType() == _CTRL_TYPE.UNIT and unitFunctional.getEntityType() != self.__requestCtx.getEntityType():
+                    self.__requestCtx.removeFlags(FUNCTIONAL_FLAG.SWITCH)
         else:
             LOG_ERROR('Unit functional is not found')
         if errorCode not in IGNORED_UNIT_MGR_ERRORS:
@@ -623,7 +619,7 @@ class _PrebattleDispatcher(object):
             self.__factories.clear()
             self.__factories = None
         g_eventDispatcher.removeSpecBattlesFromCarousel()
-        self._globalListeners.clear()
+        self.clear()
         return
 
     def __changePrbFunctional(self, flags = FUNCTIONAL_FLAG.UNDEFINED, prbType = 0, stop = True):
@@ -663,9 +659,7 @@ class _PrebattleDispatcher(object):
         items = []
         for created in self.__factories.createFunctional(ctx):
             if ctx.hasFlags(FUNCTIONAL_FLAG.SET_GLOBAL_LISTENERS):
-                for listener in self._globalListeners:
-                    created.addListener(listener())
-
+                created.addMutualListeners(self)
             items.append(created)
 
         for item in items:

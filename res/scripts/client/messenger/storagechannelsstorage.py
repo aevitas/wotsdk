@@ -68,7 +68,7 @@ class ChannelsStorage(SimpleCachedStorage):
         for channel in self.__channels:
             state = channel.getPersistentState()
             if state:
-                data.append((channel.getProtoType(), channel.getID(), state))
+                data.append((channel.getProtoType(), str(channel.getID()), state))
 
         return data[-_CHANNELS_MAX_COUNT:]
 
@@ -79,7 +79,7 @@ class ChannelsStorage(SimpleCachedStorage):
 
             def stateGenerator(requiredType):
                 for item in data:
-                    if type(item) is not types.TupleType:
+                    if not isinstance(item, types.TupleType):
                         continue
                     if len(item) != 3:
                         continue

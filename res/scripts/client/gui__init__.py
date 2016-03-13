@@ -2,7 +2,7 @@
 import nations
 from collections import defaultdict
 from constants import IS_DEVELOPMENT
-from gui.GuiSettings import GuiSettings
+from gui.GuiSettings import GuiSettings as _GuiSettings
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 from helpers.html.templates import XMLCollection
 g_guiResetters = set()
@@ -10,7 +10,7 @@ g_repeatKeyHandlers = set()
 g_keyEventHandlers = set()
 g_mouseEventHandlers = set()
 g_tankActiveCamouflage = {'historical': {}}
-GUI_SETTINGS = GuiSettings()
+GUI_SETTINGS = _GuiSettings()
 DEPTH_OF_Disconnect = 0.0
 DEPTH_OF_Postmortem = 0.01
 DEPTH_OF_BotsMenu = 0.05

@@ -11,4 +11,4 @@ class MakeTankUnavailableInCarousel(aop.Pointcut):
 class VehicleTooltipStatus(aop.Pointcut):
 
     def __init__(self, config):
-        aop.Pointcut.__init__(self, 'gui.shared.tooltips.vehicle', 'VehicleStatusField', '_VehicleStatusField__getVehicleStatus', aspects=(aspects.VehicleTooltipStatus(config),))
+        aop.Pointcut.__init__(self, 'gui.shared.tooltips.vehicle', 'StatusBlockConstructor', '_StatusBlockConstructor__getVehicleStatus', aspects=(aspects.VehicleTooltipStatus(config),))

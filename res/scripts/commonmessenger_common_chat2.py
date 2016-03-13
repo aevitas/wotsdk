@@ -1,6 +1,7 @@
 # Embedded file name: scripts/common/messenger_common_chat2.py
 from collections import namedtuple
 from constants import IS_CLIENT, IS_CHINA
+from string import Template
 
 def _makeID(start = None, range = None):
     global _g_id
@@ -164,7 +165,7 @@ class MESSENGER_ACTION_IDS():
             return None
 
 
-_MESSENGER_ACTION_NAMES = {_id:_name for _name, _id in MESSENGER_ACTION_IDS.__dict__.iteritems() if type(_id) is int and not _name.startswith('_')}
+_MESSENGER_ACTION_NAMES = {_id:_name for _name, _id in MESSENGER_ACTION_IDS.__dict__.iteritems() if isinstance(_id, int) and not _name.startswith('_')}
 _MESSENGER_ERROR_NAMES = {_id:_name for _name, _id in MESSENGER_ERRORS.__dict__.iteritems() if not _name.startswith('_')}
 AdminChatCommand = namedtuple('AdminChatCommand', ('id', 'name', 'timeout'))
 ADMIN_CHAT_COMMANDS = (AdminChatCommand(id=_makeID(start=MESSENGER_ACTION_IDS._ADMIN_COMMAND_START_ID), name='USERBAN', timeout=30.0), AdminChatCommand(id=_makeID(), name='USERUNBAN', timeout=30.0))
@@ -195,3 +196,26 @@ BATTLE_CHAT_COMMANDS = (BattleChatCommand(id=_makeID(start=MESSENGER_ACTION_IDS.
  BattleChatCommand(id=_makeID(), name='RELOADING_UNAVAILABLE', cooldownPeriod=5.0 + _COOLDOWN_OFFSET, msgText='reloading_unavailable', vehMarker=None, soundNotification=None))
 BATTLE_CHAT_COMMANDS_BY_NAMES = {v.name:v for v in BATTLE_CHAT_COMMANDS}
 raise len(BATTLE_CHAT_COMMANDS) <= MESSENGER_ACTION_IDS._BATTLE_ACTION_END_ID - MESSENGER_ACTION_IDS._BATTLE_CHAT_COMMAND_START_ID or AssertionError
+
+class MUC_SERVICE_TYPE(object):
+    STANDARD = 1
+    USER = 2
+    CLAN = 3
+
+
+MUC_SERVICE_TYPES = frozenset((MUC_SERVICE_TYPE.CLAN, MUC_SERVICE_TYPE.STANDARD, MUC_SERVICE_TYPE.USER))
+
+def resolveMucRoomsOfService(service):
+    t = Template(service['format'])
+    return t.substitute(service)
+
+
+def canResolveMucRoomsOfService(service):
+    canResolve = False
+    try:
+        Template(service['format']).substitute(service)
+        canResolve = True
+    except:
+        pass
+    finally:
+        return canResolve

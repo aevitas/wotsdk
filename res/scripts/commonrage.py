@@ -3,14 +3,14 @@ import ResMgr
 from items import vehicles
 _CONFIG_FILE = 'scripts/item_defs/rage.xml'
 
-class DamageSettings:
+class DamageSettings(object):
 
     def __init__(self, section):
         self.damageFactor = section['damageFactor'].asFloat
         self.pointsForKill = section['ragePointsForKill'].asFloat
 
 
-class RageTeamOrSoloSettings:
+class RageTeamOrSoloSettings(object):
 
     def __init__(self, section):
         self.vehicleDamageSettings = DamageSettings(section['vehicle'])
@@ -24,7 +24,7 @@ class RageTeamOrSoloSettings:
 RageTeamSettings = RageTeamOrSoloSettings
 RageSoloSettings = RageTeamOrSoloSettings
 
-class RageSettings:
+class RageSettings(object):
 
     def __init__(self, section):
         self.pointsLimit = section['ragePointsLimit'].asFloat
@@ -50,7 +50,8 @@ class RageSettings:
     def __getattr__(self, item):
         if item in ('pointsForFlagPickup', 'pointsForFlagCapture', 'pointsForOneResource', 'deathPenalty'):
             return lambda isSolo: (getattr(self.soloSettings, item) if isSolo else getattr(self.teamSettings, item))
-        raise Exception, 'Wrong item to access from RageSettings:%s' % item
+        else:
+            return super(RageSettings, self).__getattr__(item)
 
 
 g_cache = None

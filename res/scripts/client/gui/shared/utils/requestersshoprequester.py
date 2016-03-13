@@ -159,7 +159,8 @@ class ShopCommonStats(object):
                                         'credits' : cost in credits,
                                         'gold' : cost in gold,
                                         'baseRoleLoss' : float in [0, 1], fraction of role to drop,
-                                        'classChangeRoleLoss' : float in [0, 1], fraction of role to drop additionally if
+                                        'classChangeRoleLoss' : float in [0, 1], fraction of role to drop
+                                                additionally if
                                                 classes of self.vehicleTypeID and newVehicleTypeID are different,
                                         'isPremium' : tankman becomes premium,
                                         }.
@@ -347,7 +348,8 @@ class ShopRequester(AbstractSyncDataRequester, ShopCommonStats):
                                         'gold' : default cost in gold,
                                         'defGold' : default cost in gold,
                                         'baseRoleLoss' : float in [0, 1], fraction of role to drop,
-                                        'classChangeRoleLoss' : float in [0, 1], fraction of role to drop additionally if
+                                        'classChangeRoleLoss' : float in [0, 1], fraction of role to drop
+                                        additionally if
                                                 classes of self.vehicleTypeID and newVehicleTypeID are different,
                                         'isPremium' : tankman becomes premium,
                                         }.
@@ -595,7 +597,8 @@ class DefaultShopRequester(ShopCommonStats):
                                         'credits' : cost in credits,
                                         'gold' : cost in gold,
                                         'baseRoleLoss' : float in [0, 1], fraction of role to drop,
-                                        'classChangeRoleLoss' : float in [0, 1], fraction of role to drop additionally if
+                                        'classChangeRoleLoss' : float in [0, 1], fraction of role to drop
+                                        additionally if
                                                 classes of self.vehicleTypeID and newVehicleTypeID are different,
                                         'isPremium' : tankman becomes premium,
                                         }.

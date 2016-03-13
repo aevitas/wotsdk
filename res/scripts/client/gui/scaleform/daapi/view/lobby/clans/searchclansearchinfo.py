@@ -105,8 +105,8 @@ class ClanSearchInfo(ClanSearchInfoMeta, ClanListener, ClanEmblemsHelper):
             sendRequestBtnEnabled = False
             sendRequestTooltip = CLANS.SEARCH_INFO_INVITEALREADYACHIEVED_TOOLTIP
         elif reason == CLIENT_CLAN_RESTRICTIONS.CLAN_APPLICATION_ALREADY_SENT:
-            requestSentVisible = True
-            sendRequestBtnVisible = False
+            sendRequestBtnEnabled = False
+            sendRequestTooltip = CLANS.SEARCH_INFO_REQUESTALREADYSENT_TOOLTIP
         elif reason == CLIENT_CLAN_RESTRICTIONS.CLAN_LEAVE_COOLDOWN:
             sendRequestBtnEnabled = False
             sendRequestTooltip = CLANS.SEARCH_INFO_COOLDOWN_TOOLTIP

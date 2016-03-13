@@ -9,6 +9,9 @@ class TutorialHangarQuestDetailsMeta(BaseDAAPIComponent):
     def showTip(self, id, type):
         self._printOverrideError('showTip')
 
+    def getSortedTableData(self, data):
+        self._printOverrideError('getSortedTableData')
+
     def as_updateQuestInfoS(self, data):
         if self._isDAAPIInited():
             return self.flashObject.as_updateQuestInfo(data)

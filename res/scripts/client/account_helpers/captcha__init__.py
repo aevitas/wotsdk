@@ -15,11 +15,11 @@ class _BASE_CAPTCHA_API(object):
         if key is None:
             key = self._SERVER_ERROR_CODES.get(defaultErrorCode)
         if key is None:
-            raise Exception, "It is impossible to determine error text for code = '%s', default code = '%s'" % (errorCode, defaultErrorCode)
+            raise Exception("It is impossible to determine error text for code = '%s', default code = '%s'" % (errorCode, defaultErrorCode))
         return i18n.makeString(key)
 
     def getImageSource(self, publicKey, *args):
-        raise NotImplemented, 'method getImageSource must be implement'
+        raise NotImplemented('method getImageSource must be implement')
 
 
 def _CAPTCHA_API_FACTORY():

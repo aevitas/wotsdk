@@ -217,7 +217,7 @@ class Aim(Flash):
         return
 
     def offsetChanged(self, offset1, offset2):
-        if type(offset1) is Math.Vector2 and type(offset2) is Math.Vector2:
+        if isinstance(offset1, Math.Vector2) and isinstance(offset2, Math.Vector2):
             return abs(offset1.x - offset2.x) > Aim.EPSILON or abs(offset1.y - offset2.y) > Aim.EPSILON
         return abs(offset1[0] - offset2[0]) > Aim.EPSILON or abs(offset1[1] - offset2[1]) > Aim.EPSILON
 

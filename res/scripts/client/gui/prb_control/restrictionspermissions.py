@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/prb_control/restrictions/permissions.py
 from UnitBase import UNIT_ROLE, UNIT_FLAGS
 import account_helpers
-from constants import PREBATTLE_ROLE, PREBATTLE_TEAM_STATE, QUEUE_TYPE, FALLOUT_BATTLE_TYPE
+from constants import PREBATTLE_ROLE, PREBATTLE_TEAM_STATE, QUEUE_TYPE
 from constants import PREBATTLE_ACCOUNT_STATE
 from gui.prb_control import prb_getters
 from gui.prb_control.items.prb_items import TeamStateInfo
@@ -278,12 +278,12 @@ class PreQueuePermissions(interfaces.IGUIPermissions):
 
 class FalloutQueuePermissions(PreQueuePermissions):
 
-    @prequeue_storage_getter(QUEUE_TYPE.EVENT_BATTLES)
+    @prequeue_storage_getter(QUEUE_TYPE.FALLOUT)
     def storage(self):
         return None
 
     def canCreateSquad(self):
         canDo = super(FalloutQueuePermissions, self).canCreateSquad()
         if canDo:
-            canDo = self.storage.getBattleType() != FALLOUT_BATTLE_TYPE.UNDEFINED
+            canDo = self.storage.getBattleType() in QUEUE_TYPE.FALLOUT
         return canDo

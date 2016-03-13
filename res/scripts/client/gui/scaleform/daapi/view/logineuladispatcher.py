@@ -28,7 +28,7 @@ class EULADispatcher(EventSystemEntity):
 
     def _populate(self):
         EventSystemEntity._populate(self)
-        if self.isShow == False:
+        if self.isShow is False:
             return
         isShowFullEULA = GUI_SETTINGS.eula.full
         if isShowFullEULA:

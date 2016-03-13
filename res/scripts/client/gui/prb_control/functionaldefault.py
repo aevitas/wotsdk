@@ -16,7 +16,7 @@ from gui.prb_control.restrictions.limits import DefaultLimits
 from gui.prb_control.restrictions.permissions import DefaultPrbPermissions
 from gui.prb_control.restrictions.permissions import IntroPrbPermissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE, PREBATTLE_ROSTER, REQUEST_TYPE, PREBATTLE_INIT_STEP
-from gui.shared.utils.ListenersCollection import ListenersCollection
+from gui.shared.utils.listeners_collection import ListenersCollection
 from prebattle_shared import decodeRoster
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 
@@ -81,7 +81,6 @@ class _PrbFunctional(ListenersCollection, interfaces.IPrbFunctional):
         self._flags = flags
 
     def fini(self, clientPrb = None, woEvents = False):
-        self._setListenerClass(None)
         self._requestHandlers.clear()
         self._deferredReset = False
         return FUNCTIONAL_FLAG.UNDEFINED
@@ -127,9 +126,7 @@ class IntroPrbFunctional(_PrbFunctional):
 
     def init(self, clientPrb = None, ctx = None):
         self._hasEntity = True
-        for listener in self._listeners:
-            listener.onIntroPrbFunctionalInited()
-
+        self._invokeListeners('onIntroPrbFunctionalInited')
         if self._listReq:
             self._listReq.start(self._onPrbListReceived)
         return FUNCTIONAL_FLAG.UNDEFINED
@@ -141,12 +138,11 @@ class IntroPrbFunctional(_PrbFunctional):
             self._listReq = None
         super(IntroPrbFunctional, self).fini(clientPrb, woEvents)
         try:
-            for listener in self._listeners:
-                listener.onIntroPrbFunctionalFinished()
-
+            self._invokeListeners('onIntroPrbFunctionalFinished')
         except:
             LOG_CURRENT_EXCEPTION()
 
+        self.clear()
         return FUNCTIONAL_FLAG.UNDEFINED
 
     def getEntityType(self):
@@ -193,7 +189,6 @@ class PrbInitFunctional(interfaces.IPrbFunctional):
         return FUNCTIONAL_FLAG.UNDEFINED
 
     def fini(self, clientPrb = None, woEvents = False):
-        self.__dispatcher = None
         if clientPrb is None:
             clientPrb = prb_getters.getClientPrebattle()
         if clientPrb is not None:
@@ -283,9 +278,7 @@ class PrbDispatcher(_PrbFunctional):
             clientPrb.onPlayerAdded += self.prb_onPlayerAdded
             clientPrb.onPlayerRemoved += self.prb_onPlayerRemoved
             clientPrb.onKickedFromQueue += self.prb_onKickedFromQueue
-            for listener in self._listeners:
-                listener.onPrbFunctionalInited()
-
+            self._invokeListeners('onPrbFunctionalInited')
         else:
             LOG_ERROR('ClientPrebattle is not defined')
         return FUNCTIONAL_FLAG.UNDEFINED
@@ -299,12 +292,11 @@ class PrbDispatcher(_PrbFunctional):
             self._limits = None
         if not woEvents:
             try:
-                for listener in self._listeners:
-                    listener.onPrbFunctionalFinished()
-
+                self._invokeListeners('onPrbFunctionalFinished')
             except:
                 LOG_CURRENT_EXCEPTION()
 
+        self.clear()
         if clientPrb is None:
             clientPrb = prb_getters.getClientPrebattle()
         if clientPrb is not None:
@@ -364,8 +356,7 @@ class PrbDispatcher(_PrbFunctional):
     def prb_onSettingUpdated(self, settingName):
         settingValue = self._settings[settingName]
         LOG_DEBUG('prb_onSettingUpdated', settingName, settingValue)
-        for listener in self._listeners:
-            listener.onSettingUpdated(self, settingName, settingValue)
+        self._invokeListeners('onSettingUpdated', self, settingName, settingValue)
 
     def prb_onTeamStatesReceived(self):
         team1State = self.getTeamState(team=1)
@@ -374,31 +365,26 @@ class PrbDispatcher(_PrbFunctional):
         if self._deferredReset and not self.getTeamState().isInQueue():
             self._deferredReset = False
             self.reset()
-        for listener in self._listeners:
-            listener.onTeamStatesReceived(self, team1State, team2State)
+        self._invokeListeners('onTeamStatesReceived', self, team1State, team2State)
 
     def prb_onPlayerStateChanged(self, pID, roster):
         accountInfo = self.getPlayerInfo(pID=pID)
         LOG_DEBUG('prb_onPlayerStateChanged', accountInfo)
-        for listener in self._listeners:
-            listener.onPlayerStateChanged(self, roster, accountInfo)
+        self._invokeListeners('onPlayerStateChanged', self, roster, accountInfo)
 
     def prb_onRosterReceived(self):
         LOG_DEBUG('prb_onRosterReceived')
         rosters = self.getRosters()
-        for listener in self._listeners:
-            listener.onRostersChanged(self, rosters, True)
-
+        self._invokeListeners('onRostersChanged', self, rosters, True)
         team = self.getPlayerTeam()
-        for listener in self._listeners:
-            listener.onPlayerTeamNumberChanged(self, team)
+        self._invokeListeners('onPlayerTeamNumberChanged', self, team)
 
     def prb_onPlayerRosterChanged(self, pID, prevRoster, roster, actorID):
         LOG_DEBUG('prb_onPlayerRosterChanged', pID, prevRoster, roster, actorID)
         rosters = self.getRosters(keys=[prevRoster, roster])
         actorInfo = self.getPlayerInfo(pID=actorID)
         playerInfo = self.getPlayerInfo(pID=pID)
-        for listener in self._listeners:
+        for listener in self.getListenersIterator():
             if actorInfo and playerInfo:
                 listener.onPlayerRosterChanged(self, actorInfo, playerInfo)
             listener.onRostersChanged(self, rosters, False)
@@ -407,14 +393,13 @@ class PrbDispatcher(_PrbFunctional):
             prevTeam, _ = decodeRoster(prevRoster)
             currentTeam, _ = decodeRoster(roster)
             if currentTeam is not prevTeam:
-                for listener in self._listeners:
-                    listener.onPlayerTeamNumberChanged(self, currentTeam)
+                self._invokeListeners('onPlayerTeamNumberChanged', self, currentTeam)
 
     def prb_onPlayerAdded(self, pID, roster):
         LOG_DEBUG('prb_onPlayerAdded', pID, roster)
         rosters = self.getRosters(keys=[roster])
         playerInfo = self.getPlayerInfo(pID=pID, rosterKey=roster)
-        for listener in self._listeners:
+        for listener in self.getListenersIterator():
             listener.onPlayerAdded(self, playerInfo)
             listener.onRostersChanged(self, rosters, False)
 
@@ -422,7 +407,7 @@ class PrbDispatcher(_PrbFunctional):
         LOG_DEBUG('prb_onPlayerRemoved', pID, roster, name)
         rosters = self.getRosters(keys=[roster])
         playerInfo = prb_items.PlayerPrbInfo(pID, name=name)
-        for listener in self._listeners:
+        for listener in self.getListenersIterator():
             listener.onPlayerRemoved(self, playerInfo)
             listener.onRostersChanged(self, rosters, False)
 

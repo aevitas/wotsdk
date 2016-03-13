@@ -1,9 +1,10 @@
 # Embedded file name: scripts/common/live_crc.py
 from types import *
-import zlib, cPickle
+import zlib
+import cPickle
 
 def _iterDict__skip(x, skip = set()):
-    a = x.items()
+    a = list(x.items())
     a.sort()
     for i in a:
         if i[0] not in skip and i[1] is not None:

@@ -352,10 +352,10 @@ class FortViewHelper(FortListener):
         nutIcon = ' ' + icons.nut()
         labelOne = text_styles.main(i18n.makeString(FORTIFICATIONS.BUILDINGS_BUILDINGTOOLTIP_STRENGTH))
         labelTwo = text_styles.main(i18n.makeString(FORTIFICATIONS.BUILDINGS_BUILDINGTOOLTIP_STORE))
-        defResCompensationValue = 0
         fstLine = labelOne + text_styles.neutral(self.__toFormattedStr(hpVal)) + ' / ' + text_styles.standard(self.__toFormattedStr(maxHpValue)) + nutIcon
         secLine = labelTwo + text_styles.neutral(self.__toFormattedStr(defResVal)) + ' / ' + text_styles.standard(self.__toFormattedStr(maxDefResValue)) + nutIcon
         toolTipData = fstLine + secLine
+        defResCompensationValue = defResVal - maxDefResValue
         if defResCompensationValue > 0:
             toolTipData += text_styles.standard(i18n.makeString(FORTIFICATIONS.BUILDINGS_BUILDINGTOOLTIP_COMPENSATION)) + text_styles.neutral(self.__toFormattedStr(defResCompensationValue)) + nutIcon
         return toolTipData

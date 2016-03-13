@@ -26,7 +26,7 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.dialogs.SystemMessageDialog import SystemMessageDialog
     from gui.Scaleform.daapi.view.lobby.eliteWindow.EliteWindow import EliteWindow
     from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardWindow
-    from gui.Scaleform.daapi.view.lobby.BattleQueue import BattleQueue
+    from gui.Scaleform.daapi.view.lobby.battle_queue import BattleQueue
     from gui.Scaleform.daapi.view.lobby.BrowserWindow import BrowserWindow
     from gui.Scaleform.daapi.view.lobby.components.CalendarComponent import CalendarComponent
     from gui.Scaleform.daapi.view.lobby.customization.VehicleCustomization import VehicleCustomization
@@ -40,7 +40,6 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.MinimapLobby import MinimapLobby
     from gui.Scaleform.daapi.view.lobby.ModuleInfoWindow import ModuleInfoWindow
     from gui.Scaleform.daapi.view.lobby.PersonalCase import PersonalCase
-    from gui.Scaleform.daapi.view.lobby.PremiumCongratulationWindow import PremiumCongratulationWindow
     from gui.Scaleform.daapi.view.lobby.PremiumWindow import PremiumWindow
     from gui.Scaleform.daapi.view.lobby.PromoPremiumIgrWindow import PromoPremiumIgrWindow
     from gui.Scaleform.daapi.view.lobby.recruitWindow.RecruitParamsComponent import RecruitParamsComponent
@@ -86,8 +85,7 @@ def getViewSettings():
      GroupedViewSettings(VIEW_ALIAS.GET_PREMIUM_POPOVER, GetPremiumPopover, 'getPremiumPopover.swf', ViewTypes.TOP_WINDOW, 'getPremiumPopover', VIEW_ALIAS.GET_PREMIUM_POPOVER, ScopeTemplates.WINDOW_VIEWED_MULTISCOPE),
      GroupedViewSettings(VIEW_ALIAS.LOBBY_MENU, LobbyMenu, 'lobbyMenu.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.LOBBY_SUB_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.MODULE_INFO_WINDOW, ModuleInfoWindow, 'moduleInfo.swf', ViewTypes.WINDOW, 'moduleInfoWindow', None, ScopeTemplates.DEFAULT_SCOPE),
-     GroupedViewSettings(VIEW_ALIAS.PERSONAL_CASE, PersonalCase, 'personalCase.swf', ViewTypes.WINDOW, 'personalCaseWindow', None, ScopeTemplates.DEFAULT_SCOPE),
-     GroupedViewSettings(VIEW_ALIAS.PREMIUM_CONGRATULATION_WINDOW, PremiumCongratulationWindow, 'premiumCongratulationWindow.swf', ViewTypes.WINDOW, '', None, ScopeTemplates.DEFAULT_SCOPE),
+     GroupedViewSettings(VIEW_ALIAS.PERSONAL_CASE, PersonalCase, 'personalCase.swf', ViewTypes.WINDOW, 'personalCaseWindow', None, ScopeTemplates.LOBBY_SUB_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.PREMIUM_WINDOW, PremiumWindow, 'premiumWindow.swf', ViewTypes.WINDOW, '', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.PROMO_PREMIUM_IGR_WINDOW, PromoPremiumIgrWindow, 'promoPremiumIgrWindow.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.QUESTS_RECRUIT_WINDOW, QuestsRecruitWindow, 'questRecruitWindow.swf', ViewTypes.WINDOW, 'questRecruitWindow', None, ScopeTemplates.DEFAULT_SCOPE),
@@ -131,7 +129,6 @@ class LobbyPackageBusinessHandler(PackageBusinessHandler):
          (VIEW_ALIAS.LOBBY_MENU, self.loadViewByCtxEvent),
          (VIEW_ALIAS.MODULE_INFO_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.PERSONAL_CASE, self.loadViewByCtxEvent),
-         (VIEW_ALIAS.PREMIUM_CONGRATULATION_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.PREMIUM_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.PROMO_PREMIUM_IGR_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.QUESTS_RECRUIT_WINDOW, self.loadViewByCtxEvent),

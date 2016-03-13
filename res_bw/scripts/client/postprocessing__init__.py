@@ -243,7 +243,7 @@ def defaultChain(optionIdx = -1):
     graphics setting registry and used.
     """
     if optionIdx == -1:
-        optionIdx = BigWorld.getGraphicsSetting('POST_PROCESSING')
+        optionIdx = BigWorld.getGraphicsSetting('POST_PROCESSING_QUALITY')
     RenderTargets.clearRenderTargets()
     if optionIdx == 0:
         chain(load('High_Graphics_Setting.ppchain'))

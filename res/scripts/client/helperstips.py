@@ -4,6 +4,7 @@ import sys
 from collections import defaultdict, namedtuple
 from constants import ARENA_GUI_TYPE
 import constants
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.battle_control import arena_info
 from gui.shared.utils.functions import rnd_choice_loop
 from helpers import i18n
@@ -18,7 +19,7 @@ TIPS_IMAGE_SOURCE = '../maps/icons/battleLoading/tips/%s.png'
 TIPS_GROUPS_SOURCE = '../maps/icons/battleLoading/groups/%s.png'
 TIPS_PATTERN_PARTS_COUNT = 8
 BATTLE_CONDITIONS_PARTS_COUNT = 2
-_FoundTip = namedtuple('_FoundTip', 'status, body')
+_FoundTip = namedtuple('_FoundTip', 'status, body, icon')
 
 class _TipsCriteria(object):
     __slots__ = ('_count', '_classTag', '_nation', '_level')
@@ -72,14 +73,19 @@ class RandomTipsCriteria(_TipsCriteria):
         if iterator is not None:
             tip = _FoundTip(*next(iterator))
         else:
-            tip = _FoundTip('', '')
+            tip = _FoundTip('', '', '')
         return tip
 
 
 class SandboxTipsCriteria(_TipsCriteria):
 
     def find(self):
-        return _FoundTip(i18n.makeString('#tips:howToPlay'), i18n.makeString('#tips:sandbox01'))
+        sandbox = 'sandbox01'
+        type = arena_info.getArenaType()
+        if type is not None:
+            if type.geometryName == '10_hills':
+                sandbox = 'sandbox02'
+        return _FoundTip(i18n.makeString('#tips:howToPlay'), i18n.makeString('#tips:%s' % sandbox), TIPS_IMAGE_SOURCE % sandbox)
 
 
 def getTipsCriteria(arena):
@@ -140,9 +146,16 @@ def _readTips():
                             arenaGuiTypeCondition = _ArenaGuiTypeCondition(arenaGuiTypeParts[0], arenaGuiTypeParts[1:])
                             for arenaGuiType in ARENA_GUI_TYPE.RANGE:
                                 if arenaGuiTypeCondition.validate(arenaGuiType):
-                                    result[battleCondition][arenaGuiType][vehicleTypeCondition][nation][vehLevel].append((i18n.makeString('#tips:%s' % status), i18n.makeString('#tips:%s' % key)))
+                                    result[battleCondition][arenaGuiType][vehicleTypeCondition][nation][vehLevel].append((i18n.makeString('#tips:%s' % status), i18n.makeString('#tips:%s' % key), _getTipIcon(tipID, group)))
 
     return result
+
+
+def _getTipIcon(tipID, group):
+    currentTipImage = TIPS_IMAGE_SOURCE % tipID
+    if currentTipImage in RES_ICONS.MAPS_ICONS_BATTLELOADING_TIPS_ENUM:
+        return currentTipImage
+    return TIPS_GROUPS_SOURCE % group
 
 
 def _getIntValue(strCondition):

@@ -329,7 +329,7 @@ class TankmanFreeToOwnXpConvertor(Processor):
 class TankmanAddSkill(ItemProcessor):
 
     def __init__(self, tankman, skillName):
-        super(TankmanAddSkill, self).__init__(tankman)
+        super(TankmanAddSkill, self).__init__(tankman, (plugins.TankmanAddSkillValidator(tankman.descriptor, skillName),))
         self.skillName = skillName
 
     def _errorHandler(self, code, errStr = '', ctx = None):

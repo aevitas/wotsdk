@@ -2,4 +2,7 @@
 from gui.Scaleform.daapi.view.lobby.rally.BaseRallyMainWindow import BaseRallyMainWindow
 
 class SquadWindowMeta(BaseRallyMainWindow):
-    pass
+
+    def as_setComponentIdS(self, componentId):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setComponentId(componentId)

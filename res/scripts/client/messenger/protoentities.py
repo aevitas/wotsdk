@@ -233,11 +233,10 @@ class ChannelEntity(ChatEntity, ChannelEvents):
                 continue
             memberID = member.getID()
             if memberID in self._members:
-                self._members[memberID].update(status=member.getStatus())
-            else:
-                isChanged = True
-                self._members[member.getID()] = member
-                member.onMemberStatusChanged += self._onMemberStatusChanged
+                self._members[memberID].clear()
+            isChanged = True
+            self._members[member.getID()] = member
+            member.onMemberStatusChanged += self._onMemberStatusChanged
 
         if isChanged:
             self.onMembersListChanged()
@@ -290,6 +289,9 @@ class MemberEntity(ChatEntity, MemberEvents):
 
     def getID(self):
         return self._memberID
+
+    def getDatabaseID(self):
+        return 0L
 
     def getName(self):
         return self._nickName

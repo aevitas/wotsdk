@@ -3,11 +3,9 @@ from gui.Scaleform.framework.entities.abstract.AbstractWindowView import Abstrac
 
 class TrainingWindowMeta(AbstractWindowView):
 
-    def getInfo(self):
-        self._printOverrideError('getInfo')
-
-    def getMapsData(self):
-        self._printOverrideError('getMapsData')
-
     def updateTrainingRoom(self, key, time, isPrivate, description):
         self._printOverrideError('updateTrainingRoom')
+
+    def as_setDataS(self, info, mapsData):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setData(info, mapsData)

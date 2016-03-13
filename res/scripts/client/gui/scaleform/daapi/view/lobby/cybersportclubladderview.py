@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/cyberSport/ClubLadderView.py
 import BigWorld
 from adisp import process
-from debug_utils import LOG_DEBUG
 from helpers.i18n import makeString as _ms
 from gui.clubs.club_helpers import isSeasonInProgress
 from gui.clubs.contexts import GetClubsContendersCtx
@@ -105,19 +104,17 @@ class ClubLadderView(StaticFormationLadderViewMeta, ClubPage, ClubEmblemsHelper)
         return
 
     def __packLadderState(self, club):
+        hasBattlesInSeason = club.wasInRatedBattleThisSeason() and self._hasLadderInfo
         if not isSeasonInProgress():
-            showStateMessage = True
             title = CYBERSPORT.STATICFORMATION_LADDERVIEW_LADDERSTATUS_NOSEASON
             message = CYBERSPORT.STATICFORMATION_LADDERVIEW_LADDERMSG_NOSEASON
-        elif not club.wasInRatedBattleThisSeason() or not self._hasLadderInfo:
-            showStateMessage = True
+        elif not hasBattlesInSeason:
             title = CYBERSPORT.STATICFORMATION_LADDERVIEW_LADDERSTATUS_NOBATTLES
             message = CYBERSPORT.STATICFORMATION_LADDERVIEW_LADDERMSG_NOBATTLES
         else:
-            showStateMessage = False
             title = CYBERSPORT.STATICFORMATION_LADDERVIEW_LADDERSTATUS_INLADDER
             message = CYBERSPORT.STATICFORMATION_LADDERVIEW_LADDERMSG_INLADDER
-        return {'showStateMessage': showStateMessage,
+        return {'showStateMessage': not hasBattlesInSeason,
          'stateMessage': {'title': text_styles.middleTitle(title),
                           'message': text_styles.main(message),
                           'iconPath': getLadderChevron256x256()}}

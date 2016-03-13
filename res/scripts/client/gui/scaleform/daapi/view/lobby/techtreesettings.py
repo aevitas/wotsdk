@@ -34,6 +34,7 @@ class NODE_STATE:
     VEHICLE_CAN_BE_CHANGED = 16384
     VEHICLE_IN_RENT = 32768
     VEHICLE_RENTAL_IS_OVER = 65536
+    PURCHASE_DISABLED = 131072
 
     @classmethod
     def add(cls, state, flag):
@@ -205,12 +206,10 @@ class VehicleClassInfo(object):
 
     def __init__(self):
         super(VehicleClassInfo, self).__init__()
-        self.__info = defaultdict(lambda : {'userString': '',
-         'name': ''})
+        self.__info = defaultdict(lambda : {'name': ''})
         for tag in VEHICLE_CLASS_TAGS:
             info = getTypeInfoByName(_VEHICLE_TYPE_NAME)['tags'][tag]
-            self.__info[frozenset((tag,))] = {'userString': info['userString'],
-             'name': info['name']}
+            self.__info[frozenset((tag,))] = {'name': info['name']}
 
     def getInfoByTags(self, tags):
         return self.__info[VEHICLE_CLASS_TAGS & tags]

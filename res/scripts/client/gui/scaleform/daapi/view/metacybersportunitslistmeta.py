@@ -27,9 +27,13 @@ class CyberSportUnitsListMeta(BaseRallyListView):
     def searchTeams(self, name):
         self._printOverrideError('searchTeams')
 
-    def as_noSearchResultsS(self, mesage, cleanBtnVisible):
+    def as_setDummyS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_noSearchResults(mesage, cleanBtnVisible)
+            return self.flashObject.as_setDummy(data)
+
+    def as_setDummyVisibleS(self, visible):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setDummyVisible(visible)
 
     def as_setSearchResultTextS(self, text, descrText, filterData):
         if self._isDAAPIInited():
@@ -39,13 +43,9 @@ class CyberSportUnitsListMeta(BaseRallyListView):
         if self._isDAAPIInited():
             return self.flashObject.as_setHeader(data)
 
-    def as_setSelectedVehiclesInfoS(self, infoText, selectedVehiclesCount):
+    def as_updateNavigationBlockS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setSelectedVehiclesInfo(infoText, selectedVehiclesCount)
-
-    def as_updateNavigationBlockS(self, value):
-        if self._isDAAPIInited():
-            return self.flashObject.as_updateNavigationBlock(value)
+            return self.flashObject.as_updateNavigationBlock(data)
 
     def as_updateRallyIconS(self, iconPath):
         if self._isDAAPIInited():

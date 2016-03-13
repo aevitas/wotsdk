@@ -3,14 +3,14 @@ from operator import attrgetter
 import BigWorld
 from debug_utils import LOG_DEBUG
 from CurrentVehicle import g_currentVehicle
-from account_helpers.AccountSettings import AccountSettings, CAROUSEL_FILTER, FALLOUT_CAROUSEL_FILTER
+from account_helpers.AccountSettings import AccountSettings, CAROUSEL_FILTER, FALLOUT_CAROUSEL_FILTER, STORE_TAB
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import g_instance as g_gameCtrl, getFalloutCtrl
 from gui.shared.formatters.ranges import toRomanRangeString
-from gui.shared.formatters.text_styles import alert, standard, main, middleTitle, highTitle
+from gui.shared.formatters.text_styles import alert, standard, main, middleTitle, highTitle, statInfo, critical
 from gui.shared.formatters.time_formatters import RentLeftFormatter
 from gui.shared.tooltips import ACTION_TOOLTIPS_STATE, ACTION_TOOLTIPS_TYPE
 from helpers import i18n, int2roman
@@ -25,6 +25,7 @@ from gui.shared.gui_items.Vehicle import VEHICLE_TYPES_ORDER, Vehicle
 from gui.shared.formatters import icons
 from gui.Scaleform import getVehicleTypeAssetPath
 from gui.Scaleform.daapi.view.meta.TankCarouselMeta import TankCarouselMeta
+from gui.shared.gui_items.Vehicle import Vehicle
 
 class TankCarousel(TankCarouselMeta, GlobalListener):
     UPDATE_LOCKS_PERIOD = 60
@@ -77,10 +78,11 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
             SystemMessages.g_instance.pushI18nMessage(result.userMsg, type=result.sysMsgType)
 
     def buyTankClick(self):
+        AccountSettings.setFilter(STORE_TAB, 0)
         shopFilter = list(AccountSettings.getFilter('shop_current'))
         shopFilter[1] = 'vehicle'
         AccountSettings.setFilter('shop_current', tuple(shopFilter))
-        self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.LOBBY_SHOP), EVENT_BUS_SCOPE.LOBBY)
+        self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.LOBBY_STORE), EVENT_BUS_SCOPE.LOBBY)
 
     def getVehicleTypeProvider(self):
         all = self.__getProviderObject('none')
@@ -256,11 +258,14 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         self.updateVehicles(vehicles)
         return
 
-    def getStringStatus(self, vState):
+    def getStringStatus(self, vState, ignoreGroupState = False):
+        statusStr = ''
         if vState == Vehicle.VEHICLE_STATE.IN_PREMIUM_IGR_ONLY:
             icon = icons.premiumIgrSmall()
-            return i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState, icon=icon)
-        return i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState)
+            statusStr = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState, icon=icon)
+        elif vState not in Vehicle.GROUP_STATES or not ignoreGroupState:
+            statusStr = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % vState)
+        return statusStr
 
     def _getVehicleData(self, vehicle, vState, vStateLvl, rentInfoStr):
         return {'id': vehicle.invID,
@@ -314,7 +319,7 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
                 if vehicle is not None:
                     vState, vStateLvl = vehicle.getState()
                     data.update({'isActivated': True,
-                     'formattedStatusStr': self.getStringStatus(vState),
+                     'formattedStatusStr': self.getStringStatus(vState, True),
                      'inventoryId': vehicle.invID,
                      'vehicleName': vehicle.shortUserName,
                      'vehicleIcon': vehicle.iconSmall,
@@ -345,8 +350,17 @@ class TankCarousel(TankCarouselMeta, GlobalListener):
         return (False, '')
 
     def __updateMultiselectionData(self):
+        falloutCfg = self.__falloutCtrl.getConfig()
         showSlots, msg = self.__getMultiselectionStatus()
-        self.as_setMultiselectionModeS(self.__multiselectionMode, msg, showSlots, self.__getMultiselectionSlots())
+        canDo, _ = self.prbDispatcher.canPlayerDoAction()
+        data = {'multiSelectionIsEnabled': self.__multiselectionMode,
+         'formattedMessage': msg,
+         'showSlots': showSlots,
+         'slots': self.__getMultiselectionSlots(),
+         'indicatorIsEnabled': canDo,
+         'vehicleTypes': middleTitle(i18n.makeString(FALLOUT.MULTISELECTIONSLOT_SELECTIONSTATUS)) + ' ' + main(i18n.makeString(FALLOUT.MULTISELECTIONSLOT_SELECTIONREQUIREMENTS, level=toRomanRangeString(list(falloutCfg.allowedLevels), 1))),
+         'statusSrt': statInfo(FALLOUT.MULTISELECTIONSLOT_GROUPREADY) if canDo else critical(FALLOUT.MULTISELECTIONSLOT_GROUPNOTREADY)}
+        self.as_setMultiselectionModeS(data)
 
     def __setFilters(self):
         if self.__multiselectionMode:

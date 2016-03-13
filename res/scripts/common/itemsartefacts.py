@@ -1,13 +1,13 @@
 # Embedded file name: scripts/common/items/artefacts.py
 import Math
-import items, nations
+import items
+import nations
 from items import _xml, vehicles
 from debug_utils import *
 from constants import IS_CLIENT, IS_BASEAPP, IS_CELLAPP, IS_WEB, IS_DEVELOPMENT
 from functools import partial
 if IS_CLIENT:
     from helpers import i18n
-    import FMOD
 elif IS_WEB:
     from web_stubs import *
 
@@ -76,7 +76,7 @@ class StaticFactorDevice(OptionalDevice):
             attrDict = getattr(vehicleDescr, self.__attr[0])
             attrName = self.__attr[1]
         val = attrDict[attrName]
-        if type(val) is int:
+        if isinstance(val, int):
             attrDict[attrName] = int(val * self.__factor)
         else:
             attrDict[attrName] = val * self.__factor
@@ -96,7 +96,7 @@ class StaticAdditiveDevice(OptionalDevice):
             attrDict = getattr(vehicleDescr, self.__attr[0])
             attrName = self.__attr[1]
         val = attrDict[attrName]
-        if type(val) is int:
+        if isinstance(val, int):
             attrDict[attrName] = int(val + self.__value)
         else:
             attrDict[attrName] = val + self.__value
@@ -338,7 +338,10 @@ class Bomber(Equipment):
     def _readConfig(self, xmlCtx, section):
         self.delay = _xml.readPositiveFloat(xmlCtx, section, 'delay')
         self.modelName = _xml.readString(xmlCtx, section, 'modelName')
-        self.soundEvent = _xml.readString(xmlCtx, section, 'soundEvent')
+        if IS_CLIENT:
+            self.soundEvent = _xml.readString(xmlCtx, section, 'wwsoundEvent')
+        else:
+            self.soundEvent = _xml.readString(xmlCtx, section, 'soundEvent')
         self.speed = _xml.readInt(xmlCtx, section, 'speed')
         self.heights = _xml.readTupleOfPositiveInts(xmlCtx, section, 'heights', 2)
         self.areaLength = _xml.readPositiveFloat(xmlCtx, section, 'areaLength')

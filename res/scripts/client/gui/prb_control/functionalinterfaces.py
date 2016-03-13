@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/prb_control/functional/interfaces.py
 from debug_utils import LOG_DEBUG
+from gui.shared.utils.listeners_collection import IListenersCollection
 from gui.prb_control.items import prb_items, unit_items, SelectResult
 from gui.prb_control.restrictions.interfaces import IPrbPermissions
 from gui.prb_control.restrictions.interfaces import IUnitPermissions
@@ -105,15 +106,6 @@ class IClientFunctional(object):
         pass
 
     def reset(self):
-        pass
-
-
-class IListenersCollection(object):
-
-    def addListener(self, listener):
-        pass
-
-    def removeListener(self, listener):
         pass
 
 
@@ -333,11 +325,17 @@ class IUnitFunctional(IClientFunctional, IListenersCollection):
     def getCandidates(self, unitIdx = None):
         return {}
 
+    def getRosterType(self, unitIdx = None):
+        return None
+
     def getRoster(self, unitIdx = None):
         return None
 
-    def getVehicleInfo(self, dbID = None, unitIdx = None):
-        return unit_items.VehicleInfo()
+    def getVehiclesInfo(self, dbID = None, unitIdx = None):
+        return (unit_items.VehicleInfo(),)
+
+    def invalidateSelectedVehicles(self, vehCDs):
+        return None
 
     def getFlags(self, unitIdx = None):
         return unit_items.UnitFlags(0)
@@ -429,7 +427,7 @@ class IUnitListener(IIntroUnitListener):
     def onUnitPlayersListChanged(self):
         pass
 
-    def onUnitVehicleChanged(self, dbID, vInfo):
+    def onUnitVehiclesChanged(self, dbID, vInfos):
         pass
 
     def onUnitPlayerVehDictChanged(self, pInfo):

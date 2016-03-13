@@ -214,8 +214,6 @@ class DebugView():
             self.update()
 
     def swapLines(self, keyname1, keyname2):
-        if deltaLine == 0:
-            return
         try:
             ind1 = self.__listKeynames.index(keyname1)
             ind2 = self.__listKeynames.index(keyname2)

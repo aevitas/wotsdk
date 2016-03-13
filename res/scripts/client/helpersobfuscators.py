@@ -7,7 +7,7 @@ class XORObfuscator:
 
     def __init__(self, key):
         if len(key) < 1:
-            raise ValueError, 'Key length must be at least one character'
+            raise ValueError('Key length must be at least one character')
         self.__key = key
 
     def __doXor(self, data):

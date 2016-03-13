@@ -116,6 +116,8 @@ class ConnectionManager(object):
 
         if status == LOGIN_STATUS.LOGGED_ON:
             if stage == 1:
+                if self.__connectionMethod == CONNECTION_METHOD.TOKEN and 'token2' in responseData:
+                    self.__swtichToToken2(responseData['token2'])
                 self.onLoggedOn(responseData)
                 self.onConnected()
         else:
@@ -151,6 +153,15 @@ class ConnectionManager(object):
                 self.__connectionData.username = params['login'][1:]
             except IndexError:
                 self.__connectionData.username = params['login']
+
+    def __swtichToToken2(self, token2):
+        self.__connectionMethod = CONNECTION_METHOD.TOKEN2
+        params = json.loads(self.__connectionData.username, encoding='utf-8')
+        params.pop('token', None)
+        params['token2'] = token2
+        params['auth_method'] = CONNECTION_METHOD.TOKEN2
+        self.__connectionData.username = json.dumps(params, encoding='utf-8')
+        return
 
     def __setHostDataAndConnect(self, predefinedHost):
         self.__connectionData.publicKeyPath = predefinedHost.keyPath

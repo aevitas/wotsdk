@@ -78,7 +78,7 @@ class PlayerCtxStorage(SimpleCachedStorage):
         self.__banInfo = banInfo
 
     def setCachedItem(self, key, value):
-        if type(key) != types.StringType:
+        if not isinstance(key, types.StringType):
             LOG_WARNING('Key is not string', type(key), key)
             return
         if type(value) not in types.StringTypes:
@@ -105,5 +105,5 @@ class PlayerCtxStorage(SimpleCachedStorage):
 
     def _setCachedData(self, data):
         lastVoipUri = data.pop(0)
-        if type(lastVoipUri) is types.StringType:
+        if isinstance(lastVoipUri, types.StringType):
             self.__cachedItems['lastVoipUri'] = lastVoipUri

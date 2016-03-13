@@ -258,6 +258,8 @@ class PostBattleConditions(ConditionsParser):
             return conditions.Achievements(uniqueName, data)
         if name == 'vehicleKills':
             return conditions.VehicleKills(uniqueName, data)
+        if name == 'vehicleDamage':
+            return conditions.VehicleDamage(uniqueName, data)
         if name == 'clanKills':
             return conditions.ClanKills(uniqueName, data)
         if name == 'results':
@@ -345,6 +347,8 @@ class BonusConditions(ConditionsParser):
             return conditions.BattlesCount(uniqueName, data, self)
         if name == 'vehicleKills':
             return conditions.VehicleKillsCumulative(uniqueName, data, self)
+        if name == 'vehicleDamage':
+            return conditions.VehicleDamageCumulative(uniqueName, data, self)
         if name == 'cumulative':
             result = []
             for idx, data in enumerate(data):

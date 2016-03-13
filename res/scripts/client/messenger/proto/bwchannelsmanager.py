@@ -10,15 +10,11 @@ from messenger import g_settings
 from messenger.m_constants import LAZY_CHANNEL, MESSENGER_SCOPE, USER_TAG
 from messenger.proto.bw.ChatActionsListener import ChatActionsListener
 from messenger.proto.bw import entities
-from messenger.proto.bw.errors import ChannelNotFound
+from messenger.proto.bw.errors import ChannelNotFound, ChannelLimitReachedError
 from messenger.proto.bw import find_criteria, limits
 from messenger.proto.bw.wrappers import ChatActionWrapper
 from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
-
-class CREATE_CHANNEL_RESULT(object):
-    doRequest, activeChannelLimitReached = range(2)
-
 
 class ChannelsManager(ChatActionsListener):
 
@@ -119,12 +115,13 @@ class ChannelsManager(ChatActionsListener):
     def createChannel(self, name, password = None):
         channels = self.channelsStorage.getChannelsByCriteria(find_criteria.BWActiveChannelFindCriteria())
         if USER_ACTIVE_CHANNELS_LIMIT <= len(channels):
-            return CREATE_CHANNEL_RESULT.activeChannelLimitReached
-        if name.startswith('#'):
-            name = name[1:]
-        self.__creationInfo[name] = password
-        BigWorld.player().createChatChannel(name, password)
-        return CREATE_CHANNEL_RESULT.doRequest
+            return ChannelLimitReachedError()
+        else:
+            if name.startswith('#'):
+                name = name[1:]
+            self.__creationInfo[name] = password
+            BigWorld.player().createChatChannel(name, password)
+            return None
 
     def findChannels(self, token, requestID = None):
         BigWorld.player().findChatChannels(token, requestID=requestID)

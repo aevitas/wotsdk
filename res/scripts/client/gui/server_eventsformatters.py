@@ -446,10 +446,20 @@ def packTextCondition(label, value = None, relation = None, current = None, tota
      'showDone': isCompleted}, 'description')
 
 
-def packBonusTypeElement(bonusType):
-    if bonusType in (ARENA_BONUS_TYPE.SANDBOX, ARENA_BONUS_TYPE.RATED_SANDBOX):
-        bonusType = ARENA_BONUS_TYPE.RATED_SANDBOX
-    return _packIconTextElement(label=i18n.makeString('#menu:bonusType/%d' % bonusType), icon='../maps/icons/battleTypes/%d.png' % bonusType)
+def packBonusTypeElements(bonusTypes):
+    uniqueTypes = set()
+    for bonusType in bonusTypes:
+        if bonusType in (ARENA_BONUS_TYPE.SANDBOX, ARENA_BONUS_TYPE.RATED_SANDBOX):
+            bonusType = ARENA_BONUS_TYPE.RATED_SANDBOX
+        if bonusType in (ARENA_BONUS_TYPE.TOURNAMENT_REGULAR, ARENA_BONUS_TYPE.TOURNAMENT_CLAN):
+            bonusType = ARENA_BONUS_TYPE.TOURNAMENT
+        uniqueTypes.add(bonusType)
+
+    elements = []
+    for bonusType in uniqueTypes:
+        elements.append(_packIconTextElement(label=i18n.makeString('#menu:bonusType/%d' % bonusType), icon='../maps/icons/battleTypes/%d.png' % bonusType))
+
+    return elements
 
 
 def packFormationElement(formationName):
@@ -492,10 +502,10 @@ def packSeparator(label, needAlign = False):
 
 def packQuestDetailsSeparator(leftPadding = 0, rightPadding = 0, topPadding = 0, bottomPadding = 0):
     return UiElement({'linkage': 'QuestDetailsSeparatorBlockUI',
-     'leftPadding': leftPadding,
-     'rightPadding': rightPadding,
-     'topPadding': topPadding,
-     'bottomPadding': bottomPadding})
+     'paddings': {'left': leftPadding,
+                  'right': rightPadding,
+                  'top': topPadding,
+                  'bottom': bottomPadding}})
 
 
 def packQuestDetailsSpacing(spacing = 0):

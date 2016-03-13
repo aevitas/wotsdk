@@ -40,7 +40,7 @@ class GROUP_TYPE(CONST_CONTAINER):
     AND = 'and'
 
 
-_SORT_ORDER = ('igrType', 'premiumAccount', 'token', 'inClan', 'GR', 'accountDossier', 'vehiclesUnlocked', 'vehiclesOwned', 'hasClub', 'hasReceivedMultipliedXP', 'vehicleDossier', 'vehicleDescr', 'bonusTypes', 'isSquad', 'camouflageKind', 'geometryNames', 'win', 'isAlive', 'achievements', 'results', 'unitResults', 'vehicleKills', 'clanKills', 'clubs', 'cumulative', 'vehicleKillsCumulative')
+_SORT_ORDER = ('igrType', 'premiumAccount', 'token', 'inClan', 'GR', 'accountDossier', 'vehiclesUnlocked', 'vehiclesOwned', 'hasClub', 'hasReceivedMultipliedXP', 'vehicleDossier', 'vehicleDescr', 'bonusTypes', 'isSquad', 'camouflageKind', 'geometryNames', 'win', 'isAlive', 'achievements', 'results', 'unitResults', 'vehicleKills', 'vehicleDamage', 'clanKills', 'clubs', 'cumulative', 'vehicleKillsCumulative', 'vehicleDamageCumulative')
 _SORT_ORDER_INDICES = dict(((name, idx) for idx, name in enumerate(_SORT_ORDER)))
 
 def _handleRelation(relation, source, toCompare):
@@ -615,7 +615,7 @@ class Token(_Requirement):
                     else:
                         label = i18n.makeString('#quests:details/requirements/token', questName=quest.getUserName())
                     counterDescr = None
-                    if e.getType() != _ET.TOKEN_QUEST:
+                    if e.getType() not in (_ET.TOKEN_QUEST, _ET.PERSONAL_QUEST, _ET.BATTLE_QUEST):
                         counterDescr = i18n.makeString('#quests:quests/table/battlesLeft')
                     groupID = quest.getGroupID()
                     group = self.__getGroup(groupID)
@@ -895,7 +895,7 @@ class BattleBonusType(_Condition, _Negatable):
 
     def _format(self, svrEvents, event = None):
         if event is None or not event.isGuiDisabled():
-            return [formatters.packIconTextBlock(formatters.formatGray('#quests:details/conditions/battleBonusType'), iconTexts=[ formatters.packBonusTypeElement(bt) for bt in self._types ])]
+            return [formatters.packIconTextBlock(formatters.formatGray('#quests:details/conditions/battleBonusType'), iconTexts=formatters.packBonusTypeElements(self._types))]
         else:
             return []
 
@@ -1421,6 +1421,60 @@ class VehicleKillsCumulative(_Cumulativable, VehicleKills):
 
     def _getKey(self):
         return 'vehicleKills'
+
+    def _getTotalValue(self):
+        return self._relationValue
+
+    def _getBonusData(self):
+        return self._bonus
+
+    def _formatByGroup(self, svrEvents, groupByKey, event = None):
+        if self._bonus is not None:
+            progress = self.getProgressPerGroup()
+            if groupByKey in progress:
+                current, total, _, _ = progress[groupByKey]
+                if event is not None and event.isCompleted():
+                    current, total = (None, None)
+                if self._bonus.getGroupByValue() is not None:
+                    return [formatters.packTextCondition(i18n.makeString(self._getLabelKey()), relation=self._relation, value=self._relationValue, current=current, total=total)]
+                fmtData = self._formatData(svrEvents, current, total, event=event)
+                if fmtData is not None:
+                    return [fmtData]
+        return []
+
+    def __repr__(self):
+        return 'VehicleKills<key=%s; %s=%d; total=%d>' % (self._getKey(),
+         self._relation,
+         self._relationValue,
+         self._getTotalValue())
+
+
+class VehicleDamage(_VehsListCondition):
+
+    def __init__(self, path, data):
+        super(VehicleDamage, self).__init__('vehicleDamage', dict(data), path)
+
+    def _getLabelKey(self):
+        return '#quests:details/conditions/vehicleDamage'
+
+    def _formatVehsTable(self, event = None):
+        return formatters.packVehiclesBlock(self._makeUniqueTableID(event), formatters.VEH_KILLS_HEADER, vehs=_prepareVehData(self._getVehiclesList(self._data)))
+
+    def __repr__(self):
+        return 'VehicleDamage<%s=%d>' % (self._relation, self._relationValue)
+
+
+class VehicleDamageCumulative(_Cumulativable, VehicleDamage):
+
+    def __init__(self, path, data, bonusCond):
+        super(VehicleDamage, self).__init__('vehicleDamageCumulative', dict(data), path)
+        self._bonus = weakref.proxy(bonusCond)
+
+    def getUserString(self):
+        return i18n.makeString(self._getLabelKey())
+
+    def _getKey(self):
+        return 'vehicleDamage'
 
     def _getTotalValue(self):
         return self._relationValue

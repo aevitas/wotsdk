@@ -3,7 +3,7 @@ from adisp import async
 from messenger.m_constants import CLIENT_ERROR_ID
 from messenger.proto.entities import SharedUserEntity
 from messenger.proto.shared_errors import ClientError
-from messenger.proto.xmpp.errors import createServerError
+from messenger.proto.xmpp.errors import createServerIQError
 from messenger.proto.xmpp.extensions import spa_resolver
 from messenger.proto.xmpp.gloox_constants import GLOOX_EVENT as _EVENT, IQ_TYPE
 from messenger.proto.xmpp.gloox_wrapper import ClientEventsHandler
@@ -78,6 +78,8 @@ class NicknameResolver(ClientEventsHandler):
         return True
 
     def __doCallback(self, result = None, error = None):
+        if error:
+            g_logOutput.error(CLIENT_LOG_AREA.GENERIC, 'Error has been received on requesting nicknames', error)
         if self.__callback:
             self.__callback(result or {}, error)
             self.__callback = None
@@ -108,7 +110,7 @@ class NicknameResolver(ClientEventsHandler):
                     result[dbID] = name
 
             elif iqType == IQ_TYPE.ERROR:
-                error = createServerError(pyGlooxTag)
+                error = createServerIQError(pyGlooxTag)
             self.__doCallback(result=result, error=error)
             return
 

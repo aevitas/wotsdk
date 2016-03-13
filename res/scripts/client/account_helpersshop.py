@@ -61,7 +61,7 @@ class Shop(object):
         return
 
     def synchronize(self, serverCacheRev = None):
-        LOG_MX('Shop.synchronize: cli_rev=%s, serv_rev=%s' % (self.__getCacheRevision(), serverCacheRev))
+        LOG_DEBUG('Shop.synchronize: cli_rev=%s, serv_rev=%s' % (self.__getCacheRevision(), serverCacheRev))
         if self.__ignore:
             return
         elif self.__getCacheRevision() == serverCacheRev:
@@ -76,7 +76,7 @@ class Shop(object):
             return
 
     def resynchronize(self):
-        LOG_MX('resynchronize')
+        LOG_DEBUG('resynchronize')
         if self.__ignore:
             return
         else:
@@ -205,9 +205,6 @@ class Shop(object):
     def getPremiumCost(self, callback):
         self.__getValue('premiumCost', callback)
 
-    def getTradeFees(self, callback):
-        self.__getValue('tradeFees', callback)
-
     def getTankmanCost(self, callback):
         self.__getValue('tankmanCost', callback)
 
@@ -237,9 +234,6 @@ class Shop(object):
 
     def getHornCost(self, callback):
         self.__getValue('hornCost', callback)
-
-    def getGoldPackets(self, callback):
-        return self.__getValue('goldPackets', callback)
 
     def buy(self, itemTypeIdx, nationIdx, itemShopID, count, goldForCredits, callback):
         if self.__ignore:

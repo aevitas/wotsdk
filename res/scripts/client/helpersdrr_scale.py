@@ -21,7 +21,7 @@ def changeScaleByStep(offset):
     result = None
     scale = BigWorld.getDRRScale()
     newScale = normalizeScale(scale + offset)
-    if scale != newScale:
+    if normalizeScale(scale) != newScale:
         BigWorld.setDRRScale(newScale)
         if normalizeScale(BigWorld.getDRRScale()) == newScale:
             result = newScale

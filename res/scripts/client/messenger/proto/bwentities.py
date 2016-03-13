@@ -11,6 +11,7 @@ from messenger.proto.entities import UserEntity
 from messenger.m_constants import PROTO_TYPE, LAZY_CHANNEL, PRIMARY_CHANNEL_ORDER
 from messenger.proto.bw.wrappers import ChannelDataWrapper
 PREBATTLE_TYPE_CHAT_FLAG = {PREBATTLE_TYPE.SQUAD: chat_shared.CHAT_CHANNEL_SQUAD,
+ PREBATTLE_TYPE.FALLOUT: chat_shared.CHAT_CHANNEL_SQUAD,
  PREBATTLE_TYPE.COMPANY: chat_shared.CHAT_CHANNEL_TEAM,
  PREBATTLE_TYPE.TRAINING: chat_shared.CHAT_CHANNEL_TRAINING,
  PREBATTLE_TYPE.CLAN: chat_shared.CHAT_CHANNEL_PREBATTLE_CLAN,
@@ -130,6 +131,9 @@ class BWMemberEntity(MemberEntity):
         if nickName and type(nickName) is not types.UnicodeType:
             nickName = unicode(nickName, 'utf-8', errors='ignore')
         super(BWMemberEntity, self).__init__(memberID, nickName, status)
+
+    def getDatabaseID(self):
+        return self.getID()
 
     def getProtoType(self):
         return PROTO_TYPE.BW

@@ -55,7 +55,7 @@ def _init():
 
 
 def _raiseWrongXml(fileName, msg):
-    raise Exception, "error in '" + fileName + "': " + msg
+    raise Exception("error in '" + fileName + "': " + msg)
 
 
 _init()

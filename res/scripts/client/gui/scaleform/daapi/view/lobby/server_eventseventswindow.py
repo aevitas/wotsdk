@@ -4,8 +4,9 @@ from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core.settings_constants import TUTORIAL
 import constants
 from debug_utils import LOG_WARNING
+from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
-from gui.server_events import g_eventsCache, settings as quest_settings, caches, isPotapovQuestEnabled
+from gui.server_events import g_eventsCache, settings as quest_settings, caches
 from gui.Scaleform.daapi.view.meta.QuestsWindowMeta import QuestsWindowMeta
 from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES as _QA
 from gui.Scaleform.locale.QUESTS import QUESTS
@@ -57,7 +58,7 @@ class EventsWindow(QuestsWindowMeta):
 
     def __initWindow(self):
         tabs = []
-        if isPotapovQuestEnabled():
+        if g_lobbyContext.getServerSettings().isPotapovQuestEnabled():
             tabs.append(self.__packTabDataItem(QUESTS.QUESTS_TABS_PERSONAL, _QA.TAB_PERSONAL_QUESTS))
         tabs.append(self.__packTabDataItem(QUESTS.QUESTS_TABS_CURRENT, _QA.TAB_COMMON_QUESTS))
         if g_eventsCache.getQuests(lambda x: x.getType() == constants.EVENT_TYPE.CLUBS_QUEST):
@@ -73,7 +74,10 @@ class EventsWindow(QuestsWindowMeta):
     def _selectLastTab(self):
         tabID = self._navInfo.tabID
         if not tabID:
-            tabID = _QA.TAB_PERSONAL_QUESTS if isPotapovQuestEnabled() else _QA.TAB_COMMON_QUESTS
+            if g_lobbyContext.getServerSettings().isPotapovQuestEnabled():
+                tabID = _QA.TAB_PERSONAL_QUESTS
+            else:
+                tabID = _QA.TAB_COMMON_QUESTS
         self.as_selectTabS(tabID)
         return tabID
 
@@ -87,6 +91,8 @@ class EventsWindow(QuestsWindowMeta):
                         self._navInfo.selectRandomQuest(pQuest.getTileID(), pQuest.getID())
                     else:
                         self._navInfo.selectFalloutQuest(pQuest.getTileID(), pQuest.getID())
+                elif eventType == constants.EVENT_TYPE.CLUBS_QUEST:
+                    self._navInfo.selectLadderQuest(eventID)
                 elif eventType in (constants.EVENT_TYPE.TUTORIAL, constants.EVENT_TYPE.MOTIVE_QUEST):
                     self._navInfo.selectTutorialQuest(eventID)
                 else:

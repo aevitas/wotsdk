@@ -368,7 +368,7 @@ class ProfileUtils(object):
     def formatFloatPercent(value):
         if value != ProfileUtils.UNAVAILABLE_VALUE:
             value = value * 100
-            value = BigWorld.wg_getNiceNumberFormat(value) + '%'
+            value = text_styles.concatStylesWithSpace(BigWorld.wg_getNiceNumberFormat(value), ProfileUtils.PERCENT_SYMBOL)
         return str(value)
 
     @staticmethod

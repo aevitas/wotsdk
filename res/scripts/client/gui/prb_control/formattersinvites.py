@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/prb_control/formatters/invites.py
-from constants import PREBATTLE_TYPE_NAMES, PREBATTLE_TYPE
+from UnitBase import UNIT_MGR_FLAGS
+from constants import PREBATTLE_TYPE_NAMES, PREBATTLE_TYPE, QUEUE_TYPE
 from constants import QUEUE_TYPE_NAMES
 from debug_utils import LOG_ERROR
 from gui import makeHtmlString
@@ -198,14 +199,20 @@ class FalloutInviteHtmlTextFormatter(PrbInviteHtmlTextFormatter):
             creatorName = makeHtmlString('html_templates:lobby/prebattle', 'inviteTitleCreatorName', ctx={'name': invite.senderFullName})
         else:
             creatorName = ''
+        unitMgrFlags = invite.getExtraData().get('unitMgrFlags', 0)
+        queueType = QUEUE_TYPE.UNKNOWN
+        if unitMgrFlags & UNIT_MGR_FLAGS.FALLOUT_CLASSIC:
+            queueType = QUEUE_TYPE.FALLOUT_CLASSIC
+        elif unitMgrFlags & UNIT_MGR_FLAGS.FALLOUT_MULTITEAM:
+            queueType = QUEUE_TYPE.FALLOUT_MULTITEAM
         return makeHtmlString('html_templates:lobby/prebattle', 'inviteTitle', ctx={'sender': creatorName,
-         'battleType': i18n.makeString('#invites:invites/text/fallout/%d' % invite.getExtraData().get('falloutBattleType'))}, sourceKey='FALLOUT')
+         'battleType': i18n.makeString('#invites:invites/text/FALLOUT/%s' % getPreQueueName(queueType))}, sourceKey='FALLOUT')
 
 
 def getPrbInviteHtmlFormatter(invite):
     if invite.type == PREBATTLE_TYPE.FORT_BATTLE:
         return PrbFortBattleInviteHtmlTextFormatter()
-    if invite.getExtraData().get('falloutBattleType'):
+    if invite.type == PREBATTLE_TYPE.FALLOUT:
         return FalloutInviteHtmlTextFormatter()
     return PrbInviteHtmlTextFormatter()
 

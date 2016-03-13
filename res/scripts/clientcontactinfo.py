@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/ContactInfo.py
-import BigWorld, Settings
+import BigWorld
+import Settings
 
 class ContactInfo:
     KEY_USER = 'user'

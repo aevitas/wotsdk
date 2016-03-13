@@ -6,7 +6,6 @@ from tutorial.data import effects
 from tutorial.doc_loader import sub_parsers
 from tutorial.control.battle import triggers
 from tutorial.logger import LOG_ERROR
-import FMOD
 _EFFECT_TYPE = effects.EFFECT_TYPE
 
 def _readShowMarkerSection(xmlCtx, section, _, conditions):
@@ -195,9 +194,8 @@ def _readHintSection(xmlCtx, section, _):
     else:
         image = chapter.SimpleImagePath()
     speakID = None
-    if FMOD.enabled:
-        if 'speak' in section.keys():
-            speakID = _xml.readString(xmlCtx, section, 'speak')
+    if 'wwspeak' in section.keys():
+        speakID = _xml.readString(xmlCtx, section, 'wwspeak')
     return chapter.SimpleHint(hintID, text, image, speakID=speakID)
 
 
@@ -215,9 +213,8 @@ def _readGreetingSection(xmlCtx, section, _):
     title = translation(_xml.readString(xmlCtx, section, 'title'))
     text = translation(_xml.readString(xmlCtx, section, 'text'))
     speakID = None
-    if FMOD.enabled:
-        if 'speak' in section.keys():
-            speakID = _xml.readString(xmlCtx, section, 'speak')
+    if 'wwspeak' in section.keys():
+        speakID = _xml.readString(xmlCtx, section, 'wwspeak')
     return chapter.Greeting(greetingID, title, text, speakID=speakID)
 
 

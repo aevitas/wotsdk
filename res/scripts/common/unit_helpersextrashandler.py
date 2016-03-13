@@ -1,6 +1,6 @@
 # Embedded file name: scripts/common/unit_helpers/ExtrasHandler.py
 import cPickle
-from debug_utils import LOG_OGNICK_DEV
+from debug_utils import LOG_DEBUG_DEV
 
 class EmptyExtrasHandler(object):
 
@@ -26,12 +26,12 @@ class EmptyExtrasHandler(object):
         pass
 
 
-class FortBattleExtrasHandler(EmptyExtrasHandler):
+class ClanBattleExtrasHandler(EmptyExtrasHandler):
 
     def __init__(self, unit = None):
         self._unit = unit
-        from unit_helpers.MsgProcessor import FortBattleMgrMsgProcessor
-        self._processor = FortBattleMgrMsgProcessor(unit)
+        from unit_helpers.MsgProcessor import ClanBattleMgrMsgProcessor
+        self._processor = ClanBattleMgrMsgProcessor(unit)
 
     def new(self, initial = None):
         result = {'battleID': 0,
@@ -43,7 +43,8 @@ class FortBattleExtrasHandler(EmptyExtrasHandler):
          'battleResultList': [],
          'isEnemyReadyForBattle': 0,
          'clanEquipments': None,
-         'lastEquipRev': 0}
+         'lastEquipRev': 0,
+         'localizedData': None}
         if initial:
             result.update(initial)
         return result
@@ -132,7 +133,7 @@ class SortieExtrasHandler(EmptyExtrasHandler):
 
     def updateUnitExtras(self, extras, updateStr):
         update = cPickle.loads(updateStr)
-        LOG_OGNICK_DEV('updateUnitExtras', update)
+        LOG_DEBUG_DEV('updateUnitExtras', update)
         extras.update(update)
 
 

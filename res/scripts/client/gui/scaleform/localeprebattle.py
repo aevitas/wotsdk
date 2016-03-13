@@ -47,3 +47,4 @@ class PREBATTLE(object):
     SWITCHPERIPHERYWINDOW_FORT_DESCRIPTION = '#prebattle:switchPeripheryWindow/fort/description'
     SWITCHPERIPHERYWINDOW_FORT_SELECTSERVERLABEL = '#prebattle:switchPeripheryWindow/fort/selectServerLabel'
     SWITCHPERIPHERYWINDOW_FORT_APPLYSWITCHLABEL = '#prebattle:switchPeripheryWindow/fort/applySwitchLabel'
+    COMPANYLISTVIEW_FILTERBUTTON_LABEL = '#prebattle:companyListView/filterButton/label'

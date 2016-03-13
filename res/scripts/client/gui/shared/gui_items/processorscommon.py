@@ -121,7 +121,7 @@ class BattleResultsGetter(Processor):
         self.__arenaUniqueID = arenaUniqueID
 
     def _errorHandler(self, code, errStr = '', ctx = None):
-        LOG_ERROR('Error on server request to get battle results ', self.__arenaUniqueID, code, errStr, ctx)
+        LOG_WARNING('Error on server request to get battle results ', self.__arenaUniqueID, code, errStr, ctx)
         return makeError()
 
     def _successHandler(self, code, ctx = None):

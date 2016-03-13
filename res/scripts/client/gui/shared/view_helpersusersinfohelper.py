@@ -83,8 +83,8 @@ class UsersInfoHelper(object):
             self._invalid['ratings'].add(userDbID)
         return user.getGlobalRating()
 
-    def getGuiUserData(self, userDbID):
-        user = self.getContact(userDbID)
+    def buildGuiUserData(self, user):
+        userDbID = user.getID()
         colorGetter = g_settings.getColorScheme('rosters').getColors
         return {'userName': self.getGuiUserName(userDbID),
          'clanAbbrev': self.getUserClanAbbrev(userDbID),
@@ -92,6 +92,14 @@ class UsersInfoHelper(object):
          'tags': user.getTags() if user else [],
          'dbID': userDbID,
          'colors': colorGetter(user.getGuiType() if user else USER_GUI_TYPE.OTHER)}
+
+    def getGuiUserData(self, userDbID):
+        user = self.getContact(userDbID)
+        return self.buildGuiUserData(user)
+
+    def getGuiUserDataWithStatus(self, userDbID):
+        user = self.getContact(userDbID)
+        return (user.hasValidName() and user.hasValidRating(), self.buildGuiUserData(user))
 
     def getGuiUserName(self, userDbID, formatter = lambda v: v):
         userName = self.getUserName(userDbID)

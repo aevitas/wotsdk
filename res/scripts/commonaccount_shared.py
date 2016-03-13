@@ -155,7 +155,7 @@ def getCamouflageIGRType(nationID, camouflageID):
     else:
         descr = vehicles.g_cache.customization(nationID)['camouflages'].get(camouflageID)
         if descr is None:
-            raise Exception, 'Wrong camouflage idx'
+            raise Exception('Wrong camouflage idx')
         return descr['igrType']
 
 
@@ -166,7 +166,7 @@ def getPlayerInscriptionIGRType(nationID, inscriptionID):
         customizationCache = vehicles.g_cache.customization(nationID)
         descr = customizationCache['inscriptions'].get(inscriptionID)
         if descr is None:
-            raise Exception, 'Wrong inscription id'
+            raise Exception('Wrong inscription id')
         return descr[1]
 
 
@@ -176,7 +176,7 @@ def getPlayerEmblemIGRType(emblemID):
     else:
         descr = vehicles.g_cache.playerEmblems()[1].get(emblemID)
         if descr is None:
-            raise Exception, 'Wrong emblem idx'
+            raise Exception('Wrong emblem idx')
         return descr[1]
 
 
@@ -323,3 +323,23 @@ def isValidClientVersion(clientVersion, serverVersion):
         if clientPatchVersion < serverPatchVersion:
             return False
     return True
+
+
+def readClientServerVersion():
+    import ResMgr
+    fileName = 'scripts/entity_defs/Account.def'
+    section = ResMgr.openSection(fileName)
+    if section is None:
+        raise Exception('Cannot open ' + fileName)
+    for attrName, section in section['Properties'].items():
+        if not attrName.startswith('requiredVersion_'):
+            continue
+        version = section.readString('Default')
+        if not version:
+            raise Exception('Subsection Account.def/Properties/%s/Default is missing or empty' % attrName)
+        section = None
+        ResMgr.purge(fileName)
+        return (attrName, version)
+
+    raise Exception('Field Account.def/Properties/requiredVersion_* is not found')
+    return

@@ -3,33 +3,30 @@ import types
 import weakref
 from abc import ABCMeta, abstractmethod
 import ArenaType
-from goodies.goodie_constants import GOODIE_TARGET_TYPE
+import potapov_quests
+import gui.awards.event_dispatcher as shared_events
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.gold_fish import isGoldFishActionActive, isTimeToShowGoldFishPromo
-from gui.goodies.GoodiesCache import g_goodiesCache
+from gui.goodies import g_goodiesCache
 from gui.prb_control.settings import BATTLES_TO_SELECT_RANDOM_MIN_LIMIT
 from gui.prb_control.storage import prequeue_storage_getter
-from gui.shared.economics import getPremiumCostActionPrc
-import potapov_quests
 from potapov_quests import PQ_BRANCH
-from shared_utils import findFirst
-import gui.awards.event_dispatcher as shared_events
 from constants import EVENT_TYPE, QUEUE_TYPE
 from helpers import i18n
 from chat_shared import SYS_MESSAGE_TYPE
 from account_helpers.AccountSettings import AccountSettings, AWARDS
 from account_shared import getFairPlayViolationName
-from debug_utils import LOG_CURRENT_EXCEPTION, LOG_WARNING, LOG_ERROR
-from items import ITEM_TYPE_INDICES, getTypeOfCompactDescr
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_WARNING, LOG_ERROR, LOG_DEBUG
+from items import ITEM_TYPE_INDICES, getTypeOfCompactDescr, vehicles as vehicles_core
 from messenger.proto.events import g_messengerEvents
 from messenger.formatters import NCContextItemFormatter, TimeFormatter
+from messenger.formatters.service_channel import TelecomReceivedInvoiceFormatter
 from dossiers2.custom.records import DB_ID_TO_RECORD
 from dossiers2.ui.layouts import POTAPOV_QUESTS_GROUP
 from gui.Scaleform.daapi.view.dialogs import I18PunishmentDialogMeta
 from gui.Scaleform.locale.DIALOGS import DIALOGS
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
-from gui.server_events import events_dispatcher as quests_events
-from gui.server_events import g_eventsCache
+from gui.server_events import g_eventsCache, events_dispatcher as quests_events
 from gui.game_control.controllers import Controller
 from gui.shared.gui_items.dossier.factories import getAchievementFactory
 from gui.shared.gui_items.Tankman import Tankman
@@ -45,23 +42,24 @@ class AwardController(Controller, GlobalListener):
 
     def __init__(self, proxy):
         super(AwardController, self).__init__(proxy)
-        self.__handlers = [PunishWindowHandler(self),
+        self.__handlers = [QuestBoosterAwardHandler(self),
+         BoosterAfterBattleAwardHandler(self),
+         PunishWindowHandler(self),
          RefSystemQuestsWindowHandler(self),
          FortResultsWindowHandler(self),
          PotapovQuestsBonusHandler(self),
          PotapovWindowAfterBattleHandler(self),
          TokenQuestsWindowHandler(self),
+         MotiveQuestsWindowHandler(self),
          RefSysStatusWindowHandler(self),
          VehiclesResearchHandler(self),
          VictoryHandler(self),
          BattlesCountHandler(self),
          PveBattlesCountHandler(self),
          PotapovQuestsAutoWindowHandler(self),
-         PersonalDiscountHandler(self),
-         QuestBoosterAwardHandler(self),
-         BoosterAfterBattleAwardHandler(self),
          GoldFishHandler(self),
-         FalloutVehiclesBuyHandler(self)]
+         FalloutVehiclesBuyHandler(self),
+         TelecomHandler(self)]
         self.__delayedHandlers = []
         self.__isLobbyLoaded = False
 
@@ -77,11 +75,13 @@ class AwardController(Controller, GlobalListener):
         if self.canShow():
             handler(ctx)
         else:
+            LOG_DEBUG('Postponed award call:', handler, ctx)
             self.__delayedHandlers.append((handler, ctx))
 
     def handlePostponed(self, *args):
         if self.canShow():
             for handler, ctx in self.__delayedHandlers:
+                LOG_DEBUG('Calling postponed award handler:', handler, ctx)
                 handler(ctx)
 
             self.__delayedHandlers = []
@@ -227,37 +227,18 @@ class FortResultsWindowHandler(ServiceChannelHandler):
         g_eventBus.handleEvent(events.LoadViewEvent(FORTIFICATION_ALIASES.FORT_BATTLE_RESULTS_WINDOW_ALIAS, ctx={'data': battleResult}), scope=EVENT_BUS_SCOPE.LOBBY)
 
 
-class PersonalDiscountHandler(ServiceChannelHandler):
-
-    def __init__(self, awardCtrl):
-        super(PersonalDiscountHandler, self).__init__(SYS_MESSAGE_TYPE.premiumPersonalDiscount.index(), awardCtrl)
-
-    def _showAward(self, ctx):
-        data = ctx[1].data
-        if data:
-            newGoodies = data.get('newGoodies', [])
-            if len(newGoodies) > 0:
-                discountID = findFirst(None, newGoodies)
-                shopDiscounts = g_itemsCache.items.shop.premiumPacketsDiscounts
-                discount = shopDiscounts.get(discountID, None)
-                if discount is not None and discount.targetID == GOODIE_TARGET_TYPE.ON_BUY_PREMIUM:
-                    packet = discount.getTargetValue()
-                    discountPrc = getPremiumCostActionPrc(shopDiscounts, packet, g_itemsCache.items)
-                    shared_events.showPremiumDiscountAward(discount.condition[1], packet, discountPrc)
-        return
-
-
 class PotapovQuestsBonusHandler(ServiceChannelHandler):
 
     def __init__(self, awardCtrl):
         super(PotapovQuestsBonusHandler, self).__init__(SYS_MESSAGE_TYPE.potapovQuestBonus.index(), awardCtrl)
 
     def _showAward(self, ctx):
+        LOG_DEBUG('Show potapov quest bonus award!', ctx)
         data = ctx[1].data
         completedQuestIDs = set(data.get('completedQuestIDs', set()))
         achievements = []
         tokens = {}
-        for recordIdx, value in data.get('popUpRecords') or {}:
+        for recordIdx, value in data.get('popUpRecords', []):
             factory = getAchievementFactory(DB_ID_TO_RECORD[recordIdx])
             if factory is not None:
                 a = factory.create(value=int(value))
@@ -293,8 +274,8 @@ class PotapovWindowAfterBattleHandler(ServiceChannelHandler):
 
     def _showAward(self, ctx):
         achievements = []
-        popUpRecords = ctx[1].data.get('popUpRecords', {})
-        for recordIdx, value in popUpRecords.iteritems():
+        popUpRecords = ctx[1].data.get('popUpRecords', [])
+        for recordIdx, value in popUpRecords:
             recordName = DB_ID_TO_RECORD[recordIdx]
             if recordName in POTAPOV_QUESTS_GROUP:
                 factory = getAchievementFactory(recordName)
@@ -329,6 +310,19 @@ class TokenQuestsWindowHandler(ServiceChannelHandler):
         if needToShowVehAwardWindow:
             for vehTypeCompDescr in data.get('vehicles') or {}:
                 quests_events.showVehicleAward(Vehicle(typeCompDescr=abs(vehTypeCompDescr)))
+
+
+class MotiveQuestsWindowHandler(ServiceChannelHandler):
+
+    def __init__(self, awardCtrl):
+        super(MotiveQuestsWindowHandler, self).__init__(SYS_MESSAGE_TYPE.battleResults.index(), awardCtrl)
+
+    def _showAward(self, ctx):
+        data = ctx[1].data
+        motiveQuests = g_eventsCache.getMotiveQuests()
+        for qID in data.get('completedQuestIDs', set()):
+            if qID in motiveQuests:
+                quests_events.showMotiveAward(motiveQuests[qID])
 
 
 class QuestBoosterAwardHandler(ServiceChannelHandler):
@@ -442,7 +436,7 @@ class SpecialAchievement(AwardHandler):
         raise NotImplementedError
 
     def _needToShowAward(self, ctx = None):
-        return self._awardCtrl.canShow() == False or self._getAchievementToShow() != None
+        return self._awardCtrl.canShow() is False or self._getAchievementToShow() is not None
 
     def _getAchievementToShow(self):
         achievementCount = self.getAchievementCount()
@@ -508,39 +502,39 @@ class FalloutVehiclesBuyHandler(AwardHandler):
     def start(self):
         hasVehicleLvl8 = False
         hasVehicleLvl10 = False
-        if not self.eventsStorage.hasVehicleLvl8():
+        if not self.falloutStorage.hasVehicleLvl8():
             if g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVELS(range(8, 10))):
                 hasVehicleLvl8 = True
-        if not self.eventsStorage.hasVehicleLvl10():
+        if not self.falloutStorage.hasVehicleLvl10():
             if g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)):
                 hasVehicleLvl10 = True
         if hasVehicleLvl8 or hasVehicleLvl10:
-            self.eventsStorage.setHasVehicleLvls(hasVehicleLvl8, hasVehicleLvl10)
+            self.falloutStorage.setHasVehicleLvls(hasVehicleLvl8, hasVehicleLvl10)
         g_clientUpdateManager.addCallbacks({'inventory.1': self.__onVehsChanged})
 
     def stop(self):
         g_clientUpdateManager.removeObjectCallbacks(self)
 
-    @prequeue_storage_getter(QUEUE_TYPE.EVENT_BATTLES)
-    def eventsStorage(self):
+    @prequeue_storage_getter(QUEUE_TYPE.FALLOUT)
+    def falloutStorage(self):
         return None
 
     def _needToShowAward(self, ctx = None):
         return self._awardCtrl.canShow() is False or self._shouldBeShown()
 
     def _shouldBeShown(self):
-        return not self.eventsStorage.hasVehicleLvl8() or not self.eventsStorage.hasVehicleLvl10()
+        return not self.falloutStorage.hasVehicleLvl8() or not self.falloutStorage.hasVehicleLvl10()
 
     def _showAward(self, ctx = None):
         if self._shouldBeShown():
-            if not self.eventsStorage.hasVehicleLvl8():
+            if not self.falloutStorage.hasVehicleLvl8():
                 for vehicle in g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVELS(range(8, 10))).itervalues():
-                    self.eventsStorage.setHasVehicleLvl8()
+                    self.falloutStorage.setHasVehicleLvl8()
                     shared_events.showFalloutAward((vehicle.level,))
                     break
 
-            if not self.eventsStorage.hasVehicleLvl10() and g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)):
-                self.eventsStorage.setHasVehicleLvl10()
+            if not self.falloutStorage.hasVehicleLvl10() and g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)):
+                self.falloutStorage.setHasVehicleLvl10()
                 shared_events.showFalloutAward((10,), True)
 
     def __onVehsChanged(self, *args):
@@ -643,4 +637,24 @@ class GoldFishHandler(AwardHandler):
 
     def _showAward(self, ctx):
         if isGoldFishActionActive() and isTimeToShowGoldFishPromo():
-            g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.GOLD_FISH_WINDOW))
+            g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.GOLD_FISH_WINDOW), scope=EVENT_BUS_SCOPE.LOBBY)
+
+
+class TelecomHandler(ServiceChannelHandler):
+
+    def __init__(self, awardCtrl):
+        super(TelecomHandler, self).__init__(SYS_MESSAGE_TYPE.telecomOrderCreated.index(), awardCtrl)
+
+    @staticmethod
+    def __getVehileDesrs(data):
+        return [ vehicles_core.getVehicleType(vehDesr).compactDescr for vehDesr in data['data']['vehicles'] ]
+
+    def _showAward(self, ctx):
+        data = ctx[1].data
+        hasCrew = TelecomReceivedInvoiceFormatter.invoiceHasCrew(data)
+        hasBrotherhood = TelecomReceivedInvoiceFormatter.invoiceHasBrotherhood(data)
+        vehicleDesrs = self.__getVehileDesrs(data)
+        if vehicleDesrs:
+            shared_events.showTelecomAward(vehicleDesrs, hasCrew, hasBrotherhood)
+        else:
+            LOG_ERROR("Can't show telecom award window!")

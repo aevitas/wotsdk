@@ -744,9 +744,9 @@ class FortController(_FortController):
         super(FortController, self)._removeFortListeners()
 
     def __refreshCooldowns(self, doNotify = True):
+        self.__cancelCooldownCallback()
         if self.__cooldownBuildings and doNotify:
             self._listeners.notify('onBuildingsUpdated', self.__cooldownBuildings, self.__cooldownPassed)
-        self.__cancelCooldownCallback()
         fort = self.getFort()
         self.__cooldownBuildings = fort.getBuildingsOnCooldown()
         if self.__cooldownBuildings:
@@ -766,6 +766,7 @@ class FortController(_FortController):
 
     def __cancelCooldownCallback(self):
         if self.__cooldownCallback is not None:
+            LOG_DEBUG('Cooldown callback cancelling: ', self.__cooldownCallback)
             BigWorld.cancelCallback(self.__cooldownCallback)
             self.__cooldownCallback = None
             self.__cooldownBuildings = []

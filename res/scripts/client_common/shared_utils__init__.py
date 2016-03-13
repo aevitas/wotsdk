@@ -24,6 +24,7 @@ class BoundMethodWeakref(object):
 
     def __init__(self, func):
         self.methodName = func.__name__
+        raise not self.methodName.startswith('__') or AssertionError('BoundMethodWeakref: private methods are not supported')
         self.wrefCls = weakref.ref(func.__self__)
 
     def __call__(self, *args, **kwargs):

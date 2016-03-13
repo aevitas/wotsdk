@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/ColorSchemeManager.py
 import types
-import Math, ResMgr
+import Math
+import ResMgr
 from debug_utils import LOG_ERROR, LOG_WARNING
 from windows import UIInterface
 
@@ -113,7 +114,7 @@ class _ColorSchemeManager(UIInterface):
                             LOG_ERROR('schemeGroup tag requires to delete a "default" tag. Failed Tag:\n' + str(baseHash))
                         return baseHash
                     for subKey in insertingSection.keys():
-                        if subKey not in baseHash.keys() or not type(baseHash[subKey]) == types.DictType:
+                        if subKey not in baseHash.keys() or not isinstance(baseHash[subKey], types.DictType):
                             baseHash[subKey] = insertingSection[subKey]
                         else:
                             baseHash[subKey].update(insertingSection[subKey])

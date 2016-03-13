@@ -210,7 +210,7 @@ class UsersManager(ChatActionsListener):
         result = False
         if data['command'] == 'findUser':
             result = True
-            g_messengerEvents.users.onFindUsersFailed(chatAction.get('requestID', -1L), actionResponse, data)
+            g_messengerEvents.users.onFindUsersFailed(chatAction.get('requestID', -1), actionResponse, data)
         return result
 
     def __onIncorrectCharacter(self, actionResponse, chatAction):
@@ -218,7 +218,7 @@ class UsersManager(ChatActionsListener):
         result = False
         if action == chat_shared.CHAT_ACTIONS.findUsers.index():
             result = True
-            g_messengerEvents.users.onFindUsersFailed(chatAction.get('requestID', -1L), actionResponse, None)
+            g_messengerEvents.users.onFindUsersFailed(chatAction.get('requestID', -1), actionResponse, None)
         return result
 
     def __ce_onConnectStateChanged(self, channel):

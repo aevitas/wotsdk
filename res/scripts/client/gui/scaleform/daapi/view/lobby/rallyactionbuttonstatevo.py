@@ -15,7 +15,6 @@ class ActionButtonStateVO(dict):
     def __init__(self, unitFunctional):
         super(ActionButtonStateVO, self).__init__()
         self._playerInfo = unitFunctional.getPlayerInfo()
-        self._extra = unitFunctional.getExtra()
         self.__unitIsValid, self.__restrictionType = unitFunctional.canPlayerDoAction()
         self.__isEnabled = self._isEnabled(self.__unitIsValid, self.__restrictionType)
         self.__stats = unitFunctional.getStats()

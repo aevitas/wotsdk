@@ -66,7 +66,7 @@ class TechnicalMaintenance(TechnicalMaintenanceMeta):
         if not g_currentVehicle.isPresent():
             self.destroy()
             return
-        if reason == CACHE_SYNC_REASON.SHOP_RESYNC or self.__currentVehicleId in diff.get(GUI_ITEM_TYPE.VEHICLE, {}):
+        if reason == CACHE_SYNC_REASON.SHOP_RESYNC:
             self.populateTechnicalMaintenance()
             self.populateTechnicalMaintenanceEquipment(**self.__layout)
 

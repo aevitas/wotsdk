@@ -3,7 +3,7 @@ from operator import itemgetter
 import BigWorld
 import Event
 from gui.game_control.controllers import Controller
-from gui.goodies.GoodiesCache import g_goodiesCache
+from gui.goodies import g_goodiesCache
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
 from helpers import time_utils

@@ -13,6 +13,6 @@ class FortPeriodDefenceWindowMeta(AbstractWindowView):
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)
 
-    def as_setTextDataS(self, data):
+    def as_setInitDataS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setTextData(data)
+            return self.flashObject.as_setInitData(data)

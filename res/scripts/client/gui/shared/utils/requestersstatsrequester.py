@@ -78,7 +78,7 @@ class StatsRequester(AbstractSyncDataRequester):
     def vehiclesXPs(self):
         """
         @return: vehicles experience. Dict format:
-                                { vehicle type int compact descriptor: xp value, }
+                    { vehicle type int compact descriptor: xp value, }
         """
         return self.getCacheValue('vehTypeXP', dict())
 
@@ -86,7 +86,7 @@ class StatsRequester(AbstractSyncDataRequester):
     def multipliedVehicles(self):
         """
         @return: current day already multiplied vehicles list. Format:
-                                [vehicle type int compact descriptor, ...]
+                    [vehicle type int compact descriptor, ...]
         """
         return self.getCacheValue('multipliedXPVehs', list())
 
@@ -94,7 +94,7 @@ class StatsRequester(AbstractSyncDataRequester):
     def eliteVehicles(self):
         """
         @return: elite vehicles list. Format:
-                                [vehicle type int compact descriptor, ...]
+                    [vehicle type int compact descriptor, ...]
         """
         return self.getCacheValue('eliteVehicles', list())
 
@@ -102,7 +102,7 @@ class StatsRequester(AbstractSyncDataRequester):
     def vehicleTypeLocks(self):
         """
         @return: vehicles locks. Now available only clan locks [1]. Format:
-                { vehicle type int compact descriptor: { 1: time to unlock in seconds }, }
+            { vehicle type int compact descriptor: { 1: time to unlock in seconds }, }
         """
         return self.getCacheValue('vehTypeLocks', dict())
 
@@ -110,7 +110,7 @@ class StatsRequester(AbstractSyncDataRequester):
     def globalVehicleLocks(self):
         """
         @return: vehicles locks. Now available only clan locks [1]. Format:
-                { 1: time to unlock in seconds, }
+            { 1: time to unlock in seconds, }
         """
         return self.getCacheValue('globalVehicleLocks', dict())
 
@@ -118,7 +118,7 @@ class StatsRequester(AbstractSyncDataRequester):
     def attributes(self):
         """
         @return: account attributes. Bit combination of
-                                constants.ACCOUNT_ATTR.*
+                    constants.ACCOUNT_ATTR.*
         """
         return self.getCacheValue('attrs', 0)
 
@@ -135,7 +135,7 @@ class StatsRequester(AbstractSyncDataRequester):
 
     @property
     def isTeamKiller(self):
-        return self.getCacheValue('tkillIsSuspected', 0)
+        return self.getCacheValue('tkillIsSuspected', False)
 
     @property
     def restrictions(self):
@@ -241,4 +241,11 @@ class StatsRequester(AbstractSyncDataRequester):
 
     @property
     def tutorialsCompleted(self):
-        return self.getCacheValue('tutorialsCompleted', {})
+        return self.getCacheValue('tutorialsCompleted', 0)
+
+    @property
+    def oldVehInvIDs(self):
+        """
+        @return: Unit previously selected vehicles
+        """
+        return self.getCacheValue('oldVehInvIDs', ())

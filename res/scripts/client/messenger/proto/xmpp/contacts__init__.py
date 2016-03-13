@@ -127,7 +127,7 @@ class _VoipHandler(object):
 
 
 class ContactsManager(ClientEventsHandler):
-    __slots__ = ('__seq', '__tasks', '__cooldown', '__presence', '__voip', '__rqRestrictions')
+    __slots__ = ('__seq', '__tasks', '__cooldown', '__presence', '__voip', '__rqRestrictions', '__subsBatch', '__subsRestrictions')
 
     def __init__(self):
         super(ContactsManager, self).__init__()

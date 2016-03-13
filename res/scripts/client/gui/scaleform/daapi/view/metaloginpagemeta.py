@@ -108,3 +108,7 @@ class LoginPageMeta(View):
     def as_showSocialFormS(self, haveToken, userName, icoPath, socialId):
         if self._isDAAPIInited():
             return self.flashObject.as_showSocialForm(haveToken, userName, icoPath, socialId)
+
+    def as_resetPasswordS(self):
+        if self._isDAAPIInited():
+            return self.flashObject.as_resetPassword()

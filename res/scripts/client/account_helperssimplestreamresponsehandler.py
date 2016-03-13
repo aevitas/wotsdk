@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/account_helpers/SimpleStreamResponseHandler.py
-import weakref, zlib, cPickle
+import weakref
+import zlib
+import cPickle
 import AccountCommands
 from debug_utils import *
 

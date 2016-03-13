@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/rally/vo_converters.py
 import BigWorld
-from constants import VEHICLE_CLASS_INDICES, VEHICLE_CLASSES, FALLOUT_BATTLE_TYPE
+from constants import VEHICLE_CLASS_INDICES, VEHICLE_CLASSES, QUEUE_TYPE
 from gui.LobbyContext import g_lobbyContext
 from gui import makeHtmlString
 from gui.Scaleform.daapi.view.lobby.cyberSport import PLAYER_GUI_STATUS, SLOT_LABEL
@@ -22,7 +22,6 @@ from messenger import g_settings
 from messenger.m_constants import USER_GUI_TYPE
 from messenger.storage import storage_getter
 from nations import INDICES as NATIONS_INDICES, NAMES as NATIONS_NAMES
-from gui.server_events import g_eventsCache
 from gui.shared.utils.functions import makeTooltip
 from gui.shared.formatters import icons, text_styles
 
@@ -124,6 +123,12 @@ def makeVehicleVO(vehicle, levelsRange = None, vehicleTypes = None, isCurrentPla
         if not vehicleVO['isReadyToFight']:
             vehicleVO['enabled'], vehicleVO['tooltip'] = False, makeTooltip('#tooltips:vehicleStatus/%s/header' % vState, '#tooltips:vehicleStatus/body')
         return vehicleVO
+
+
+def makeFiltersVO(nationIDRange, vTypeRange, vLevelRange):
+    return {'nationIDRange': nationIDRange,
+     'vTypeRange': vTypeRange,
+     'vLevelRange': vLevelRange}
 
 
 def makeUserVO(user, colorGetter, isPlayerSpeaking = False):
@@ -229,13 +234,13 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
         isPlayerSpeaking = app.voiceChatManager.isPlayerSpeaking
     else:
         isPlayerSpeaking = lambda dbID: False
-    if unit.isSquad():
-        falloutBattleType = unit.getExtra().eventType
-        isFallout = falloutBattleType != FALLOUT_BATTLE_TYPE.UNDEFINED
-        falloutCfg = g_eventsCache.getFalloutConfig(falloutBattleType)
+    falloutCtrl = getFalloutCtrl()
+    isFallout = falloutCtrl.isEnabled()
+    if isFallout:
+        falloutBattleType = falloutCtrl.getBattleType()
+        falloutCfg = falloutCtrl.getConfig()
     else:
-        falloutBattleType = FALLOUT_BATTLE_TYPE.UNDEFINED
-        isFallout = False
+        falloutBattleType = QUEUE_TYPE.UNKNOWN
         falloutCfg = None
     if unit is None:
         makeVO = makePlayerVO
@@ -262,16 +267,15 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
             slotPlayerUI = makeVO(player, userGetter(dbID), colorGetter, isPlayerSpeaking(dbID))
             isCurrentPlayer = player.isCurrentPlayer()
             if vehicle:
-                if 'vehLevel' in vehicle:
-                    slotLevel = vehicle['vehLevel']
-                if 'vehTypeCompDescr' in vehicle:
-                    vehicleVO = makeVehicleVO(vehicleGetter(vehicle['vehTypeCompDescr']), levelsRange, isCurrentPlayer=isCurrentPlayer)
+                slotLevel = vehicle.vehLevel
+                if vehicle.vehTypeCompDescr:
+                    vehicleVO = makeVehicleVO(vehicleGetter(vehicle.vehTypeCompDescr), levelsRange, isCurrentPlayer=isCurrentPlayer)
         if unit is not None and unit.isClub():
             slotLabel = makeStaticSlotLabel(unitState, slotState, isPlayerCreator, vehCount, checkForVehicles, pInfo.isLegionary(), unit.isRated())
         else:
-            isRequired = falloutBattleType == FALLOUT_BATTLE_TYPE.MULTITEAM
+            isRequired = falloutBattleType == QUEUE_TYPE.FALLOUT_MULTITEAM
             slotLabel = makeSlotLabel(unitState, slotState, isPlayerCreator, vehCount, checkForVehicles, isRequired=isRequired)
-        if unit.isSquad():
+        if unit.isSquad() or unit.isFalloutSquad():
             playerStatus = getSquadPlayerStatus(slotState, player)
         else:
             playerStatus = getPlayerStatus(slotState, player)
@@ -300,9 +304,8 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
                 dbID = player.dbID
                 isCurrentPlayer = player.isCurrentPlayer()
                 if isCurrentPlayer:
-                    falloutCtrl = getFalloutCtrl()
                     statusTemplate = None
-                    if falloutBattleType == FALLOUT_BATTLE_TYPE.MULTITEAM:
+                    if falloutBattleType == QUEUE_TYPE.FALLOUT_MULTITEAM:
                         if len(falloutCtrl.getSelectedVehicles()) < falloutCfg.minVehiclesPerPlayer:
                             statusTemplate = i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFYMULTITEAM)
                     elif falloutCtrl.mustSelectRequiredVehicle():
@@ -313,8 +316,8 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
                         for slotIdx in range(falloutCfg.minVehiclesPerPlayer):
                             vehiclesNotify[slotIdx] = statusTemplate
 
-                for idx, (vInvID, vehIntCD) in enumerate(unit.getExtra().accountVehicles.get(dbID, ())):
-                    selectedVehicles[idx] = makeVehicleVO(vehicleGetter(vehIntCD), falloutCfg.allowedLevels, isCurrentPlayer=isCurrentPlayer)
+                for idx, vehicle in enumerate(unit.getVehicles().get(dbID, ())):
+                    selectedVehicles[idx] = makeVehicleVO(vehicleGetter(vehicle.vehTypeCompDescr), falloutCfg.allowedLevels, isCurrentPlayer=isCurrentPlayer)
 
             slot['vehiclesNotify'] = vehiclesNotify
             slot['selectedVehicle'] = selectedVehicles
@@ -460,7 +463,7 @@ def makeStaticFormationStatusLbl(unitState):
 def makeSortieVO(unitFunctional, unitIdx = None, app = None):
     fullData = unitFunctional.getUnitFullData(unitIdx=unitIdx)
     if fullData is None:
-        return {}
+        return
     else:
         unit, unitState, unitStats, pInfo, slotsIter = fullData
         division = getDivisionNameByType(unit.getRosterTypeID())
@@ -596,7 +599,6 @@ def makeBuildingIndicatorsVOByDescr(buildingDescr):
 
 
 def makeBuildingIndicatorsVO(buildingLevel, progress, hpVal, hpTotalVal, defResVal, maxDefResVal):
-    defResCompensationValue = 0
     FORMAT_PATTERN = '###'
     if progress == FORT_ALIAS.STATE_FOUNDATION_DEF or progress == FORT_ALIAS.STATE_FOUNDATION:
         hpValueFormatter = text_styles.alert(FORMAT_PATTERN)
@@ -620,7 +622,7 @@ def makeBuildingIndicatorsVO(buildingLevel, progress, hpVal, hpTotalVal, defResV
      'hpCurrentValue': hpVal,
      'hpTotalValue': hpTotalVal,
      'defResCurrentValue': defResVal,
-     'defResCompensationValue': defResCompensationValue,
+     'defResCompensationValue': max(0, defResVal - maxDefResVal),
      'defResTotalValue': maxDefResVal,
      'hpProgressLabels': hpProgressLabels,
      'defResProgressLabels': storeProgressLabels}

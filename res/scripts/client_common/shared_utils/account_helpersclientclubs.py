@@ -7,13 +7,13 @@ from functools import partial
 from club_shared import CLIENT_CLUB_COMMANDS, CLUB_SUBSCRIPTION_TYPE, ACCOUNT_NOTIFICATION_TYPE, WEB_CMD_RESULT
 import cPickle
 from Event import Event, EventManager
-from debug_utils import LOG_DAN, LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_SVAN_DEV
+from debug_utils import LOG_DEBUG, LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_DEBUG_DEV
 from ClubDescr import ClubDescr
 from pprint import pformat
 CLIENT_CLUB_COMMANDS_NAMES = {v:k for k, v in CLIENT_CLUB_COMMANDS.__dict__.iteritems() if isinstance(v, int)}
 
 def _logClubResponse(*args):
-    LOG_SVAN_DEV('\n\n[SERVER CMD RESPONSE]\n{}\n', args)
+    LOG_DEBUG_DEV('\n\n[SERVER CMD RESPONSE]\n{}\n', args)
 
 
 OK = 0
@@ -99,7 +99,7 @@ class ClientClubs(object):
             return None
 
     def onCooldown(self, requestID, cmdID, cooldown):
-        LOG_SVAN_DEV('requestID={} cmd={} cooldown={}', requestID, cmdID, int(cooldown) - int(time.time()))
+        LOG_DEBUG_DEV('requestID={} cmd={} cooldown={}', requestID, cmdID, int(cooldown) - int(time.time()))
 
     def onClubNotification(self, pickledNotification):
         item = cPickle.loads(pickledNotification)
@@ -116,7 +116,7 @@ class ClientClubs(object):
                 notice = item
             self.onClientClubsNotification(notificationType, notice)
         else:
-            LOG_SVAN_DEV('\n unknown notification => \n {} \n', item)
+            LOG_DEBUG_DEV('\n unknown notification => \n {} \n', item)
 
     def onClubResponse(self, requestID, responseCode, responseError, extra = None, cmd = 0, arg2 = 0, arg3 = 0, callback = None):
         if responseCode == OK and extra:
@@ -141,7 +141,7 @@ class ClientClubs(object):
                 pass
             elif cmd == CLIENT_CLUB_COMMANDS.GET_CLUBS_CONTENDERS:
                 conteders = [ ClubContender(*club) for club in extra ]
-                LOG_SVAN_DEV('Clubs from ladder : {}', conteders)
+                LOG_DEBUG_DEV('Clubs from ladder : {}', conteders)
         if callback:
             callback(responseCode, responseError, extra)
 
@@ -162,7 +162,7 @@ class ClientClubs(object):
             return
 
     def _doClubCmd(self, cmd, arg2, arg3, callback):
-        LOG_DAN('_doClubCmd', cmd, arg2, arg3)
+        LOG_DEBUG('_doClubCmd', cmd, arg2, arg3)
         clubCallback = partial(self.onClubResponse, cmd=cmd, arg2=arg2, arg3=arg3, callback=callback)
         self.__account._doCmdInt3(AccountCommands.CMD_DO_CLUB_CMD, cmd, arg2, arg3, clubCallback)
 

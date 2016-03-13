@@ -15,12 +15,12 @@ leave a function, do sometihing else for some time and then return into the
 calling function with a result. So the function that makes asynchronous calls
 should look like this:
 
-        @process
-        def my_handler():
-                response = yield some_async_func()
-                data = parse_response(response)
-                result = yield some_other_async_func(data)
-                store_result(result)
+    @process
+    def my_handler():
+        response = yield some_async_func()
+        data = parse_response(response)
+        result = yield some_other_async_func(data)
+        store_result(result)
 
 Each `yield` is where the function returns and lets the framework around it to
 do its job. And the code after `yield` is what usually goes in a callback.
@@ -48,11 +48,11 @@ asynchronous function (and can make your callback parameter to be named
 "callback"). But when you want to call some library function you can wrap it in
 async in place.
 
-        # call http.fetch(url, callback=callback)
-        result = yield async(http.fetch)
+    # call http.fetch(url, callback=callback)
+    result = yield async(http.fetch)
 
-        # call http.fetch(url, cb=safewrap(callback))
-        result = yield async(http.fetch, cbname='cb', cbwrapper=safewrap)(url)
+    # call http.fetch(url, cb=safewrap(callback))
+    result = yield async(http.fetch, cbname='cb', cbwrapper=safewrap)(url)
 
 Here you can use two optional parameters for async:
 
@@ -66,25 +66,25 @@ Here you can use two optional parameters for async:
 asynchronous calls as it can be done with normal functions. In this case the
 @async decorator shuold be the outer one:
 
-        @async
-        @process
-        def async_calling_other_asyncs(arg, callback):
-                # ....
+    @async
+    @process
+    def async_calling_other_asyncs(arg, callback):
+        # ....
 
 ## Multiple asynchronous calls
 
 The library also allows to call multiple asynchronous functions in parallel and
 get all their result for processing at once:
 
-        @async
-        def async_http_get(url, callback):
-                # get url asynchronously
-                # call callback(response) at the end
+    @async
+    def async_http_get(url, callback):
+        # get url asynchronously
+        # call callback(response) at the end
 
-        @process
-        def get_stat():
-                urls = ['http://.../', 'http://.../', ... ]
-                responses = yield map(async_http_get, urls)
+    @process
+    def get_stat():
+        urls = ['http://.../', 'http://.../', ... ]
+        responses = yield map(async_http_get, urls)
 
 After *all* the asynchronous calls will complete `responses` will be a list of
 responses corresponding to given urls.
@@ -95,9 +95,15 @@ Modifications:
 
 Add generator steps callback. Used to notificate about
 step changing or generator stop.
+
+16/02/2016, Brukish
+
+Added stacktrace processing to give more clear error logs.
 ---------------------------------------------------------------------------
 """
 from functools import partial
+from debug_utils import LOG_WRAPPED_CURRENT_EXCEPTION
+CLEAR_TRACE = True
 
 class CallbackDispatcher(object):
 
@@ -133,10 +139,33 @@ class CallbackDispatcher(object):
             self.stepCallback(True)
 
 
+if CLEAR_TRACE:
+
+    class AdispException(Exception):
+        pass
+
+
+    def doCall(func, processor):
+        try:
+            return processor()
+        except AdispException as e:
+            raise e
+        except Exception as e:
+            funcName = func.__name__
+            LOG_WRAPPED_CURRENT_EXCEPTION('adisp', funcName, func.func_code.co_filename, func.func_code.co_firstlineno + 1)
+            raise AdispException('There was an error during %s async call.' % funcName, e)
+
+
+else:
+
+    def doCall(func, processor):
+        return processor()
+
+
 def process(func, stepCallback = lambda stop: None):
 
     def wrapper(*args, **kwargs):
-        CallbackDispatcher(func(*args, **kwargs), stepCallback)
+        doCall(func, partial(CallbackDispatcher, func(*args, **kwargs), stepCallback))
 
     return wrapper
 
@@ -147,7 +176,7 @@ def async(func, cbname = 'callback', cbwrapper = lambda x: x):
 
         def caller(callback):
             kwargs[cbname] = cbwrapper(callback)
-            return func(*args, **kwargs)
+            doCall(func, partial(func, *args, **kwargs))
 
         return caller
 

@@ -157,6 +157,12 @@ class _AppLoader(object):
     def quitFromGame(self):
         BigWorld.quit()
 
+    def attachCursor(self, appNS):
+        self.__appFactory.attachCursor(appNS)
+
+    def detachCursor(self, appNS):
+        self.__appFactory.detachCursor(appNS)
+
     def __updateState(self):
         result = False
         newState = self.__state.goNext(self.__ctx)

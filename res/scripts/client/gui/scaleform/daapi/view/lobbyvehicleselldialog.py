@@ -27,10 +27,6 @@ class VehicleSellDialog(VehicleSellDialogMeta):
         self.destroy()
 
     def getDialogSettings(self):
-        """
-        Called from flash.
-        @return: <dict> dialog settings dict from `AccountSettings`
-        """
         return dict(AccountSettings.getSettings('vehicleSellDialog'))
 
     def setDialogSettings(self, isOpened):
@@ -77,8 +73,7 @@ class VehicleSellDialog(VehicleSellDialogMeta):
          'action': vehicleAction,
          'hasCrew': vehicle.hasCrew,
          'isRented': vehicle.isRented}
-        onVehicle = defaultdict(list)
-        onVehicleOptionalDevices = onVehicle['optionalDevices']
+        onVehicleOptionalDevices = []
         for o in vehicle.optDevices:
             data = None
             if o is not None:
@@ -91,9 +86,9 @@ class VehicleSellDialog(VehicleSellDialogMeta):
                  'sellPrice': o.sellPrice,
                  'toInventory': True,
                  'action': action}
-            onVehicleOptionalDevices.append(data)
+                onVehicleOptionalDevices.append(data)
 
-        onVehicleoShells = onVehicle['shells']
+        onVehicleoShells = []
         for s in vehicle.shells:
             data = None
             if s is not None:
@@ -107,9 +102,9 @@ class VehicleSellDialog(VehicleSellDialogMeta):
                  'kind': s.type,
                  'toInventory': s in otherVehsShells or s.isPremium,
                  'action': action}
-            onVehicleoShells.append(data)
+                onVehicleoShells.append(data)
 
-        onVehicleEquipments = onVehicle['equipments']
+        onVehicleEquipments = []
         for e in vehicle.eqs:
             data = None
             if e is not None:
@@ -121,17 +116,16 @@ class VehicleSellDialog(VehicleSellDialogMeta):
                  'sellPrice': e.sellPrice,
                  'toInventory': True,
                  'action': action}
-            onVehicleEquipments.append(data)
+                onVehicleEquipments.append(data)
 
-        inInventory = defaultdict(list)
-        inInventoryModules = inInventory['modules']
+        inInventoryModules = []
         for m in modules:
             inInventoryModules.append({'intCD': m.intCD,
              'inventoryCount': m.inventoryCount,
              'toInventory': True,
              'sellPrice': m.sellPrice})
 
-        inInventoryShells = inInventory['shells']
+        inInventoryShells = []
         for s in shells:
             action = None
             if s.sellPrice != s.defaultSellPrice:
@@ -144,19 +138,29 @@ class VehicleSellDialog(VehicleSellDialogMeta):
              'toInventory': s in otherVehsShells or s.isPremium,
              'action': action})
 
-        removePrice = (0, items.shop.paidRemovalCost)
+        removePrice = items.shop.paidRemovalCost
+        removePrices = (0, removePrice)
         defRemovePrice = (0, items.shop.defaults.paidRemovalCost)
         removeAction = None
-        if removePrice != defRemovePrice:
+        if removePrices != defRemovePrice:
             removeAction = {'type': ACTION_TOOLTIPS_TYPE.ECONOMICS,
              'key': 'paidRemovalCost',
              'isBuying': True,
              'state': (None, ACTION_TOOLTIPS_STATE.DISCOUNT),
-             'newPrice': removePrice,
+             'newPrice': removePrices,
              'oldPrice': defRemovePrice}
-        removePrices = {'removePrice': removePrice,
-         'action': removeAction}
-        self.as_setDataS(vehicleData, onVehicle, inInventory, removePrices, items.stats.gold)
+        settings = self.getDialogSettings()
+        isSlidingComponentOpened = settings['isOpened']
+        self.as_setDataS({'accountGold': items.stats.gold,
+         'sellVehicleVO': vehicleData,
+         'optionalDevicesOnVehicle': onVehicleOptionalDevices,
+         'shellsOnVehicle': onVehicleoShells,
+         'equipmentsOnVehicle': onVehicleEquipments,
+         'modulesInInventory': inInventoryModules,
+         'shellsInInventory': inInventoryShells,
+         'removeActionPrice': removeAction,
+         'removePrice': removePrice,
+         'isSlidingComponentOpened': isSlidingComponentOpened})
         return
 
     def setUserInput(self, value):
@@ -167,8 +171,8 @@ class VehicleSellDialog(VehicleSellDialogMeta):
 
     def setResultCredit(self, isGold, value):
         self.controlNumber = str(value)
-        self.__setControlQuestion(isGold)
-        self.as_setControlNumberS(isGold, self.controlNumber)
+        question = self.__getControlQuestion(isGold)
+        self.as_setControlQuestionDataS(isGold, self.controlNumber, question)
 
     def _dispose(self):
         super(VehicleSellDialog, self)._dispose()
@@ -228,13 +232,13 @@ class VehicleSellDialog(VehicleSellDialogMeta):
     def __initCtrlQuestion(self):
         self.as_enableButtonS(False)
 
-    def __setControlQuestion(self, usingGold = False):
+    def __getControlQuestion(self, usingGold = False):
         if usingGold:
             currencyFormatter = BigWorld.wg_getGoldFormat(long(self.controlNumber))
         else:
             currencyFormatter = BigWorld.wg_getIntegralFormat(long(self.controlNumber))
         question = makeHtmlString('html_templates:lobby/dialogs', 'vehicleSellQuestion', {'controlNumber': currencyFormatter})
-        self.as_setCtrlQuestionS(str(question))
+        return question
 
     def __shopResyncHandler(self, reason, diff):
         vehicle = g_itemsCache.items.getVehicle(self.vehInvID)

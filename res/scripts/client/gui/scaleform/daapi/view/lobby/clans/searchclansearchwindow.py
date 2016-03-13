@@ -34,6 +34,7 @@ def _packHeaderColumnData(columnID, label, buttonWidth, tooltip, showSeparator =
 
 class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
     __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.CLAN_RATINGS, CLAN_REQUESTED_DATA_TYPE.SEARCH_CLANS, CLAN_REQUESTED_DATA_TYPE.GET_RECOMMENDED_CLANS]
+    MIN_CHARS_FOR_SEARCH = 2
 
     def __init__(self, ctx):
         super(ClanSearchWindow, self).__init__()
@@ -54,8 +55,13 @@ class ClanSearchWindow(ClanSearchWindowMeta, ClanListener):
             pass
 
     def search(self, text):
-        self.__clanFinder.setRecommended(False)
-        self.__doSearch(text)
+        if len(text) < self.MIN_CHARS_FOR_SEARCH:
+            self._showDummy(True)
+            self._setDummyData(CLANS.SEARCH_REQUESTTOOSHORT_HEADER, CLANS.SEARCH_REQUESTTOOSHORT_BODY, None, self.__clanFinder.hasSuccessRequest(), _ms(CLANS.SEARCH_REQUESTTOOSHORT_BUTTON), CLANS.SEARCH_REQUESTTOOSHORT_BUTTON_TOOLTIP_HEADER)
+        else:
+            self.__clanFinder.setRecommended(False)
+            self.__doSearch(text)
+        return
 
     def previousPage(self):
         self.as_showWaitingS(WAITING.PREBATTLE_AUTO_SEARCH, {})

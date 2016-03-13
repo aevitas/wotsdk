@@ -18,7 +18,7 @@ from items import vehicles
 from gui.Scaleform.genConsts.CUSTOMIZATION_ITEM_TYPE import CUSTOMIZATION_ITEM_TYPE
 
 class StatsConfiguration(object):
-    __slots__ = ('vehicle', 'sellPrice', 'buyPrice', 'unlockPrice', 'inventoryCount', 'vehiclesCount', 'node', 'xp', 'dailyXP', 'minRentPrice', 'rentals')
+    __slots__ = ('vehicle', 'sellPrice', 'buyPrice', 'unlockPrice', 'inventoryCount', 'vehiclesCount', 'node', 'xp', 'dailyXP', 'minRentPrice', 'rentals', 'slotIdx')
 
     def __init__(self):
         self.vehicle = None
@@ -32,6 +32,7 @@ class StatsConfiguration(object):
         self.node = None
         self.xp = True
         self.dailyXP = True
+        self.slotIdx = 0
         return
 
 
@@ -226,6 +227,7 @@ class HangarContext(ToolTipContext):
         value.xp = True
         value.dailyXP = True
         value.vehicle = self._vehicle
+        value.slotIdx = self._slotIdx
         return value
 
     def getParamsConfiguration(self, item):
@@ -472,7 +474,17 @@ class FortPopoverDefResProgressContext(FortificationContext):
     pass
 
 
+class SettingsMinimapContext(ToolTipContext):
+    pass
+
+
 class TechCustomizationContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
         super(TechCustomizationContext, self).__init__(TOOLTIP_COMPONENT.TECH_CUSTOMIZATION, fieldsToExclude)
+
+
+class BoosterContext(ToolTipContext):
+
+    def __init__(self, fieldsToExclude = None):
+        super(BoosterContext, self).__init__(TOOLTIP_COMPONENT.BOOSTER, fieldsToExclude)

@@ -171,7 +171,7 @@ class OpsUnpacker:
             try:
                 unpackFormat, methodName, specialFormat, additionals, calcSize, packFormat = self._opsFormatDefs[opCode]
             except:
-                raise Exception, '%s unpackOps: unknown opcode %s' % (self.__class__, opCode)
+                raise Exception('%s unpackOps: unknown opcode %s' % (self.__class__, opCode))
 
             method = getattr(self, methodName)
             if unpackFormat or specialFormat:

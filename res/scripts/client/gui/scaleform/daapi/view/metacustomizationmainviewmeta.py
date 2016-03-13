@@ -55,14 +55,6 @@ class CustomizationMainViewMeta(View):
         if self._isDAAPIInited():
             return self.flashObject.as_setBonusPanelData(data)
 
-    def as_setBuyingPanelDataS(self, data):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setBuyingPanelData(data)
-
-    def as_setBuyingPanelInitDataS(self, data):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setBuyingPanelInitData(data)
-
     def as_setCarouselDataS(self, data):
         if self._isDAAPIInited():
             return self.flashObject.as_setCarouselData(data)
@@ -75,9 +67,9 @@ class CustomizationMainViewMeta(View):
         if self._isDAAPIInited():
             return self.flashObject.as_setCarouselFilterData(data)
 
-    def as_setBottomPanelHeaderS(self, newHeaderText):
+    def as_setBottomPanelHeaderS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setBottomPanelHeader(newHeaderText)
+            return self.flashObject.as_setBottomPanelHeader(data)
 
     def as_setSlotsPanelDataS(self, data):
         if self._isDAAPIInited():

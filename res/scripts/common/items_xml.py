@@ -7,7 +7,7 @@ def raiseWrongXml(xmlContext, subsectionName, msg):
         fileName = xmlContext[1] + ('/' + fileName if fileName else '')
         xmlContext = xmlContext[0]
 
-    raise Exception, "error in '" + fileName + "': " + msg
+    raise Exception("error in '" + fileName + "': " + msg)
     return
 
 

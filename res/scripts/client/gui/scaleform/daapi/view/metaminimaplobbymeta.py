@@ -6,6 +6,9 @@ class MinimapLobbyMeta(MinimapEntityMeta):
     def setMap(self, arenaID):
         self._printOverrideError('setMap')
 
+    def setMinimapData(self, arenaID, playerTeam, size):
+        self._printOverrideError('setMinimapData')
+
     def as_changeMapS(self, texture):
         if self._isDAAPIInited():
             return self.flashObject.as_changeMap(texture)

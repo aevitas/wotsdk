@@ -132,12 +132,12 @@ class QuestsCurrentTab(QuestsCurrentTabMeta):
             return res
         return cmp(a.getUserName(), b.getUserName())
 
-    def _filterFunc(self, a):
-        if self.__filterType == self.FILTER_TYPE.ACTIONS and not self._isAction(a):
+    def _filterFunc(self, event):
+        if self.__filterType == self.FILTER_TYPE.ACTIONS and not self._isAction(event):
             return False
-        if self.__filterType == self.FILTER_TYPE.QUESTS and not self._isQuest(a):
+        if self.__filterType == self.FILTER_TYPE.QUESTS and not self._isQuest(event):
             return False
-        return (not self._hideCompleted or not a.isCompleted()) and self._isAvailableQuestForTab(a)
+        return not (self._hideCompleted and event.isCompleted()) and self._isAvailableQuestForTab(event)
 
     def _applyFilters(self, quests):
         return filter(self._filterFunc, self.__applySort(quests))

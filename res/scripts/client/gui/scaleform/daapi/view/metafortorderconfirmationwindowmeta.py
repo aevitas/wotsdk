@@ -9,10 +9,10 @@ class FortOrderConfirmationWindowMeta(AbstractWindowView):
     def getTimeStr(self, time):
         self._printOverrideError('getTimeStr')
 
-    def as_setDataS(self, value):
+    def as_setDataS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setData(value)
+            return self.flashObject.as_setData(data)
 
-    def as_setSettingsS(self, value):
+    def as_setSettingsS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setSettings(value)
+            return self.flashObject.as_setSettings(data)

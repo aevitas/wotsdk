@@ -50,7 +50,7 @@ def getArenaBonusType():
 def getArenaGuiTypeLabel():
     arenaGuiType = getArenaGuiType()
     if arenaGuiType in constants.ARENA_GUI_TYPE_LABEL.LABELS:
-        label = constants.ARENA_GUI_TYPE_LABEL.LABELS[getArenaGuiType()]
+        label = constants.ARENA_GUI_TYPE_LABEL.LABELS[arenaGuiType]
     else:
         label = ''
     return label
@@ -63,17 +63,24 @@ def isLowLevelBattle():
     return 0 < battleLevel < 4
 
 
-def isRandomBattle():
-    return getArenaGuiType() == constants.ARENA_GUI_TYPE.RANDOM
+def isRandomBattle(arena = None):
+    return getArenaGuiType(arena=arena) == constants.ARENA_GUI_TYPE.RANDOM
 
 
-def isEventBattle():
-    return getArenaGuiType() == constants.ARENA_GUI_TYPE.EVENT_BATTLES
+def isEventBattle(arena = None):
+    return getArenaGuiType(arena=arena) == constants.ARENA_GUI_TYPE.EVENT_BATTLES
 
 
-def isFalloutBattle():
-    arenaType = getArenaType()
-    return isEventBattle() and arenaType is not None and arenaType.gameplayName.startswith('fallout')
+def isFalloutBattle(arena = None):
+    return getArenaGuiType(arena=arena) in constants.ARENA_GUI_TYPE.FALLOUT_RANGE
+
+
+def isFalloutClassic(arena = None):
+    return getArenaGuiType(arena=arena) == constants.ARENA_GUI_TYPE.FALLOUT_CLASSIC
+
+
+def isFalloutMultiTeam(arena = None):
+    return getArenaGuiType(arena=arena) == constants.ARENA_GUI_TYPE.FALLOUT_MULTITEAM
 
 
 def isInSandboxBattle(arena = None):
@@ -104,7 +111,7 @@ def getArenaIconKey(arenaType = None, arenaGuiType = None):
         arenaType = arena.arenaType
     arenaGuiType = arenaGuiType or getArenaGuiType()
     arenaIcon = arenaType.geometryName
-    if arenaGuiType == constants.ARENA_GUI_TYPE.EVENT_BATTLES and arenaType.gameplayName.startswith('fallout'):
+    if arenaGuiType in constants.ARENA_GUI_TYPE.FALLOUT_RANGE:
         return '%s_fallout' % arenaIcon
     else:
         return arenaIcon
@@ -134,12 +141,6 @@ def hasResourcePoints(arenaType = None, arenBonusType = None):
         return caps.get(arenBonusType) & caps.RESOURCE_POINTS > 0 and arenaType.resourcePoints
     else:
         return False
-
-
-def getIsMultiteam(arenaType = None):
-    if arenaType is None:
-        arenaType = getArenaType()
-    return arenaType.gameplayName in ('fallout', 'fallout2', 'fallout3')
 
 
 def hasRepairPoints(arenaType = None, arenBonusType = None):
@@ -175,6 +176,25 @@ def hasGasAttack(arenBonusType = None):
     if arenBonusType is None:
         arenBonusType = getArenaBonusType()
     if arenBonusType is not None:
-        return caps.get(arenBonusType) & caps.GAS_ATTACK_MECHANICS > 0 and getIsMultiteam()
+        return caps.get(arenBonusType) & caps.GAS_ATTACK_MECHANICS > 0 and isFalloutMultiTeam()
     else:
         return False
+
+
+def getGasAttackSettings():
+    if hasGasAttack():
+        return getArenaType().gasAttackSettings
+    else:
+        return None
+
+
+def getArenaVehicleExtras(vehicleID, avatar = None):
+    extras = None
+    arena = getClientArena(avatar=avatar)
+    if arena is not None:
+        try:
+            extras = arena.vehicles[vehicleID]['vehicleType'].extras[:]
+        except (KeyError, AttributeError):
+            pass
+
+    return extras

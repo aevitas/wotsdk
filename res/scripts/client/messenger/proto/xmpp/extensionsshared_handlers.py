@@ -26,3 +26,9 @@ class IQChildHandler(PyHandler):
             data = child.parseTag(tag)
             if data:
                 yield data
+
+
+class ProxyHandler(PyHandler):
+
+    def getFilterString(self):
+        return self._ext.getXPath()

@@ -217,7 +217,7 @@ class PollItem(WindowItem):
 
     def validate(self, actionsHolder):
         if len(self._buttons) < 2:
-            raise ValidationError, 'Poll item "{0}" must has two buttons.'.format(self._name)
+            raise ValidationError('Poll item "{0}" must has two buttons.'.format(self._name))
         super(PollItem, self).validate(actionsHolder)
 
 

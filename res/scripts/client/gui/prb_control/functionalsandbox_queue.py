@@ -14,7 +14,7 @@ from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.functional import prequeue
 from gui.prb_control.functional.decorators import vehicleAmmoCheck
 from gui.prb_control.items import SelectResult
-from gui.prb_control.settings import SANDBOX_MAX_VEHICLE_LEVEL, QUEUE_RESTRICTION, FUNCTIONAL_FLAG, PREBATTLE_ACTION_NAME
+from gui.prb_control.settings import SANDBOX_MAX_VEHICLE_LEVEL, QUEUE_RESTRICTION, FUNCTIONAL_FLAG, PREBATTLE_ACTION_NAME, CTRL_ENTITY_TYPE
 from gui.prb_control.storage import prequeue_storage_getter
 from gui.shared import g_itemsCache, REQ_CRITERIA
 from gui.shared.gui_items.Vehicle import Vehicle
@@ -95,15 +95,17 @@ class SandboxQueueFunctional(prequeue.AccountQueueFunctional):
         if self.__watcher is not None:
             self.__watcher.stop()
             self.__watcher = None
-        if not woEvents and self._flags & FUNCTIONAL_FLAG.SWITCH == 0:
-            if self._flags & FUNCTIONAL_FLAG.RANDOM_BATTLES == FUNCTIONAL_FLAG.RANDOM_BATTLES:
-                self.storage.suspend()
         g_lobbyContext.getServerSettings().onServerSettingsChange -= self.__onServerSettingChanged
         super(SandboxQueueFunctional, self).fini(woEvents)
         return
 
     def isInQueue(self):
         return prb_getters.isInSandboxQueue()
+
+    def leave(self, ctx, callback = None):
+        if not ctx.hasFlags(FUNCTIONAL_FLAG.BATTLE_TUTORIAL):
+            self.storage.suspend()
+        super(SandboxQueueFunctional, self).leave(ctx, callback)
 
     @vehicleAmmoCheck
     def queue(self, ctx, callback = None):
@@ -125,7 +127,7 @@ class SandboxQueueFunctional(prequeue.AccountQueueFunctional):
             return (False, QUEUE_RESTRICTION.LIMIT_LEVEL)
 
     def getConfirmDialogMeta(self, ctx):
-        if not self.hasLockedState() and ctx.getEntityType() == PREBATTLE_TYPE.SQUAD:
+        if not self.hasLockedState() and ctx.getCtrlType() == CTRL_ENTITY_TYPE.UNIT and ctx.getEntityType() == PREBATTLE_TYPE.SQUAD:
             meta = rally_dialog_meta.createLeavePreQueueMeta(ctx, self._queueType)
         else:
             meta = super(SandboxQueueFunctional, self).getConfirmDialogMeta(ctx)

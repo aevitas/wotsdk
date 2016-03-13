@@ -52,6 +52,7 @@ class SoundSettings(dict):
         return res
 
     def getSoundName(self, soundType, soundId, state):
+        state = 'ww' + state
         if len(soundId) and self.__overrides.has_key(soundId) > 0:
             sound = self.__overrides.get(soundId, {}).get(state, '')
         elif len(soundType) > 0 and self.__groups.has_key(soundType):
@@ -109,7 +110,7 @@ class SoundManager(UIInterface):
                     return
                 scope = scope[key]
 
-            if type(scope) != str:
+            if not isinstance(scope, str):
                 LOG_ERROR('Invalid soundpath under key: %s', dictPath)
                 return
             SoundGroups.g_instance.playSound2D(scope)

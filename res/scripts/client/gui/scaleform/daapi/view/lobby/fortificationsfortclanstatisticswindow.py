@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/FortClanStatisticsWindow.py
+from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.view.meta.FortClanStatisticsWindowMeta import FortClanStatisticsWindowMeta
 
 class FortClanStatisticsWindow(FortClanStatisticsWindowMeta):
@@ -10,6 +11,7 @@ class FortClanStatisticsWindow(FortClanStatisticsWindowMeta):
 
     def _populate(self):
         super(FortClanStatisticsWindow, self)._populate()
+        LOG_DEBUG('FortClanStatisticsWindow | _populate', self.data.getData())
         self.as_setDataS(self.data.getData())
 
     def _dispose(self):

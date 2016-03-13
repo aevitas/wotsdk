@@ -114,10 +114,6 @@ class MENU(object):
     LOADING_BATTLETYPES_DESC_6 = '#menu:loading/battleTypes/desc/6'
     LOADING_BATTLETYPES_7 = '#menu:loading/battleTypes/7'
     LOADING_BATTLETYPES_DESC_7 = '#menu:loading/battleTypes/desc/7'
-    LOADING_BATTLETYPES_7_RESOURCE = '#menu:loading/battleTypes/7/resource'
-    LOADING_BATTLETYPES_DESC_7_RESOURCE = '#menu:loading/battleTypes/desc/7/resource'
-    LOADING_BATTLETYPES_7_MULTITEAM = '#menu:loading/battleTypes/7/multiteam'
-    LOADING_BATTLETYPES_DESC_7_MULTITEAM = '#menu:loading/battleTypes/desc/7/multiteam'
     LOADING_BATTLETYPES_8 = '#menu:loading/battleTypes/8'
     LOADING_BATTLETYPES_DESC_8 = '#menu:loading/battleTypes/desc/8'
     LOADING_BATTLETYPES_9 = '#menu:loading/battleTypes/9'
@@ -128,10 +124,10 @@ class MENU(object):
     LOADING_BATTLETYPES_DESC_11 = '#menu:loading/battleTypes/desc/11'
     LOADING_BATTLETYPES_12 = '#menu:loading/battleTypes/12'
     LOADING_BATTLETYPES_DESC_12 = '#menu:loading/battleTypes/desc/12'
-    LOADING_BATTLETYPES_MIX = '#menu:loading/battleTypes/mix'
-    LOADING_BATTLETYPES_RESOURCEPOINTS = '#menu:loading/battleTypes/resourcePoints'
-    LOADING_BATTLETYPES_MIX_UPPER = '#menu:loading/battleTypes/mix_upper'
-    LOADING_BATTLETYPES_RESOURCEPOINTS_UPPER = '#menu:loading/battleTypes/resourcePoints_upper'
+    LOADING_BATTLETYPES_13 = '#menu:loading/battleTypes/13'
+    LOADING_BATTLETYPES_DESC_13 = '#menu:loading/battleTypes/desc/13'
+    LOADING_BATTLETYPES_14 = '#menu:loading/battleTypes/14'
+    LOADING_BATTLETYPES_DESC_14 = '#menu:loading/battleTypes/desc/14'
     LOADING_TEAM1 = '#menu:loading/team1'
     LOADING_TEAM2 = '#menu:loading/team2'
     LOADING_TEAMS_ALLIES = '#menu:loading/teams/allies'
@@ -169,6 +165,7 @@ class MENU(object):
     TANKMANPERSONALCASE_USINGLEVEL = '#menu:tankmanPersonalCase/usingLevel'
     TANKMANPERSONALCASE_MODIFIERS_FROMCOMMANDER = '#menu:tankmanPersonalCase/modifiers/fromCommander'
     TANKMANPERSONALCASE_MODIFIERS_FROMEQUIPMENT = '#menu:tankmanPersonalCase/modifiers/fromEquipment'
+    TANKMANPERSONALCASE_MODIFIERS_CUSTOMIZATION = '#menu:tankmanPersonalCase/modifiers/customization'
     TANKMANPERSONALCASE_MODIFIERS_FROMSKILLS = '#menu:tankmanPersonalCase/modifiers/fromSkills'
     TANKMANPERSONALCASE_MODIFIERS_PENALTY = '#menu:tankmanPersonalCase/modifiers/penalty'
     TANKMANPERSONALCASE_MODIFIERSHEADER = '#menu:tankmanPersonalCase/modifiersHeader'
@@ -244,6 +241,7 @@ class MENU(object):
     TANKCAROUSEL_VEHICLESTATES_UNAVAILABLE = '#menu:tankCarousel/vehicleStates/unavailable'
     TANKCAROUSEL_VEHICLESTATES_UNSUITABLETOQUEUE = '#menu:tankCarousel/vehicleStates/unsuitableToQueue'
     TANKCAROUSEL_VEHICLESTATES_FALLOUT_ONLY = '#menu:tankCarousel/vehicleStates/fallout_only'
+    TANKCAROUSEL_VEHICLESTATES_DEALISOVER = '#menu:tankCarousel/vehicleStates/dealIsOver'
     STORE_VEHICLESTATES_BATTLE = '#menu:store/vehicleStates/battle'
     STORE_VEHICLESTATES_LOCKED = '#menu:store/vehicleStates/locked'
     STORE_VEHICLESTATES_CLANLOCKED = '#menu:store/vehicleStates/clanLocked'
@@ -270,6 +268,7 @@ class MENU(object):
     STORE_VEHICLESTATES_FALLOUT_BROKEN = '#menu:store/vehicleStates/fallout_broken'
     STORE_VEHICLESTATES_UNSUITABLETOQUEUE = '#menu:store/vehicleStates/unsuitableToQueue'
     STORE_VEHICLESTATES_FALLOUT_ONLY = '#menu:store/vehicleStates/fallout_only'
+    STORE_VEHICLESTATES_DEALISOVER = '#menu:store/vehicleStates/dealIsOver'
     CURRENTVEHICLESTATUS_BATTLE = '#menu:currentVehicleStatus/battle'
     CURRENTVEHICLESTATUS_INPREBATTLE = '#menu:currentVehicleStatus/inPrebattle'
     CURRENTVEHICLESTATUS_RENTALISOVER = '#menu:currentVehicleStatus/rentalIsOver'
@@ -295,6 +294,7 @@ class MENU(object):
     CURRENTVEHICLESTATUS_FALLOUT_REQUIRED = '#menu:currentVehicleStatus/fallout_required'
     CURRENTVEHICLESTATUS_FALLOUT_BROKEN = '#menu:currentVehicleStatus/fallout_broken'
     CURRENTVEHICLESTATUS_FALLOUT_ONLY = '#menu:currentVehicleStatus/fallout_only'
+    CURRENTVEHICLESTATUS_DEALISOVER = '#menu:currentVehicleStatus/dealIsOver'
     REPAIR_REPAIRSTATUS = '#menu:repair/repairstatus'
     REPAIR_CURIENCY = '#menu:repair/curiency'
     REPAIR_BUTTON = '#menu:repair/button'
@@ -492,8 +492,8 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_AVAILABLEUNTILSOON = '#menu:headerButtons/battle/availableUntilSoon'
     HEADERBUTTONS_BATTLE_MENU_STANDART = '#menu:headerButtons/battle/menu/standart'
     HEADERBUTTONS_BATTLE_MENU_FALLOUT = '#menu:headerButtons/battle/menu/fallout'
-    HEADERBUTTONS_BATTLE_MENU_FALLOUT_1 = '#menu:headerButtons/battle/menu/fallout/1'
-    HEADERBUTTONS_BATTLE_MENU_FALLOUT_2 = '#menu:headerButtons/battle/menu/fallout/2'
+    HEADERBUTTONS_BATTLE_MENU_FALLOUT_14 = '#menu:headerButtons/battle/menu/fallout/14'
+    HEADERBUTTONS_BATTLE_MENU_FALLOUT_15 = '#menu:headerButtons/battle/menu/fallout/15'
     HEADERBUTTONS_BATTLE_MENU_SQUAD = '#menu:headerButtons/battle/menu/squad'
     HEADERBUTTONS_BATTLE_MENU_TRAINING = '#menu:headerButtons/battle/menu/training'
     HEADERBUTTONS_BATTLE_MENU_TEAM = '#menu:headerButtons/battle/menu/team'
@@ -526,7 +526,8 @@ class MENU(object):
     PVESANDBOX_QUEUE_PLAYER_WAITING_TIME = '#menu:pveSandbox/queue/player-waiting-time'
     HEADERBUTTONS_RATING = '#menu:headerButtons/rating'
     HEADERBUTTONS_PROFILE = '#menu:headerButtons/profile'
-    HEADERBUTTONS_INVENTORY = '#menu:headerButtons/inventory'
+    STORETAB_INVENTORY = '#menu:storeTab/inventory'
+    STORETAB_SHOP = '#menu:storeTab/shop'
     HEADERBUTTONS_TECHTREE = '#menu:headerButtons/techtree'
     HEADERBUTTONS_BARRACKS = '#menu:headerButtons/barracks'
     HEADERBUTTONS_FORTS = '#menu:headerButtons/forts'
@@ -584,6 +585,7 @@ class MENU(object):
     HEADER_ACCOUNT_POPOVER_CLAN_SEARCHCLAN2 = '#menu:header/account/popover/clan/searchClan2'
     HEADER_ACCOUNT_POPOVER_CLAN_NOTINCLAN = '#menu:header/account/popover/clan/notInClan'
     HEADER_ACCOUNT_POPOVER_CREW_BTNLABEL = '#menu:header/account/popover/crew/btnLabel'
+    HEADER_ACCOUNT_POPOVER_CREWBUTTON_DISABLEDTOOLTIP = '#menu:header/account/popover/crewButton/disabledTooltip'
     HEADER_ACCOUNT_POPOVER_CREW_POSITION_LEADER = '#menu:header/account/popover/crew/position/leader'
     HEADER_ACCOUNT_POPOVER_CREW_POSITION_VICE_LEADER = '#menu:header/account/popover/crew/position/vice_leader'
     HEADER_ACCOUNT_POPOVER_CREW_POSITION_RECRUITER = '#menu:header/account/popover/crew/position/recruiter'
@@ -732,11 +734,6 @@ class MENU(object):
     PREMIUM_PACKET_DAYS30 = '#menu:premium/packet/days30'
     PREMIUM_PACKET_DAYS180 = '#menu:premium/packet/days180'
     PREMIUM_PACKET_DAYS360 = '#menu:premium/packet/days360'
-    PREMIUMCONGRATULATION_TITLE = '#menu:premiumCongratulation/title'
-    PREMIUMCONGRATULATION_HEDER = '#menu:premiumCongratulation/heder'
-    PREMIUMCONGRATULATION_DESCRIPTION = '#menu:premiumCongratulation/description'
-    PREMIUMCONGRATULATION_BTNLABEL = '#menu:premiumCongratulation/btnLabel'
-    PREMIUMCONGRATULATION_CLOSEBTN = '#menu:premiumCongratulation/closeBtn'
     PREMIUM_GOLD = '#menu:premium/gold'
     PREMIUM_SUBMITBUY = '#menu:premium/submitBuy'
     PREMIUM_SUBMITCONTINUE = '#menu:premium/submitContinue'
@@ -1276,6 +1273,8 @@ class MENU(object):
     BONUSTYPE_12 = '#menu:bonusType/12'
     BONUSTYPE_13 = '#menu:bonusType/13'
     BONUSTYPE_16 = '#menu:bonusType/16'
+    BONUSTYPE_18 = '#menu:bonusType/18'
+    BONUSTYPE_19 = '#menu:bonusType/19'
     FORTIFICATIONCTX_DIRECTIONCONTROL = '#menu:fortificationCtx/directionControl'
     FORTIFICATIONCTX_ASSIGNEDPLAYERS = '#menu:fortificationCtx/assignedPlayers'
     FORTIFICATIONCTX_MODERNIZATION = '#menu:fortificationCtx/modernization'
@@ -1401,6 +1400,13 @@ class MENU(object):
     AWARDWINDOW_PERSONALDISCOUNTAWARD_ADDITIONAL_EXPERIENCE_RENT = '#menu:awardWindow/personalDiscountAward/additional/experience/rent'
     AWARDWINDOW_PERSONALDISCOUNTAWARD_REWARDTEXT = '#menu:awardWindow/personalDiscountAward/rewardText'
     AWARDWINDOW_PERSONALDISCOUNTAWARD_ACTIVATEBTN_LABEL = '#menu:awardWindow/personalDiscountAward/activateBtn/label'
+    AWARDWINDOW_TELECOMAWARD_HEADER = '#menu:awardWindow/telecomAward/header'
+    AWARDWINDOW_TELECOMAWARD_DESCRIPTION = '#menu:awardWindow/telecomAward/description'
+    AWARDWINDOW_TELECOMAWARD_DESCRIPTION_WITHBROTHERHOOD = '#menu:awardWindow/telecomAward/description/withBrotherhood'
+    AWARDWINDOW_TELECOMAWARD_DESCRIPTION_WITHOUTCREW = '#menu:awardWindow/telecomAward/description/withoutCrew'
+    AWARDWINDOW_TELECOMAWARD_VEHICLES = '#menu:awardWindow/telecomAward/vehicles'
+    AWARDWINDOW_TELECOMAWARD_SUBDESCRIPTION = '#menu:awardWindow/telecomAward/subdescription'
+    AWARDWINDOW_TELECOMAWARD_BUTTON_LABEL = '#menu:awardWindow/telecomAward/button/label'
     REFERRALMANAGEMENTWINDOW_TITLE = '#menu:ReferralManagementWindow/title'
     REFERRALMANAGEMENTWINDOW_INFOHEADER_HAVENOTTANK = '#menu:ReferralManagementWindow/infoHeader/haveNotTank'
     REFERRALMANAGEMENTWINDOW_INFOHEADER_HAVETANK = '#menu:ReferralManagementWindow/infoHeader/haveTank'
@@ -1453,6 +1459,8 @@ class MENU(object):
     STATICFORAMTION_STAFF_CTXMENU_REMOVEMEMBER = '#menu:staticForamtion/staff/ctxMenu/removeMember'
     BOOSTERSWINDOW_TITLE = '#menu:boostersWindow/title'
     BOOSTERSWINDOW_CLOSEBTN_LABEL = '#menu:boostersWindow/closeBtn/label'
+    BOOSTERSWINDOW_LEVELFILTERS_LABEL = '#menu:boostersWindow/levelFilters/label'
+    BOOSTERSWINDOW_TYPEFILTERS_LABEL = '#menu:boostersWindow/typeFilters/label'
     BOOSTERSWINDOW_TABS_AVAILABLELABEL = '#menu:boostersWindow/tabs/availableLabel'
     BOOSTERSWINDOW_TABS_NOTAVAILABLELABEL = '#menu:boostersWindow/tabs/notAvailableLabel'
     BOOSTERSWINDOW_ACTIVEBOOSTERS = '#menu:boostersWindow/activeBoosters'
@@ -1462,7 +1470,8 @@ class MENU(object):
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_QUESTFOROPEN = '#menu:boostersWindow/boostersTableRenderer/questForOpen'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_ACTIVATEBTNLABEL = '#menu:boostersWindow/boostersTableRenderer/activateBtnLabel'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_GOTOQUESTBTNLABEL = '#menu:boostersWindow/boostersTableRenderer/goToQuestBtnLabel'
-    BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO = '#menu:boostersWindow/boostersTable/noInfo'
+    BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_TITLE = '#menu:boostersWindow/boostersTable/noInfo/title'
+    BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_MESSAGE = '#menu:boostersWindow/boostersTable/noInfo/message'
     BOOSTER_USERNAME_BOOSTER_XP = '#menu:booster/userName/booster_xp'
     BOOSTER_DESCRIPTION_BOOSTER_XP = '#menu:booster/description/booster_xp'
     BOOSTER_USERNAME_BOOSTER_FREE_XP = '#menu:booster/userName/booster_free_xp'
@@ -1755,6 +1764,7 @@ class MENU(object):
      TANKMANTRAININGWINDOW_CLOSEBTN)
     TANKMANPERSONALCASE_MODIFIERS_ENUM = (TANKMANPERSONALCASE_MODIFIERS_FROMCOMMANDER,
      TANKMANPERSONALCASE_MODIFIERS_FROMEQUIPMENT,
+     TANKMANPERSONALCASE_MODIFIERS_CUSTOMIZATION,
      TANKMANPERSONALCASE_MODIFIERS_FROMSKILLS,
      TANKMANPERSONALCASE_MODIFIERS_PENALTY,
      TANKMANPERSONALCASE_MODIFIERSHEADER,
@@ -1829,17 +1839,13 @@ class MENU(object):
      LOADING_BATTLETYPES_5,
      LOADING_BATTLETYPES_6,
      LOADING_BATTLETYPES_7,
-     LOADING_BATTLETYPES_7_RESOURCE,
-     LOADING_BATTLETYPES_7_MULTITEAM,
      LOADING_BATTLETYPES_8,
      LOADING_BATTLETYPES_9,
      LOADING_BATTLETYPES_10,
      LOADING_BATTLETYPES_11,
      LOADING_BATTLETYPES_12,
-     LOADING_BATTLETYPES_MIX,
-     LOADING_BATTLETYPES_RESOURCEPOINTS,
-     LOADING_BATTLETYPES_MIX_UPPER,
-     LOADING_BATTLETYPES_RESOURCEPOINTS_UPPER)
+     LOADING_BATTLETYPES_13,
+     LOADING_BATTLETYPES_14)
     REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_ENUM = (REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_INVITE_BLOCK, REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_SQUAD_BLOCK, REFERRALREFERRERINTROWINDOW_TEXTBLOCK_BODY_REFERRALS_BLOCK)
     TANKCAROUSEL_VEHICLESTATES_ENUM = (TANKCAROUSEL_VEHICLESTATES_BATTLE,
      TANKCAROUSEL_VEHICLESTATES_LOCKED,
@@ -1868,17 +1874,18 @@ class MENU(object):
      TANKCAROUSEL_VEHICLESTATES_BUYSLOT,
      TANKCAROUSEL_VEHICLESTATES_UNAVAILABLE,
      TANKCAROUSEL_VEHICLESTATES_UNSUITABLETOQUEUE,
-     TANKCAROUSEL_VEHICLESTATES_FALLOUT_ONLY)
-    SHOP_TABLE_HEADER_COUNT_ENUM = (SHOP_TABLE_HEADER_COUNT_VEHICLE,
-     SHOP_TABLE_HEADER_COUNT_MODULE,
-     SHOP_TABLE_HEADER_COUNT_SHELL,
-     SHOP_TABLE_HEADER_COUNT_OPTIONALDEVICE,
-     SHOP_TABLE_HEADER_COUNT_EQUIPMENT)
+     TANKCAROUSEL_VEHICLESTATES_FALLOUT_ONLY,
+     TANKCAROUSEL_VEHICLESTATES_DEALISOVER)
     FINALSTATISTIC_COMMONSTATS_RESULTLABEL_ENUM = (FINALSTATISTIC_COMMONSTATS_RESULTLABEL_WIN,
      FINALSTATISTIC_COMMONSTATS_RESULTLABEL_LOSE,
      FINALSTATISTIC_COMMONSTATS_RESULTLABEL_TIE,
      FINALSTATISTIC_COMMONSTATS_RESULTLABEL_TECHWIN,
      FINALSTATISTIC_COMMONSTATS_RESULTLABEL_ENDED)
+    SHOP_TABLE_HEADER_COUNT_ENUM = (SHOP_TABLE_HEADER_COUNT_VEHICLE,
+     SHOP_TABLE_HEADER_COUNT_MODULE,
+     SHOP_TABLE_HEADER_COUNT_SHELL,
+     SHOP_TABLE_HEADER_COUNT_OPTIONALDEVICE,
+     SHOP_TABLE_HEADER_COUNT_EQUIPMENT)
     TANKMEN_ENUM = (TANKMEN_LIGHTTANK,
      TANKMEN_MEDIUMTANK,
      TANKMEN_HEAVYTANK,
@@ -1887,10 +1894,6 @@ class MENU(object):
      TANKMEN_LOCKREASON_INBATTLE,
      TANKMEN_LOCKREASON_PREBATTLE,
      TANKMEN_LOCKREASON_BROKEN)
-    PROFILE_STATS_BLOCKS_ENUM = (PROFILE_STATS_BLOCKS_COMMON,
-     PROFILE_STATS_BLOCKS_BATTLEEFFECT,
-     PROFILE_STATS_BLOCKS_CREDITS,
-     PROFILE_STATS_BLOCKS_STUDYING)
     LOADING_BATTLETYPES_DESC_ENUM = (LOADING_BATTLETYPES_DESC_0,
      LOADING_BATTLETYPES_DESC_1,
      LOADING_BATTLETYPES_DESC_2,
@@ -1899,13 +1902,17 @@ class MENU(object):
      LOADING_BATTLETYPES_DESC_5,
      LOADING_BATTLETYPES_DESC_6,
      LOADING_BATTLETYPES_DESC_7,
-     LOADING_BATTLETYPES_DESC_7_RESOURCE,
-     LOADING_BATTLETYPES_DESC_7_MULTITEAM,
      LOADING_BATTLETYPES_DESC_8,
      LOADING_BATTLETYPES_DESC_9,
      LOADING_BATTLETYPES_DESC_10,
      LOADING_BATTLETYPES_DESC_11,
-     LOADING_BATTLETYPES_DESC_12)
+     LOADING_BATTLETYPES_DESC_12,
+     LOADING_BATTLETYPES_DESC_13,
+     LOADING_BATTLETYPES_DESC_14)
+    PROFILE_STATS_BLOCKS_ENUM = (PROFILE_STATS_BLOCKS_COMMON,
+     PROFILE_STATS_BLOCKS_BATTLEEFFECT,
+     PROFILE_STATS_BLOCKS_CREDITS,
+     PROFILE_STATS_BLOCKS_STUDYING)
     VEHICLEINFO_PARAMS_ENUM = (VEHICLEINFO_PARAMS_MAXHEALTH,
      VEHICLEINFO_PARAMS_WEIGHT,
      VEHICLEINFO_PARAMS_ENGINEPOWER,
@@ -2218,16 +2225,16 @@ class MENU(object):
         return outcome
 
     @staticmethod
-    def shop_table_header_count(key):
-        outcome = '#menu:shop/table/header/count/%s' % key
-        if outcome not in MENU.SHOP_TABLE_HEADER_COUNT_ENUM:
+    def finalstatistic_commonstats_resultlabel(key):
+        outcome = '#menu:finalStatistic/commonStats/resultlabel/%s' % key
+        if outcome not in MENU.FINALSTATISTIC_COMMONSTATS_RESULTLABEL_ENUM:
             raise Exception, 'locale key "' + outcome + '" was not found'
         return outcome
 
     @staticmethod
-    def finalstatistic_commonstats_resultlabel(key):
-        outcome = '#menu:finalStatistic/commonStats/resultlabel/%s' % key
-        if outcome not in MENU.FINALSTATISTIC_COMMONSTATS_RESULTLABEL_ENUM:
+    def shop_table_header_count(key):
+        outcome = '#menu:shop/table/header/count/%s' % key
+        if outcome not in MENU.SHOP_TABLE_HEADER_COUNT_ENUM:
             raise Exception, 'locale key "' + outcome + '" was not found'
         return outcome
 
@@ -2239,16 +2246,16 @@ class MENU(object):
         return outcome
 
     @staticmethod
-    def profile_stats_blocks(key):
-        outcome = '#menu:profile/stats/blocks/%s' % key
-        if outcome not in MENU.PROFILE_STATS_BLOCKS_ENUM:
+    def loading_battletypes_desc(key):
+        outcome = '#menu:loading/battleTypes/desc/%s' % key
+        if outcome not in MENU.LOADING_BATTLETYPES_DESC_ENUM:
             raise Exception, 'locale key "' + outcome + '" was not found'
         return outcome
 
     @staticmethod
-    def loading_battletypes_desc(key):
-        outcome = '#menu:loading/battleTypes/desc/%s' % key
-        if outcome not in MENU.LOADING_BATTLETYPES_DESC_ENUM:
+    def profile_stats_blocks(key):
+        outcome = '#menu:profile/stats/blocks/%s' % key
+        if outcome not in MENU.PROFILE_STATS_BLOCKS_ENUM:
             raise Exception, 'locale key "' + outcome + '" was not found'
         return outcome
 

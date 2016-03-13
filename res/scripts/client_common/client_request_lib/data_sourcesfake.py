@@ -26,7 +26,7 @@ def fake_method(example):
                 response_code = exceptions.ResponseCodes.NO_ERRORS
                 status_code = 200
             except exceptions.BaseRequestError as e:
-                result = e.description
+                result = {'description': e.description}
                 status_code = e.status_code
                 response_code = e.response_code
             except:
@@ -299,7 +299,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
     @fake_method(example={'clan_id': 2790,
      'favorite_arena_6': 1,
      'favorite_arena_8': 3,
-     'favorite_arena_10': 121,
+     'favorite_arena_10': 65549,
      'favorite_primetime': dt_time(19, 0)})
     def get_clan_favorite_attributes(self, clan_id, fields = None):
         """
@@ -430,7 +430,7 @@ class FakeDataAccessor(base.BaseDataAccessor):
     @fake_method(example=lambda account_id: {'global_rating': random.randrange(100, 10000),
      'battle_avg_xp': random.randrange(100, 10000),
      'battles_count': random.randrange(1, 1000),
-     'battle_avg_performance': random.randrange(1, 1000),
+     'battle_avg_performance': random.uniform(0, 1),
      'xp_amount': random.randrange(100, 1000),
      'account_id': account_id})
     def get_accounts_info(self, account_ids, fields = None):
@@ -448,7 +448,20 @@ class FakeDataAccessor(base.BaseDataAccessor):
       'prime_time': dt_time(18, 0, 0),
       'periphery': 333,
       'game_map': 'some_map',
-      'turns_owned': 12}])
+      'pillage_cooldown': 1,
+      'pillage_end_datetime': datetime.now() + timedelta(hours=3),
+      'turns_owned': 12}, {'front_name': 'some_front2',
+      'province_id': 'some_province2',
+      'front_name_localized': 'some_front_localized2',
+      'province_id_localized': 'some_province_localized2',
+      'revenue': 333,
+      'hq_connected': True,
+      'prime_time': dt_time(19, 0, 0),
+      'periphery': 444,
+      'game_map': 'some_map2',
+      'pillage_cooldown': None,
+      'pillage_end_datetime': None,
+      'turns_owned': 13}])
     def get_clan_provinces(self, clan_id, fields = None):
         """
         return fake data from `clan_provinces` section

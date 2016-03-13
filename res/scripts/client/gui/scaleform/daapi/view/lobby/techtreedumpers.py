@@ -33,7 +33,7 @@ class _BaseDumper(object):
     def _getRentStatus(item):
         status = ''
         statusLevel = ''
-        if item.isRented:
+        if item.isRented and not item.isTelecom:
             if item.rentalIsOver:
                 if item.isPremiumIGR:
                     status = i18n.makeString('#menu:currentVehicleStatus/igrRentalIsOver')
@@ -53,7 +53,7 @@ class ResearchItemsObjDumper(_BaseDumper):
             cache = {'nodes': [],
              'top': [],
              'global': {'enableInstallItems': False,
-                        'statusString': '',
+                        'statusString': None,
                         'extraInfo': {},
                         'freeXP': 0,
                         'hasNationTree': False}}
@@ -117,8 +117,7 @@ class ResearchItemsObjDumper(_BaseDumper):
 
     def _getItemData(self, node, item, rootItem):
         nodeCD = node['id']
-        vClass = {'userString': '',
-         'name': ''}
+        vClass = {'name': ''}
         extraInfo = None
         status = statusLevel = ''
         minRentPricePackage = None
@@ -129,8 +128,7 @@ class ResearchItemsObjDumper(_BaseDumper):
         else:
             if item.itemTypeID == GUI_ITEM_TYPE.GUN and item.isClipGun(rootItem.descriptor):
                 extraInfo = CLIP_ICON_PATH
-            vClass.update({'name': item.itemTypeName,
-             'userString': item.userType})
+            vClass.update({'name': item.itemTypeName})
         credits, gold = item.minRentPrice or item.buyPrice
         action = None
         if item.buyPrice != item.defaultPrice and not minRentPricePackage:
@@ -153,13 +151,12 @@ class ResearchItemsObjDumper(_BaseDumper):
          'extraInfo': extraInfo,
          'status': status,
          'statusLevel': statusLevel,
-         'isRemovable': item.isRented,
          'isPremiumIGR': item.isPremiumIGR}
 
 
 class ResearchItemsXMLDumper(ResearchItemsObjDumper):
     __xmlBody = '<?xml version="1.0" encoding="utf-8"?><graph><top>{0:>s}</top><nodes>{1:>s}</nodes><global><enableInstallItems>{2[enableInstallItems]:b}</enableInstallItems><statusString>{2[statusString]:>s}</statusString><extraInfo><type>{2[extraInfo][type]:>s}</type><title><![CDATA[{2[extraInfo][title]:>s}]]></title><benefitsHead><![CDATA[{2[extraInfo][benefitsHead]:>s}]]></benefitsHead><benefitsList><![CDATA[{2[extraInfo][benefitsList]:>s}]]></benefitsList></extraInfo><freeXP>{2[freeXP]:n}</freeXP><hasNationTree>{2[hasNationTree]:b}</hasNationTree></global></graph>'
-    __nodeFormat = '<node><id>{id:d}</id><nameString>{nameString:>s}</nameString><class><name>{primaryClass[name]:>s}</name><userString>{primaryClass[userString]:>s}</userString></class><level>{level:d}</level><earnedXP>{earnedXP:d}</earnedXP><state>{state:d}</state><unlockProps><parentID>{unlockProps[0]:d}</parentID><unlockIdx>{unlockProps[1]:d}</unlockIdx><xpCost>{unlockProps[2]:n}</xpCost><required>{unlockProps[3]:>s}</required></unlockProps><smallIconPath><![CDATA[{smallIconPath:>s}]]></smallIconPath><iconPath><![CDATA[{iconPath:>s}]]></iconPath><longName>{longName:>s}</longName><shopPrice><credits>{shopPrice[0]:n}</credits><gold>{shopPrice[1]:n}</gold></shopPrice><display><renderer>{displayInfo[renderer]:>s}</renderer><path>{displayInfo[path]:>s}</path><level>{displayInfo[level]:d}</level></display></node>'
+    __nodeFormat = '<node><id>{id:d}</id><nameString>{nameString:>s}</nameString><class><name>{primaryClass[name]:>s}</name></class><level>{level:d}</level><earnedXP>{earnedXP:d}</earnedXP><state>{state:d}</state><unlockProps><parentID>{unlockProps[0]:d}</parentID><unlockIdx>{unlockProps[1]:d}</unlockIdx><xpCost>{unlockProps[2]:n}</xpCost><required>{unlockProps[3]:>s}</required></unlockProps><smallIconPath><![CDATA[{smallIconPath:>s}]]></smallIconPath><iconPath><![CDATA[{iconPath:>s}]]></iconPath><longName>{longName:>s}</longName><shopPrice><credits>{shopPrice[0]:n}</credits><gold>{shopPrice[1]:n}</gold></shopPrice><display><renderer>{displayInfo[renderer]:>s}</renderer><path>{displayInfo[path]:>s}</path><level>{displayInfo[level]:d}</level></display></node>'
     __idFormat = '<id>{0:d}</id>'
 
     def __init__(self):
@@ -261,7 +258,7 @@ class NationObjDumper(_BaseDumper):
 
 class NationXMLDumper(NationObjDumper):
     __xmlBody = '<?xml version="1.0" encoding="utf-8"?><tree><nodes>{0:>s}</nodes><scrollIndex>{1:d}</scrollIndex></tree>'
-    __nodeFormat = '<node><id>{id:d}</id><nameString>{nameString:>s}</nameString><class><name>{primaryClass[name]:>s}</name><userString>{primaryClass[userString]:>s}</userString></class><level>{level:d}</level><earnedXP>{earnedXP:d}</earnedXP><state>{state:d}</state><unlockProps><parentID>{unlockProps[0]:d}</parentID><unlockIdx>{unlockProps[1]:d}</unlockIdx><xpCost>{unlockProps[2]:n}</xpCost><topIDs>{unlockProps[3]:>s}</topIDs></unlockProps><iconPath>{iconPath:>s}</iconPath><smallIconPath><![CDATA[{smallIconPath:>s}]]></smallIconPath><longName>{longName:>s}</longName><shopPrice><credits>{shopPrice[0]:n}</credits><gold>{shopPrice[1]:n}</gold></shopPrice><display>{displayInfo:>s}</display></node>'
+    __nodeFormat = '<node><id>{id:d}</id><nameString>{nameString:>s}</nameString><class><name>{primaryClass[name]:>s}</name></class><level>{level:d}</level><earnedXP>{earnedXP:d}</earnedXP><state>{state:d}</state><unlockProps><parentID>{unlockProps[0]:d}</parentID><unlockIdx>{unlockProps[1]:d}</unlockIdx><xpCost>{unlockProps[2]:n}</xpCost><topIDs>{unlockProps[3]:>s}</topIDs></unlockProps><iconPath>{iconPath:>s}</iconPath><smallIconPath><![CDATA[{smallIconPath:>s}]]></smallIconPath><longName>{longName:>s}</longName><shopPrice><credits>{shopPrice[0]:n}</credits><gold>{shopPrice[1]:n}</gold></shopPrice><display>{displayInfo:>s}</display></node>'
     __displayInfoFormat = '<row>{row:d}</row><column>{column:d}</column><position><x>{position[0]:n}</x><y>{position[1]:n}</y></position><lines>{lines:>s}</lines>'
     __setFormat = '<set><outLiteral>{0:>s}</outLiteral><outPin><x>{1[0]:n}</x><y>{1[1]:n}</y></outPin><inPins>{2:>s}</inPins></set>'
     __inPinFormat = '<item><childID>{childID:d}</childID><inPin><x>{inPin[0]:n}</x><y>{inPin[1]:n}</y></inPin><viaPins>{dump:>s}</viaPins></item>'

@@ -32,7 +32,7 @@ class SETTINGS_SECTIONS(CONST_CONTAINER):
 
 
 class ServerSettingsManager(object):
-    __version = 17
+    __version = 19
     GAME = settings_constants.GAME
     GRAPHICS = settings_constants.GRAPHICS
     SOUND = settings_constants.SOUND
@@ -61,7 +61,10 @@ class ServerSettingsManager(object):
      SETTINGS_SECTIONS.GAME_EXTENDED: Section(masks={GAME.SHOW_BATTLE_EFFICIENCY_RIBBONS: 0,
                                        GAME.CHAT_CONTACTS_LIST_ONLY: 1,
                                        GAME.RECEIVE_INVITES_IN_BATTLE: 2,
-                                       GAME.RECEIVE_CLAN_INVITES_NOTIFICATIONS: 3}, offsets={}),
+                                       GAME.RECEIVE_CLAN_INVITES_NOTIFICATIONS: 3,
+                                       GAME.MINIMAP_VIEW_RANGE: 6,
+                                       GAME.MINIMAP_MAX_VIEW_RANGE: 7,
+                                       GAME.MINIMAP_DRAW_RANGE: 8}, offsets={GAME.BATTLE_LOADING_INFO: Offset(4, 48)}),
      SETTINGS_SECTIONS.GAMEPLAY: Section(masks={}, offsets={GAME.GAMEPLAY_MASK: Offset(0, 65535)}),
      SETTINGS_SECTIONS.GRAPHICS: Section(masks={GRAPHICS.FPS_PERFOMANCER: 0,
                                   GAME.LENS_EFFECT: 1}, offsets={}),
@@ -112,7 +115,7 @@ class ServerSettingsManager(object):
      SETTINGS_SECTIONS.FALLOUT: Section(masks={'isEnabled': 3,
                                  'isAutomatch': 4,
                                  'hasVehicleLvl8': 5,
-                                 'hasVehicleLvl10': 6}, offsets={'falloutBattleType': Offset(0, 3)}),
+                                 'hasVehicleLvl10': 6}, offsets={'falloutBattleType': Offset(8, 65280)}),
      SETTINGS_SECTIONS.TUTORIAL: Section(masks={TUTORIAL.CUSTOMIZATION: 0,
                                   TUTORIAL.TECHNICAL_MAINTENANCE: 1,
                                   TUTORIAL.PERSONAL_CASE: 2,
@@ -122,7 +125,8 @@ class ServerSettingsManager(object):
                                   TUTORIAL.REPAIRKIT_USED: 8,
                                   TUTORIAL.FIRE_EXTINGUISHER_USED: 10,
                                   TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED: 11}, offsets={}),
-     SETTINGS_SECTIONS.ONCE_ONLY_HINTS: Section(masks={'FalloutQuestsTab': 0}, offsets={})}
+     SETTINGS_SECTIONS.ONCE_ONLY_HINTS: Section(masks={'FalloutQuestsTab': 0,
+                                         'CustomizationSlotsHint': 1}, offsets={})}
     AIM_MAPPING = {'net': 1,
      'netType': 1,
      'centralTag': 1,
@@ -343,15 +347,22 @@ class ServerSettingsManager(object):
         return self._mapValues(settings, storingValue, masks, offsets)
 
     def _setSectionSettings(self, section, settings):
+        storedSettings = self.getSection(section)
         storedValue = g_settingsCache.getSectionSettings(section, None)
         storingValue = self._buildSectionSettings(section, settings)
         if storedValue == storingValue:
             return
         else:
-            LOG_DEBUG('Applying %s server settings: ' % section, settings)
             g_settingsCache.setSectionSettings(section, storingValue)
             self.setVersion()
-            self._core.onSettingsChanged(settings)
+            settingsDiff = {}
+            for k, v in settings.iteritems():
+                sV = storedSettings.get(k)
+                if sV != v:
+                    settingsDiff[k] = v
+
+            LOG_DEBUG('Applying %s server settings: ' % section, settingsDiff)
+            self._core.onSettingsChanged(settingsDiff)
             return
 
     def _extractValue(self, key, storedValue, default, masks, offsets):
@@ -391,35 +402,49 @@ class ServerSettingsManager(object):
          'keyboardData': {},
          'graphicsData': {},
          'marksOnGun': {},
+         'fallout': {},
          'clear': {}}
         yield migrateToVersion(currentVersion, self._core, data)
-        self._setSettingsSections(**data)
+        self._setSettingsSections(data)
         callback(self)
 
-    def _setSettingsSections(self, gameData, gameExtData, gameplayData, controlsData, aimData, markersData, keyboardData, graphicsData, marksOnGun, clear):
+    def _setSettingsSections(self, data):
         settings = {}
+        clear = data.get('clear', {})
+        gameData = data.get('gameData', {})
         clearGame = clear.get(SETTINGS_SECTIONS.GAME, 0)
         if gameData or clearGame:
             settings[SETTINGS_SECTIONS.GAME] = self._buildSectionSettings(SETTINGS_SECTIONS.GAME, gameData) ^ clearGame
+        gameExtData = data.get('gameExtData', {})
         clearGameExt = clear.get(SETTINGS_SECTIONS.GAME_EXTENDED, 0)
         if gameExtData or clearGameExt:
             settings[SETTINGS_SECTIONS.GAME_EXTENDED] = self._buildSectionSettings(SETTINGS_SECTIONS.GAME_EXTENDED, gameExtData) ^ clearGameExt
+        gameplayData = data.get('gameplayData', {})
         clearGameplay = clear.get(SETTINGS_SECTIONS.GAMEPLAY, 0)
         if gameplayData or clearGameplay:
             settings[SETTINGS_SECTIONS.GAMEPLAY] = self._buildSectionSettings(SETTINGS_SECTIONS.GAMEPLAY, gameplayData) ^ clearGameplay
+        controlsData = data.get('controlsData', {})
         clearControls = clear.get(SETTINGS_SECTIONS.CONTROLS, 0)
         if controlsData or clearControls:
             settings[SETTINGS_SECTIONS.CONTROLS] = self._buildSectionSettings(SETTINGS_SECTIONS.CONTROLS, controlsData) ^ clearControls
+        graphicsData = data.get('graphicsData', {})
         clearGraphics = clear.get(SETTINGS_SECTIONS.GRAPHICS, 0)
         if graphicsData or clearGraphics:
             settings[SETTINGS_SECTIONS.GRAPHICS] = self._buildSectionSettings(SETTINGS_SECTIONS.GRAPHICS, graphicsData) ^ clearGraphics
+        aimData = data.get('aimData', {})
         if aimData:
             settings.update(self._buildAimSettings(aimData))
+        markersData = data.get('markersData', {})
         if markersData:
             settings.update(self._buildMarkersSettings(markersData))
+        keyboardData = data.get('keyboardData', {})
         if keyboardData:
             settings.update(keyboardData)
+        marksOnGun = data.get('marksOnGun', {})
         if marksOnGun:
             settings[SETTINGS_SECTIONS.MARKS_ON_GUN] = self._buildSectionSettings(SETTINGS_SECTIONS.MARKS_ON_GUN, marksOnGun)
+        fallout = data.get('fallout', {})
+        if fallout:
+            settings[SETTINGS_SECTIONS.FALLOUT] = self._buildSectionSettings(SETTINGS_SECTIONS.FALLOUT, fallout)
         if settings:
             self.setSettings(settings)

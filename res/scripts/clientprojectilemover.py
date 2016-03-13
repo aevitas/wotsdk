@@ -51,7 +51,7 @@ class ProjectileMover(object):
 
         return
 
-    def add(self, shotID, effectsDescr, gravity, refStartPoint, refVelocity, startPoint, maxDistance, isOwnShoot = False, tracerCameraPos = Math.Vector3(0, 0, 0)):
+    def add(self, shotID, effectsDescr, gravity, refStartPoint, refVelocity, startPoint, maxDistance, attackerID = 0, tracerCameraPos = Math.Vector3(0, 0, 0)):
         import BattleReplay
         if BattleReplay.g_replayCtrl.isTimeWarpInProgress:
             return
@@ -60,10 +60,11 @@ class ProjectileMover(object):
             if artID is not None:
                 self.salvo.addProjectile(artID, gravity, refStartPoint, refVelocity)
                 return
-            projectileMotor = self.__ballistics.addProjectile(shotID, gravity, refStartPoint, refVelocity, startPoint, maxDistance, isOwnShoot, ownVehicleGunPositionGetter(), tracerCameraPos)
+            projectileMotor = self.__ballistics.addProjectile(shotID, gravity, refStartPoint, refVelocity, startPoint, maxDistance, attackerID, ownVehicleGunPositionGetter(), tracerCameraPos)
             if projectileMotor is None:
                 return
             projModelName, projModelOwnShotName, projEffects = effectsDescr['projectile']
+            isOwnShoot = attackerID == BigWorld.player().playerVehicleID
             model = BigWorld.Model(projModelOwnShotName if isOwnShoot else projModelName)
             proj = {'model': model,
              'motor': projectileMotor,
@@ -71,12 +72,13 @@ class ProjectileMover(object):
              'showExplosion': False,
              'fireMissedTrigger': isOwnShoot,
              'autoScaleProjectile': isOwnShoot,
+             'attackerID': attackerID,
              'effectsData': {}}
             BigWorld.player().addModel(model)
             model.addMotor(projectileMotor)
             model.visible = False
             model.visibleAttachments = True
-            projEffects.attachTo(proj['model'], proj['effectsData'], 'flying', isPlayer=isOwnShoot, isArtillery=False)
+            projEffects.attachTo(proj['model'], proj['effectsData'], 'flying', isPlayerVehicle=isOwnShoot, isArtillery=False)
             self.__projectiles[shotID] = proj
             FlockManager.getManager().onProjectile(startPoint)
             return
@@ -101,14 +103,18 @@ class ProjectileMover(object):
         else:
             proj = self.__projectiles.get(shotID)
             if proj is None:
-                self.__addExplosionEffect(endPoint, effectsDescr, effectMaterial, velocityDir)
+                __proj = {}
+                __proj['effectsDescr'] = effectsDescr
+                __proj['effectMaterial'] = effectMaterial
+                __proj['attackerID'] = 0
+                self.__addExplosionEffect(endPoint, __proj, velocityDir)
                 return
             if proj['fireMissedTrigger']:
                 proj['fireMissedTrigger'] = False
                 TriggersManager.g_manager.fireTrigger(TRIGGER_TYPE.PLAYER_SHOT_MISSED)
             params = self.__ballistics.explodeProjectile(shotID, endPoint)
             if params is not None:
-                self.__addExplosionEffect(params[0], effectsDescr, effectMaterial, params[1])
+                self.__addExplosionEffect(params[0], proj, params[1])
             else:
                 proj['showExplosion'] = True
                 proj['effectMaterial'] = effectMaterial
@@ -124,8 +130,8 @@ class ProjectileMover(object):
         BigWorld.player().inputHandler.onProjectileHit(hitPosition, caliber, isOwnShot)
         FlockManager.getManager().onProjectile(hitPosition)
 
-    def __addExplosionEffect(self, position, effectsDescr, effectMaterial, velocityDir):
-        effectTypeStr = effectMaterial + 'Hit'
+    def __addExplosionEffect(self, position, proj, velocityDir):
+        effectTypeStr = proj['effectMaterial'] + 'Hit'
         p0 = Math.Vector3(position.x, 1000, position.z)
         p1 = Math.Vector3(position.x, -1000, position.z)
         waterDist = BigWorld.wg_collideWater(p0, p1, False)
@@ -134,15 +140,15 @@ class ProjectileMover(object):
             testRes = BigWorld.wg_collideSegment(BigWorld.player().spaceID, p0, p1, 128)
             staticY = testRes[0].y if testRes is not None else waterY
             if staticY < waterY and position.y - waterY <= 0.1:
-                shallowWaterDepth, rippleDiameter = effectsDescr['waterParams']
+                shallowWaterDepth, rippleDiameter = proj['effectsDescr']['waterParams']
                 if waterY - staticY < shallowWaterDepth:
                     effectTypeStr = 'shallowWaterHit'
                 else:
                     effectTypeStr = 'deepWaterHit'
                 position = Math.Vector3(position.x, waterY, position.z)
                 self.__addWaterRipples(position, rippleDiameter, 5)
-        keyPoints, effects, _ = effectsDescr[effectTypeStr]
-        BigWorld.player().terrainEffects.addNew(position, effects, keyPoints, None, dir=velocityDir, start=position + velocityDir.scale(-1.0), end=position + velocityDir.scale(1.0))
+        keyPoints, effects, _ = proj['effectsDescr'][effectTypeStr]
+        BigWorld.player().terrainEffects.addNew(position, effects, keyPoints, None, dir=velocityDir, start=position + velocityDir.scale(-1.0), end=position + velocityDir.scale(1.0), attackerID=proj['attackerID'])
         return
 
     def __killProjectile(self, shotID, position, impactVelDir):
@@ -154,7 +160,7 @@ class ProjectileMover(object):
             projEffects = effectsDescr['projectile'][2]
             projEffects.detachFrom(proj['effectsData'], 'stopFlying')
             if proj['showExplosion']:
-                self.__addExplosionEffect(position, effectsDescr, proj['effectMaterial'], impactVelDir)
+                self.__addExplosionEffect(position, proj, impactVelDir)
             return
 
     def __deleteProjectile(self, shotID):

@@ -25,10 +25,10 @@ class DIALOG_BUTTON_ID(object):
 class IDialogMeta(object):
 
     def getEventType(self):
-        raise NotImplementedError, 'Dialog event type must be specified'
+        raise NotImplementedError('Dialog event type must be specified')
 
     def getViewScopeType(self):
-        raise NotImplementedError, 'Dialog scope must be specified'
+        raise NotImplementedError('Dialog scope must be specified')
 
 
 class ISimpleDialogButtonsMeta(object):

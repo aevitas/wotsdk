@@ -55,6 +55,7 @@ class BattleReplay():
     playerVehicleID = property(lambda self: self.__replayCtrl.playerVehicleID)
     fps = property(lambda self: self.__replayCtrl.fps)
     ping = property(lambda self: self.__replayCtrl.ping)
+    compressed = property(lambda self: self.__replayCtrl.isFileCompressed())
     isLaggingNow = property(lambda self: self.__replayCtrl.isLaggingNow)
     playbackSpeed = property(lambda self: self.__replayCtrl.playbackSpeed)
     scriptModalWindowsEnabled = property(lambda self: self.__replayCtrl.scriptModalWindowsEnabled)
@@ -452,8 +453,9 @@ class BattleReplay():
 
     def setArenaPeriod(self, period, length):
         if not self.isRecording:
-            raise AssertionError
-            period = period == constants.ARENA_PERIOD.AFTERBATTLE and constants.ARENA_PERIOD.BATTLE
+            LOG_ERROR('Replay is not recorded on setArenaPeriod')
+        if period == constants.ARENA_PERIOD.AFTERBATTLE:
+            period = constants.ARENA_PERIOD.BATTLE
         self.__replayCtrl.arenaPeriod = period
         self.__replayCtrl.arenaLength = length
 
@@ -595,8 +597,9 @@ class BattleReplay():
             try:
                 self.__serverSettings = json.loads(self.__replayCtrl.getArenaInfoStr()).get('serverSettings')
             except:
-                LOG_ERROR('There is exception while getting serverSettings from replay')
-                LOG_CURRENT_EXCEPTION()
+                LOG_WARNING('There is problem while unpacking server settings from replay')
+                if IS_DEVELOPMENT:
+                    LOG_CURRENT_EXCEPTION()
 
         from gui.LobbyContext import g_lobbyContext
         g_lobbyContext.setServerSettings(self.__serverSettings)
@@ -714,7 +717,7 @@ class BattleReplay():
 
     def __onClientVersionConfirmDlgClosed(self, result):
         if result:
-            self.__replayCtrl.isWaitingForVersionConfirm = False
+            self.__replayCtrl.confirmDlgAccepted()
         else:
             self.stop()
 
@@ -796,16 +799,8 @@ class BattleReplay():
                     for field in ('damageEventList', 'xpReplay', 'creditsReplay', 'tmenXPReplay', 'fortResourceReplay', 'goldReplay', 'freeXPReplay', 'avatarDamageEventList'):
                         personal[field] = None
 
-                    details = personal.pop('details', None)
-                    if details is not None:
-                        modifiedDetails = dict()
-                        for key, value in details.iteritems():
-                            modifiedDetails[str(key)] = value
-
-                        personal['details'] = modifiedDetails
-
             modifiedResults = (modifiedResults, self.__getArenaVehiclesInfo(), BigWorld.player().arena.statistics)
-            self.__replayCtrl.setArenaStatisticsStr(json.dumps(modifiedResults))
+            self.__replayCtrl.setArenaStatisticsStr(json.dumps(_JSON_Encode(modifiedResults)))
         return
 
     def __onAccountBecomePlayer(self):
@@ -939,6 +934,42 @@ class BattleReplay():
             if self.__arenaPeriod == period and period == ARENA_PERIOD.BATTLE:
                 self.resetArenaPeriod()
         self.__arenaPeriod = period
+
+    def setDataCallback(self, name, callback):
+        eventHandler = self.__replayCtrl.getCallbackHandler(name)
+        if eventHandler is None:
+            eventHandler = Event.Event()
+            self.__replayCtrl.setDataCallback(name, eventHandler)
+        eventHandler += callback
+        return
+
+    def serializeCallbackData(self, cbkName, data):
+        self.__replayCtrl.serializeCallbackData(cbkName, data)
+
+    def delDataCallback(self, name, callback):
+        eventHandler = self.__replayCtrl.getCallbackHandler(name)
+        if eventHandler is not None:
+            eventHandler -= callback
+        return
+
+
+def _JSON_Encode(obj):
+    if isinstance(obj, dict):
+        newDict = {}
+        for key, value in obj.iteritems():
+            if isinstance(key, tuple):
+                newDict[str(key)] = _JSON_Encode(value)
+            else:
+                newDict[key] = _JSON_Encode(value)
+
+        return newDict
+    if isinstance(obj, list) or isinstance(obj, tuple):
+        newList = []
+        for value in obj:
+            newList.append(_JSON_Encode(value))
+
+        return newList
+    return obj
 
 
 def isPlaying():

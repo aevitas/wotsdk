@@ -9,6 +9,9 @@ class IClubListener(object):
     def onCompletedSeasonsInfoChanged(self):
         pass
 
+    def onIGRTypeChanged(self):
+        pass
+
     def onAccountClubRelationChanged(self, isRelatedToClubs):
         pass
 

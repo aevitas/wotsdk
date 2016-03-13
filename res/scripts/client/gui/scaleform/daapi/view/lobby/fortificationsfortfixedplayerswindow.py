@@ -118,7 +118,7 @@ class FortFixedPlayersWindow(FortFixedPlayersWindowMeta, FortViewHelper):
          'toolTip': toolTip,
          'textAlign': textAlign,
          'sortType': sortType,
-         'defaultSortDirection': 'ascending'}
+         'defaultSortDirection': 'descending'}
 
     def __playersLabel(self):
         concat = ' / {0}'.format(self.__limitFixedPlayers)

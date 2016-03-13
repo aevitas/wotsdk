@@ -6,9 +6,10 @@ from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui import DialogsInterface, makeHtmlString, SystemMessages, game_control
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
+from gui.awards.event_dispatcher import showClanJoinAward
 from gui.clans import contexts as clan_ctxs
 from gui.clans.clan_controller import g_clanCtrl
-from gui.clans.settings import showAcceptClanInviteDialog
+from gui.clans.clan_helpers import showAcceptClanInviteDialog
 from gui.clubs import contexts as club_ctx, events_dispatcher as club_events
 from gui.clubs.club_helpers import ClubListener
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
@@ -224,9 +225,13 @@ class _AcceptClanInviteHandler(_ClanInviteHandler):
     def handleAction(self, model, entityID, action):
         super(_AcceptClanInviteHandler, self).handleAction(model, entityID, action)
         entity = model.getNotification(self.getNotType(), entityID).getEntity()
-        result = yield showAcceptClanInviteDialog(entity.getClanName(), entity.getClanTag())
+        clanName = entity.getClanName()
+        clanTag = entity.getClanTag()
+        result = yield showAcceptClanInviteDialog(clanName, clanTag)
         if result:
-            yield g_clanCtrl.sendRequest(clan_ctxs.AcceptInviteCtx(self._getInviteID(model, entityID)), allowDelay=True)
+            reqResult = yield g_clanCtrl.sendRequest(clan_ctxs.AcceptInviteCtx(self._getInviteID(model, entityID)), allowDelay=True)
+            if reqResult.isSuccess():
+                showClanJoinAward(clanName, clanTag, entity.getClanId())
 
 
 class _DeclineClanInviteHandler(_ClanInviteHandler):

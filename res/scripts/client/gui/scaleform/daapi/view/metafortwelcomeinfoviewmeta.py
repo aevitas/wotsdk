@@ -9,13 +9,12 @@ class FortWelcomeInfoViewMeta(BaseDAAPIComponent):
     def onNavigate(self, code):
         self._printOverrideError('onNavigate')
 
+    def openClanResearch(self):
+        self._printOverrideError('openClanResearch')
+
     def as_setWarningTextS(self, text, disabledBtnTooltip):
         if self._isDAAPIInited():
             return self.flashObject.as_setWarningText(text, disabledBtnTooltip)
-
-    def as_setHyperLinksS(self, searchClanLink, createClanLink, detailLink):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setHyperLinks(searchClanLink, createClanLink, detailLink)
 
     def as_setCommonDataS(self, data):
         if self._isDAAPIInited():

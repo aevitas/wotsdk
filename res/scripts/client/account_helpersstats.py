@@ -20,7 +20,7 @@ _SIMPLE_VALUE_STATS = ('credits', 'fortResource', 'gold', 'slots', 'berths', 'fr
 _DICT_STATS = ('vehTypeXP', 'vehTypeLocks', 'restrictions', 'globalVehicleLocks', 'refSystem')
 _GROWING_SET_STATS = ('unlocks', 'eliteVehicles', 'multipliedXPVehs')
 _ACCOUNT_STATS = ('clanDBID', 'attrs', 'premiumExpiryTime', 'autoBanTime', 'globalRating')
-_CACHE_STATS = ('isFinPswdVerified', 'mayConsumeWalletResources', 'unitAcceptDeadline', 'oldVehInvID')
+_CACHE_STATS = ('isFinPswdVerified', 'mayConsumeWalletResources', 'unitAcceptDeadline', 'oldVehInvIDs')
 
 class Stats(object):
 
@@ -80,7 +80,7 @@ class Stats(object):
         if cacheDiff is not None:
             for stat in _CACHE_STATS:
                 if stat in cacheDiff:
-                    LOG_DAN_DEV('CACHE stat change', stat, cacheDiff[stat])
+                    LOG_DEBUG_DEV('CACHE stat change', stat, cacheDiff[stat])
                     cache[stat] = cacheDiff[stat]
 
             spaDiff = cacheDiff.get('SPA', None)

@@ -205,7 +205,6 @@ class AmmunitionPanel(AmmunitionPanelMeta):
                  'label': ITEM_TYPES.shell_kindsabbreviation(shell.type),
                  'icon': '../maps/icons/ammopanel/ammo/%s' % shell.descriptor['icon'][0],
                  'count': count,
-                 'historicalBattleID': -1,
                  'tooltip': '',
                  'tooltipType': TOOLTIPS_CONSTANTS.HANGAR_SHELL})
 

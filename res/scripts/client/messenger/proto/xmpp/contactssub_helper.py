@@ -156,7 +156,7 @@ class SubscriptionsRestrictions(object):
             return (True, None)
 
     def canApproveFriendship(self, contact):
-        if not contact:
+        if not contact or contact.getItemType() == XMPP_ITEM_TYPE.EMPTY_ITEM:
             return (False, ClientContactError(CONTACT_ERROR_ID.CONTACT_ITEM_NOT_FOUND))
         tags = contact.getTags()
         if USER_TAG.SUB_APPROVED in tags:
@@ -179,7 +179,7 @@ class SubscriptionsRestrictions(object):
             return (False, ClientContactError(CONTACT_ERROR_ID.CONTACT_ITEM_NOT_FOUND))
 
     def canCancelFriendship(self, contact):
-        if not contact:
+        if not contact or contact.getItemType() == XMPP_ITEM_TYPE.EMPTY_ITEM:
             return (False, ClientContactError(CONTACT_ERROR_ID.CONTACT_ITEM_NOT_FOUND))
         tags = contact.getTags()
         if USER_TAG.SUB_APPROVED in tags:

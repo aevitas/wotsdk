@@ -24,7 +24,7 @@ class MembersDataProvider(DAAPIDataProvider):
         getUser = self.usersStorage.getUser
         getColors = g_settings.getColorScheme('rosters').getColors
         for member in members:
-            dbID = member.getID()
+            dbID = member.getDatabaseID()
             isOnline = member.isOnline()
             user = getUser(dbID)
             if user:

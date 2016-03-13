@@ -4,8 +4,9 @@ import BigWorld
 import Math
 from constants import EVENT_TYPE as _ET
 from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.goodies.GoodiesCache import g_goodiesCache
+from gui.goodies import g_goodiesCache
 from gui.shared.formatters import text_styles
 from gui.shared.utils.functions import makeTooltip
 from helpers import time_utils
@@ -265,7 +266,8 @@ class BoosterBonus(SimpleBonus):
          'showCount': False,
          'qualityIconSrc': booster.getQualityIcon(),
          'slotLinkage': BOOSTER_CONSTANTS.SLOT_UI,
-         'showLeftTime': False}
+         'showLeftTime': False,
+         'boosterId': booster.boosterID}
 
     def hasIconFormat(self):
         return True
@@ -275,7 +277,7 @@ class BoosterBonus(SimpleBonus):
         for booster, count in sorted(self.getBoosters().iteritems(), key=lambda (booster, count): booster.boosterType):
             if booster is not None:
                 result.append({'value': BigWorld.wg_getIntegralFormat(count),
-                 'tooltip': makeTooltip(header=booster.userName, body=booster.description),
+                 'tooltip': TOOLTIPS_CONSTANTS.BOOSTERS_BOOSTER_INFO,
                  'boosterVO': self.__makeBoosterVO(booster)})
 
         return result
@@ -435,6 +437,10 @@ class TankmenBonus(SimpleBonus):
         return RES_ICONS.MAPS_ICONS_LIBRARY_TANKMAN
 
     def getTooltipIcon(self):
+        for tmanInfo in self.getTankmenData():
+            if tmanInfo.isFemale:
+                return RES_ICONS.MAPS_ICONS_QUESTS_TANKMANFEMALEGRAY
+
         return RES_ICONS.MAPS_ICONS_REFERRAL_REFSYS_MEN_BW
 
     @classmethod
@@ -460,6 +466,8 @@ class RefSystemTankmenBonus(TankmenBonus):
     def formatValue(self):
         result = []
         for tmanInfo in self.getTankmenData():
+            if tmanInfo.isFemale:
+                return '%s %s' % (i18n.makeString('#quests:bonuses/item/tankwoman'), i18n.makeString('#quests:bonuses/tankmen/description', value=getRoleUserName(tmanInfo.role)))
             result.append(i18n.makeString('#quests:bonuses/tankmen/description', value=getRoleUserName(tmanInfo.role)))
 
         return ', '.join(result)

@@ -375,6 +375,9 @@ class ScriptDriver(object):
 
         cancelledTasks.clear()
 
+    def beginInterrupt(self, interrupt):
+        self.__beginInterrupt(interrupt)
+
     def __beginInterrupt(self, interrupt):
         self.suspend()
         self.__interruptDriver = ScriptDriver(self.__script)
@@ -601,7 +604,7 @@ class ScriptTask(object):
         self.subtasks.remove(task)
 
     def process(self):
-        raise Exception, 'Task must implement process method'
+        raise Exception('Task must implement process method')
 
     def suspend(self, cancel):
         pass

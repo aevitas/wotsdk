@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/server_events/PQController.py
 import operator
 import BigWorld
+from gui.LobbyContext import g_lobbyContext
 from gui.shared.utils.requesters.QuestsProgressRequester import FalloutQuestsProgressRequester, RandomQuestsProgressRequester
 import potapov_quests
 from items import tankmen
@@ -63,7 +64,10 @@ class _PotapovQuestsController(object):
         return self.__hasQuestsForSelect
 
     def hasQuestsForReward(self):
-        return self.__hasQuestsForReward
+        return self.__hasQuestsForReward and self.isEnabled()
+
+    def isEnabled(self):
+        pass
 
     def update(self, eventsCache, diff = None):
         if diff is not None:
@@ -149,6 +153,9 @@ class RandomPQController(_PotapovQuestsController):
         super(RandomPQController, self).__init__(pqType)
         self.questsProgress = RandomQuestsProgressRequester()
 
+    def isEnabled(self):
+        return g_lobbyContext.getServerSettings().isRegularQuestEnabled()
+
     def _getQuestsCache(self):
         return potapov_quests.g_cache
 
@@ -165,6 +172,9 @@ class FalloutPQController(_PotapovQuestsController):
         pqType = PQ_BRANCH.TYPE_TO_NAME[PQ_BRANCH.FALLOUT]
         super(FalloutPQController, self).__init__(pqType)
         self.questsProgress = FalloutQuestsProgressRequester()
+
+    def isEnabled(self):
+        return g_lobbyContext.getServerSettings().isFalloutQuestEnabled()
 
     def _getQuestsCache(self):
         return potapov_quests.g_cache

@@ -103,10 +103,7 @@ class BrowserWindow(BrowserMeta):
             self.__customTitle = event.ctx.get('title', self.__customTitle)
             self.__showActionBtn = event.ctx.get('showActionBtn', self.__showActionBtn)
             self.as_configureS(self.__isDefault, self.__customTitle, self.__showActionBtn, self.__showCloseBtn)
-            browserUrl = self.__browser.url
-            if browserUrl[-1] == '/':
-                browserUrl = browserUrl[:-1]
-            if self.__url and self.__url != browserUrl:
+            if self.__url and self.__url.rstrip('/') != self.__browser.url.rstrip('/'):
                 self.__browser.navigate(self.__url)
             else:
                 self.__browser.onBrowserShow(False)

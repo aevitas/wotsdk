@@ -68,7 +68,7 @@ class AddBlockItemTask(_BlockItemTask):
         self._iqID = client.sendIQ(blocking_cmd.BlockItemQuery(self._jid))
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.ADD_IGNORED, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.ADD_IGNORED, pyGlooxTag)
 
 
 class RemoveBlockItemTask(_BlockItemTask):
@@ -95,7 +95,7 @@ class RemoveBlockItemTask(_BlockItemTask):
         self._iqID = client.sendIQ(blocking_cmd.UnblockItemQuery(self._jid))
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.REMOVE_IGNORED, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.REMOVE_IGNORED, pyGlooxTag)
 
 
 class SyncBlockItemTask(IQTask):

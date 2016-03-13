@@ -95,3 +95,12 @@ class ClientInvitations(object):
             LOG_CURRENT_EXCEPTION()
 
         self._loadExpiryCallback()
+
+
+class ReplayClientInvitations(ClientInvitations):
+
+    def processInvitations(self, invitations):
+        for inv in invitations:
+            inv['expiresAt'] = getCurrentTimestamp() + 86400
+
+        super(ReplayClientInvitations, self).processInvitations(invitations)

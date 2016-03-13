@@ -29,7 +29,7 @@ class _ParsingResult(object):
         return False
 
     def getError(self):
-        raise RuntimeError, 'That routine can not be invoked in this class'
+        raise RuntimeError('That routine can not be invoked in this class')
 
     def _next(self):
         return self.tail.pop(0)

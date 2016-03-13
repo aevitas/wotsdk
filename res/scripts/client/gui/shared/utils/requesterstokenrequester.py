@@ -21,7 +21,7 @@ class TokenRequester(object):
         if callable(wrapper):
             self.__wrapper = wrapper
         else:
-            raise ValueError, 'Wrapper is invalid: {0}'.format(wrapper)
+            raise ValueError('Wrapper is invalid: {0}'.format(wrapper))
         self.__tokenType = tokenType
         self.__callback = None
         self.__lastResponse = None

@@ -1,2 +1,2 @@
 # Embedded file name: scripts/client/gui/goodies/__init__.py
-pass
+from gui.goodies.GoodiesCache import g_goodiesCache

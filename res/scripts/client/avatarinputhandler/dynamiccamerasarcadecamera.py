@@ -24,12 +24,21 @@ def getCameraAsSettingsHolder(settingsDataSec):
 
 
 MinMax = namedtuple('MinMax', ('min', 'max'))
+
+class AdvancedColliderConstants(namedtuple('AdvancedColliderConstants', ('enable', 'ePower', 'fovRatio', 'specialCollisionRadius', 'forwardEstimatedTime', 'backwardEstimatedTime'))):
+
+    @staticmethod
+    def fromSection(dataSection):
+        it = iter(AdvancedColliderConstants._fields)
+        return AdvancedColliderConstants(dataSection.readBool(next(it), True), dataSection.readFloat(next(it)), dataSection.readFloat(next(it)), dataSection.readFloat(next(it)), dataSection.readFloat(next(it)), dataSection.readFloat(next(it)))
+
+
 _INERTIA_EASING = mathUtils.Easing.exponentialEasing
 ENABLE_INPUT_ROTATION_INERTIA = False
 
 class _InputInertia(object):
     __ZOOM_DURATION = 0.5
-    positionDelta = property(lambda self: self.__deltaInterpolator.value)
+    positionDelta = property(lambda self: self.__deltaEasing.value)
     fovZoomMultiplier = property(lambda self: self.__zoomMultiplierEasing.value)
     endZoomMultiplier = property(lambda self: self.__zoomMultiplierEasing.b)
 
@@ -174,13 +183,9 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.__onChangeControlMode = None
         self.__cam = None
         self.__aim = None
-        self.__aimingSystem.destroy()
-        self.__aimingSystem = None
-        return
-
-    def __del__(self):
-        if self.__cam is not None:
-            self.destroy()
+        if self.__aimingSystem is not None:
+            self.__aimingSystem.destroy()
+            self.__aimingSystem = None
         return
 
     def getPivotSettings(self):
@@ -210,7 +215,9 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
 
     def __setModelsToCollideWith(self, models):
         self.__cam.setModelsToCollideWith(models)
-        self.__aimingSystem.setModelsToCollideWith(models)
+        if self.__aimingSystem is not None:
+            self.__aimingSystem.setModelsToCollideWith(models)
+        return
 
     def focusOnPos(self, preferredPos):
         self.__aimingSystem.focusOnPos(preferredPos)
@@ -408,9 +415,14 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
                 inertDt = deltaTime = deltaTime / repSpeed
         self.__aimingSystem.update(deltaTime)
         virginShotPoint = self.__aimingSystem.getThirdPersonShotPoint()
+        delta = self.__inputInertia.positionDelta
+        sign = delta.dot(Vector3(0, 0, 1))
         self.__inputInertia.update(inertDt)
+        delta = (delta - self.__inputInertia.positionDelta).length
+        if delta != 0.0:
+            self.__cam.setScrollDelta(math.copysign(delta, sign))
         FovExtended.instance().setFovByMultiplier(self.__inputInertia.fovZoomMultiplier)
-        unshakenPos = self.__inputInertia.calcWorldPos(self.__aimingSystem.matrix)
+        unshakenPos = self.__inputInertia.calcWorldPos(self.__aimingSystem.idealMatrix if self.__cam.advancedColliderEnabled else self.__aimingSystem.matrix)
         vehMatrix = Math.Matrix(self.__aimingSystem.vehicleMProv)
         vehiclePos = vehMatrix.translation
         fromVehicleToUnshakedPos = unshakenPos - vehiclePos
@@ -654,6 +666,11 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         maxAccelerationDuration = readFloat(dynamicsSection, 'maxAccelerationDuration', 0.0, 10000.0, ArcadeCamera._DEFAULT_MAX_ACCELERATION_DURATION)
         self.__accelerationSmoother = AccelerationSmoother(accelerationFilter, maxAccelerationDuration)
         self.__inputInertia = _InputInertia(self.__cfg['fovMultMinMaxDist'], 0.0)
+        advancedCollision = dataSec['advancedCollision']
+        if advancedCollision is None:
+            LOG_ERROR('<advancedCollision> dataSection is not found!')
+        else:
+            BigWorld.setAdvancedColliderConstants(AdvancedColliderConstants.fromSection(advancedCollision), cfg['distRange'][0])
         return
 
     def writeUserPreferences(self):

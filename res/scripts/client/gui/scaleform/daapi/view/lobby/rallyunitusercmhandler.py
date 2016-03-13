@@ -16,6 +16,9 @@ class UnitUserCMHandler(BaseUserCMHandler, UnitListener):
         super(UnitUserCMHandler, self).__init__(cmProxy, ctx)
         self.startUnitListening()
 
+    def isSquadCreator(self):
+        return self.unitFunctional.isCreator()
+
     def fini(self):
         self.stopUnitListening()
         super(UnitUserCMHandler, self).fini()
@@ -42,7 +45,7 @@ class UnitUserCMHandler(BaseUserCMHandler, UnitListener):
         return option
 
     def _addSquadInfo(self, options, isIgnored):
-        if self.unitFunctional.getEntityType() != PREBATTLE_TYPE.SQUAD or not self.unitFunctional.isCreator():
+        if self.unitFunctional.getEntityType() not in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
             return super(UnitUserCMHandler, self)._addSquadInfo(options, isIgnored)
         return options
 

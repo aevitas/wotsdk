@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/dialogs/rally_dialog_meta.py
 from constants import PREBATTLE_TYPE, QUEUE_TYPE
-from debug_utils import LOG_WARNING
+from debug_utils import LOG_DEBUG
 from gui.Scaleform.daapi.view.dialogs import I18nDialogMeta, I18nInfoDialogMeta, I18nConfirmDialogMeta
 from gui.Scaleform.genConsts.CYBER_SPORT_ALIASES import CYBER_SPORT_ALIASES
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
@@ -13,6 +13,7 @@ _P_TYPE = PREBATTLE_TYPE
 _Q_TYPE = QUEUE_TYPE
 _C_TYPE = CTRL_ENTITY_TYPE
 _VIEW_SCOPES = {(_C_TYPE.UNIT, _P_TYPE.SQUAD): SimpleScope(PREBATTLE_ALIASES.SQUAD_VIEW_PY, VIEW_SCOPE),
+ (_C_TYPE.UNIT, _P_TYPE.FALLOUT): SimpleScope(PREBATTLE_ALIASES.FALLOUT_SQUAD_VIEW_PY, VIEW_SCOPE),
  (_C_TYPE.PREBATTLE, _P_TYPE.COMPANY): SimpleScope(PREBATTLE_ALIASES.COMPANY_ROOM_VIEW_PY, VIEW_SCOPE),
  (_C_TYPE.UNIT, _P_TYPE.UNIT): SimpleScope(CYBER_SPORT_ALIASES.UNIT_VIEW_PY, VIEW_SCOPE),
  (_C_TYPE.UNIT, _P_TYPE.SORTIE): SimpleScope(FORTIFICATION_ALIASES.FORT_BATTLE_ROOM_VIEW_PY, VIEW_SCOPE),
@@ -53,7 +54,7 @@ class _RallyScopeDialogMeta(I18nDialogMeta):
         if self.__key in _VIEW_SCOPES:
             scopeType = _VIEW_SCOPES[self.__key]
         else:
-            LOG_WARNING('View scope is not defined', self.__key)
+            LOG_DEBUG('View scope is not defined', self.__key)
             scopeType = super(_RallyScopeDialogMeta, self).getViewScopeType()
         return scopeType
 
@@ -77,7 +78,8 @@ class RallyScopeConfirmDialogMeta(_RallyScopeDialogMeta):
 
 
 _ENTITY_TO_ANOTHER_PREFIX = {(_C_TYPE.PREQUEUE, _Q_TYPE.RANDOMS): ('', 'goToAnother'),
- (_C_TYPE.PREQUEUE, _Q_TYPE.EVENT_BATTLES): ('', 'goToAnother'),
+ (_C_TYPE.PREQUEUE, _Q_TYPE.FALLOUT_CLASSIC): ('', 'goToAnother'),
+ (_C_TYPE.PREQUEUE, _Q_TYPE.FALLOUT_MULTITEAM): ('', 'goToAnother'),
  (_C_TYPE.PREQUEUE, _Q_TYPE.SANDBOX): ('', 'goToAnother'),
  (_C_TYPE.PREQUEUE, _Q_TYPE.TUTORIAL): ('', 'goToBattleTutorial'),
  (_C_TYPE.PREBATTLE, _P_TYPE.TRAINING): ('', 'goToAnother'),

@@ -25,8 +25,6 @@ class TOOLTIP_TYPE(CONST_CONTAINER):
     IGR = 'igr'
     CYBER_SPORT = 'cyberSport'
     MAP = 'map'
-    HISTORICAL_AMMO = 'historicalAmmo'
-    HISTORICAL_MODULES = 'historicalModules'
     CONTROL = 'control'
     REF_SYSTEM = 'refSystem'
     PRIVATE_QUESTS = 'privateQuests'
@@ -36,6 +34,7 @@ class TOOLTIP_TYPE(CONST_CONTAINER):
     CLAN_PROFILE = 'clanProfile'
     TECH_CUSTOMIZATION = 'techCustomization'
     TECH_CUSTOMIZATION_BONUS = 'techCustomizationBonus'
+    BOOSTER = 'booster'
 
 
 class TOOLTIP_COMPONENT(CONST_CONTAINER):
@@ -57,6 +56,7 @@ class TOOLTIP_COMPONENT(CONST_CONTAINER):
     CONTACT = 'contact'
     HANGAR_TUTORIAL = 'hangarTutorial'
     TECH_CUSTOMIZATION = 'techCustomization'
+    BOOSTER = 'booster'
 
 
 class ACTION_TOOLTIPS_TYPE(CONST_CONTAINER):

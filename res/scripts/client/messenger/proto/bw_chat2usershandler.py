@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/messenger/proto/bw_chat2/UsersHandler.py
-from messenger.m_constants import GAME_ONLINE_STATUS
+from messenger.m_constants import GAME_ONLINE_STATUS, USER_TAG
 from messenger.proto.bw_chat2 import provider, limits
 from messenger.proto.bw_chat2.wrappers import SearchResultIterator
 from messenger.proto.events import g_messengerEvents
@@ -47,6 +47,9 @@ class UsersHandler(provider.ResponseDictHandler):
                     received.update(tags=user.getTags(), gosBit=GAME_ONLINE_STATUS.IN_SEARCH)
                 else:
                     received.update(tags=user.getTags())
+            else:
+                received.addTags((USER_TAG.SEARCH, USER_TAG.TEMP))
+                self.usersStorage.addUser(received)
             users.append(received)
 
         g_messengerEvents.users.onFindUsersComplete(ids[1], users)

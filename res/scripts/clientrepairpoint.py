@@ -17,7 +17,10 @@ class RepairPoint(BigWorld.UserDataObject, _CTFCheckPoint, _CTFPointFlag, _UDOAt
         _CTFCheckPoint.__init__(self, self.radiusModel)
         _CTFPointFlag.__init__(self, self.flagModel, self.position)
         if self.__isVisibleForCurrentArena():
-            self._createTerrainSelectedArea(self.position, self.radius * 2.0, self._OVER_TERRAIN_HEIGHT, self._COLOR)
+            if self.heightOver > 0.0:
+                self._createTerrainSelectedArea(self.position, self.radius * 2.0, self.heightOver, self._COLOR, False)
+            else:
+                self._createTerrainSelectedArea(self.position, self.radius * 2.0, self._OVER_TERRAIN_HEIGHT, self._COLOR, True)
             self._createFlag()
 
     def __del__(self):

@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/managers/containers.py
-import weakref, types
+import weakref
+import types
 from Event import Event
 from debug_utils import LOG_DEBUG, LOG_WARNING, LOG_ERROR, LOG_CURRENT_EXCEPTION
 from gui.Scaleform.framework import ScopeTemplates
@@ -11,25 +12,25 @@ from gui.Scaleform.framework.entities.abstract.ContainerManagerMeta import Conta
 class IViewContainer(object):
 
     def add(self, pyView):
-        raise NotImplementedError, 'IViewContainer.add must be implemented'
+        raise NotImplementedError('IViewContainer.add must be implemented')
 
     def remove(self, pyView):
-        raise NotImplementedError, 'IViewContainer.remove must be implemented'
+        raise NotImplementedError('IViewContainer.remove must be implemented')
 
     def clear(self):
-        raise NotImplementedError, 'IViewContainer.clear must be implemented'
+        raise NotImplementedError('IViewContainer.clear must be implemented')
 
     def destroy(self):
-        raise NotImplementedError, 'IViewContainer.destroy must be implemented'
+        raise NotImplementedError('IViewContainer.destroy must be implemented')
 
     def getView(self, criteria = None):
-        raise NotImplementedError, 'IViewContainer.getView must be implemented'
+        raise NotImplementedError('IViewContainer.getView must be implemented')
 
     def getViewCount(self, **kwargs):
-        raise NotImplementedError, 'IViewContainer.getViewCount must be implemented'
+        raise NotImplementedError('IViewContainer.getViewCount must be implemented')
 
     def canCancelPreviousLoading(self):
-        raise NotImplementedError, 'IViewContainer.canCancelPreviousLoading must be implemented'
+        raise NotImplementedError('IViewContainer.canCancelPreviousLoading must be implemented')
 
 
 class _DefaultContainer(IViewContainer):
@@ -119,7 +120,7 @@ class ExternalCriteria(object):
         self._criteria = criteria
 
     def find(self, name, obj):
-        raise NotImplemented, 'ExternalCriteria.find must be implemented'
+        raise NotImplemented('ExternalCriteria.find must be implemented')
 
 
 class _PopUpContainer(IViewContainer):
@@ -170,7 +171,7 @@ class _PopUpContainer(IViewContainer):
     def getView(self, criteria = None):
         popUp = None
         if criteria is not None:
-            if type(criteria) is types.DictionaryType:
+            if isinstance(criteria, types.DictionaryType):
                 popUp = self.__findByDictCriteria(criteria)
             elif isinstance(criteria, ExternalCriteria):
                 popUp = self.__findByExCriteria(criteria)
@@ -222,7 +223,6 @@ class _PopUpContainer(IViewContainer):
 
 
 class ContainerManager(ContainerManagerMeta):
-    onViewAddedToContainer = Event()
     __DESTROY_ORDER = (ViewTypes.DEFAULT,
      ViewTypes.LOBBY_SUB,
      ViewTypes.WINDOW,
@@ -235,6 +235,7 @@ class ContainerManager(ContainerManagerMeta):
 
     def __init__(self, loader):
         super(ContainerManager, self).__init__()
+        self.onViewAddedToContainer = Event()
         proxy = weakref.proxy(self)
         self.__containers = {ViewTypes.DEFAULT: _DefaultContainer(proxy),
          ViewTypes.CURSOR: _DefaultContainer(proxy),

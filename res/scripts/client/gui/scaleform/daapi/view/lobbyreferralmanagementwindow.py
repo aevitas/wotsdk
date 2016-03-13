@@ -103,10 +103,10 @@ class ReferralManagementWindow(ReferralManagementWindowMeta, GlobalListener, Not
         infoIcon = icons.info()
         multiplyExpText = text_styles.standard(ms(MENU.REFERRALMANAGEMENTWINDOW_REFERRALSTABLE_EXPMULTIPLIER))
         tableExpText = text_styles.standard(ms(MENU.REFERRALMANAGEMENTWINDOW_REFERRALSTABLE_EXP))
-        return [self.__makeSortingButton(ms(MENU.REFERRALMANAGEMENTWINDOW_REFERRALSTABLE_NICK), 146, TEXT_ALIGN.LEFT),
+        return (self.__makeSortingButton(ms(MENU.REFERRALMANAGEMENTWINDOW_REFERRALSTABLE_NICK), 146, TEXT_ALIGN.LEFT),
          self.__makeSortingButton(ms(tableExpText + ' ' + infoIcon), 143, TEXT_ALIGN.RIGHT, toolTip=TOOLTIPS.REFERRALMANAGEMENTWINDOW_TABLE_EXPERIENCE),
          self.__makeSortingButton(ms(multiplyExpText + ' ' + infoIcon), 193, TEXT_ALIGN.CENTER, toolTipSpecial='refSysXPMultiplier'),
-         self.__makeSortingButton('', 166, TEXT_ALIGN.CENTER)]
+         self.__makeSortingButton('', 166, TEXT_ALIGN.CENTER))
 
     def __makeSortingButton(self, label, buttonWidth, textAlign, toolTip = '', toolTipSpecial = ''):
         return {'label': label,
@@ -150,7 +150,7 @@ class ReferralManagementWindow(ReferralManagementWindowMeta, GlobalListener, Not
                  'fullName': user.getFullName(),
                  'userName': user.getName(),
                  'clanAbbrev': user.getClanAbbrev()}
-                canInviteToSquad = self.prbFunctional.getEntityType() == PREBATTLE_TYPE.NONE or self.prbFunctional.getEntityType() == PREBATTLE_TYPE.SQUAD and self.prbFunctional.getPermissions().canSendInvite()
+                canInviteToSquad = self.prbFunctional.getEntityType() in (PREBATTLE_TYPE.NONE, PREBATTLE_TYPE.TRAINING) or self.prbFunctional.getEntityType() == PREBATTLE_TYPE.SQUAD and self.prbFunctional.getPermissions().canSendInvite()
                 btnEnabled = canInviteToSquad or False
                 btnTooltip = TOOLTIPS.REFERRALMANAGEMENTWINDOW_CREATESQUADBTN_DISABLED_SQUADISFULL
             else:
@@ -256,9 +256,9 @@ class ReferralManagementWindow(ReferralManagementWindowMeta, GlobalListener, Not
 
     @process
     def __inviteOrCreateSquad(self, referralID):
-        if self.prbFunctional.getEntityType() == PREBATTLE_TYPE.NONE or self.prbFunctional.getEntityType() == PREBATTLE_TYPE.SQUAD and self.prbFunctional.getPermissions().canSendInvite():
+        if self.prbFunctional.getEntityType() in (PREBATTLE_TYPE.NONE, PREBATTLE_TYPE.TRAINING) or self.prbFunctional.getEntityType() == PREBATTLE_TYPE.SQUAD and self.prbFunctional.getPermissions().canSendInvite():
             user = self.usersStorage.getUser(referralID)
-            if self.prbFunctional.getEntityType() == PREBATTLE_TYPE.NONE:
+            if self.prbFunctional.getEntityType() in (PREBATTLE_TYPE.NONE, PREBATTLE_TYPE.TRAINING):
                 result = yield self.prbDispatcher.create(unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', accountsToInvite=[referralID], isForced=True))
             else:
                 result = yield self.prbDispatcher.sendUnitRequest(SendInvitesCtx([referralID], ''))

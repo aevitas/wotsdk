@@ -60,7 +60,7 @@ def _getBattleChartsStatistics(battlesStats, levelDisabledTooltip):
         tooltip = PROFILE.SECTION_STATISTICS_CHART_LEVEL_TOOLTIP
         if value is None:
             value = -1
-            if levelDisabledTooltip != None:
+            if levelDisabledTooltip is not None:
                 tooltip = levelDisabledTooltip
         lvlRes[level - 1] = {'xField': str(level),
          'icon': '../maps/icons/levels/tank_level_{0}.png'.format(level),

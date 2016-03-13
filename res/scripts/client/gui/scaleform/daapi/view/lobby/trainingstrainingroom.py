@@ -19,6 +19,7 @@ from gui.prb_control.settings import PREBATTLE_ROSTER, PREBATTLE_SETTING_NAME
 from gui.prb_control.settings import FUNCTIONAL_FLAG
 from gui.prb_control.settings import REQUEST_TYPE, CTRL_ENTITY_TYPE
 from gui.shared import events, EVENT_BUS_SCOPE
+from gui.sounds.ambients import LobbySubViewEnv
 from helpers import int2roman, i18n
 from messenger.ext import passCensor
 from messenger.proto.events import g_messengerEvents
@@ -30,6 +31,7 @@ from gui.Scaleform.locale.MENU import MENU
 from gui.shared.formatters import text_styles
 
 class TrainingRoom(LobbySubView, TrainingRoomMeta, PrbListener):
+    __sound_env__ = LobbySubViewEnv
 
     def __init__(self, _ = None):
         super(TrainingRoom, self).__init__()

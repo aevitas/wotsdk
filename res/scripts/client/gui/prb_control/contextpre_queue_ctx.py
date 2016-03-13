@@ -4,7 +4,7 @@ from gui.prb_control.context import PrbCtrlRequestCtx
 from gui.prb_control.settings import CTRL_ENTITY_TYPE, REQUEST_TYPE
 from gui.prb_control.settings import FUNCTIONAL_FLAG
 from gui.shared.utils.decorators import ReprInjector
-__all__ = ('QueueCtx', 'DequeueCtx', 'RandomQueueCtx', 'EventBattlesQueueCtx', 'JoinModeCtx', 'LeavePreQueueCtx')
+__all__ = ('QueueCtx', 'DequeueCtx', 'RandomQueueCtx', 'FalloutQueueCtx', 'JoinModeCtx', 'LeavePreQueueCtx')
 
 class _PreQueueRequestCtx(PrbCtrlRequestCtx):
 
@@ -56,21 +56,17 @@ class RandomQueueCtx(QueueCtx):
         return self.__gamePlayMask
 
 
-@ReprInjector.simple(('getVehicleInventoryIDs', 'vInvIDs'), ('getBattleType', 'battleType'), ('getGameplaysMask', 'gameplayMask'), ('getWaitingID', 'waitingID'))
+@ReprInjector.simple(('getVehicleInventoryIDs', 'vInvIDs'), ('getGameplaysMask', 'gameplayMask'), ('getWaitingID', 'waitingID'))
 
-class EventBattlesQueueCtx(QueueCtx):
+class FalloutQueueCtx(QueueCtx):
 
-    def __init__(self, vehInvIDs, battleType, canAddToSquad = False, waitingID = ''):
-        super(EventBattlesQueueCtx, self).__init__(entityType=QUEUE_TYPE.EVENT_BATTLES, waitingID=waitingID)
+    def __init__(self, queueType, vehInvIDs, canAddToSquad = False, waitingID = ''):
+        super(FalloutQueueCtx, self).__init__(entityType=queueType, waitingID=waitingID)
         self.__vehInvIDs = vehInvIDs
-        self.__battleType = battleType
         self.__canAddToSquad = canAddToSquad
 
     def getVehicleInventoryIDs(self):
         return list(self.__vehInvIDs)
-
-    def getBattleType(self):
-        return self.__battleType
 
     def canAddToSquad(self):
         return self.__canAddToSquad

@@ -26,8 +26,8 @@ from gui.battle_control.dyn_squad_functional import DynSquadFunctional
 from gui.battle_control.gas_attack_controller import GasAttackController
 from gui.battle_control.hit_direction_ctrl import HitDirectionController
 from gui.battle_control.requests import AvatarRequestsController
-BattleSessionProviderStartCtx = namedtuple('BattleSessionProviderStartCtx', ('avatar', 'arena', 'replayCtrl', 'gasAttackMgr'))
-BattleSessionProviderStartCtx.__new__.__defaults__ = (None, None, None, None)
+BattleSessionProviderStartCtx = namedtuple('BattleSessionProviderStartCtx', ('avatar', 'replayCtrl', 'gasAttackMgr'))
+BattleSessionProviderStartCtx.__new__.__defaults__ = (None, None, None)
 
 class BattleSessionProvider(object):
     __slots__ = ('__ammoCtrl', '__equipmentsCtrl', '__optDevicesCtrl', '__vehicleStateCtrl', '__chatCommands', '__drrScaleCtrl', '__feedback', '__ctx', '__arenaDP', '__arenaListeners', '__arenaLoadCtrl', '__respawnsCtrl', '__notificationsCtrl', '__isBattleUILoaded', '__arenaTeamsBasesCtrl', '__periodCtrl', '__messagesCtrl', '__repairCtrl', '__hitDirectionCtrl', '__requestsCtrl', '__avatarStatsCtrl', '__dynSquadFunctional', '__weakref__', '__gasAttackCtrl')
@@ -160,7 +160,7 @@ class BattleSessionProvider(object):
         self.__drrScaleCtrl = DRRScaleController()
         self.__respawnsCtrl = RespawnsController(startCtx)
         self.__repairCtrl = RepairController()
-        self.__dynSquadFunctional = DynSquadFunctional()
+        self.__dynSquadFunctional = DynSquadFunctional(isReplayPlaying)
         self.__notificationsCtrl = NotificationsController(self.__arenaDP)
         self.__gasAttackCtrl = GasAttackController(startCtx)
         ctx = weakref.proxy(self.__ctx)
@@ -169,7 +169,7 @@ class BattleSessionProvider(object):
         self.__arenaListeners.addController(ctx, self.__arenaTeamsBasesCtrl)
         self.__arenaListeners.addController(ctx, self.__periodCtrl)
         self.__arenaListeners.addController(ctx, self.__respawnsCtrl)
-        self.__arenaListeners.start(startCtx.arena, arenaDP=self.__arenaDP)
+        self.__arenaListeners.start(startCtx.avatar.arena, arenaDP=self.__arenaDP)
         self.__feedback = createFeedbackAdaptor(isReplayPlaying)
         self.__feedback.start(self.__arenaDP)
         self.__messagesCtrl = createBattleMessagesCtrl(isReplayPlaying)
@@ -235,9 +235,9 @@ class BattleSessionProvider(object):
     def setBattleUI(self, battleUI):
         raise not self.__isBattleUILoaded or AssertionError('Battle UI already is set')
         self.__isBattleUILoaded = True
-        self.__arenaTeamsBasesCtrl.setUI(battleUI.teamBasesPanel)
-        self.__periodCtrl.setUI(battleUI.timersBar, battleUI.ppSwitcher)
-        self.__hitDirectionCtrl.setUI(battleUI.indicators)
+        self.__arenaTeamsBasesCtrl.setUI(battleUI.getTeamBasesPanel())
+        self.__periodCtrl.setUI(battleUI.getBattleTimer(), battleUI.getPreBattleTimer(), battleUI.getPlayersPanelsSwitcher())
+        self.__hitDirectionCtrl.setUI(battleUI.getIndicators())
         self.__drrScaleCtrl.start(battleUI)
         self.__dynSquadFunctional.setUI(battleUI, self)
 
@@ -254,7 +254,7 @@ class BattleSessionProvider(object):
         self.__equipmentsCtrl.clear()
         self.__optDevicesCtrl.clear()
         self.__gasAttackCtrl.clear()
-        self.__feedback.setPlayerVehicle(0L)
+        self.__feedback.setPlayerVehicle(0)
         self.__vehicleStateCtrl.switchToPostmortem()
 
     def useLoaderIntuition(self):

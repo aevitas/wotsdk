@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/respawn_view.py
 import BigWorld
-from gui.battle_control.arena_info import hasResourcePoints, getIsMultiteam, hasFlags
+from gui.battle_control.arena_info import hasResourcePoints, isFalloutMultiTeam, hasFlags
 from gui.Scaleform.daapi.view.fallout_info_panel_helper import getCosts
 from gui.shared.utils.plugins import IPlugin
 import nations
@@ -34,10 +34,10 @@ class _BattleRespawnView(BattleRespawnViewMeta):
         self.__disabled = False
         return
 
-    def start(self, vehsList):
+    def start(self, vehsList, isLimited):
         self._populate(self.__proxy.getMember('_level0.battleRespawnView').getInstance())
         slotsData = self.__getSlotsData(vehsList)
-        generalData = self.__getGeneralData()
+        generalData = self.__getGeneralData(isLimited)
         helpText = self.__getHelpText()
         self.as_initializeS(generalData, slotsData, helpText)
 
@@ -46,7 +46,7 @@ class _BattleRespawnView(BattleRespawnViewMeta):
         arenaType = arena.arenaType
         isSolo = len(list(g_sessionProvider.getArenaDP().getVehiclesIterator())) == 1
         plusStr = makeString(FALLOUT.INFOPANEL_SINGLEHELPTEXT_PLUS)
-        isMultiteam = getIsMultiteam(arenaType)
+        isMultiteam = isFalloutMultiTeam()
         headerStr = makeHtmlString(_HTML_TEMPLATE_FALLOUT_INFO_KEY, 'header', makeString(FALLOUT.INFOPANEL_SECRETWIN_HEAD))
         additionalBlockTemplate = makeHtmlString(_HTML_TEMPLATE_FALLOUT_INFO_KEY, 'winPoints')
         costKill, costFlags, costDamage = getCosts(arenaType, isSolo, True)
@@ -120,26 +120,28 @@ class _BattleRespawnView(BattleRespawnViewMeta):
         for v in vehsList:
             nationID, _ = v.type.id
             classTag = tuple(VEHICLE_CLASS_TAGS & v.type.tags)[0]
-            isElite = False
-            premiumTags = frozenset([VEHICLE_TAGS.PREMIUM])
+            premiumTags = frozenset((VEHICLE_TAGS.PREMIUM,))
             isPremium = bool(v.type.tags & premiumTags)
             result.append({'vehicleID': v.intCD,
              'vehicleName': self.__getVehicleName(v),
              'flagIcon': _FLAG_ICON_TEMPLATE % nations.NAMES[nationID],
              'vehicleIcon': getIconPath(v.type.name),
-             'vehicleType': _VEHICLE_TYPE_ELITE_TEMPLATE % classTag if isElite else _VEHICLE_TYPE_TEMPLATE % classTag,
-             'isElite': isElite,
+             'vehicleType': _VEHICLE_TYPE_TEMPLATE % classTag,
+             'isElite': False,
              'isPremium': isPremium,
              'vehicleLevel': _VEHICLE_LEVEL_TEMPLATE % v.type.level})
 
         return result
 
-    def __getGeneralData(self):
+    def __getGeneralData(self, isLimited):
         if hasResourcePoints():
             helpPanelMode = 'points'
         else:
             helpPanelMode = 'flags'
-        return {'titleMsg': "<font face='$FieldFont' size='32' color='#F4EFE8'>%s</font><font size='4'><br><br></font>%s" % (i18n.makeString(INGAME_GUI.RESPAWNVIEW_TITLE), standard(i18n.makeString(INGAME_GUI.RESPAWNVIEW_ADDITIONALTIP))),
+        respawnMessage = '#ingame_gui:respawnView/additionalTip'
+        if isLimited:
+            respawnMessage += 'Limited'
+        return {'titleMsg': "<font face='$FieldFont' size='32' color='#F4EFE8'>%s</font><font size='4'><br><br></font>%s" % (i18n.makeString(INGAME_GUI.RESPAWNVIEW_TITLE), standard(i18n.makeString(respawnMessage))),
          'helpPanelMode': helpPanelMode,
          'topInfoStr': '',
          'respawnInfoStr': '',
@@ -176,7 +178,7 @@ class _BattleRespawnView(BattleRespawnViewMeta):
     def __getVehicleName(self, vehile):
         tags = vehile.type.tags
         isIGR = bool(VEHICLE_TAGS.PREMIUM_IGR in tags)
-        vehicleName = vehile.type.shortUserString
+        vehicleName = vehile.type.shortUserString if isIGR else vehile.type.userString
         if isIGR:
             vehicleName = self.__igrVehicleFormat % {'vehicle': vehicleName}
         return vehicleName

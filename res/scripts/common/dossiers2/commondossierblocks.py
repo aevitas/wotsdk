@@ -69,6 +69,7 @@ class StaticDossierBlockDescr(object):
         data = dict([ (key, value) for value, (key, _) in izip(values, self.__recordsLayout) ])
         data.update(self.__data)
         self.__data = data
+        self.__isExpanded = True
         return self
 
     def updateDossierCompDescr(self, dossierCompDescrArray, offset, size):

@@ -11,7 +11,7 @@ class _QualifiersChainApplier(object):
     def __init__(self, conditions, qualifiers):
         self.__qualifiers = qualifiers
         self.__conditions = conditions
-        self.__lastCheckCondition = {}
+        self._lastCheckCondition = {}
 
     def __call__(self, value):
         qualifiers = self.__qualifiers
@@ -20,7 +20,7 @@ class _QualifiersChainApplier(object):
         else:
             conditions = self.__conditions
             conditionsKeys = frozenset(conditions.iterkeys())
-            lastCheckCondition = self.__lastCheckCondition
+            lastCheckCondition = self._lastCheckCondition
             for qualifier in qualifiers:
                 if not qualifier.conditionParams <= conditionsKeys:
                     continue
@@ -34,7 +34,7 @@ class _QualifiersChainApplier(object):
             return value
 
     def testConditionsChange(self):
-        lastCheckCondition = self.__lastCheckCondition
+        lastCheckCondition = self._lastCheckCondition
         conditions = self.__conditions
         conditionsKeys = frozenset(conditions.iterkeys())
         for qualifier in self.__qualifiers:

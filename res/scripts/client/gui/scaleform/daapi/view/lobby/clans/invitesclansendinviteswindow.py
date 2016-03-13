@@ -6,7 +6,7 @@ from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.locale.WAITING import WAITING
 from gui.clans import contexts as clan_ctx
 from gui.clans import formatters as clans_fmts
-from gui.clans.clan_helpers import ClanListener
+from gui.clans.clan_helpers import ClanListener, showClanInviteSystemMsg
 from gui.shared.view_helpers import UsersInfoHelper
 from helpers import i18n
 from messenger.m_constants import USER_TAG
@@ -27,12 +27,15 @@ class ClanSendInvitesWindow(SendInvitesWindow, UsersInfoHelper, ClanListener):
         result = yield self.clansCtrl.sendRequest(ctx)
         successAccounts = [ item.getAccountDbID() for item in ctx.getDataObj(result.data) ]
         failedAccounts = set(accountsToInvite) - set(successAccounts)
-        if successAccounts:
-            accountNames = [ self.getUserName(userDbID) for userDbID in successAccounts ]
-            SystemMessages.pushMessage(clans_fmts.getInvitesSentSysMsg(accountNames))
-        if failedAccounts:
-            accountNames = [ self.getUserName(userDbID) for userDbID in failedAccounts ]
-            SystemMessages.pushMessage(clans_fmts.getInvitesNotSentSysMsg(accountNames), type=SystemMessages.SM_TYPE.Error)
+        if len(accountsToInvite) > 1:
+            if successAccounts:
+                accountNames = [ self.getUserName(userDbID) for userDbID in successAccounts ]
+                SystemMessages.pushMessage(clans_fmts.getInvitesSentSysMsg(accountNames))
+            if failedAccounts:
+                accountNames = [ self.getUserName(userDbID) for userDbID in failedAccounts ]
+                SystemMessages.pushMessage(clans_fmts.getInvitesNotSentSysMsg(accountNames), type=SystemMessages.SM_TYPE.Error)
+        else:
+            showClanInviteSystemMsg(self.getUserName(accountsToInvite[0]), result.isSuccess(), result.getCode())
         self.as_hideWaitingS()
 
     def _populate(self):

@@ -390,7 +390,7 @@ class SimpleHint(HasID):
         return self.__image
 
     def hasImageRef(self):
-        return type(self.__image) is types.StringType
+        return isinstance(self.__image, types.StringType)
 
     def getSpeakID(self):
         return self.__speakID
@@ -478,7 +478,7 @@ class GuiItemRef(HasTargetID):
         return self.__props.copy()
 
     def getLifeCycle(self):
-        raise NotImplementedError, 'GuiItemRef.getLifeCycle not implemented'
+        raise NotImplementedError('GuiItemRef.getLifeCycle not implemented')
 
     def getConditions(self):
         return self.__conditions
@@ -553,7 +553,7 @@ class EntityMarker(HasID):
         self.__createInd = createInd
 
     def getTypeID(self):
-        raise NotImplementedError, 'EntityMarker.getTypeID not implemented'
+        raise NotImplementedError('EntityMarker.getTypeID not implemented')
 
     def getVarRef(self):
         return self.__varRef

@@ -17,7 +17,7 @@ class TASK_RESULT(object):
     CREATE_SEQ = 16
 
 
-class _Task(object):
+class _Task(ClientHolder):
     __slots__ = ('_result',)
 
     def __init__(self):
@@ -41,7 +41,7 @@ class _Task(object):
         raise NotImplementedError
 
 
-class IQTask(_Task, ClientHolder):
+class IQTask(_Task):
     __slots__ = ('_iqID',)
 
     def __init__(self):

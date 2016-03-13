@@ -55,11 +55,13 @@ class WebBridge(object):
                 serverStatus = _STATUS.WEB_BROWSER_ERROR
         return serverStatus == _STATUS.OK
 
-    def __onDataServerReceivedData(self, token, spaID):
+    def __onDataServerReceivedData(self, token, spaID, socialNetwork):
         Waiting.show('login')
         BigWorld.callback(0.1, BigWorld.wg_bringWindowToForeground)
         self.__loginParams['token'] = token
         self.__loginParams['account_id'] = spaID
+        from Manager import SOCIAL_NETWORKS
+        self.__preferences['login_type'] = socialNetwork or SOCIAL_NETWORKS.WGNI
         connectionManager.initiateConnection(self.__loginParams, '', self.__preferences['server_name'])
 
     def __getWgniParams(self, isExternal, isRegistration):
@@ -69,7 +71,7 @@ class WebBridge(object):
         if isExternal:
             params['external'] = self.__preferences['login_type']
         if GUI_SETTINGS.socialNetworkLogin['encryptToken'] and not isRegistration:
-            params['token_secret'] = base64.b64encode(self.__dataServer.tokenSecret)
+            params['token_secret'] = base64.urlsafe_b64encode(self.__dataServer.tokenSecret)
         return params
 
     @staticmethod

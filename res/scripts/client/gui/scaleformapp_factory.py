@@ -8,14 +8,13 @@ from gui.Scaleform.LogitechMonitor import LogitechMonitor
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.settings import config as sf_config
 from gui.Scaleform.framework.package_layout import PackageImporter
-from gui.Scaleform.managers.Cursor import Cursor
 from gui.Scaleform.managers.windows_stored_data import g_windowsStoredData
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
 from gui.app_loader.interfaces import IAppFactory
 from gui.app_loader.settings import APP_NAME_SPACE as _SPACE
 from shared_utils import AlwaysValidObject
 
-class NoAppFactory(AlwaysValidObject):
+class NoAppFactory(AlwaysValidObject, IAppFactory):
 
     def createLobby(self):
         LOG_DEBUG('NoAppFactory.createLobby')
@@ -122,20 +121,26 @@ class AS3_AS2_AppFactory(IAppFactory):
     def attachCursor(self, appNS):
         if appNS not in self.__apps:
             return
-        LOG_DEBUG('Attach cursor', appNS)
-        app = self.__apps[appNS]
-        if app and app.cursorMgr:
-            app.cursorMgr.attachCursor(True)
         else:
-            Cursor.setAutoShow(True)
+            LOG_DEBUG('Attach cursor', appNS)
+            app = self.__apps[appNS]
+            if app is not None:
+                app.attachCursor()
+            else:
+                LOG_DEBUG('Can not attach cursor because of app is not found', appNS)
+            return
 
     def detachCursor(self, appNS):
         if appNS not in self.__apps:
             return
-        LOG_DEBUG('Detach cursor', appNS)
-        app = self.__apps[appNS]
-        if app and app.cursorMgr:
-            app.cursorMgr.detachCursor(True)
+        else:
+            LOG_DEBUG('Detach cursor', appNS)
+            app = self.__apps[appNS]
+            if app is not None:
+                app.detachCursor()
+            else:
+                LOG_DEBUG('Can not detach cursor because of app is not found', appNS)
+            return
 
     def destroy(self):
         for appNS in self.__apps.iterkeys():
@@ -205,9 +210,22 @@ class AS3_AS2_AppFactory(IAppFactory):
             app.active(isActive)
 
 
+class AS3_AppFactory(AS3_AS2_AppFactory):
+
+    def _getBattleAppInstance(self):
+        from gui.development.ui.Scaleform.BattleEntry import BattleEntry
+        return BattleEntry(_SPACE.SF_BATTLE)
+
+    def _loadBattlePage(self):
+        g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.BATTLE), EVENT_BUS_SCOPE.BATTLE)
+
+
 def createAppFactory():
     if GUI_SETTINGS.isGuiEnabled():
-        factory = AS3_AS2_AppFactory()
+        if GUI_SETTINGS.useAS3Battle:
+            factory = AS3_AppFactory()
+        else:
+            factory = AS3_AS2_AppFactory()
     else:
         factory = NoAppFactory()
     return factory

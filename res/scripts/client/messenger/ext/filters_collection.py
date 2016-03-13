@@ -3,7 +3,7 @@ import re
 import sre_compile
 import pickle
 import BigWorld
-from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG
+from debug_utils import LOG_CURRENT_EXCEPTION
 from external_strings_utils import normalized_unicode_trim
 from gui import GUI_SETTINGS
 from gui.shared.utils import functions
@@ -108,6 +108,10 @@ class FloodFilter(IIncomingMessageFilter):
             if recentCount < len(userHistory):
                 self.__history[senderID] = userHistory[-recentCount:]
             return text
+
+    def resetHistory(self, contactId):
+        if contactId in self.__history:
+            self.__history[contactId] = []
 
 
 class DomainNameFilter(IIncomingMessageFilter):

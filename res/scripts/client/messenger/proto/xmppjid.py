@@ -1,5 +1,8 @@
 # Embedded file name: scripts/client/messenger/proto/xmpp/jid.py
+import random
 import types
+import time
+from ids_generators import SequenceIDGenerator
 from messenger import g_settings
 
 class BareJID(object):
@@ -27,7 +30,7 @@ class BareJID(object):
         elif isinstance(jid, BareJID):
             self._node, self._domain, tail = jid.getNode(), jid.getDomain(), jid.getResource()
         else:
-            raise (ValueError, 'JID can be specified as string or as instance of JID class.')
+            raise ValueError('JID can be specified as string or as instance of JID class.')
         return tail
 
     def getBareJID(self):
@@ -80,6 +83,12 @@ class BareJID(object):
     def __hash__(self):
         return hash(self.__str__())
 
+    def __getstate__(self):
+        return str(self)
+
+    def __setstate__(self, state):
+        self.setJID(state)
+
 
 class JID(BareJID):
     __slots__ = ('_resource',)
@@ -114,10 +123,10 @@ class _DatabaseIDGetter(object):
             try:
                 result = long(value)
             except ValueError:
-                result = 0L
+                result = 0
 
         else:
-            result = 0L
+            result = 0
         return result
 
 
@@ -140,4 +149,18 @@ def makeContactJID(dbID):
     jid = ContactBareJID()
     jid.setNode(long(dbID))
     jid.setDomain(g_settings.server.XMPP.domain)
+    return jid
+
+
+_counter = SequenceIDGenerator()
+
+def makeUserRoomJID(room = ''):
+    jid = JID()
+    service = g_settings.server.XMPP.userRoomsService
+    if not service:
+        return jid
+    if not room:
+        room = 'user_room_{:08X}_{:08X}_{:04X}'.format(long(time.time()) & 4294967295L, random.randrange(1, 4294967295L), _counter.next())
+    jid.setNode(room)
+    jid.setDomain(service)
     return jid

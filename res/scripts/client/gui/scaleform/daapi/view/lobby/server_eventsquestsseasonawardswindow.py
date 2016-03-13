@@ -56,6 +56,7 @@ class QuestsSeasonAwardsWindow(QuestsSeasonAwardsWindowMeta):
              'extraAward': extraAward})
 
         self.as_setDataS({'windowTitle': _ms(QUESTS.SEASONAWARDSWINDOW_TITLE),
+         'visibleTabs': self._contentTabs.isVisible(),
          'awards': awards})
 
     def __packBasicAward(self, tile):

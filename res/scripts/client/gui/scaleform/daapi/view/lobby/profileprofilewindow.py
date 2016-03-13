@@ -10,7 +10,7 @@ from gui.Scaleform.locale.PROFILE import PROFILE
 from gui.Scaleform.locale.WAITING import WAITING
 from helpers.i18n import makeString
 from gui.clans import formatters as clans_fmts
-from gui.clans.clan_helpers import ClanListener
+from gui.clans.clan_helpers import ClanListener, showClanInviteSystemMsg
 from gui.clans.contexts import CreateInviteCtx
 from gui.clans.clan_controller import g_clanCtrl
 from gui.shared import g_itemsCache
@@ -29,12 +29,6 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         self.__databaseID = ctx.get('databaseID')
 
     def onClanStateChanged(self, oldStateID, newStateID):
-        self.__updateAddToClanBtn()
-
-    def onClanInvitesCountReceived(self, clanDbID, invitesCount):
-        self.__updateAddToClanBtn()
-
-    def onClanAppsCountReceived(self, clanDbID, appsCount):
         self.__updateAddToClanBtn()
 
     def _populate(self):
@@ -129,10 +123,7 @@ class ProfileWindow(ProfileWindowMeta, ClanListener):
         profile = g_clanCtrl.getAccountProfile()
         context = CreateInviteCtx(profile.getClanDbID(), [self.__databaseID])
         result = yield g_clanCtrl.sendRequest(context, allowDelay=True)
-        if result.isSuccess():
-            SystemMessages.pushMessage(clans_fmts.getAppSentSysMsg(profile.getClanName(), profile.getClanAbbrev()))
-        else:
-            SystemMessages.pushMessage(clans_fmts.getInvitesNotSentSysMsg([self.__userName]), type=SystemMessages.SM_TYPE.Error)
+        showClanInviteSystemMsg(self.__userName, result.isSuccess(), result.getCode())
         self.__updateAddToClanBtn()
         self.as_hideWaitingS()
 

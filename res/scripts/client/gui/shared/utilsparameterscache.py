@@ -2,7 +2,10 @@
 from gui.shared.utils import RELOAD_TIME_PROP_NAME, DISPERSION_RADIUS_PROP_NAME, AIMING_TIME_PROP_NAME, PIERCING_POWER_PROP_NAME, DAMAGE_PROP_NAME, SHELLS_PROP_NAME, SHELLS_COUNT_PROP_NAME, SHELL_RELOADING_TIME_PROP_NAME, RELOAD_MAGAZINE_TIME_PROP_NAME, CLIP_VEHICLES_PROP_NAME, CLIP_VEHICLES_CD_PROP_NAME, GUN_CLIP, GUN_CAN_BE_CLIP, GUN_NORMAL
 from items import artefacts
 from items.vehicles import getVehicleType
-import BigWorld, nations, math, sys
+import BigWorld
+import nations
+import math
+import sys
 from debug_utils import *
 from helpers import i18n
 from items import vehicles
@@ -32,165 +35,6 @@ class _ParametersCache(object):
     def initialized(self):
         return self.__init
 
-    def __readXMLItems(self):
-        result = dict()
-        for _, idx in nations.INDICES.iteritems():
-            section = result.setdefault(idx, dict())
-            section[vehicles._VEHICLE] = [ self.__getItemDescriptor(vehicles._VEHICLE, idx, cd) for cd in vehicles.g_list.getList(idx).keys() ]
-            section[vehicles._RADIO] = [ self.__getItemDescriptor(vehicles._RADIO, idx, data['compactDescr']) for data in vehicles.g_cache.radios(idx).itervalues() ]
-            section[vehicles._ENGINE] = [ self.__getItemDescriptor(vehicles._ENGINE, idx, data['compactDescr']) for data in vehicles.g_cache.engines(idx).itervalues() ]
-            section[vehicles._CHASSIS] = [ self.__getItemDescriptor(vehicles._CHASSIS, idx, data['compactDescr']) for data in vehicles.g_cache.chassis(idx).itervalues() ]
-            section[vehicles._TURRET] = [ self.__getItemDescriptor(vehicles._TURRET, idx, data['compactDescr']) for data in vehicles.g_cache.turrets(idx).itervalues() ]
-            section[vehicles._GUN] = [ self.__getItemDescriptor(vehicles._GUN, idx, data['compactDescr']) for data in vehicles.g_cache.guns(idx).itervalues() ]
-            section[vehicles._SHELL] = [ self.__getItemDescriptor(vehicles._SHELL, idx, data['compactDescr']) for data in vehicles.g_cache.shells(idx).itervalues() ]
-
-        section = result.setdefault(nations.NONE_INDEX, dict())
-        section[vehicles._EQUIPMENT] = [ self.__getItemDescriptor(vehicles._EQUIPMENT, nations.NONE_INDEX, data['compactDescr']) for data in vehicles.g_cache.equipments().itervalues() ]
-        section[vehicles._OPTIONALDEVICE] = [ self.__getItemDescriptor(vehicles._OPTIONALDEVICE, nations.NONE_INDEX, data['compactDescr']) for data in vehicles.g_cache.optionalDevices().itervalues() ]
-        return result
-
-    def __getItemDescriptor(self, typeIdx, nationIdx, itemID):
-        if typeIdx == vehicles._VEHICLE:
-            return vehicles.VehicleDescr(typeID=(nationIdx, itemID))
-        return vehicles.getDictDescr(itemID)
-
-    def __getItems(self, typeIdx, nationIdx = None):
-        if nationIdx is None:
-            result = list()
-            for idx in nations.INDICES.itervalues():
-                vDescrs = self.__getItems(typeIdx, idx)
-                if vDescrs is not None:
-                    result.extend(vDescrs)
-
-            return result
-        else:
-            items = self.__xmlItems.get(nationIdx, {}).get(typeIdx)
-            if items is None:
-                return list()
-            return items
-
-    def _getShotsPerMinute(self, descriptor):
-        clipCount = descriptor['clip'][0] / (descriptor['burst'][0] if descriptor['clip'][0] > 1 else 1)
-        return descriptor['burst'][0] * clipCount * 60.0 / (descriptor['reloadTime'] + (descriptor['burst'][0] - 1) * descriptor['burst'][1] + (clipCount - 1) * descriptor['clip'][1])
-
-    def __getParamFromCache(self, typeCompactDescr, paramName, default = None):
-        itemTypeID, nationID, typeID = vehicles.parseIntCompactDescr(typeCompactDescr)
-        cachedParams = self.__cache.get(nationID, {}).get(itemTypeID, {}).get(typeCompactDescr, {})
-        return cachedParams.get(paramName, default)
-
-    def __precachEquipments(self):
-        self.__cache.setdefault(nations.NONE_INDEX, {})[vehicles._EQUIPMENT] = {}
-        equipments = self.__getItems(vehicles._EQUIPMENT, nations.NONE_INDEX)
-        for eqpDescr in equipments:
-            equipmentNations, params = set(), {}
-            for vDescr in self.__getItems(vehicles._VEHICLE):
-                if not eqpDescr.checkCompatibilityWithVehicle(vDescr)[0]:
-                    continue
-                nation, id = vDescr.type.id
-                equipmentNations.add(nation)
-
-            eqDescrType = type(eqpDescr)
-            if eqDescrType is artefacts.Artillery:
-                shellDescr = vehicles.getDictDescr(eqpDescr.shellCompactDescr)
-                shellParams = self.getShellParameters(shellDescr)
-                params.update({'damage': (shellDescr['damage'][0], shellDescr['damage'][0]),
-                 'piercingPower': eqpDescr.piercingPower,
-                 'caliber': shellParams['caliber'],
-                 'shotsNumberRange': eqpDescr.shotsNumber,
-                 'areaRadius': eqpDescr.areaRadius,
-                 'artDelayRange': eqpDescr.delay})
-            elif eqDescrType is artefacts.Bomber:
-                shellDescr = vehicles.getDictDescr(eqpDescr.shellCompactDescr)
-                params.update({'bombDamage': (shellDescr['damage'][0], shellDescr['damage'][0]),
-                 'piercingPower': eqpDescr.piercingPower,
-                 'bombsNumberRange': eqpDescr.bombsNumber,
-                 'areaSquare': eqpDescr.areaLength * eqpDescr.areaWidth,
-                 'flyDelayRange': eqpDescr.delay})
-            self.__cache[nations.NONE_INDEX][vehicles._EQUIPMENT][eqpDescr.compactDescr] = {'nations': equipmentNations,
-             'avgParams': params}
-
-    def __precachOptionalDevices(self):
-        self.__cache.setdefault(nations.NONE_INDEX, {})[vehicles._OPTIONALDEVICE] = {}
-        optDevs = self.__getItems(vehicles._OPTIONALDEVICE, nations.NONE_INDEX)
-        for deviceDescr in optDevs:
-            wmin, wmax = sys.maxint, -1
-            deviceNations = set()
-            for vDescr in self.__getItems(vehicles._VEHICLE):
-                if not deviceDescr.checkCompatibilityWithVehicle(vDescr)[0]:
-                    continue
-                nation, id = vDescr.type.id
-                deviceNations.add(nation)
-                mods = deviceDescr.weightOnVehicle(vDescr)
-                weightOnVehicle = math.ceil(vDescr.physics['weight'] * mods[0] + mods[1])
-                wmin, wmax = min(wmin, weightOnVehicle), max(wmax, weightOnVehicle)
-
-            self.__cache[nations.NONE_INDEX][vehicles._OPTIONALDEVICE][deviceDescr.compactDescr] = {'weight': (wmin, wmax),
-             'nations': deviceNations}
-
-    def __precachGuns(self):
-        for nationName, nationIdx in nations.INDICES.iteritems():
-            self.__cache.setdefault(nationIdx, {})[vehicles._GUN] = {}
-            vcls = self.__getItems(vehicles._VEHICLE, nationIdx)
-            guns = self.__getItems(vehicles._GUN, nationIdx)
-            for g in guns:
-                descriptors = list()
-                cacheParams = {'turrets': list(),
-                 'avgParams': dict(),
-                 CLIP_VEHICLES_PROP_NAME: list()}
-                clipVehiclesDict = dict()
-                for vDescr in vcls:
-                    for vTurrets in vDescr.type.turrets:
-                        for turret in vTurrets:
-                            for gun in turret['guns']:
-                                if gun['id'][1] == g['id'][1]:
-                                    descriptors.append(gun)
-                                    if len(vDescr.hull['fakeTurrets']['lobby']) != len(vDescr.turrets):
-                                        turretString = turret['userString']
-                                        cacheParams['turrets'].append(turretString)
-                                    if gun['clip'][0] > 1:
-                                        clipVehiclesDict[vDescr.type.compactDescr] = 0
-
-                clipVehiclesList = []
-                for key in clipVehiclesDict.iterkeys():
-                    clipVehiclesList.append(key)
-
-                cacheParams[CLIP_VEHICLES_PROP_NAME] = clipVehiclesList
-                cacheParams['avgParams'] = self.__calcGunParams(g, descriptors)
-                self.__cache[nationIdx][vehicles._GUN][g['compactDescr']] = cacheParams
-
-    def __precachShells(self):
-        for nationName, nationIdx in nations.INDICES.iteritems():
-            self.__cache.setdefault(nationIdx, {})[vehicles._SHELL] = {}
-            guns = self.__getItems(vehicles._GUN, nationIdx)
-            shells = self.__getItems(vehicles._SHELL, nationIdx)
-            for sDescr in shells:
-                descriptors = list()
-                gNames = list()
-                self.__cache[nationIdx][vehicles._SHELL][sDescr['compactDescr']] = {'guns': list(),
-                 'avgParams': dict()}
-                for gDescr in guns:
-                    if 'shots' in gDescr:
-                        for shot in gDescr['shots']:
-                            if shot['shell']['id'][1] == sDescr['id'][1]:
-                                if gDescr['userString'] not in gNames:
-                                    gNames.append(gDescr['userString'])
-                                    descriptors.append(shot)
-
-                self.__cache[nationIdx][vehicles._SHELL][sDescr['compactDescr']]['guns'] = gNames
-                self.__cache[nationIdx][vehicles._SHELL][sDescr['compactDescr']]['avgParams'] = self.__calcShellParams(sDescr, descriptors)
-
-    def __getComponentVehiclesNames(self, typeCompactDescr):
-        from gui.shared.gui_items import getVehicleSuitablesByType
-        itemTypeIdx, nationIdx, typeIdx = vehicles.parseIntCompactDescr(typeCompactDescr)
-        result = list()
-        for vDescr in self.__getItems(vehicles._VEHICLE, nationIdx):
-            components, _ = getVehicleSuitablesByType(vDescr, itemTypeIdx)
-            filtered = filter(lambda item: item['compactDescr'] == typeCompactDescr, components)
-            if len(filtered):
-                result.append(vDescr.type.userString)
-
-        return result
-
     def init(self):
         import time
         startTime = time.time()
@@ -208,50 +52,6 @@ class _ParametersCache(object):
         LOG_DEBUG("Parameters' cache initialization has been completed. Time elapsed: %.5fs" % elapsed)
         self.__init = True
         return True
-
-    def __calcGunParams(self, gunDescr, descriptors):
-        result = {SHELLS_COUNT_PROP_NAME: (sys.maxint, -1),
-         RELOAD_TIME_PROP_NAME: (sys.maxint, -1),
-         RELOAD_MAGAZINE_TIME_PROP_NAME: (sys.maxint, -1),
-         SHELL_RELOADING_TIME_PROP_NAME: (sys.maxint, -1),
-         DISPERSION_RADIUS_PROP_NAME: (sys.maxint, -1),
-         AIMING_TIME_PROP_NAME: (sys.maxint, -1),
-         PIERCING_POWER_PROP_NAME: list(),
-         DAMAGE_PROP_NAME: list(),
-         SHELLS_PROP_NAME: list()}
-        for descr in descriptors:
-            currShellsCount = descr['clip'][0]
-            if currShellsCount > 1:
-                self.__updateMinMaxValues(result, SHELL_RELOADING_TIME_PROP_NAME, descr['clip'][1])
-                self.__updateMinMaxValues(result, RELOAD_MAGAZINE_TIME_PROP_NAME, descr[RELOAD_TIME_PROP_NAME])
-                self.__updateMinMaxValues(result, SHELLS_COUNT_PROP_NAME, currShellsCount)
-            self.__updateMinMaxValues(result, RELOAD_TIME_PROP_NAME, self._getShotsPerMinute(descr))
-            curDispRadius = round(descr['shotDispersionAngle'] * 100, 2)
-            curAimingTime = round(descr[AIMING_TIME_PROP_NAME], 1)
-            self.__updateMinMaxValues(result, DISPERSION_RADIUS_PROP_NAME, curDispRadius)
-            self.__updateMinMaxValues(result, AIMING_TIME_PROP_NAME, curAimingTime)
-
-        if 'shots' in gunDescr:
-            for shot in gunDescr['shots']:
-                result[PIERCING_POWER_PROP_NAME].append('%d' % shot[PIERCING_POWER_PROP_NAME][0])
-                result[DAMAGE_PROP_NAME].append('%d' % shot['shell'][DAMAGE_PROP_NAME][0])
-                result[SHELLS_PROP_NAME].append(i18n.makeString('#item_types:shell/kinds/' + shot['shell']['kind']))
-
-        return result
-
-    def __updateMinMaxValues(self, targetDict, key, value):
-        targetDict[key] = (min(targetDict[key][0], value), max(targetDict[key][1], value))
-
-    def __calcShellParams(self, shellDescr, descriptors):
-        result = {PIERCING_POWER_PROP_NAME: (sys.maxint, -1),
-         DAMAGE_PROP_NAME: (sys.maxint, -1)}
-        for d in descriptors:
-            curPiercingPower = (round(d[PIERCING_POWER_PROP_NAME][0] - d[PIERCING_POWER_PROP_NAME][0] * d['shell']['piercingPowerRandomization']), round(d[PIERCING_POWER_PROP_NAME][0] + d[PIERCING_POWER_PROP_NAME][0] * d['shell']['piercingPowerRandomization']))
-            curDamage = (round(d['shell'][DAMAGE_PROP_NAME][0] - d['shell'][DAMAGE_PROP_NAME][0] * d['shell']['damageRandomization']), round(d['shell'][DAMAGE_PROP_NAME][0] + d['shell'][DAMAGE_PROP_NAME][0] * d['shell']['damageRandomization']))
-            result[PIERCING_POWER_PROP_NAME] = (min(result[PIERCING_POWER_PROP_NAME][0], curPiercingPower[0], curPiercingPower[1]), max(result[PIERCING_POWER_PROP_NAME][1], curPiercingPower[0], curPiercingPower[1]))
-            result[DAMAGE_PROP_NAME] = (min(result[DAMAGE_PROP_NAME][0], curDamage[0], curDamage[1]), max(result[DAMAGE_PROP_NAME][1], curDamage[0], curDamage[1]))
-
-        return result
 
     def getParameters(self, itemDescr, vehicleDescr = None):
         if isinstance(itemDescr, vehicles.VehicleDescr):
@@ -441,6 +241,210 @@ class _ParametersCache(object):
             elif vehicleCD is not None:
                 reloadingType = GUN_NORMAL
         return reloadingType
+
+    def __readXMLItems(self):
+        result = dict()
+        for _, idx in nations.INDICES.iteritems():
+            section = result.setdefault(idx, dict())
+            section[vehicles._VEHICLE] = [ self.__getItemDescriptor(vehicles._VEHICLE, idx, cd) for cd in vehicles.g_list.getList(idx).keys() ]
+            section[vehicles._RADIO] = [ self.__getItemDescriptor(vehicles._RADIO, idx, data['compactDescr']) for data in vehicles.g_cache.radios(idx).itervalues() ]
+            section[vehicles._ENGINE] = [ self.__getItemDescriptor(vehicles._ENGINE, idx, data['compactDescr']) for data in vehicles.g_cache.engines(idx).itervalues() ]
+            section[vehicles._CHASSIS] = [ self.__getItemDescriptor(vehicles._CHASSIS, idx, data['compactDescr']) for data in vehicles.g_cache.chassis(idx).itervalues() ]
+            section[vehicles._TURRET] = [ self.__getItemDescriptor(vehicles._TURRET, idx, data['compactDescr']) for data in vehicles.g_cache.turrets(idx).itervalues() ]
+            section[vehicles._GUN] = [ self.__getItemDescriptor(vehicles._GUN, idx, data['compactDescr']) for data in vehicles.g_cache.guns(idx).itervalues() ]
+            section[vehicles._SHELL] = [ self.__getItemDescriptor(vehicles._SHELL, idx, data['compactDescr']) for data in vehicles.g_cache.shells(idx).itervalues() ]
+
+        section = result.setdefault(nations.NONE_INDEX, dict())
+        section[vehicles._EQUIPMENT] = [ self.__getItemDescriptor(vehicles._EQUIPMENT, nations.NONE_INDEX, data['compactDescr']) for data in vehicles.g_cache.equipments().itervalues() ]
+        section[vehicles._OPTIONALDEVICE] = [ self.__getItemDescriptor(vehicles._OPTIONALDEVICE, nations.NONE_INDEX, data['compactDescr']) for data in vehicles.g_cache.optionalDevices().itervalues() ]
+        return result
+
+    def __getItemDescriptor(self, typeIdx, nationIdx, itemID):
+        if typeIdx == vehicles._VEHICLE:
+            return vehicles.VehicleDescr(typeID=(nationIdx, itemID))
+        return vehicles.getDictDescr(itemID)
+
+    def __getItems(self, typeIdx, nationIdx = None):
+        if nationIdx is None:
+            result = list()
+            for idx in nations.INDICES.itervalues():
+                vDescrs = self.__getItems(typeIdx, idx)
+                if vDescrs is not None:
+                    result.extend(vDescrs)
+
+            return result
+        else:
+            items = self.__xmlItems.get(nationIdx, {}).get(typeIdx)
+            if items is None:
+                return list()
+            return items
+
+    def _getShotsPerMinute(self, descriptor):
+        clipCount = descriptor['clip'][0] / (descriptor['burst'][0] if descriptor['clip'][0] > 1 else 1)
+        return descriptor['burst'][0] * clipCount * 60.0 / (descriptor['reloadTime'] + (descriptor['burst'][0] - 1) * descriptor['burst'][1] + (clipCount - 1) * descriptor['clip'][1])
+
+    def __getParamFromCache(self, typeCompactDescr, paramName, default = None):
+        itemTypeID, nationID, typeID = vehicles.parseIntCompactDescr(typeCompactDescr)
+        cachedParams = self.__cache.get(nationID, {}).get(itemTypeID, {}).get(typeCompactDescr, {})
+        return cachedParams.get(paramName, default)
+
+    def __precachEquipments(self):
+        self.__cache.setdefault(nations.NONE_INDEX, {})[vehicles._EQUIPMENT] = {}
+        equipments = self.__getItems(vehicles._EQUIPMENT, nations.NONE_INDEX)
+        for eqpDescr in equipments:
+            equipmentNations, params = set(), {}
+            for vDescr in self.__getItems(vehicles._VEHICLE):
+                if not eqpDescr.checkCompatibilityWithVehicle(vDescr)[0]:
+                    continue
+                nation, id = vDescr.type.id
+                equipmentNations.add(nation)
+
+            eqDescrType = type(eqpDescr)
+            if eqDescrType is artefacts.Artillery:
+                shellDescr = vehicles.getDictDescr(eqpDescr.shellCompactDescr)
+                shellParams = self.getShellParameters(shellDescr)
+                params.update({'damage': (shellDescr['damage'][0], shellDescr['damage'][0]),
+                 'piercingPower': eqpDescr.piercingPower,
+                 'caliber': shellParams['caliber'],
+                 'shotsNumberRange': eqpDescr.shotsNumber,
+                 'explosionRadius': shellDescr['explosionRadius'],
+                 'areaRadius': eqpDescr.areaRadius,
+                 'artDelayRange': eqpDescr.delay})
+            elif eqDescrType is artefacts.Bomber:
+                shellDescr = vehicles.getDictDescr(eqpDescr.shellCompactDescr)
+                params.update({'bombDamage': (shellDescr['damage'][0], shellDescr['damage'][0]),
+                 'piercingPower': eqpDescr.piercingPower,
+                 'bombsNumberRange': eqpDescr.bombsNumber,
+                 'areaSquare': eqpDescr.areaLength * eqpDescr.areaWidth,
+                 'flyDelayRange': eqpDescr.delay})
+            self.__cache[nations.NONE_INDEX][vehicles._EQUIPMENT][eqpDescr.compactDescr] = {'nations': equipmentNations,
+             'avgParams': params}
+
+    def __precachOptionalDevices(self):
+        self.__cache.setdefault(nations.NONE_INDEX, {})[vehicles._OPTIONALDEVICE] = {}
+        optDevs = self.__getItems(vehicles._OPTIONALDEVICE, nations.NONE_INDEX)
+        for deviceDescr in optDevs:
+            wmin, wmax = sys.maxint, -1
+            deviceNations = set()
+            for vDescr in self.__getItems(vehicles._VEHICLE):
+                if not deviceDescr.checkCompatibilityWithVehicle(vDescr)[0]:
+                    continue
+                nation, id = vDescr.type.id
+                deviceNations.add(nation)
+                mods = deviceDescr.weightOnVehicle(vDescr)
+                weightOnVehicle = math.ceil(vDescr.physics['weight'] * mods[0] + mods[1])
+                wmin, wmax = min(wmin, weightOnVehicle), max(wmax, weightOnVehicle)
+
+            self.__cache[nations.NONE_INDEX][vehicles._OPTIONALDEVICE][deviceDescr.compactDescr] = {'weight': (wmin, wmax),
+             'nations': deviceNations}
+
+    def __precachGuns(self):
+        for nationName, nationIdx in nations.INDICES.iteritems():
+            self.__cache.setdefault(nationIdx, {})[vehicles._GUN] = {}
+            vcls = self.__getItems(vehicles._VEHICLE, nationIdx)
+            guns = self.__getItems(vehicles._GUN, nationIdx)
+            for g in guns:
+                descriptors = list()
+                cacheParams = {'turrets': list(),
+                 'avgParams': dict(),
+                 CLIP_VEHICLES_PROP_NAME: list()}
+                clipVehiclesDict = dict()
+                for vDescr in vcls:
+                    for vTurrets in vDescr.type.turrets:
+                        for turret in vTurrets:
+                            for gun in turret['guns']:
+                                if gun['id'][1] == g['id'][1]:
+                                    descriptors.append(gun)
+                                    if len(vDescr.hull['fakeTurrets']['lobby']) != len(vDescr.turrets):
+                                        turretString = turret['userString']
+                                        cacheParams['turrets'].append(turretString)
+                                    if gun['clip'][0] > 1:
+                                        clipVehiclesDict[vDescr.type.compactDescr] = 0
+
+                clipVehiclesList = []
+                for key in clipVehiclesDict.iterkeys():
+                    clipVehiclesList.append(key)
+
+                cacheParams[CLIP_VEHICLES_PROP_NAME] = clipVehiclesList
+                cacheParams['avgParams'] = self.__calcGunParams(g, descriptors)
+                self.__cache[nationIdx][vehicles._GUN][g['compactDescr']] = cacheParams
+
+    def __precachShells(self):
+        for nationName, nationIdx in nations.INDICES.iteritems():
+            self.__cache.setdefault(nationIdx, {})[vehicles._SHELL] = {}
+            guns = self.__getItems(vehicles._GUN, nationIdx)
+            shells = self.__getItems(vehicles._SHELL, nationIdx)
+            for sDescr in shells:
+                descriptors = list()
+                gNames = list()
+                self.__cache[nationIdx][vehicles._SHELL][sDescr['compactDescr']] = {'guns': list(),
+                 'avgParams': dict()}
+                for gDescr in guns:
+                    if 'shots' in gDescr:
+                        for shot in gDescr['shots']:
+                            if shot['shell']['id'][1] == sDescr['id'][1]:
+                                if gDescr['userString'] not in gNames:
+                                    gNames.append(gDescr['userString'])
+                                    descriptors.append(shot)
+
+                self.__cache[nationIdx][vehicles._SHELL][sDescr['compactDescr']]['guns'] = gNames
+                self.__cache[nationIdx][vehicles._SHELL][sDescr['compactDescr']]['avgParams'] = self.__calcShellParams(sDescr, descriptors)
+
+    def __getComponentVehiclesNames(self, typeCompactDescr):
+        from gui.shared.gui_items import getVehicleSuitablesByType
+        itemTypeIdx, nationIdx, typeIdx = vehicles.parseIntCompactDescr(typeCompactDescr)
+        result = list()
+        for vDescr in self.__getItems(vehicles._VEHICLE, nationIdx):
+            components, _ = getVehicleSuitablesByType(vDescr, itemTypeIdx)
+            filtered = filter(lambda item: item['compactDescr'] == typeCompactDescr, components)
+            if len(filtered):
+                result.append(vDescr.type.userString)
+
+        return result
+
+    def __calcGunParams(self, gunDescr, descriptors):
+        result = {SHELLS_COUNT_PROP_NAME: (sys.maxint, -1),
+         RELOAD_TIME_PROP_NAME: (sys.maxint, -1),
+         RELOAD_MAGAZINE_TIME_PROP_NAME: (sys.maxint, -1),
+         SHELL_RELOADING_TIME_PROP_NAME: (sys.maxint, -1),
+         DISPERSION_RADIUS_PROP_NAME: (sys.maxint, -1),
+         AIMING_TIME_PROP_NAME: (sys.maxint, -1),
+         PIERCING_POWER_PROP_NAME: list(),
+         DAMAGE_PROP_NAME: list(),
+         SHELLS_PROP_NAME: list()}
+        for descr in descriptors:
+            currShellsCount = descr['clip'][0]
+            if currShellsCount > 1:
+                self.__updateMinMaxValues(result, SHELL_RELOADING_TIME_PROP_NAME, descr['clip'][1])
+                self.__updateMinMaxValues(result, RELOAD_MAGAZINE_TIME_PROP_NAME, descr[RELOAD_TIME_PROP_NAME])
+                self.__updateMinMaxValues(result, SHELLS_COUNT_PROP_NAME, currShellsCount)
+            self.__updateMinMaxValues(result, RELOAD_TIME_PROP_NAME, self._getShotsPerMinute(descr))
+            curDispRadius = round(descr['shotDispersionAngle'] * 100, 2)
+            curAimingTime = round(descr[AIMING_TIME_PROP_NAME], 1)
+            self.__updateMinMaxValues(result, DISPERSION_RADIUS_PROP_NAME, curDispRadius)
+            self.__updateMinMaxValues(result, AIMING_TIME_PROP_NAME, curAimingTime)
+
+        if 'shots' in gunDescr:
+            for shot in gunDescr['shots']:
+                result[PIERCING_POWER_PROP_NAME].append('%d' % shot[PIERCING_POWER_PROP_NAME][0])
+                result[DAMAGE_PROP_NAME].append('%d' % shot['shell'][DAMAGE_PROP_NAME][0])
+                result[SHELLS_PROP_NAME].append(i18n.makeString('#item_types:shell/kinds/' + shot['shell']['kind']))
+
+        return result
+
+    def __updateMinMaxValues(self, targetDict, key, value):
+        targetDict[key] = (min(targetDict[key][0], value), max(targetDict[key][1], value))
+
+    def __calcShellParams(self, shellDescr, descriptors):
+        result = {PIERCING_POWER_PROP_NAME: (sys.maxint, -1),
+         DAMAGE_PROP_NAME: (sys.maxint, -1)}
+        for d in descriptors:
+            curPiercingPower = (round(d[PIERCING_POWER_PROP_NAME][0] - d[PIERCING_POWER_PROP_NAME][0] * d['shell']['piercingPowerRandomization']), round(d[PIERCING_POWER_PROP_NAME][0] + d[PIERCING_POWER_PROP_NAME][0] * d['shell']['piercingPowerRandomization']))
+            curDamage = (round(d['shell'][DAMAGE_PROP_NAME][0] - d['shell'][DAMAGE_PROP_NAME][0] * d['shell']['damageRandomization']), round(d['shell'][DAMAGE_PROP_NAME][0] + d['shell'][DAMAGE_PROP_NAME][0] * d['shell']['damageRandomization']))
+            result[PIERCING_POWER_PROP_NAME] = (min(result[PIERCING_POWER_PROP_NAME][0], curPiercingPower[0], curPiercingPower[1]), max(result[PIERCING_POWER_PROP_NAME][1], curPiercingPower[0], curPiercingPower[1]))
+            result[DAMAGE_PROP_NAME] = (min(result[DAMAGE_PROP_NAME][0], curDamage[0], curDamage[1]), max(result[DAMAGE_PROP_NAME][1], curDamage[0], curDamage[1]))
+
+        return result
 
 
 g_instance = _ParametersCache()

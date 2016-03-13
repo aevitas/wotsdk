@@ -12,6 +12,10 @@ class ProfileAwards(ProfileAwardsMeta):
         super(ProfileAwards, self).__init__(*args)
         self.__achievementsFilter = PROFILE.SECTION_AWARDS_DROPDOWN_LABELS_ALL
 
+    def setFilter(self, data):
+        self.__achievementsFilter = data
+        self.invokeUpdate()
+
     @classmethod
     def _getTotalStatsBlock(cls, dossier):
         return dossier.getTotalStats()
@@ -48,18 +52,14 @@ class ProfileAwards(ProfileAwardsMeta):
             achievement = stats.getAchievement(('rareAchievements', rareID))
             if achievement is not None:
                 image_id = achievement.getSmallIcon()[6:]
-                self.as_setRareAchievementDataS({'rareID': rareID,
-                 'rareIconId': image_id})
+                self.as_setRareAchievementDataS(rareID, image_id)
         return
-
-    def __packProviderItem(self, key):
-        return {'label': i18n.makeString(key),
-         'key': key}
-
-    def setFilter(self, data):
-        self.__achievementsFilter = data
-        self.invokeUpdate()
 
     def _dispose(self):
         self._disposeRequester()
         super(ProfileAwards, self)._dispose()
+
+    @staticmethod
+    def __packProviderItem(key):
+        return {'label': i18n.makeString(key),
+         'key': key}

@@ -3,16 +3,24 @@ from gui.Scaleform.framework.entities.abstract.AbstractWindowView import Abstrac
 
 class RetrainCrewWindowMeta(AbstractWindowView):
 
-    def submit(self, data):
+    def submit(self, operationId):
         self._printOverrideError('submit')
 
     def changeRetrainType(self, retrainTypeIndex):
         self._printOverrideError('changeRetrainType')
 
-    def as_setCommonDataS(self, data):
+    def as_setCrewDataS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setCommonData(data)
+            return self.flashObject.as_setCrewData(data)
 
-    def as_updateDataS(self, data):
+    def as_setVehicleDataS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_updateData(data)
+            return self.flashObject.as_setVehicleData(data)
+
+    def as_setCrewOperationDataS(self, data):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setCrewOperationData(data)
+
+    def as_setAllCrewDataS(self, data):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setAllCrewData(data)

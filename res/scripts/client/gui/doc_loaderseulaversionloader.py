@@ -18,9 +18,9 @@ class EULAVersionLoader(object):
     def loadXMLVersion(self):
         xmlFile = ResMgr.openSection(VERSION_FILE_PATH)
         if not xmlFile:
-            raise Exception, 'EULAVersionLoader.loadXMLVersion %s file is missing' % VERSION_FILE_PATH
+            raise Exception('EULAVersionLoader.loadXMLVersion %s file is missing' % VERSION_FILE_PATH)
         xmlVersion = xmlFile.readString(VERSION_TAG)
         if not xmlVersion:
-            raise Exception, 'Subsection EULAVersionLoader.loadXMLVersion EULAVersion tag <%(ver)s> is missing or empty in %(path)s' % {'ver': VERSION_TAG,
-             'path': VERSION_FILE_PATH}
+            raise Exception('Subsection EULAVersionLoader.loadXMLVersion EULAVersion tag <%(ver)s> is missing or empty in %(path)s' % {'ver': VERSION_TAG,
+             'path': VERSION_FILE_PATH})
         self.__xmlVersion = int(xmlVersion)

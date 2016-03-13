@@ -12,10 +12,10 @@ class _PotapovQuestsSelect(Processor):
         self.__quests = potapovQuestItems
         self.__questBranch = questBranch
         deselectedQuests = set(events_cache.getSelectedQuests().values()).difference(set(potapovQuestItems))
-        super(_PotapovQuestsSelect, self).__init__((plugins.PotapovQuestValidator(potapovQuestItems), self._getLockedByVehicleValidator()(deselectedQuests)))
+        super(_PotapovQuestsSelect, self).__init__((plugins.PotapovQuestValidator(potapovQuestItems), self._getLockedByVehicleValidator(deselectedQuests)))
 
     @staticmethod
-    def _getLockedByVehicleValidator():
+    def _getLockedByVehicleValidator(quests):
         raise NotImplemented
 
     def _getMessagePrefix(self):
@@ -71,8 +71,8 @@ class RandomQuestSelect(PotapovQuestSelect):
         super(RandomQuestSelect, self).__init__(quest, events_cache, PQ_BRANCH.REGULAR)
 
     @staticmethod
-    def _getLockedByVehicleValidator():
-        return plugins.RandomQuestsLockedByVehicle
+    def _getLockedByVehicleValidator(quests):
+        return plugins.PotapovQuestsLockedByVehicle(quests)
 
 
 class FalloutQuestSelect(PotapovQuestSelect):
@@ -81,8 +81,8 @@ class FalloutQuestSelect(PotapovQuestSelect):
         super(FalloutQuestSelect, self).__init__(quest, events_cache, PQ_BRANCH.FALLOUT)
 
     @staticmethod
-    def _getLockedByVehicleValidator():
-        return plugins.FalloutQuestsLockedByVehicle
+    def _getLockedByVehicleValidator(quests):
+        return plugins.PotapovQuestsLockedByVehicle(quests, messageKeyPrefix='fallout/')
 
 
 class _PotapovQuestRefuse(_PotapovQuestsSelect):
@@ -103,8 +103,8 @@ class RandomQuestRefuse(_PotapovQuestRefuse):
         super(RandomQuestRefuse, self).__init__(quest, events_cache, PQ_BRANCH.REGULAR)
 
     @staticmethod
-    def _getLockedByVehicleValidator():
-        return plugins.RandomQuestsLockedByVehicle
+    def _getLockedByVehicleValidator(quests):
+        return plugins.PotapovQuestsLockedByVehicle(quests)
 
 
 class FalloutQuestRefuse(_PotapovQuestRefuse):
@@ -113,8 +113,8 @@ class FalloutQuestRefuse(_PotapovQuestRefuse):
         super(FalloutQuestRefuse, self).__init__(quest, events_cache, PQ_BRANCH.FALLOUT)
 
     @staticmethod
-    def _getLockedByVehicleValidator():
-        return plugins.FalloutQuestsLockedByVehicle
+    def _getLockedByVehicleValidator(quests):
+        return plugins.PotapovQuestsLockedByVehicle(quests, messageKeyPrefix='fallout/')
 
 
 class _PotapovQuestsGetReward(Processor):

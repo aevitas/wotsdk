@@ -106,7 +106,7 @@ class AddRosterItemTask(RosterItemTask):
         client.setContactToRoster(self._jid, self._name, self._groups)
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.ADD_FRIEND, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.ADD_FRIEND, pyGlooxTag)
 
 
 class RemoveRosterItemTask(RosterItemTask):
@@ -121,6 +121,11 @@ class RemoveRosterItemTask(RosterItemTask):
                 _syncEmptyGroups(self.usersStorage, self._groups)
                 g_logOutput.debug(CLIENT_LOG_AREA.ROSTER, 'Roster item is removed', user)
                 self._doNotify(USER_ACTION_ID.FRIEND_REMOVED, user)
+            elif user.getItemType() == XMPP_ITEM_TYPE.SUB_PENDING:
+                user.update(item=None)
+                _syncEmptyGroups(self.usersStorage, self._groups)
+                g_logOutput.debug(CLIENT_LOG_AREA.ROSTER, 'Friendship request is revoked by sender', user)
+                g_messengerEvents.users.onFriendshipRequestsUpdated([user])
             return user
 
     def _doRun(self, client):
@@ -130,7 +135,7 @@ class RemoveRosterItemTask(RosterItemTask):
         return ROSTER_CONTEXT.REMOVE_ROSTER_ITEM
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.REMOVE_FRIEND, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.REMOVE_FRIEND, pyGlooxTag)
 
 
 class EmptyGroupsTask(RosterItemTask):
@@ -169,7 +174,7 @@ class ChangeRosterItemGroupsTask(RosterItemTask):
         client.setContactToRoster(self._jid, self._name, self._groups)
 
     def _getError(self, pyGlooxTag):
-        return errors.createServerActionError(CLIENT_ACTION_ID.CHANGE_GROUP, pyGlooxTag)
+        return errors.createServerActionIQError(CLIENT_ACTION_ID.CHANGE_GROUP, pyGlooxTag)
 
 
 class _RosterItemsGroupsChain(object):

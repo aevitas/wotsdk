@@ -1,17 +1,18 @@
 # Embedded file name: scripts/client/gui/prb_control/items/__init__.py
 from collections import namedtuple
-from constants import PREBATTLE_TYPE, QUEUE_TYPE, FALLOUT_BATTLE_TYPE
+from UnitBase import ROSTER_TYPE
+from constants import PREBATTLE_TYPE, QUEUE_TYPE
 from gui.prb_control.items.prb_items import PlayerPrbInfo
 from gui.prb_control.items.unit_items import PlayerUnitInfo
-from gui.prb_control.settings import CTRL_ENTITY_TYPE
+from gui.prb_control.settings import CTRL_ENTITY_TYPE, FUNCTIONAL_FLAG
 from gui.shared.utils.decorators import ReprInjector
 
 @ReprInjector.simple('ctrlTypeID', 'entityTypeID', 'hasModalEntity', 'hasLockedState', 'isIntroMode')
 
 class FunctionalState(object):
-    __slots__ = ('ctrlTypeID', 'entityTypeID', 'hasModalEntity', 'hasLockedState', 'isIntroMode', 'funcState', 'extra')
+    __slots__ = ('ctrlTypeID', 'entityTypeID', 'hasModalEntity', 'hasLockedState', 'isIntroMode', 'funcState', 'funcFlags', 'rosterType')
 
-    def __init__(self, ctrlTypeID = 0, entityTypeID = 0, hasModalEntity = False, hasLockedState = False, isIntroMode = False, funcState = None, extra = None):
+    def __init__(self, ctrlTypeID = 0, entityTypeID = 0, hasModalEntity = False, hasLockedState = False, isIntroMode = False, funcState = None, funcFlags = FUNCTIONAL_FLAG.UNDEFINED, rosterType = 0):
         super(FunctionalState, self).__init__()
         self.ctrlTypeID = ctrlTypeID
         self.entityTypeID = entityTypeID
@@ -19,7 +20,8 @@ class FunctionalState(object):
         self.hasLockedState = hasLockedState
         self.isIntroMode = isIntroMode
         self.funcState = funcState
-        self.extra = extra
+        self.funcFlags = funcFlags
+        self.rosterType = rosterType
 
     def isInPrebattle(self, prbType = 0):
         result = False
@@ -58,22 +60,16 @@ class FunctionalState(object):
         return result
 
     def isInFallout(self):
-        if self.isInUnit(PREBATTLE_TYPE.SQUAD) and self.extra is not None and self.extra.eventType:
-            return True
-        else:
-            return False
+        return self.isInUnit(PREBATTLE_TYPE.FALLOUT) or self.funcFlags & FUNCTIONAL_FLAG.FALLOUT_BATTLES > 0
 
     def isQueueSelected(self, queueType):
         if self.isInPreQueue(queueType):
             return True
-        else:
-            if self.isInUnit(PREBATTLE_TYPE.SQUAD):
-                if queueType == QUEUE_TYPE.EVENT_BATTLES:
-                    if self.extra is not None and self.extra.eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
-                        return True
-                elif queueType == QUEUE_TYPE.RANDOMS:
-                    return True
-            return False
+        if self.isInUnit(PREBATTLE_TYPE.SQUAD) and queueType == QUEUE_TYPE.RANDOMS:
+            return True
+        if self.isInUnit(PREBATTLE_TYPE.FALLOUT) and (queueType == QUEUE_TYPE.FALLOUT_CLASSIC and self.rosterType == ROSTER_TYPE.FALLOUT_CLASSIC_ROSTER or queueType == QUEUE_TYPE.FALLOUT_MULTITEAM and self.rosterType == ROSTER_TYPE.FALLOUT_MULTITEAM_ROSTER):
+            return True
+        return False
 
     def doLeaveToAcceptInvite(self, prbType = 0):
         result = False

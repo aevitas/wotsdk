@@ -3,7 +3,6 @@ import BattleReplay
 import BigWorld
 import Event
 from constants import ATTACK_REASON_INDICES as _AR_INDICES
-from gui.battle_control.arena_info import isEventBattle
 
 class _ENTITY_TYPE(object):
     UNKNOWN = 'unknown'
@@ -18,7 +17,8 @@ _ATTACK_REASON_CODE = {_AR_INDICES['shot']: 'DEATH_FROM_SHOT',
  _AR_INDICES['ramming']: 'DEATH_FROM_RAMMING',
  _AR_INDICES['world_collision']: 'DEATH_FROM_WORLD_COLLISION',
  _AR_INDICES['death_zone']: 'DEATH_FROM_DEATH_ZONE',
- _AR_INDICES['drowning']: 'DEATH_FROM_DROWNING'}
+ _AR_INDICES['drowning']: 'DEATH_FROM_DROWNING',
+ _AR_INDICES['gas_attack']: 'DEATH_FROM_GAS_ATTACK'}
 _PLAYER_KILL_ENEMY_SOUND = 'enemy_killed_by_player'
 _PLAYER_KILL_ALLY_SOUND = 'ally_killed_by_player'
 

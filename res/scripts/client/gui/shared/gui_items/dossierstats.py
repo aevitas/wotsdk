@@ -15,6 +15,7 @@ _EPIC_SECTION = ACHIEVEMENT_SECTIONS_INDICES[ACHIEVEMENT_SECTION.EPIC]
 _ACTION_SECTION = ACHIEVEMENT_SECTIONS_INDICES[ACHIEVEMENT_SECTION.ACTION]
 _NEAREST_ACHIEVEMENTS_COUNT = 5
 _SIGNIFICANT_ACHIEVEMENTS_PER_SECTION = 3
+_TOP_ACHIEVEMENTS = 9
 _7X7_AVAILABLE_RANGE = range(6, 9)
 _FALLOUT_AVAILABLE_RANGE = range(8, constants.MAX_VEHICLE_LEVEL + 1)
 
@@ -499,6 +500,15 @@ class _AchievementsBlock(_StatsBlockAbstract):
 
         result = itertools.chain(*map(mapQueryEntry, achievementsQuery))
         return tuple(result)
+
+    def getTopAchievements(self, achievesCount = _TOP_ACHIEVEMENTS):
+        sections = self.getAchievements(isInDossier=True)
+
+        def mapQueryEntry(entry):
+            return sorted(entry, key=lambda x: x.getWeight())
+
+        result = itertools.chain(*map(mapQueryEntry, itertools.chain(sections)))
+        return tuple(result)[:achievesCount]
 
     @abstractmethod
     def _getAcceptableAchieves(self):
@@ -1298,7 +1308,8 @@ class AccountDossierStats(_DossierStats):
          self.getHistoricalStats(),
          self.getFortBattlesStats(),
          self.getFortSortiesStats(),
-         self.getRated7x7Stats()))
+         self.getRated7x7Stats(),
+         self.getFalloutStats()))
 
     def getRandomStats(self):
         return AccountRandomStatsBlock(self._getDossierItem())
@@ -1367,7 +1378,8 @@ class VehicleDossierStats(_DossierStats):
          self.getTeam7x7Stats(),
          self.getHistoricalStats(),
          self.getFortBattlesStats(),
-         self.getFortSortiesStats()))
+         self.getFortSortiesStats(),
+         self.getFalloutStats()))
 
     def getRandomStats(self):
         return RandomStatsBlock(self._getDossierItem())

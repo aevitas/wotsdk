@@ -5,7 +5,7 @@ from external_strings_utils import truncate_utf8
 from gui.prb_control import prb_getters, settings as prb_settings
 from gui.prb_control.context import PrbCtrlRequestCtx
 from gui.shared.utils.decorators import ReprInjector
-__all__ = ('CreateUnitCtx', 'JoinModeCtx', 'JoinUnitCtx', 'LeaveUnitCtx', 'LockUnitCtx', 'CloseSlotCtx', 'SetVehicleUnitCtx', 'ChangeOpenedUnitCtx', 'ChangeCommentUnitCtx', 'SetReadyUnitCtx', 'AssignUnitCtx', 'AutoSearchUnitCtx', 'AcceptSearchUnitCtx', 'DeclineSearchUnitCtx', 'BattleQueueUnitCtx', 'RosterSlotCtx', 'SetRostersSlotsCtx', 'KickPlayerCtx', 'ChangeRatedUnitCtx', 'SquadSettingsCtx', 'ChangeDivisionCtx', 'SetEventVehiclesCtx', 'ChangeEventSquadTypeCtx')
+__all__ = ('CreateUnitCtx', 'JoinModeCtx', 'JoinUnitCtx', 'LeaveUnitCtx', 'LockUnitCtx', 'CloseSlotCtx', 'SetVehicleUnitCtx', 'ChangeOpenedUnitCtx', 'ChangeCommentUnitCtx', 'SetReadyUnitCtx', 'AssignUnitCtx', 'AutoSearchUnitCtx', 'AcceptSearchUnitCtx', 'DeclineSearchUnitCtx', 'BattleQueueUnitCtx', 'RosterSlotCtx', 'SetRostersSlotsCtx', 'KickPlayerCtx', 'ChangeRatedUnitCtx', 'SquadSettingsCtx', 'ChangeDivisionCtx', 'SetVehiclesCtx', 'ChangeFalloutQueueTypeCtx')
 _CTRL_ENTITY_TYPE = prb_settings.CTRL_ENTITY_TYPE
 _REQUEST_TYPE = prb_settings.REQUEST_TYPE
 _FUNCTIONAL_FLAG = prb_settings.FUNCTIONAL_FLAG
@@ -381,8 +381,8 @@ class ChangeRatedUnitCtx(_UnitRequestCtx):
 class SquadSettingsCtx(_UnitRequestCtx):
     __slots__ = ('__accountsToInvite',)
 
-    def __init__(self, waitingID = '', flags = prb_settings.FUNCTIONAL_FLAG.UNDEFINED, accountsToInvite = None, isForced = False):
-        super(SquadSettingsCtx, self).__init__(entityType=PREBATTLE_TYPE.SQUAD, waitingID=waitingID, flags=flags, isForced=isForced)
+    def __init__(self, entityType = PREBATTLE_TYPE.SQUAD, waitingID = '', flags = prb_settings.FUNCTIONAL_FLAG.UNDEFINED, accountsToInvite = None, isForced = False):
+        super(SquadSettingsCtx, self).__init__(entityType=entityType, waitingID=waitingID, flags=flags, isForced=isForced)
         self.__accountsToInvite = accountsToInvite or []
 
     def getID(self):
@@ -413,50 +413,34 @@ class ChangeDivisionCtx(_UnitRequestCtx):
 
 @ReprInjector.simple(('__vehsList', 'vehsList'), ('getWaitingID', 'waitingID'))
 
-class SetEventVehiclesCtx(_UnitRequestCtx):
+class SetVehiclesCtx(_UnitRequestCtx):
     __slots__ = ('__vehsList',)
 
     def __init__(self, vehsList, waitingID = ''):
-        super(SetEventVehiclesCtx, self).__init__(waitingID=waitingID)
+        super(SetVehiclesCtx, self).__init__(waitingID=waitingID)
         self.__vehsList = vehsList
 
     def getVehsList(self):
         return self.__vehsList
 
     def getRequestType(self):
-        return _REQUEST_TYPE.SET_ES_VEHICLE_LIST
+        return _REQUEST_TYPE.SET_VEHICLE_LIST
 
     def getCooldown(self):
         return 2.0
 
 
-@ReprInjector.simple(('getUnitIdx', 'unitIdx'), ('__isReady', 'isReady'), ('getWaitingID', 'waitingID'))
+@ReprInjector.simple(('__queueType', 'queueType'), ('getWaitingID', 'waitingID'))
 
-class SetReadyEventSquadCtx(_UnitRequestCtx):
-    __slots__ = ('__isReady',)
+class ChangeFalloutQueueTypeCtx(_UnitRequestCtx):
+    __slots__ = ('__queueType',)
 
-    def __init__(self, isReady = True, waitingID = ''):
-        super(SetReadyEventSquadCtx, self).__init__(waitingID=waitingID)
-        self.__isReady = isReady
-
-    def isReady(self):
-        return self.__isReady
-
-    def getRequestType(self):
-        return _REQUEST_TYPE.SET_ES_PLAYER_STATE
-
-
-@ReprInjector.simple(('__eventType', 'eventType'), ('getWaitingID', 'waitingID'))
-
-class ChangeEventSquadTypeCtx(_UnitRequestCtx):
-    __slots__ = ('__eventType',)
-
-    def __init__(self, eventType = True, waitingID = ''):
-        super(ChangeEventSquadTypeCtx, self).__init__(waitingID=waitingID)
-        self.__eventType = eventType
+    def __init__(self, queueType, waitingID = ''):
+        super(ChangeFalloutQueueTypeCtx, self).__init__(waitingID=waitingID)
+        self.__queueType = queueType
 
     def getBattleType(self):
-        return self.__eventType
+        return self.__queueType
 
     def getRequestType(self):
-        return _REQUEST_TYPE.CHANGE_ES_TYPE
+        return _REQUEST_TYPE.CHANGE_FALLOUT_QUEUE_TYPE

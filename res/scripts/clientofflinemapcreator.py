@@ -1,5 +1,8 @@
 # Embedded file name: scripts/client/OfflineMapCreator.py
-import BigWorld, Math, Keys, GUI
+import BigWorld
+import Math
+import Keys
+import GUI
 from debug_utils import *
 from functools import partial
 from gui.app_loader import g_appLoader

@@ -514,11 +514,11 @@ class PotapovQuestValidator(SyncValidator):
         return makeSuccess()
 
 
-class _PotapovQuestsLockedByVehicle(SyncValidator):
+class PotapovQuestsLockedByVehicle(SyncValidator):
 
-    def __init__(self, quests):
-        super(_PotapovQuestsLockedByVehicle, self).__init__()
-        self._messageKeyPrefix = ''
+    def __init__(self, quests, messageKeyPrefix = ''):
+        super(PotapovQuestsLockedByVehicle, self).__init__()
+        self._messageKeyPrefix = messageKeyPrefix
         self._lockedChains = g_eventsCache.getLockedQuestTypes()
         self.quests = quests
 
@@ -528,24 +528,6 @@ class _PotapovQuestsLockedByVehicle(SyncValidator):
                 return makeError(self._messageKeyPrefix + 'LOCKED_BY_VEHICLE_QUEST')
 
         return makeSuccess()
-
-
-class RandomQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
-
-    @classmethod
-    def _findLockedVehicles(cls, randomQuest):
-        return g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.CLASSES(randomQuest.getVehicleClasses()) | REQ_CRITERIA.VEHICLE.LEVELS(range(randomQuest.getVehMinLevel(), MAX_VEHICLE_LEVEL + 1)) | REQ_CRITERIA.VEHICLE.LOCKED | ~REQ_CRITERIA.VEHICLE.LOCKED_BY_FALLOUT).values()
-
-
-class FalloutQuestsLockedByVehicle(_PotapovQuestsLockedByVehicle):
-
-    def __init__(self, quests):
-        super(FalloutQuestsLockedByVehicle, self).__init__(quests)
-        self._messageKeyPrefix = 'fallout/'
-
-    @classmethod
-    def _findLockedVehicles(cls, _):
-        return g_itemsCache.items.getVehicles(REQ_CRITERIA.VEHICLE.FALLOUT.AVAILABLE | REQ_CRITERIA.VEHICLE.LOCKED_BY_FALLOUT).values()
 
 
 class PotapovQuestSlotsValidator(SyncValidator):
@@ -657,4 +639,25 @@ class BoosterActivateValidator(SyncValidator):
             return makeError('NO_BOOSTERS')
         if self.booster.inCooldown:
             return makeError('ALREADY_USED')
+        return makeSuccess()
+
+
+class TankmanAddSkillValidator(SyncValidator):
+
+    def __init__(self, tankmanDscr, skillName):
+        super(TankmanAddSkillValidator, self).__init__()
+        self.tankmanDscr = tankmanDscr
+        self.skillName = skillName
+
+    def _validate(self):
+        if self.skillName in self.tankmanDscr.skills:
+            return makeError()
+        from items.tankmen import ACTIVE_SKILLS
+        if self.skillName not in ACTIVE_SKILLS:
+            return makeError()
+        from items.tankmen import MAX_SKILL_LEVEL
+        if self.tankmanDscr.roleLevel != MAX_SKILL_LEVEL:
+            return makeError()
+        if self.tankmanDscr.skills and self.tankmanDscr.lastSkillLevel != MAX_SKILL_LEVEL:
+            return makeError()
         return makeSuccess()

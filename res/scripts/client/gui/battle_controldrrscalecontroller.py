@@ -22,7 +22,7 @@ class DRRScaleController(object):
 
     def stop(self):
         self.__ui = None
-        g_repeatKeyHandlers.remove(self.__handleRepeatKeyEvent)
+        g_repeatKeyHandlers.discard(self.__handleRepeatKeyEvent)
         return
 
     def handleKey(self, key, isDown):

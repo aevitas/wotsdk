@@ -304,7 +304,7 @@ class _TechTreeDataProvider(object):
                 if hasRoot and row > 1 and column is 1:
                     raise _ConfigError(xmlCtx, 'In first column must be one node - root node, {0:>s} '.format(uName))
                 elif row > rows or column > columns:
-                    raise _ConfigError, (xmlCtx, 'Invalid row or column index: {0:>s}, {1:d}, {2:d}'.format(uName, row, column))
+                    raise _ConfigError(xmlCtx, 'Invalid row or column index: {0:>s}, {1:d}, {2:d}'.format(uName, row, column))
                 lines = self.__readNodeLines(nodeCD, nation, xmlCtx, nodeSection, shared)
                 displayInfo[nodeCD] = {'row': row,
                  'column': column,

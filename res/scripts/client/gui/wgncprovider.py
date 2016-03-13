@@ -24,7 +24,7 @@ class _NotificationVO(object):
         return
 
     def clear(self):
-        self.notID = 0L
+        self.notID = 0
         self.ttl = 0.0
         self.actions = None
         self.items = None
@@ -137,12 +137,12 @@ class _WGNCProvider(object):
 
         if notID in self.__nots:
             LOG_WARNING('Notification already is added', notID, self.__nots[notID])
-            return 0L
+            return 0
         vo = _NotificationVO(notID, ttl, actionsHolder, guiItemsHolder, proxyDataHolder)
         if not vo.isActive():
-            return 0L
+            return 0
         if not vo.validate():
-            return 0L
+            return 0
         self.__nots[notID] = vo
         vo.showAll()
         return notID

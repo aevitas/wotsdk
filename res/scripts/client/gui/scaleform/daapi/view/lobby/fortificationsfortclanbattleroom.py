@@ -74,12 +74,13 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
         elif opCode in [UNIT_OP.CLOSE_SLOT, UNIT_OP.OPEN_SLOT]:
             self._setActionButtonState()
 
-    def onUnitVehicleChanged(self, dbID, vInfo):
+    def onUnitVehiclesChanged(self, dbID, vInfos):
         functional = self.unitFunctional
         pInfo = functional.getPlayerInfo(dbID=dbID)
         if pInfo.isInSlot:
             slotIdx = pInfo.slotIdx
-            if not vInfo.isEmpty():
+            if vInfos and not vInfos[0].isEmpty():
+                vInfo = vInfos[0]
                 vehicleVO = makeVehicleVO(g_itemsCache.items.getItemByCD(vInfo.vehTypeCD), functional.getRosterSettings().getLevelsRange(), isCurrentPlayer=pInfo.isCurrentPlayer())
                 slotCost = vInfo.vehLevel
             else:
@@ -194,7 +195,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
             mapName = ''
         infoIcon = icons.info()
         result['headerDescr'] = text_styles.standard(i18n.makeString(FORTIFICATIONS.FORTCLANBATTLEROOM_HEADER_MAPTITLE, mapName=mapName) + ' ' + infoIcon)
-        result['isOrdersBgVisible'] = bool(not unitPermissions.canChangeConsumables() and len(activeConsumes) and not canUseEquipments)
+        result['isOrdersBgVisible'] = bool(not unitPermissions.canChangeConsumables() and len(activeConsumes))
         result['mineClanName'] = g_clanCache.clanTag
         _, enemyClanAbbev, _ = self.__battle.getOpponentClanInfo()
         result['enemyClanName'] = '[%s]' % enemyClanAbbev

@@ -144,11 +144,7 @@ class ConnectToPeriphery(Action):
     def __doConnect(self):
         login, token2 = self.__credentials
         self.__addHandlers()
-        connectionManager.initiateConnection({'login': login,
-         'token2': token2,
-         'auth_method': CONNECTION_METHOD.TOKEN2,
-         'session': BigWorld.wg_cpsalt(g_loginManager.getPreference('session')),
-         'temporary': str(int(not g_loginManager.getPreference('remember_user')))}, '', getHostURL(self.__host, token2))
+        g_loginManager.initiateRelogin(login, token2, getHostURL(self.__host, token2))
 
     def __addHandlers(self):
         g_eventBus.addListener(LoginEventEx.ON_LOGIN_QUEUE_CLOSED, self.__onLoginQueueClosed, scope=EVENT_BUS_SCOPE.LOBBY)

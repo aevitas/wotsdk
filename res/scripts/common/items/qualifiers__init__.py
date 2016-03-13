@@ -17,7 +17,7 @@ class QualifiersCache(object):
     def fromXmlFile(cls, xmlPath):
         root = ResMgr.openSection(xmlPath)
         if root is None:
-            raise Exception, 'Wrong xml with item qualifiers={0}'.format(xmlPath)
+            raise Exception('Wrong xml with item qualifiers={0}'.format(xmlPath))
         res = []
         for name, section in root.items():
             if name != 'qualifier':

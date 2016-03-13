@@ -5,7 +5,7 @@ class IArenaController(object):
     __slots__ = ('__weakref__',)
 
     def getCtrlScope(self):
-        raise NotImplementedError, 'Routine "getCtrlScope" must be implemented'
+        raise NotImplementedError('Routine "getCtrlScope" must be implemented')
 
     def clear(self):
         pass
@@ -97,10 +97,10 @@ class IArenaPeriodController(IArenaController):
     def getCtrlScope(self):
         return _SCOPE.PERIOD
 
-    def setPeriodInfo(self, period, endTime, length, soundID):
+    def setPeriodInfo(self, period, endTime, length, additionalInfo, soundID):
         pass
 
-    def invalidatePeriodInfo(self, period, endTime, length):
+    def invalidatePeriodInfo(self, period, endTime, length, additionalInfo):
         pass
 
 

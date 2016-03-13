@@ -298,7 +298,7 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener):
             igrActionIcon = makeHtmlString('html_templates:igr/iconSmall', 'premium', {})
             localization = '#menu:vehicleIgr/%s'
             rentInfo = g_currentVehicle.item.rentInfo
-            vehicleIgrTimeLeft = getTimeLeftStr(localization, rentInfo.timeLeft, timeStyle=text_styles.stats, ctx={'igrIcon': igrActionIcon})
+            vehicleIgrTimeLeft = getTimeLeftStr(localization, rentInfo.getTimeLeft(), timeStyle=text_styles.stats, ctx={'igrIcon': igrActionIcon})
         self.as_setVehicleIGRS(vehicleIgrTimeLeft)
 
     def __updateState(self):

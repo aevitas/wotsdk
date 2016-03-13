@@ -12,7 +12,7 @@ from constants import DESTRUCTIBLE_MATKIND
 from helpers import isPlayerAccount
 import re
 import physics_shared
-import FMOD
+import WWISE
 g_cache = None
 g_destructiblesManager = None
 g_destructiblesAnimator = None
@@ -21,7 +21,7 @@ MODULE_DEPENDENCY_HIDING_DELAY = MODULE_DEPENDENCY_HIDING_DELAY_CONSTANT
 DESTRUCTIBLE_HIDING_DELAY_CONSTANT = 0.2
 DESTRUCTIBLE_HIDING_DELAY = DESTRUCTIBLE_HIDING_DELAY_CONSTANT
 _TREE_EFFECTS_SCALE_RATIO = 0.7
-_MAX_PITCH_TO_CHECK_TERRAIN = math.radians(87)
+_MAX_PITCH_TO_CHECK_TERRAIN = math.radians(60)
 _SHOT_EXPLOSION_SYNC_TIMEOUT = 0.11
 
 def init():
@@ -293,15 +293,13 @@ class DestructiblesManager():
             self.__dropDestructible(chunkID, destrIndex, fallDirYaw, pitchConstr, fallSpeed, isNeedAnimation, collisionFlags)
         if dmgType == DESTR_TYPE_TREE:
             destrIndex, fallDirYaw, pitchConstr, fallSpeed = decodeFallenTree(destData)
-            _, collisionFlags = BigWorld.wg_getDestructibleFallPitchConstr(self.__spaceID, chunkID, destrIndex, fallDirYaw)
+            pitchConstr, collisionFlags = BigWorld.wg_getDestructibleFallPitchConstr(self.__spaceID, chunkID, destrIndex, fallDirYaw)
             self.__dropDestructible(chunkID, destrIndex, fallDirYaw, pitchConstr, fallSpeed, isNeedAnimation, collisionFlags)
-            if FMOD.enabled:
-                FMOD.lightSoundRemove(self.__spaceID, chunkID, destrIndex)
+            WWISE.WG_lightSoundRemove(self.__spaceID, chunkID, destrIndex)
         elif dmgType == DESTR_TYPE_FRAGILE:
             destrIndex, isShotDamage = decodeFragile(destData)
             self.__destroyFragile(chunkID, destrIndex, isNeedAnimation, isShotDamage, explosionInfo)
-            if FMOD.enabled:
-                FMOD.lightSoundRemove(self.__spaceID, chunkID, destrIndex)
+            WWISE.WG_lightSoundRemove(self.__spaceID, chunkID, destrIndex)
         elif dmgType == DESTR_TYPE_STRUCTURE:
             destrIndex, matKind, isShotDamage = decodeDestructibleModule(destData)
             self.__destroyModule(chunkID, destrIndex, matKind, isNeedAnimation, isShotDamage, explosionInfo)
@@ -1288,25 +1286,15 @@ class DestructiblesManagerStaticModel():
             destrIndex, fallDirYaw, pitchConstr, fallSpeed = decodeFallenTree(destData)
             _, collisionFlags = BigWorld.wg_getDestructibleFallPitchConstr(self.__spaceID, chunkID, destrIndex, fallDirYaw)
             self.__dropDestructible(chunkID, destrIndex, dmgType, fallDirYaw, pitchConstr, fallSpeed, isNeedAnimation, collisionFlags)
-            if FMOD.enabled:
-                FMOD.lightSoundRemove(self.__spaceID, chunkID, destrIndex)
+            WWISE.WG_lightSoundRemove(self.__spaceID, chunkID, destrIndex)
         elif dmgType == DESTR_TYPE_FRAGILE:
             destrIndex, isShotDamage = decodeFragile(destData)
             self.__destroyFragile(chunkID, destrIndex, isNeedAnimation, isShotDamage, explosionInfo)
-            if FMOD.enabled:
-                FMOD.lightSoundRemove(self.__spaceID, chunkID, destrIndex)
+            WWISE.WG_lightSoundRemove(self.__spaceID, chunkID, destrIndex)
         elif dmgType == DESTR_TYPE_STRUCTURE:
             destrIndex, matKind, isShotDamage = decodeDestructibleModule(destData)
             self.__destroyModule(chunkID, destrIndex, matKind, isNeedAnimation, isShotDamage)
         return
-
-    def __setDestructibleInitialState(self, chunkID, destrIndex):
-        if type == DESTR_TYPE_STRUCTURE:
-            for moduleKind, moduleDesc in desc['modules'].iteritems():
-                self.__startLifetimeEffect(chunkID, destrIndex, moduleKind)
-
-        else:
-            self.__startLifetimeEffect(chunkID, destrIndex, -1)
 
     def __destroyFragile(self, chunkID, destrIndex, isNeedAnimation, isShotDamage, explosionInfo = None):
         self.__stopLifetimeEffect(chunkID, destrIndex, -1)
@@ -1414,7 +1402,7 @@ class DestructiblesManagerStaticModel():
         else:
             effectVars = g_cache._getEffect(effectName, effectCat, False)
             if effectVars is None:
-                print 'Could not find any effects vars for: ' + str(effectName) + ' - type: ' + str(effectType) + ' - cat: ' + str(effectCat) + ' (' + str(destrType) + ')'
+                LOG_ERROR('Could not find any effects vars for: ' + str(effectName) + ' - type: ' + str(effectType) + ' - cat: ' + str(effectCat) + ' (' + str(destrType) + ')')
                 return
             if destrType == DESTR_TYPE_TREE or destrType == DESTR_TYPE_FALLING_ATOM:
                 chunkMatrix = BigWorld.wg_getChunkMatrix(self.__spaceID, chunkID)

@@ -6,7 +6,8 @@ from CurrentVehicle import g_currentVehicle
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
-from tutorial.control import game_vars
+from tutorial.control import game_vars, g_tutorialWeaver
+from tutorial.control.lobby import aspects
 from tutorial.control.triggers import Trigger, TriggerWithValidateVar, TriggerWithSubscription
 from tutorial.logger import LOG_ERROR
 __all__ = ['BonusTrigger',
@@ -192,23 +193,23 @@ class FreeVehicleSlotChangedTrigger(Trigger):
 
     def __init__(self, triggerID):
         super(FreeVehicleSlotChangedTrigger, self).__init__(triggerID)
-        self.__slots = game_vars.getFreeVehiclesSlots()
-
-    def isOn(self):
-        return self.__slots < game_vars.getFreeVehiclesSlots()
+        self.__pIdx = -1
 
     def run(self):
         if not self.isSubscribed:
-            g_clientUpdateManager.addCallbacks({'stats.slots': self.__onSlotsChanged})
+            self.__pIdx = g_tutorialWeaver.weave(pointcut=aspects.BuySlotPointcut, aspects=[aspects.BuySlotAspect(self)])
             self.isSubscribed = True
+        self.isRunning = True
+        self.toggle(isOn=self.isOn())
+
+    def isOn(self, success = False):
+        return success
 
     def clear(self):
-        if self.isSubscribed:
-            g_clientUpdateManager.removeObjectCallbacks(self)
+        g_tutorialWeaver.clear(self.__pIdx)
+        self.__pIdx = -1
         self.isSubscribed = False
-
-    def __onSlotsChanged(self, _):
-        self.toggle(isOn=self.isOn())
+        self.isRunning = False
 
 
 class PremiumPeriodChangedTrigger(Trigger):
@@ -255,6 +256,33 @@ class PremiumDiscountUseTrigger(Trigger):
         g_clientUpdateManager.removeObjectCallbacks(self)
         self.isSubscribed = False
         self._premiumDiscounts = None
+        return
+
+    def __onDiscountsChange(self, *args):
+        self.toggle(isOn=self.isOn())
+
+
+class PersonalSlotDiscountsUseTrigger(Trigger):
+
+    def __init__(self, triggerID):
+        super(PersonalSlotDiscountsUseTrigger, self).__init__(triggerID)
+        self._slotsDiscounts = g_itemsCache.items.shop.personalSlotDiscounts
+
+    def run(self):
+        if not self.isSubscribed:
+            self.isSubscribed = True
+            g_clientUpdateManager.addCallbacks({'goodies': self.__onDiscountsChange})
+
+    def isOn(self):
+        newDiscounts = g_itemsCache.items.shop.personalSlotDiscounts
+        result = len(newDiscounts) < len(self._slotsDiscounts)
+        self._slotsDiscounts = newDiscounts
+        return result
+
+    def clear(self):
+        g_clientUpdateManager.removeObjectCallbacks(self)
+        self.isSubscribed = False
+        self._slotsDiscounts = None
         return
 
     def __onDiscountsChange(self, *args):

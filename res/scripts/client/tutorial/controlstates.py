@@ -11,7 +11,7 @@ STATE_RUN_EFFECTS = 4
 class _TutorialState(TutorialProxyHolder):
 
     def tick(self):
-        raise NotImplementedError, 'Method not implemented'
+        raise NotImplementedError('Method not implemented')
 
     def allowedToSwitch(self):
         return True

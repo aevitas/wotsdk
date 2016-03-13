@@ -18,6 +18,12 @@ class PresenceQuery(PyQuery):
     def __init__(self, queryType, to = ''):
         super(PresenceQuery, self).__init__(queryType, WgClientExtension(), to)
 
+    def getStatus(self):
+        return ('', '')
+
+    def isMucNsUsed(self):
+        return False
+
     def setIgrID(self, igrID):
         if self._ext:
             self._ext.setIgrID(igrID)

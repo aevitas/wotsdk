@@ -16,6 +16,7 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.server_events.QuestsSeasonsView import QuestsSeasonsView
     from gui.Scaleform.daapi.view.lobby.server_events.QuestsTileChainsView import FalloutQuestsTileChainsView, RandomQuestsTileChainsView
     from gui.Scaleform.daapi.view.lobby.server_events.TutorialHangarQuestDetails import TutorialHangarQuestDetails
+    from gui.Scaleform.daapi.view.lobby.server_events.MotiveQuestsDetails import MotiveQuestDetails
     from gui.Scaleform.daapi.view.lobby.server_events.TutorialQuestsTab import TutorialQuestsTab
     from gui.Scaleform.genConsts.QUESTS_ALIASES import QUESTS_ALIASES
     return (GroupedViewSettings(VIEW_ALIAS.EVENTS_WINDOW, EventsWindow, 'questsWindow.swf', ViewTypes.WINDOW, '', None, ScopeTemplates.DEFAULT_SCOPE),
@@ -28,7 +29,8 @@ def getViewSettings():
      ViewSettings(QUESTS_ALIASES.RANDOM_TILE_CHAINS_VIEW_ALIAS, RandomQuestsTileChainsView, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(QUESTS_ALIASES.FALLOUT_TILE_CHAINS_VIEW_ALIAS, FalloutQuestsTileChainsView, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(QUESTS_ALIASES.TUTORIAL_HANGAR_QUEST_DETAILS_PY_ALIAS, TutorialHangarQuestDetails, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
-     ViewSettings(QUESTS_ALIASES.QUESTS_CONTENT_TABS_PY_ALIAS, QuestsContentTabs, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE))
+     ViewSettings(QUESTS_ALIASES.QUESTS_CONTENT_TABS_PY_ALIAS, QuestsContentTabs, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
+     ViewSettings(QUESTS_ALIASES.TUTORIAL_HANGAR_MOTIVE_QUEST_DETAILS_PY_ALIAS, MotiveQuestDetails, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE))
 
 
 def getBusinessHandlers():

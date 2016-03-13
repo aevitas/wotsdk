@@ -71,7 +71,7 @@ class DescriptorParser(object):
                 if name in TUTORIAL_STOP_REASON_NAMES:
                     reasons.add(TUTORIAL_STOP_REASON_NAMES[name])
                 else:
-                    raise Exception, 'Reason not found: {0:>s}'.format(name)
+                    raise Exception('Reason not found: {0:>s}'.format(name))
 
             if len(reasons):
                 descriptor.setItemsRevertIfStop(reasons)

@@ -6,17 +6,18 @@ from messenger.proto.xmpp.gloox_constants import PRESENCES_ORDER, PRESENCE
 from messenger.proto.xmpp.wrappers import WGExtsInfo
 from messenger import g_settings
 
-@ReprInjector.simple('priority', 'message', 'presence', ('__wgExts', 'exts'))
+@ReprInjector.simple('priority', 'message', 'presence', ('__wgExts', 'exts'), ('__mucInfo', 'muc'))
 
 class Resource(object):
-    __slots__ = ('priority', 'message', 'presence', '__wgExts', '__order')
+    __slots__ = ('priority', 'message', 'presence', '__wgExts', '__mucInfo', '__order')
 
-    def __init__(self, priority = 0, message = 0, presence = PRESENCE.UNAVAILABLE, wgExts = None):
+    def __init__(self, priority = 0, message = 0, presence = PRESENCE.UNAVAILABLE, wgExts = None, mucInfo = None):
         super(Resource, self).__init__()
         self.priority = priority
         self.message = message
         self.presence = presence
-        self.__wgExts = wgExts or WGExtsInfo(None, None, None)
+        self.__wgExts = wgExts or WGExtsInfo(0, '', None, None, None)
+        self.__mucInfo = mucInfo
         self.__order = PRESENCES_ORDER.index(self.presence)
         return
 
@@ -35,6 +36,12 @@ class Resource(object):
             tags.add(USER_TAG.BAN_CHAT)
         return tags
 
+    def getWgDatabaseID(self):
+        return self.__wgExts.dbID
+
+    def getWgNickname(self):
+        return self.__wgExts.nickname
+
     def getClientInfo(self):
         return self.__wgExts.client
 
@@ -43,6 +50,9 @@ class Resource(object):
 
     def getBanInfo(self):
         return self.__wgExts.ban
+
+    def getMucInfo(self):
+        return self.__mucInfo
 
     def getOrder(self):
         return self.__order

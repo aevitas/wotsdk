@@ -15,7 +15,7 @@ class storage_getter(object):
     def __init__(self, name):
         super(storage_getter, self).__init__()
         if name not in _STORAGE:
-            raise error, 'Storage "{0:>s}" not found'.format(name)
+            raise error('Storage "{0:>s}" not found'.format(name))
         self.__name = name
 
     def __call__(self, *args):
@@ -33,7 +33,7 @@ class dyn_storage_getter(object):
         def _getStorage(_self):
             global _DYN_STORAGE
             if self.__name not in _DYN_STORAGE:
-                raise error, 'Dyn storage "{0:>s}" not found'.format(self.__name)
+                raise error('Dyn storage "{0:>s}" not found'.format(self.__name))
             return _DYN_STORAGE[self.__name]
 
         return property(_getStorage)
@@ -43,7 +43,7 @@ def addDynStorage(name, storage):
     if name not in _DYN_STORAGE:
         _DYN_STORAGE[name] = storage
     else:
-        raise error, 'Storage "{0:>s}" is exists'.format(name)
+        raise error('Storage "{0:>s}" is exists'.format(name))
 
 
 def clearDynStorage(name):
@@ -76,16 +76,18 @@ class StorageDecorator(object):
 
     def init(self):
         for name, storage in self.__readonly__.iteritems():
-            if isinstance(storage, SimpleCachedStorage):
-                storage.init()
+            storage.init()
+
+    def switch(self, scope):
+        for name, storage in self.__readonly__.iteritems():
+            storage.switch(scope)
 
     def clear(self):
         if self.__storageCache:
             for name, storage in self.__readonly__.iteritems():
-                if isinstance(storage, SimpleCachedStorage):
-                    record = storage.makeRecordInCache()
-                    if record:
-                        self.__storageCache.addRecord(name, record)
+                record = storage.makeRecordInCache()
+                if record:
+                    self.__storageCache.addRecord(name, record)
 
             self.__storageCache.write()
             self.__storageCache.clear()
@@ -99,5 +101,4 @@ class StorageDecorator(object):
         if not self.__storageCache:
             return
         for name, storage in self.__readonly__.iteritems():
-            if isinstance(storage, SimpleCachedStorage):
-                storage.restoreFromCache(self.__storageCache.popRecord(name))
+            storage.restoreFromCache(self.__storageCache.popRecord(name))

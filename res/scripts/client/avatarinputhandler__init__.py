@@ -11,8 +11,7 @@ from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSyst
 from Event import Event
 from debug_utils import *
 from gui import g_guiResetters
-from gui.Scaleform.CursorDelegator import g_cursorDelegator
-from gui.app_loader import g_appLoader
+from gui.app_loader import g_appLoader, settings
 from post_processing.post_effect_controllers import g_postProcessingEvents
 from constants import ARENA_PERIOD, AIMING_MODE
 from control_modes import _ARCADE_CAM_PIVOT_POS
@@ -221,11 +220,11 @@ class AvatarInputHandler(CallbackDelayer):
             raise AssertionError
             if self.__detachCount == -1 and isDetached:
                 self.__targeting.enable(False)
-                g_cursorDelegator.activateCursor()
+                g_appLoader.attachCursor(settings.APP_NAME_SPACE.SF_BATTLE)
                 enableAiming and self.setAimingMode(False, AIMING_MODE.USER_DISABLED)
         elif not self.__detachCount:
             self.__targeting.enable(True)
-            g_cursorDelegator.detachCursor()
+            g_appLoader.detachCursor(settings.APP_NAME_SPACE.SF_BATTLE)
 
     def updateShootingStatus(self, canShoot):
         if self.__detachCount < 0:
@@ -326,7 +325,7 @@ class AvatarInputHandler(CallbackDelayer):
             control.create()
 
         self.__addBattleCtrlListeners()
-        g_cursorDelegator.detachCursor()
+        g_appLoader.detachCursor(settings.APP_NAME_SPACE.SF_BATTLE)
         if not self.__curCtrl.isManualBind():
             BigWorld.player().positionControl.bindToVehicle(True)
         self.__curCtrl.enable(ctrlState=control_modes.dumpStateEmpty())

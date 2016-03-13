@@ -7,12 +7,19 @@ def isForcedGuiControlMode(avatar = None):
     if avatar is None:
         avatar = BigWorld.player()
     try:
-        result = avatar.isForcedGuiControlMode
+        result = avatar.isForcedGuiControlMode()
     except AttributeError:
         LOG_WARNING('Attribute "isForcedGuiControlMode" is not found')
         result = False
 
     return result
+
+
+def setForcedGuiControlMode(value, stopVehicle = True, enableAiming = True):
+    try:
+        BigWorld.player().setForcedGuiControlMode(value, stopVehicle=stopVehicle, enableAiming=enableAiming)
+    except AttributeError:
+        pass
 
 
 def getPlayerName(avatar = None):

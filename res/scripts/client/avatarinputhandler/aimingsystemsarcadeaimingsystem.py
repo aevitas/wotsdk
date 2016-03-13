@@ -52,6 +52,7 @@ class ArcadeAimingSystem(IAimingSystem):
     aimMatrix = property(lambda self: self.__aimMatrix, __setAimMatrix)
     yaw = property(lambda self: self.__cursor.yaw, __setYaw)
     pitch = property(lambda self: self.__cursor.pitch, __setPitch)
+    idealMatrix = property(lambda self: self.__idealMatrix)
 
     def __init__(self, vehicleMProv, heightAboveTarget, focusRadius, aimMatrix, anglesRange, enableSmartShotPointCalc = True):
         IAimingSystem.__init__(self)
@@ -62,6 +63,7 @@ class ArcadeAimingSystem(IAimingSystem):
         self.__cursor.base = vehicleMProv
         self.__cursor.heightAboveBase = heightAboveTarget
         self.__cursor.focusRadius = focusRadius
+        self.__idealMatrix = self._matrix
         self.__shotPointCalculator = ShotPointCalculatorPlanar() if enableSmartShotPointCalc else None
         return
 
@@ -107,6 +109,9 @@ class ArcadeAimingSystem(IAimingSystem):
         aimMatrix = self.__getLookToAimMatrix()
         aimMatrix.postMultiply(self.__cursor.matrix)
         self._matrix.set(aimMatrix)
+        aimMatrix = self.__getLookToAimMatrix()
+        aimMatrix.postMultiply(self.__cursor.idealMatrix)
+        self.__idealMatrix.set(aimMatrix)
 
     def __calcPitchAngle(self, distanceFromFocus, dir):
         fov = BigWorld.projection().fov
@@ -156,6 +161,9 @@ class ArcadeAimingSystem(IAimingSystem):
         aimMatrix = self.__getLookToAimMatrix()
         aimMatrix.postMultiply(self.__cursor.matrix)
         self._matrix.set(aimMatrix)
+        aimMatrix = self.__getLookToAimMatrix()
+        aimMatrix.postMultiply(self.__cursor.idealMatrix)
+        self.__idealMatrix.set(aimMatrix)
         if self.__shotPointCalculator is not None:
             self.__shotPointCalculator.update(*self.__getScanRay())
         return 0.0
@@ -201,7 +209,7 @@ class ShotPointCalculatorPlanar(object):
     aimPlane = property(lambda self: self.__aimPlane)
 
     def __init__(self):
-        self.__vehicleMat = BigWorld.player().getOwnVehicleMatrix()
+        self.__vehicleMat = BigWorld.player().getOwnVehicleStabilisedMatrix()
         self.__vehicleDesc = BigWorld.player().vehicleTypeDescriptor
         self.__aimPlane = _AimPlane()
         self.__getTurretMat = functools.partial(AimingSystems.getTurretJointMat, self.__vehicleDesc, self.__vehicleMat)

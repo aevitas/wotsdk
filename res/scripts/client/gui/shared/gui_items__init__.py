@@ -219,17 +219,27 @@ class HasStrCD(object):
 _RentalInfoProvider = namedtuple('RentalInfoProvider', ('rentExpiryTime',
  'compensations',
  'battlesLeft',
+ 'expiryState',
  'isRented'))
 _RentalInfoProvider.__new__.__defaults__ = (0,
  (0, 0),
  0,
+ True,
  False)
 
 class RentalInfoProvider(_RentalInfoProvider):
 
-    @property
-    def timeLeft(self):
+    def getTimeLeft(self):
         return float(time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(self.rentExpiryTime)))
+
+    def getBattlesLeft(self):
+        return self.battlesLeft or 0
+
+    def getExpiryState(self):
+        if self.expiryState is not None:
+            return self.expiryState
+        else:
+            return True
 
 
 class FittingItem(GUIItem, HasIntCD):

@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/DialogsInterface.py
+from gui import GUI_SETTINGS
 from gui.Scaleform.Waiting import Waiting
 from gui.battle_control import g_sessionProvider
 from gui.shared import events, g_eventBus
@@ -13,7 +14,7 @@ def showDialog(meta, callback):
 
 @dialog
 def showI18nInfoDialog(i18nKey, callback, meta = None):
-    if g_sessionProvider.isBattleUILoaded():
+    if g_sessionProvider.isBattleUILoaded() and not GUI_SETTINGS.useAS3Battle:
         customMsg = None
         if meta is not None:
             customMsg.getMessage()
@@ -25,7 +26,7 @@ def showI18nInfoDialog(i18nKey, callback, meta = None):
 
 @dialog
 def showI18nConfirmDialog(i18nKey, callback, meta = None, focusedID = None):
-    if g_sessionProvider.isBattleUILoaded():
+    if g_sessionProvider.isBattleUILoaded() and not GUI_SETTINGS.useAS3Battle:
         customMsg = None
         if meta is not None:
             customMsg.getMessage()

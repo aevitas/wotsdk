@@ -7,7 +7,7 @@ from gui.shared.gui_items.Vehicle import Vehicle
 class PlayerPrbInfo(object):
     __slots__ = ('accID', 'name', 'dbID', 'state', 'time', 'vehCompDescr', 'igrType', 'clanDBID', 'clanAbbrev', 'roster', 'isCreator', 'regionCode')
 
-    def __init__(self, accID, name = '', dbID = 0L, state = PREBATTLE_ACCOUNT_STATE.UNKNOWN, time = 0.0, vehCompDescr = 0, igrType = 0L, clanDBID = 0L, clanAbbrev = '', roster = 0, functional = None):
+    def __init__(self, accID, name = '', dbID = 0, state = PREBATTLE_ACCOUNT_STATE.UNKNOWN, time = 0.0, vehCompDescr = 0, igrType = 0, clanDBID = 0, clanAbbrev = '', roster = 0, functional = None):
         self.accID = accID
         self.name = name
         self.dbID = dbID

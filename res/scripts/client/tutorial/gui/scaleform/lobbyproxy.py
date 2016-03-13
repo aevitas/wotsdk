@@ -33,10 +33,10 @@ class SfLobbyProxy(GUIProxy):
         return None
 
     def getViewSettings(self):
-        raise Exception, 'Routine getViewSettings must be implemented'
+        raise Exception('Routine getViewSettings must be implemented')
 
     def getViewsAliases(self):
-        raise Exception, 'Routine getViewsAliases must be implemented'
+        raise Exception('Routine getViewsAliases must be implemented')
 
     def init(self):
         result = False

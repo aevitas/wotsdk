@@ -213,7 +213,7 @@ class ClubAvailabilityController(BattleAvailabilityController):
         if serverID is None:
             serverID = connectionManager.peripheryID
         servSettings = g_lobbyContext.getServerSettings()
-        if servSettings is not None and len(self.getForbiddenHours(serverID)) == time_utils.HOURS_IN_DAY + 1:
+        if servSettings is not None and len(self.getForbiddenHours(serverID)) == time_utils.HOURS_IN_DAY:
             return False
         else:
             return True
@@ -258,6 +258,9 @@ class SortiesCurfewController(BattleAvailabilityController):
         if diff and ('forbiddenSortieHours' in diff or 'forbiddenSortiePeripheryIDs' in diff):
             self._update(diff.get('forbiddenSortieHours'))
             LOG_DEBUG('Sorties settings changed:', diff)
+
+    def _getTimeStamp(self):
+        return time_utils.getServerRegionalTime()
 
     def _calcStatus(self, hours = None):
         super(SortiesCurfewController, self)._calcStatus(hours)

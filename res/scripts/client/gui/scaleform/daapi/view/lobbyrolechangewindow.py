@@ -167,4 +167,4 @@ class RoleChangeWindow(RoleChangeMeta):
 
         return {'items': items,
          'nativeVehicleId': nativeVehicleCD,
-         'currentVehicleId': self.__currentVehicleCD if self.__currentVehicleCD != None else -1}
+         'currentVehicleId': self.__currentVehicleCD or -1}

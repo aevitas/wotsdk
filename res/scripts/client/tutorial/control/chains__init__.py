@@ -14,6 +14,7 @@ class ChainsControlsFactory(ControlsFactory):
     def __init__(self):
         effects = {EFFECT_TYPE.ACTIVATE: core_func.FunctionalActivateEffect,
          EFFECT_TYPE.DEACTIVATE: core_func.FunctionalDeactivateEffect,
+         EFFECT_TYPE.GLOBAL_ACTIVATE: core_func.FunctionalGlobalActivateEffect,
          EFFECT_TYPE.RUN_TRIGGER: core_func.FunctionalRunTriggerEffect,
          EFFECT_TYPE.SET_GUI_ITEM_CRITERIA: core_func.FunctionalSetGuiItemCriteria,
          EFFECT_TYPE.SET_ACTION: core_func.FunctionalSetAction,

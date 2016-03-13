@@ -44,12 +44,13 @@ class CyberSportRespawnForm(CyberSportRespawnFormMeta, MyClubListener, ClubEmble
             self.__updateTimer()
             self.__updateWarning()
 
-    def onUnitVehicleChanged(self, dbID, vInfo):
+    def onUnitVehiclesChanged(self, dbID, vInfos):
         functional = self.unitFunctional
         pInfo = functional.getPlayerInfo(dbID=dbID)
         if pInfo.isInSlot:
             slotIdx = pInfo.slotIdx
-            if not vInfo.isEmpty():
+            if vInfos and not vInfos[0].isEmpty():
+                vInfo = vInfos[0]
                 vehicleVO = makeVehicleVO(g_itemsCache.items.getItemByCD(vInfo.vehTypeCD), functional.getRosterSettings().getLevelsRange())
                 slotCost = vInfo.vehLevel
             else:

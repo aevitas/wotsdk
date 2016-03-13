@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/shared/utils/requesters/IntSettingsRequester.py
 import BigWorld
+import copy
 import constants
 from adisp import async, process
 from debug_utils import LOG_ERROR
@@ -73,7 +74,9 @@ class IntSettingsRequester(object):
      'TUTORIAL': 61,
      'FALLOUT_CAROUSEL_FILTER': 62,
      'MARKS_ON_GUN': constants.USER_SERVER_SETTINGS.HIDE_MARKS_ON_GUN,
-     'ONCE_ONLY_HINTS': 70}
+     'ONCE_ONLY_HINTS': 70,
+     'CMD_BLOCK_TRACKS': 71,
+     'CMD_VOICECHAT_ENABLE': 72}
 
     def __init__(self):
         self.__cache = dict()
@@ -135,4 +138,5 @@ class IntSettingsRequester(object):
     def _addIntSettings(self, settings, callback = None):
         import BattleReplay
         if not BattleReplay.g_replayCtrl.isPlaying:
+            self.__cache.update(settings)
             BigWorld.player().intUserSettings.addIntSettings(settings, callback)

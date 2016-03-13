@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/AchievementsUtils.py
+from debug_utils import LOG_DEBUG
 from dossiers2.ui.achievements import ACHIEVEMENT_SECTION, ACHIEVEMENT_TYPE
 from dossiers2.custom.config import RECORD_CONFIGS
 from gui.shared.gui_items.dossier.achievements.abstract import isRareAchievement
@@ -96,7 +97,7 @@ class AchievementsUtils(object):
                 counterType = ACHIEVEMENTS_ALIASES.RED_COUNTER
         elif atype == ACHIEVEMENT_TYPE.SERIES:
             if in_dossier:
-                counterType = defaultSeriesCounter if defaultSeriesCounter is not None else ACHIEVEMENTS_ALIASES.YELLOW_COUNTER
+                counterType = defaultSeriesCounter or ACHIEVEMENTS_ALIASES.YELLOW_COUNTER
         elif atype == ACHIEVEMENT_TYPE.CUSTOM:
             if section == ACHIEVEMENT_SECTION.SPECIAL:
                 counterType = None

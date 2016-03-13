@@ -4,6 +4,7 @@ import sys
 import linecache
 from functools import partial
 from traceback import format_exception_only
+from constants import IS_BASEAPP
 _MAX_OBJECT_SIZE = 16384
 _MAX_DEPTH = 10
 _LINE_LIMIT = 25
@@ -62,7 +63,7 @@ def __processVar(k, v, localsProcessorCache):
     varID = id(v)
     if varID in localsProcessorCache:
         return localsProcessorCache[varID]
-    if k == 'self' or isinstance(v, BigWorld.Base) or isinstance(v, BigWorld.Proxy):
+    if k == 'self' or IS_BASEAPP and (isinstance(v, BigWorld.Base) or isinstance(v, BigWorld.Proxy)):
         res = {'className': v.__class__.__name__}
         for field, alias in (('id', 'id'), ('databaseID', 'dbID'), ('className', 'entityType')):
             if hasattr(v, field):
@@ -114,10 +115,8 @@ def __processLocals(locals, localsProcessorCache):
 
 def __excepthook(originalExceptHook, fileNameToTrim, exctype, value, traceback):
     originalExceptHook(exctype, value, traceback)
-    lines = extendedTracebackAsList(fileNameToTrim, None, None, exctype, value, traceback)
-    for line in lines:
-        print line
-
+    extMsg = extendedTracebackAsString(fileNameToTrim, None, None, exctype, value, traceback)
+    BigWorld.logError('EXCEPTION', extMsg, None)
     return
 
 

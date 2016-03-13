@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/tutorial/doc_loader/__init__.py
 import ResMgr
-from debug_utils import LOG_DEBUG
 from tutorial import settings
 from tutorial.doc_loader import gui_config
 from tutorial.doc_loader.parsers import DescriptorParser, ChapterParser

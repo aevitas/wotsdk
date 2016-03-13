@@ -14,7 +14,7 @@ CLUB_DOSSIER_VERSION = 2
 
 def __updateFromAccountDossier1(compDescr):
     if not constants.IS_DEVELOPMENT:
-        raise Exception, 'unexpected compact descriptor v1.0'
+        raise Exception('unexpected compact descriptor v1.0')
     import dossiers2
     d2 = dossiers2.getAccountDossierDescr()
     return (ACCOUNT_DOSSIER_VERSION, d2.makeCompDescr())
@@ -1814,7 +1814,7 @@ def __updateFromAccountDossier99(compDescr):
 
 def __updateFromVehicleDossier1(compDescr):
     if not constants.IS_DEVELOPMENT:
-        raise Exception, 'unexpected compact descriptor v1.0'
+        raise Exception('unexpected compact descriptor v1.0')
     import dossiers2
     d2 = dossiers2.getVehicleDossierDescr()
     return (VEHICLE_DOSSIER_VERSION, d2.makeCompDescr())

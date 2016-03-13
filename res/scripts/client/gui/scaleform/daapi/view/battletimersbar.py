@@ -42,6 +42,9 @@ class TimersBar(ITimersBar):
         self.__call('timerBig.setTimer', [_STATE_TO_MESSAGE[state]])
         self.__call('timerBig.hide', [speed])
 
+    def setWinConditionText(self, text):
+        pass
+
     def __call(self, funcName, args = None):
         if self.__ui:
             self.__ui.call('battle.{0}'.format(funcName), args)

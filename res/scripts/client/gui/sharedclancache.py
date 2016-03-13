@@ -37,7 +37,7 @@ class _ClanCache(object):
 
     def __init__(self):
         self.__waitForSync = False
-        self.__fortProvider = ClientFortProvider()
+        self.__fortProvider = None
         self.__clanMembersLen = None
         self.__clanMotto = ''
         self.__clanDescription = ''
@@ -46,11 +46,12 @@ class _ClanCache(object):
         return
 
     def init(self):
-        pass
+        self.__fortProvider = ClientFortProvider()
 
     def fini(self):
         self.onSyncStarted.clear()
         self.onSyncCompleted.clear()
+        self.clear()
 
     def onAccountShowGUI(self):
         self.__startFortProvider()
@@ -70,7 +71,8 @@ class _ClanCache(object):
         self.__invalidateData(diff, callback)
 
     def clear(self):
-        pass
+        self.__fortProvider = None
+        return
 
     @storage_getter('users')
     def usersStorage(self):

@@ -23,7 +23,9 @@ class LobbyControllersFactory(IControllerFactory):
 
     def factory(self, channel):
         controller = None
-        msgType = channel.getProtoData().msgType
+        msgType = channel.getMessageType()
         if msgType == MESSAGE_TYPE.CHAT:
             controller = lobby_controllers.ChatChannelController(channel)
+        elif msgType == MESSAGE_TYPE.GROUPCHAT:
+            controller = lobby_controllers.UserRoomController(channel)
         return controller

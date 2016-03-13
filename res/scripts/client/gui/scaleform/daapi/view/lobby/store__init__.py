@@ -8,8 +8,12 @@ from gui.Scaleform.framework.package_layout import PackageBusinessHandler
 def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.store.Inventory import Inventory
     from gui.Scaleform.daapi.view.lobby.store.Shop import Shop
+    from gui.Scaleform.daapi.view.lobby.store.StoreView import StoreView
     from gui.Scaleform.daapi.view.lobby.store.StoreTable import StoreTable
-    return (ViewSettings(VIEW_ALIAS.LOBBY_INVENTORY, Inventory, 'inventory.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.LOBBY_INVENTORY, ScopeTemplates.LOBBY_SUB_SCOPE), ViewSettings(VIEW_ALIAS.LOBBY_SHOP, Shop, 'shop.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.LOBBY_SHOP, ScopeTemplates.LOBBY_SUB_SCOPE), ViewSettings(VIEW_ALIAS.SHOP_TABLE, StoreTable, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE))
+    return (ViewSettings(VIEW_ALIAS.LOBBY_STORE, StoreView, 'store.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.LOBBY_STORE, ScopeTemplates.LOBBY_SUB_SCOPE),
+     ViewSettings(VIEW_ALIAS.SHOP_TABLE, StoreTable, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
+     ViewSettings(VIEW_ALIAS.LOBBY_INVENTORY, Inventory, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
+     ViewSettings(VIEW_ALIAS.LOBBY_SHOP, Shop, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE))
 
 
 def getBusinessHandlers():
@@ -19,5 +23,5 @@ def getBusinessHandlers():
 class StorePackageBusinessHandler(PackageBusinessHandler):
 
     def __init__(self):
-        listeners = ((VIEW_ALIAS.LOBBY_INVENTORY, self.loadViewByCtxEvent), (VIEW_ALIAS.LOBBY_SHOP, self.loadViewByCtxEvent))
+        listeners = ((VIEW_ALIAS.LOBBY_INVENTORY, self.loadViewByCtxEvent), (VIEW_ALIAS.LOBBY_STORE, self.loadViewByCtxEvent))
         super(StorePackageBusinessHandler, self).__init__(listeners, APP_NAME_SPACE.SF_LOBBY, EVENT_BUS_SCOPE.LOBBY)

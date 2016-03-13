@@ -1,8 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/user_cm_handlers.py
-import BigWorld
 from adisp import process
-import constants
 from debug_utils import LOG_DEBUG
+from gui.clans.clan_helpers import showClanInviteSystemMsg
 from gui.clans.contexts import CreateInviteCtx
 from gui.clans import formatters as clans_fmts
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
@@ -14,6 +13,7 @@ from gui.prb_control.context import SendInvitesCtx, PrebattleAction
 from gui.prb_control.prb_helpers import prbDispatcherProperty, prbFunctionalProperty
 from gui.shared import g_itemsCache, event_dispatcher as shared_events, utils
 from gui.shared.ClanCache import ClanInfo
+from gui.shared.denunciator import LobbyDenunciator, DENUNCIATIONS
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
 from gui.Scaleform.daapi.view.dialogs import I18nInfoDialogMeta
@@ -43,17 +43,6 @@ class USER(object):
     REQUEST_FRIENDSHIP = 'requestFriendship'
 
 
-class DENUICATIONS(object):
-    APPEAL = 'appeal'
-    OFFEND = 'offend'
-    FLOOD = 'flood'
-    BLACKMAIL = 'blackmail'
-    SWINDLE = 'swindle'
-    NOT_FAIR_PLAY = 'notFairPlay'
-    FORBIDDEN_NICK = 'forbiddenNick'
-    BOT = 'bot'
-
-
 class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
 
     def __init__(self, cmProxy, ctx = None):
@@ -79,7 +68,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         return self.prbDispatcher.getFunctionalCollection().canSendInvite(self.databaseID)
 
     def isSquadCreator(self):
-        return self.prbFunctional.getEntityType() == constants.PREBATTLE_TYPE.SQUAD and self.prbFunctional.isCreator()
+        return False
 
     def showUserInfo(self):
 
@@ -108,12 +97,10 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
     @process
     def sendClanInvite(self):
         profile = g_clanCtrl.getAccountProfile()
+        userName = self.userName
         context = CreateInviteCtx(profile.getClanDbID(), [self.databaseID])
         result = yield g_clanCtrl.sendRequest(context, allowDelay=True)
-        if result.isSuccess():
-            SystemMessages.pushMessage(clans_fmts.getAppSentSysMsg(profile.getClanName(), profile.getClanAbbrev()))
-        else:
-            SystemMessages.pushMessage(clans_fmts.getInvitesNotSentSysMsg([self.userName or '']), type=SystemMessages.SM_TYPE.Error)
+        showClanInviteSystemMsg(userName, result.isSuccess(), result.getCode())
 
     def createPrivateChannel(self):
         self.proto.contacts.createPrivateChannel(self.databaseID, self.userName)
@@ -298,36 +285,45 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
 
 class AppealCMHandler(BaseUserCMHandler):
 
+    def __init__(self, cmProxy, ctx = None):
+        super(AppealCMHandler, self).__init__(cmProxy, ctx)
+        self._denunciator = LobbyDenunciator()
+
+    def fini(self):
+        self._denunciator = None
+        super(AppealCMHandler, self).fini()
+        return
+
     def appealOffend(self):
-        self._makeAppeal(constants.DENUNCIATION.OFFEND)
+        self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.OFFEND)
 
     def appealFlood(self):
-        self._makeAppeal(constants.DENUNCIATION.FLOOD)
+        self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.FLOOD)
 
     def appealBlackmail(self):
-        self._makeAppeal(constants.DENUNCIATION.BLACKMAIL)
+        self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.BLACKMAIL)
 
     def appealSwindle(self):
-        self._makeAppeal(constants.DENUNCIATION.SWINDLE)
+        self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.SWINDLE)
 
     def appealNotFairPlay(self):
-        self._makeAppeal(constants.DENUNCIATION.NOT_FAIR_PLAY)
+        self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.NOT_FAIR_PLAY)
 
     def appealForbiddenNick(self):
-        self._makeAppeal(constants.DENUNCIATION.FORBIDDEN_NICK)
+        self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.FORBIDDEN_NICK)
 
     def appealBot(self):
-        self._makeAppeal(constants.DENUNCIATION.BOT)
+        self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.BOT)
 
     def _getHandlers(self):
         handlers = super(AppealCMHandler, self)._getHandlers()
-        handlers.update({DENUICATIONS.OFFEND: 'appealOffend',
-         DENUICATIONS.FLOOD: 'appealFlood',
-         DENUICATIONS.BLACKMAIL: 'appealBlackmail',
-         DENUICATIONS.SWINDLE: 'appealSwindle',
-         DENUICATIONS.NOT_FAIR_PLAY: 'appealNotFairPlay',
-         DENUICATIONS.FORBIDDEN_NICK: 'appealForbiddenNick',
-         DENUICATIONS.BOT: 'appealBot'})
+        handlers.update({DENUNCIATIONS.OFFEND: 'appealOffend',
+         DENUNCIATIONS.FLOOD: 'appealFlood',
+         DENUNCIATIONS.BLACKMAIL: 'appealBlackmail',
+         DENUNCIATIONS.SWINDLE: 'appealSwindle',
+         DENUNCIATIONS.NOT_FAIR_PLAY: 'appealNotFairPlay',
+         DENUNCIATIONS.FORBIDDEN_NICK: 'appealForbiddenNick',
+         DENUNCIATIONS.BOT: 'appealBot'})
         return handlers
 
     def _addAppealInfo(self, options):
@@ -336,30 +332,17 @@ class AppealCMHandler(BaseUserCMHandler):
         return options
 
     def _getSubmenuData(self):
-        return [self._makeItem(DENUICATIONS.OFFEND, MENU.contextmenu(DENUICATIONS.OFFEND)),
-         self._makeItem(DENUICATIONS.FLOOD, MENU.contextmenu(DENUICATIONS.FLOOD)),
-         self._makeItem(DENUICATIONS.BLACKMAIL, MENU.contextmenu(DENUICATIONS.BLACKMAIL)),
-         self._makeItem(DENUICATIONS.SWINDLE, MENU.contextmenu(DENUICATIONS.SWINDLE)),
-         self._makeItem(DENUICATIONS.NOT_FAIR_PLAY, MENU.contextmenu(DENUICATIONS.NOT_FAIR_PLAY)),
-         self._makeItem(DENUICATIONS.FORBIDDEN_NICK, MENU.contextmenu(DENUICATIONS.FORBIDDEN_NICK)),
-         self._makeItem(DENUICATIONS.BOT, MENU.contextmenu(DENUICATIONS.BOT))]
+        return [self._makeItem(DENUNCIATIONS.OFFEND, MENU.contextmenu(DENUNCIATIONS.OFFEND)),
+         self._makeItem(DENUNCIATIONS.FLOOD, MENU.contextmenu(DENUNCIATIONS.FLOOD)),
+         self._makeItem(DENUNCIATIONS.BLACKMAIL, MENU.contextmenu(DENUNCIATIONS.BLACKMAIL)),
+         self._makeItem(DENUNCIATIONS.SWINDLE, MENU.contextmenu(DENUNCIATIONS.SWINDLE)),
+         self._makeItem(DENUNCIATIONS.NOT_FAIR_PLAY, MENU.contextmenu(DENUNCIATIONS.NOT_FAIR_PLAY)),
+         self._makeItem(DENUNCIATIONS.FORBIDDEN_NICK, MENU.contextmenu(DENUNCIATIONS.FORBIDDEN_NICK)),
+         self._makeItem(DENUNCIATIONS.BOT, MENU.contextmenu(DENUNCIATIONS.BOT))]
 
     def _createSubMenuItem(self):
-        labelStr = i18n.makeString(MENU.CONTEXTMENU_APPEAL) + ' (' + str(self._getDenunciationsLeft()) + ')'
-        return self._makeItem(DENUICATIONS.APPEAL, labelStr, optInitData={'enabled': self._isAppealsEnabled()}, optSubMenu=self._getSubmenuData())
-
-    def _isAppealsEnabled(self):
-        return self._getDenunciationsLeft() > 0
-
-    def _getDenunciationsLeft(self):
-        return g_itemsCache.items.stats.denunciationsLeft
-
-    def _makeAppeal(self, appealID):
-        BigWorld.player().makeDenunciation(self.databaseID, appealID, constants.VIOLATOR_KIND.UNKNOWN)
-        topicStr = i18n.makeString(MENU.denunciation(appealID))
-        sysMsg = i18n.makeString(SYSTEM_MESSAGES.DENUNCIATION_SUCCESS) % {'name': self.userName,
-         'topic': topicStr}
-        SystemMessages.pushMessage(sysMsg, type=SystemMessages.SM_TYPE.Information)
+        labelStr = i18n.makeString(MENU.CONTEXTMENU_APPEAL) + ' (' + str(self._denunciator.getDenunciationsLeft()) + ')'
+        return self._makeItem(DENUNCIATIONS.APPEAL, labelStr, optInitData={'enabled': self._denunciator.isAppealsEnabled()}, optSubMenu=self._getSubmenuData())
 
 
 class UserContextMenuInfo(object):

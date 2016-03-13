@@ -33,8 +33,9 @@ class SoundEventChecker(Controller):
         g_currentVehicle.onChangeStarted -= self.__onVehicleChanging
 
     def __playSound(self, soundName):
-        if self.app.soundManager is not None:
-            self.app.soundManager.playEffectSound(soundName)
+        app = self.app
+        if app is not None and app.soundManager is not None:
+            app.soundManager.playEffectSound(soundName)
         return
 
     def __onVehicleChanging(self):

@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/ScopeControllers.py
-__author__ = 'd_trofimov'
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import ComponentEvent
 from gui.Scaleform.framework.entities.DisposableEntity import DisposableEntity
@@ -19,7 +18,7 @@ class ScopeController(DisposableEntity):
     def _dispose(self):
         self.__mainView = None
         self.__removeAllSubControllers()
-        self.__subControllers = None
+        self.__subControllers = []
         self.__destroyViews()
         self.__views = None
         super(ScopeController, self)._dispose()

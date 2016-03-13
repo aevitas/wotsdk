@@ -2,8 +2,6 @@
 from collections import namedtuple
 from functools import partial
 import Event
-import FMOD
-import SoundGroups
 import BigWorld
 from constants import VEHICLE_SETTING, EQUIPMENT_STAGES
 from debug_utils import LOG_ERROR
@@ -37,10 +35,10 @@ class _EquipmentItem(object):
         return False
 
     def getEntitiesIterator(self, avatar = None):
-        raise ValueError, 'Invokes getEntitiesIterator, than it is not required'
+        raise ValueError('Invokes getEntitiesIterator, than it is not required')
 
     def getGuiIterator(self, avatar = None):
-        raise ValueError, 'Invokes getGuiIterator, than it is not required'
+        raise ValueError('Invokes getGuiIterator, than it is not required')
 
     def canActivate(self, entityName = None, avatar = None):
         if self._timeRemaining > 0 and self._stage and self._stage not in (EQUIPMENT_STAGES.DEPLOYING, EQUIPMENT_STAGES.COOLDOWN):
@@ -157,20 +155,18 @@ class _ExpandedItem(_EquipmentItem):
         result, error = super(_ExpandedItem, self).canActivate(entityName, avatar)
         if not result:
             return (result, error)
-        else:
-            deviceStates = avatar_getter.getVehicleDeviceStates(avatar)
-            if not len(deviceStates):
-                return (False, _ActivationError(self._getEntitiesAreSafeKey(), None))
-            isRequired = self.isEntityRequired()
-            if isRequired:
-                if entityName is None:
-                    for item in self.getEntitiesIterator():
-                        if item[0] in deviceStates:
-                            return (False, None)
+        deviceStates = avatar_getter.getVehicleDeviceStates(avatar)
+        if not len(deviceStates):
+            return (False, _ActivationError(self._getEntitiesAreSafeKey(), None))
+        elif entityName is None:
+            for item in self.getEntitiesIterator():
+                if item[0] in deviceStates:
+                    return (not self.isEntityRequired(), None)
 
-                    return (False, _ActivationError(self._getEntitiesAreSafeKey(), None))
-                if entityName not in deviceStates:
-                    return (False, _ActivationError(self._getEntityIsSafeKey(), {'entity': self._getEntityUserString(entityName)}))
+            return (False, _ActivationError(self._getEntitiesAreSafeKey(), None))
+        elif entityName not in deviceStates:
+            return (False, _ActivationError(self._getEntityIsSafeKey(), {'entity': self._getEntityUserString(entityName)}))
+        else:
             return (True, None)
 
     def getActivationCode(self, entityName = None, avatar = None):
@@ -241,6 +237,11 @@ class _RepairKitItem(_ExpandedItem):
 
 class _OrderItem(_TriggerItem):
 
+    def deactivate(self):
+        if self._descriptor is not None:
+            super(_OrderItem, self).deactivate()
+        return
+
     def update(self, quantity, stage, timeRemaining):
         from AvatarInputHandler import MapCaseMode
         if stage == EQUIPMENT_STAGES.PREPARING and self._stage != stage:
@@ -305,8 +306,6 @@ class EquipmentsController(object):
         self.onEquipmentCooldownInPercent = Event.Event(self.__eManager)
         self._equipments = {}
         self.__readySndName = 'combat_reserve'
-        if FMOD.enabled:
-            self.__readySndName = '/ingame_voice/ingame_voice_flt/combat_reserve'
 
     def __repr__(self):
         return 'EquipmentsController({0!r:s})'.format(self._equipments)
@@ -356,7 +355,7 @@ class EquipmentsController(object):
                 item.update(quantity, stage, timeRemaining)
                 self.onEquipmentUpdated(intCD, item)
                 if item.getPrevStage() in (EQUIPMENT_STAGES.DEPLOYING, EQUIPMENT_STAGES.UNAVAILABLE, EQUIPMENT_STAGES.COOLDOWN) and item.getStage() == EQUIPMENT_STAGES.READY:
-                    SoundGroups.g_instance.playSound2D(self.__readySndName)
+                    avatar_getter.getSoundNotifications().play(self.__readySndName)
             else:
                 descriptor = vehicles.getDictDescr(intCD)
                 item = self.createItem(descriptor, quantity, stage, timeRemaining)
@@ -450,6 +449,11 @@ class _ReplayItem(_EquipmentItem):
 
 
 class _ReplayOrderItem(_ReplayItem):
+
+    def deactivate(self):
+        if self._descriptor is not None:
+            super(_ReplayOrderItem, self).deactivate()
+        return
 
     def update(self, quantity, stage, timeRemaining):
         from AvatarInputHandler import MapCaseMode

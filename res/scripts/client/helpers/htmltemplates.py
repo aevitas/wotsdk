@@ -24,7 +24,7 @@ class Template(object):
             return ''
         if ctx is None:
             ctx = {}
-        if type(self.ctx) is DictType and type(ctx) is DictType:
+        if isinstance(self.ctx, DictType) and isinstance(ctx, DictType):
             ctx.update(self.ctx)
         if ctx:
             try:
@@ -60,7 +60,7 @@ class Collection(defaultdict):
         return value
 
     def load(self, *args):
-        raise NotImplementedError, 'Loader.load not implemented'
+        raise NotImplementedError('Loader.load not implemented')
 
     def unload(self):
         self.clear()

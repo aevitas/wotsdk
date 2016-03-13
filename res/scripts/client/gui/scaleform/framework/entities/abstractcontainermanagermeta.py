@@ -40,3 +40,15 @@ class ContainerManagerMeta(BaseDAAPIModule):
     def as_bringToFrontS(self, cType, vName):
         if self._isDAAPIInited():
             return self.flashObject.as_bringToFront(cType, vName)
+
+    def as_showContainersS(self, containerNames):
+        if self._isDAAPIInited():
+            return self.flashObject.as_showContainers(containerNames)
+
+    def as_hideContainersS(self, containerNames):
+        if self._isDAAPIInited():
+            return self.flashObject.as_hideContainers(containerNames)
+
+    def as_isContainerShownS(self, containerName):
+        if self._isDAAPIInited():
+            return self.flashObject.as_isContainerShown(containerName)

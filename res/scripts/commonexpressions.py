@@ -1,6 +1,7 @@
 # Embedded file name: scripts/common/expressions.py
 import cStringIO
-import tokenize, token
+import tokenize
+import token
 
 class ParserException(Exception):
 

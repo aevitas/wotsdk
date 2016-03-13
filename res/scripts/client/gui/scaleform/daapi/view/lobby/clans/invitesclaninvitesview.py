@@ -1,11 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/clans/invites/ClanInvitesView.py
 import BigWorld
+from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.clans import formatters
 from gui.clans.items import formatField, isValueAvailable
 from gui.Scaleform.daapi.view.lobby.clans.invites.ClanInvitesViewWithTable import ClanInvitesAbstractDataProvider
 from gui.Scaleform.daapi.view.meta.ClanInvitesViewMeta import ClanInvitesViewMeta
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
-from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.daapi.view.lobby.clans.invites.ClanInvitesWindowAbstractTabView import *
 from gui.shared.formatters import text_styles
 from helpers.i18n import makeString as _ms
@@ -31,6 +31,11 @@ class ClanInvitesView(ClanInvitesViewMeta):
     @property
     def processedInvitesPaginator(self):
         return self._getPaginatorByFilterName(CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED)
+
+    def onClanInvitesCountReceived(self, clanDbID, invitesCount):
+        super(ClanInvitesView, self).onClanInvitesCountReceived(clanDbID, invitesCount)
+        if self.actualInvitesPaginator.isSynced():
+            self._enableRefreshBtn(True)
 
     def _populate(self):
         super(ClanInvitesView, self)._populate()
@@ -64,17 +69,19 @@ class ClanInvitesView(ClanInvitesViewMeta):
     def _getViewAlias(self):
         return CLANS_ALIASES.CLAN_PROFILE_INVITES_VIEW_ALIAS
 
-    def _getDummyByFilterName(self, filterName):
+    def _showDummyByFilterName(self, filterName):
+        inviteText = _ms(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITES_TEXT, invite=text_styles.main(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITES_INVITE))
         if filterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_ALL:
-            return CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_ALL
+            self._showDummy(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITES_TITLE, inviteText)
         if filterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_ACTUAL:
-            return CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_ACTUAL
-        if filterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_EXPIRED:
-            return CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_EXPIRED
-        if filterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED:
-            return CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_PROCESSED
-        LOG_DEBUG('Unexpected behaviour: no dummy for filter', filterName)
-        return CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_ALL
+            self._showDummy(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITESACTUAL_TITLE, inviteText)
+        elif filterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_EXPIRED:
+            self._showDummy(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITESEXPIRED_TITLE, inviteText)
+        elif filterName == CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED:
+            self._showDummy(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITESPROCESSED_TITLE, inviteText)
+        else:
+            LOG_DEBUG('Unexpected behaviour: no dummy for filter', filterName)
+            self._showDummy(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITES_TITLE, inviteText)
 
     def _getDefaultFilterName(self):
         return CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED
@@ -104,25 +111,8 @@ class ClanInvitesView(ClanInvitesViewMeta):
          {'alias': CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED,
           'text': _ms(CLANS.CLANINVITESWINDOW_FILTERS_HASANSWER, value=self.formatInvitesCount(self.processedInvitesPaginator))}]
 
-    def _makeTexts(self):
-        texts = super(ClanInvitesView, self)._makeTexts()
-        inviteText = _ms(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITES_TEXT, invite=text_styles.main(CLANS.CLANINVITESWINDOW_DUMMY_NOINVITES_INVITE))
-        texts.append({'alias': CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_ALL,
-         'title': CLANS.CLANINVITESWINDOW_DUMMY_NOINVITES_TITLE,
-         'text': inviteText})
-        texts.append({'alias': CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_ACTUAL,
-         'title': CLANS.CLANINVITESWINDOW_DUMMY_NOINVITESACTUAL_TITLE,
-         'text': inviteText})
-        texts.append({'alias': CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_EXPIRED,
-         'title': CLANS.CLANINVITESWINDOW_DUMMY_NOINVITESEXPIRED_TITLE,
-         'text': inviteText})
-        texts.append({'alias': CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_INVITES_PROCESSED,
-         'title': CLANS.CLANINVITESWINDOW_DUMMY_NOINVITESPROCESSED_TITLE,
-         'text': inviteText})
-        return texts
-
     def _makeHeaders(self):
-        return [self._packHeaderColumnData('userName', CLANS.CLANINVITESWINDOW_TABLE_USERNAME, 225, CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_USERNAME, textAlign='left'),
+        return [self._packHeaderColumnData('userName', CLANS.CLANINVITESWINDOW_TABLE_USERNAME, 225, CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_USERNAME, textAlign='left', defaultSortDirection='ascending'),
          self._packHeaderColumnData('message', '', 73, CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_MESSAGE, RES_ICONS.MAPS_ICONS_CLANS_INVITESWINDOW_ICON_STATISTICS_CLAN_INVITE_098),
          self._packHeaderColumnData('personalRating', '', 98, CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_PERSONALRATING, RES_ICONS.MAPS_ICONS_STATISTIC_RATING24),
          self._packHeaderColumnData('battlesCount', '', 98, CLANS.CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_BATTLESCOUNT, RES_ICONS.MAPS_ICONS_STATISTIC_BATTLES24),

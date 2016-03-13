@@ -45,7 +45,12 @@ def formatShortDateShortTimeString(timestamp):
 
 _CUSTOM_ERR_MESSAGES_BY_REQUEST = {REQUEST_TYPE.CREATE_INVITES: lambda result, ctx: ''}
 _CUSTOM_ERR_MESSAGES = {(REQUEST_TYPE.CLAN_GLOBAL_MAP_STATS, ResponseCodes.GLOBAL_MAP_ERROR): '',
+ (REQUEST_TYPE.CLAN_GLOBAL_MAP_STATS, ResponseCodes.CLAN_DOES_NOT_EXIST): '',
  (REQUEST_TYPE.CLAN_INFO, ResponseCodes.WGCCBE_ERROR): '',
+ (REQUEST_TYPE.CLAN_APPLICATIONS, ResponseCodes.WGCCBE_ERROR): '',
+ (REQUEST_TYPE.CLAN_INVITES, ResponseCodes.WGCCBE_ERROR): '',
+ (REQUEST_TYPE.ACCOUNT_INVITES, ResponseCodes.WGCCBE_ERROR): '',
+ (REQUEST_TYPE.CLAN_ACCOUNTS, ResponseCodes.WGCCBE_ERROR): '',
  (REQUEST_TYPE.ACCEPT_INVITE, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT',
  (REQUEST_TYPE.DECLINE_INVITE, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT',
  (REQUEST_TYPE.DECLINE_INVITES, ResponseCodes.CLAN_IN_TRANSACTION): 'DEFAULT',
@@ -54,7 +59,7 @@ _CUSTOM_ERR_MESSAGES = {(REQUEST_TYPE.CLAN_GLOBAL_MAP_STATS, ResponseCodes.GLOBA
 
 def getRequestErrorMsg(result, ctx):
     msgReqKey = ctx.getRequestType()
-    msgKey = (ctx.getRequestType(), result.code)
+    msgKey = (msgReqKey, result.code)
     if msgKey in _CUSTOM_ERR_MESSAGES:
         errorMsg = _CUSTOM_ERR_MESSAGES[msgKey]
     elif msgReqKey in _CUSTOM_ERR_MESSAGES_BY_REQUEST:
@@ -99,21 +104,25 @@ def getAppSentSysMsg(clanName, clanAbbrev):
     return _sysMsg('clans/notifications/requestSent', clanName=getClanFullName(clanName, clanAbbrev))
 
 
+def getInviteNotSentSysMsg(accountName, specKey = None):
+    key = specKey or 'clans/notifications/inviteSendError'
+    return _sysMsg(key, userName=accountName)
+
+
 def getInvitesNotSentSysMsg(accountNames):
-    count = len(accountNames)
-    if count == 1:
-        msg = _sysMsg('clans/notifications/inviteSendError', userName=accountNames[0])
-    else:
-        msg = _sysMsg('clans/notifications/invitesSendError', userCount=count)
-    return msg
+    return _formatMsg(accountNames, 'clans/notifications/inviteSendError', 'clans/notifications/invitesSendError')
 
 
 def getInvitesSentSysMsg(accountNames):
-    count = len(accountNames)
+    return _formatMsg(accountNames, 'clans/notifications/inviteSent', 'clans/notifications/invitesSent')
+
+
+def _formatMsg(items, singleKey, multiKey):
+    count = len(items)
     if count == 1:
-        msg = _sysMsg('clans/notifications/inviteSent', userName=accountNames[0])
+        msg = _sysMsg(singleKey, userName=items[0])
     else:
-        msg = _sysMsg('clans/notifications/invitesSent', userCount=count)
+        msg = _sysMsg(multiKey, userCount=count)
     return msg
 
 

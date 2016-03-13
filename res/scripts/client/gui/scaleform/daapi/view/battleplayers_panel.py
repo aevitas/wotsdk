@@ -69,8 +69,8 @@ class _MultiTeamsPlayersPanel(_EmptyPlayersPanel):
         return 16
 
 
-def playersPanelFactory(parentUI, isLeft, isColorBlind = False, isEvent = False, isMutlipleTeams = False):
-    if isEvent:
+def playersPanelFactory(parentUI, isLeft, isColorBlind = False, isFallout = False, isMutlipleTeams = False):
+    if isFallout:
         if isMutlipleTeams:
             return _MultiTeamsPlayersPanel()
         return _FalloutPlayersPanel()

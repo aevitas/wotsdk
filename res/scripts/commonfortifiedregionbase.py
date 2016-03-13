@@ -9,7 +9,7 @@ from constants import FORT_BUILDING_TYPE, FORT_BUILDING_TYPE_NAMES, FORT_ORDER_T
 from constants import CLAN_MEMBER_FLAGS
 from ops_pack import OpsUnpacker, packPascalString, unpackPascalString, initOpsFormatDef
 from UnitBase import UnitBase
-from debug_utils import LOG_DEBUG_DEV, LOG_DAN, LOG_CURRENT_EXCEPTION, LOG_VLK, LOG_WARNING, LOG_OGNICK_DEV, LOG_OGNICK
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_WARNING, LOG_DEBUG_DEV, LOG_DEBUG
 from UnitRoster import buildNamesDict
 NOT_ACTIVATED = -1
 TOTAL_CONTRIBUTION = 0
@@ -254,21 +254,6 @@ class FORT_OP():
     SET_INFLUENCE_POINTS = 106
 
 
-class FORT_URGENT_OP():
-    ACTIVATE_ORDER = 1
-    DEACTIVATE_ORDER = 2
-    CREATE_SORTIE = 3
-    SET_FORT_STATE = 4
-    ORDER_PRODUCED = 5
-    BUILDING_SYS_MESSAGE = 6
-    GENERIC_SYS_MESSAGE = 7
-    CREATE_FORT_BATTLE = 8
-    JOIN_FORT_BATTLE = 9
-    CHANGE_PERIPHERY_SYS_MESSAGE = 10
-    ORDER_COMPENSATED = 11
-    ACTIVATE_SPECIAL_MISSION = 12
-
-
 class FORT_NOTIFICATION():
     DING = 1
 
@@ -494,19 +479,19 @@ class BuildingDescr():
         compactDescr = struct.pack((self.FORMAT_HEADER + format), self.typeID, self.level, dirPosByte, productionCount, timeFinish, resourceCount, self.timeTransportCooldown, attachedCount, *list(self.attachedPlayers))
         return compactDescr
 
-    def incResource(self, resCount):
+    def incResource(self, resCount, allowBaseOverflow = False):
         levelRef = self.levelRef
         hpInc = min(resCount, max(levelRef.hp - self.hp, 0))
         self.hp += hpInc
         resCount -= hpInc
         if self.hp >= levelRef.hp and self.level == 0:
             self.level = 1
-        storageInc = resCount if self.typeID == FORT_BUILDING_TYPE.MILITARY_BASE else min(resCount, max(levelRef.storage - self.storage, 0))
+        storageInc = resCount if self.typeID == FORT_BUILDING_TYPE.MILITARY_BASE and allowBaseOverflow else min(resCount, max(levelRef.storage - self.storage, 0))
         self.storage += storageInc
         resCount -= storageInc
         return resCount
 
-    def setResource(self, resCount):
+    def setResource(self, resCount, allowBaseOverflow = False):
         LOG_DEBUG_DEV('%s setResource[%s:%s] %s' % (FORT_BUILDING_TYPE_NAMES.get(self.typeID, ''),
          self.hp,
          self.storage,
@@ -518,7 +503,7 @@ class BuildingDescr():
         if self.hp >= levelRef.hp and self.level == 0:
             self.level = 1
         storage = max(0, resCount)
-        if self.typeID != FORT_BUILDING_TYPE.MILITARY_BASE:
+        if self.typeID != FORT_BUILDING_TYPE.MILITARY_BASE or not allowBaseOverflow:
             storage = min(storage, levelRef.storage)
         self.storage = storage
         resCount -= storage
@@ -1126,7 +1111,7 @@ class FortifiedRegionBase(OpsUnpacker):
             self.pack()
         except Exception as e:
             LOG_CURRENT_EXCEPTION()
-            LOG_VLK('FortifiedRegionBase.self: %s' % repr(self))
+            LOG_DEBUG('FortifiedRegionBase.self: %s' % repr(self))
             raise e
 
     def getBuilding(self, buildingTypeID):
@@ -1181,7 +1166,7 @@ class FortifiedRegionBase(OpsUnpacker):
         self.storeOp(FORT_OP.SET_BUILD_MAPS, buildingTypeID, nextMapTimestamp, nextMapID, curMapID)
 
     def validateDefHour(self, value, forbiddenDefenseHours = (), isAdmin = False):
-        if value < -1 or value == -1 and isAdmin == False or value > 23 or value in forbiddenDefenseHours:
+        if value < -1 or value == -1 and isAdmin is False or value > 23 or value in forbiddenDefenseHours:
             return FORT_ERROR.BAD_HOUR_VALUE
         if IS_KOREA and value >= 15 and value <= 21:
             return FORT_ERROR.CURFEW_HOUR
@@ -1420,12 +1405,12 @@ class FortifiedRegionBase(OpsUnpacker):
         return leftResCount
 
     def _addInfluencePoints(self, influencePoints):
-        LOG_OGNICK('_addInfluencePoints', influencePoints)
+        LOG_DEBUG('_addInfluencePoints', influencePoints)
         self.storeOp(FORT_OP.ADD_INFLUENCE_POINTS, influencePoints)
         self.influencePoints += influencePoints
 
     def _createNew(self, clanDBID, creatorDBID, peripheryID, clanMemberDBIDs):
-        LOG_DAN('Fort._createNew', clanDBID, creatorDBID, peripheryID, clanMemberDBIDs)
+        LOG_DEBUG('Fort._createNew', clanDBID, creatorDBID, peripheryID, clanMemberDBIDs)
         self.dbID = clanDBID
         self.state = FORT_STATE.FORT_CREATED | FORT_STATE.PLANNED_INFO_LOADED
         self.peripheryID = peripheryID
@@ -1467,7 +1452,7 @@ class FortifiedRegionBase(OpsUnpacker):
     SIZE_DBID = struct.calcsize('<q')
 
     def _delete(self, deleterDBID):
-        LOG_DAN('Fort._delete', deleterDBID, self.dbID)
+        LOG_DEBUG('Fort._delete', deleterDBID, self.dbID)
         self.storeOp(FORT_OP.DELETE, deleterDBID)
         self._empty()
 
@@ -1483,7 +1468,7 @@ class FortifiedRegionBase(OpsUnpacker):
         return
 
     def _changeOrderCount(self, consumableTypeID, level, delta):
-        LOG_OGNICK('Fort(id=%d)._changeOrderCount' % self.dbID, consumableTypeID, level, delta)
+        LOG_DEBUG('Fort(id=%d)._changeOrderCount' % self.dbID, consumableTypeID, level, delta)
         count = self.orders.get(consumableTypeID, (0, 0))[0] + delta
         if not count >= 0:
             raise AssertionError
@@ -1495,7 +1480,7 @@ class FortifiedRegionBase(OpsUnpacker):
 
     def _replaceConsumables(self, unitMgrID, peripheryID, timeExpire, prebattleType, oldRev, newRev, consumables):
         key = (unitMgrID, peripheryID)
-        LOG_OGNICK('Fort(id=%d)._replaceConsumables oldRev=%d newRev=%d' % (self.dbID, oldRev, newRev), key, timeExpire, prebattleType, consumables)
+        LOG_DEBUG('Fort(id=%d)._replaceConsumables oldRev=%d newRev=%d' % (self.dbID, oldRev, newRev), key, timeExpire, prebattleType, consumables)
         consumablesByRev = self.consumables.setdefault(key, {})
         consumablesByRev.pop(oldRev, None)
         if consumables:
@@ -1513,7 +1498,7 @@ class FortifiedRegionBase(OpsUnpacker):
 
     def _setUnitMgrIsDead(self, unitMgrID, peripheryID):
         key = (unitMgrID, peripheryID)
-        LOG_OGNICK('Fort(id=%d)._setUnitMgrIsDead' % self.dbID, key)
+        LOG_DEBUG('Fort(id=%d)._setUnitMgrIsDead' % self.dbID, key)
         timeExpire, prebattleType, _, rev = self.consumablesMeta.get(key, (0,
          0,
          True,
@@ -1526,7 +1511,7 @@ class FortifiedRegionBase(OpsUnpacker):
 
     def _deleteConsumables(self, unitMgrID, peripheryID):
         key = (unitMgrID, peripheryID)
-        LOG_OGNICK('Fort(id=%d)._deleteConsumables' % self.dbID, key)
+        LOG_DEBUG('Fort(id=%d)._deleteConsumables' % self.dbID, key)
         self.consumables.pop(key, None)
         self.consumablesMeta.pop(key, None)
         self.storeOp(FORT_OP.DELETE_CONSUMABLES, unitMgrID, peripheryID)
@@ -1599,7 +1584,7 @@ class FortifiedRegionBase(OpsUnpacker):
 
     def _shutdownDowngrade(self):
         if self.level > DEF_SHUTDOWN_LEVEL:
-            LOG_DAN('_shutdownDowngrade', self.dbID, self.level, DEF_SHUTDOWN_LEVEL)
+            LOG_DEBUG('_shutdownDowngrade', self.dbID, self.level, DEF_SHUTDOWN_LEVEL)
             self.level = DEF_SHUTDOWN_LEVEL
             for buildTypeID in self.buildings.keys():
                 building = self.getBuilding(buildTypeID)
@@ -2046,7 +2031,7 @@ class FortifiedRegionBase(OpsUnpacker):
     def _setBuildingResource(self, buildingTypeID, resCount):
         LOG_DEBUG_DEV('_setBuildingResource', buildingTypeID, resCount)
         building = self.getBuilding(buildingTypeID)
-        building.setResource(resCount)
+        building.setResource(resCount, True)
         self.setBuilding(buildingTypeID, building)
         self.storeOp(FORT_OP.SET_RESOURCE, buildingTypeID, resCount)
 
@@ -2072,6 +2057,6 @@ class FortifiedRegionBase(OpsUnpacker):
         self.storeOp(FORT_OP.SET_PERIPHERY, peripheryID)
 
     def _setInfluencePoints(self, influencePoints):
-        LOG_OGNICK('_setInfluencePoints', influencePoints)
+        LOG_DEBUG('_setInfluencePoints', influencePoints)
         self.influencePoints = influencePoints
         self.storeOp(FORT_OP.SET_INFLUENCE_POINTS, influencePoints)

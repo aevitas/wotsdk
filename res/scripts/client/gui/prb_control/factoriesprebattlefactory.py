@@ -60,7 +60,7 @@ class PrebattleFactory(ControlFactory):
         return PlayerDecorator(info.isCreator, info.isReady())
 
     def createStateEntity(self, functional):
-        return FunctionalState(CTRL_ENTITY_TYPE.PREBATTLE, functional.getEntityType(), True, functional.hasLockedState(), isinstance(functional, default.IntroPrbFunctional))
+        return FunctionalState(CTRL_ENTITY_TYPE.PREBATTLE, functional.getEntityType(), True, functional.hasLockedState(), isinstance(functional, default.IntroPrbFunctional), funcFlags=functional.getFunctionalFlags())
 
     def createLeaveCtx(self, flags = FUNCTIONAL_FLAG.UNDEFINED):
         return prb_ctx.LeavePrbCtx(waitingID='prebattle/leave', flags=flags)

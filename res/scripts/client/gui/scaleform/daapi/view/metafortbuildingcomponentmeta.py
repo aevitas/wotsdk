@@ -23,9 +23,9 @@ class FortBuildingComponentMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setBuildingData(data)
 
-    def as_setBuildingToolTipDataS(self, uid, type, value):
+    def as_setBuildingToolTipDataS(self, uid, type, header, value):
         if self._isDAAPIInited():
-            return self.flashObject.as_setBuildingToolTipData(uid, type, value)
+            return self.flashObject.as_setBuildingToolTipData(uid, type, header, value)
 
     def as_refreshTransportingS(self):
         if self._isDAAPIInited():

@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/doc_loaders/GuiSoundsLoader.py
-__author__ = 'i_maliavko'
 import ResMgr
 from items import _xml
 from gui import doc_loaders
@@ -71,6 +70,7 @@ class GuiSoundsLoader(object):
                                                 sounds for schemas
         @return: [str] sound path
         """
+        state = 'ww' + state
         if controlID is not None and controlID in self.__overrides:
             return self.__overrides[controlID].get(state)
         elif controlType in self.__groups:

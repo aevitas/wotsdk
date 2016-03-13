@@ -84,6 +84,13 @@ class FortIntelligenceClanDescription(FortIntelligenceClanDescriptionMeta, FortV
                 yield self.fortProvider.sendRequest(RequestClanCardCtx(currentEnemyClanDBID, waitingID='fort/attack'))
         return
 
+    @process
+    def onFortBattleRemoved(self, cache, battleID):
+        if self.__item is not None:
+            currentEnemyClanDBID = self.__item.getClanDBID()
+            yield self.fortProvider.sendRequest(RequestClanCardCtx(currentEnemyClanDBID, waitingID='fort/attack'))
+        return
+
     def onEnemyClanCardRemoved(self):
         cache = self.fortCtrl.getPublicInfoCache()
         if cache is not None:

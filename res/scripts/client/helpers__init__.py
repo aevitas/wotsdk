@@ -105,6 +105,9 @@ def isShowStartupVideo():
     if not BigWorld.wg_isSSE2Supported():
         return False
     else:
+        from gui import GUI_SETTINGS
+        if not GUI_SETTINGS.guiEnabled:
+            return False
         p = Settings.g_instance.userPrefs
         return p is None or p.readInt(Settings.KEY_SHOW_STARTUP_MOVIE, 1) == 1
 
@@ -117,14 +120,14 @@ _g_alphabetOrderExcept = {1105: 1077.5,
  1025: 1045.5}
 
 def _getSymOrderIdx(symbol):
-    raise type(symbol) is types.UnicodeType or AssertionError
+    raise isinstance(symbol, types.UnicodeType) or AssertionError
     symIdx = ord(symbol)
     return _g_alphabetOrderExcept.get(symIdx, symIdx)
 
 
 def strcmp(word1, word2):
-    raise type(word1) is types.UnicodeType or AssertionError
-    raise type(word2) is types.UnicodeType or AssertionError
+    raise isinstance(word1, types.UnicodeType) or AssertionError
+    raise isinstance(word2, types.UnicodeType) or AssertionError
     for sym1, sym2 in zip(word1, word2):
         if sym1 != sym2:
             return int(round(_getSymOrderIdx(sym1) - _getSymOrderIdx(sym2)))

@@ -9,7 +9,7 @@ from constants import EQUIPMENT_STAGES
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from gui.Scaleform.daapi.view.battle import COMMAND_AMMO_CHOICE_MASK, AMMO_ICON_PATH, NO_AMMO_ICON_PATH
 from gui.battle_control import g_sessionProvider
-from gui.battle_control.arena_info import isEventBattle, hasRage
+from gui.battle_control.arena_info import isFalloutBattle, hasRage
 from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE, VEHICLE_DEVICE_IN_COMPLEX_ITEM
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import GameEvent
@@ -88,7 +88,7 @@ class ConsumablesPanel(object):
             self.__plugins.init()
             self.__plugins.start()
             props = _FalloutSlotViewProps(useStandardLayout=not hasRage())
-            self.__flashObject.setProperties(isEventBattle(), props._asdict())
+            self.__flashObject.setProperties(isFalloutBattle(), props._asdict())
             self.__addListeners()
         else:
             LOG_ERROR('Display object is not found in the swf file.')
@@ -344,6 +344,8 @@ class ConsumablesPanel(object):
                 self.__flashObject.setItemTimeQuantityInSlot(self.__cds.index(intCD), quantity, currentTime, maxTime)
                 self.__updateOrderSlot(idx, item)
             else:
+                if quantity == 0:
+                    SoundGroups.g_instance.playSound2D('battle_equipment_%d' % intCD)
                 self.__flashObject.setItemTimeQuantityInSlot(idx, quantity, currentTime, maxTime)
                 self.onPopUpClosed()
         else:
@@ -460,7 +462,7 @@ class _RageBarPlugin(IPlugin):
         avatarStatsCtrl = g_sessionProvider.getAvatarStatsCtrl()
         self.__currentValue = avatarStatsCtrl.getStats().get('ragePoints', 0)
         rageProps = _RageBarViewProps(maxValue=rage.g_cache.pointsLimit, curValue=self.__currentValue)
-        self._parentObj.flashObject.initializeRageProgress(isEventBattle(), rageProps._asdict())
+        self._parentObj.flashObject.initializeRageProgress(isFalloutBattle(), rageProps._asdict())
 
     def reset(self):
         super(_RageBarPlugin, self).reset()

@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/prb_control/storage/local_storage.py
-
+from constants import QUEUE_TYPE
 
 class LocalStorage(object):
     __slots__ = ()
@@ -13,7 +13,7 @@ class LocalStorage(object):
     def swap(self):
         pass
 
-    def release(self):
+    def release(self, *args):
         pass
 
     def suspend(self):

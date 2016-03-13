@@ -52,3 +52,5 @@ if BigWorld.component == 'client':
         BigWorld.cachedEntities = {}
     if not hasattr(BigWorld, 'allEntities'):
         BigWorld.allEntities = BigWorld.entities
+if BigWorld.component == 'cell':
+    import OldSpaceData

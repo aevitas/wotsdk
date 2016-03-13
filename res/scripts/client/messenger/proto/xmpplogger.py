@@ -37,6 +37,7 @@ class _GlooxLogger(_IEventLogger):
 
 
 class LogHandler(ClientEventsHandler):
+    __slots__ = ('__loggers',)
 
     def __init__(self):
         super(LogHandler, self).__init__()

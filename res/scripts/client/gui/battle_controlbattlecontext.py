@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/battle_control/BattleContext.py
+from collections import namedtuple
 import BigWorld
 import Settings
 from gui.battle_control import avatar_getter
@@ -43,6 +44,7 @@ class BattleContext(object):
         super(BattleContext, self).__init__()
         self.__arenaDP = None
         self.__isShowVehShortName = True
+        self.__lastArenaWinStatus = None
         self.lastArenaUniqueID = None
         self.isInBattle = False
         self.wasInBattle = False
@@ -157,6 +159,14 @@ class BattleContext(object):
             opponents = arena.extraData['opponents']
             teamName = opponents.get('%s' % teamIdx, {}).get('name', teamName)
         return teamName
+
+    def setLastArenaWinStatus(self, winStatus):
+        self.__lastArenaWinStatus = winStatus
+
+    def extractLastArenaWinStatus(self):
+        value = self.__lastArenaWinStatus
+        self.__lastArenaWinStatus = None
+        return value
 
     def _isInTeams(self, teams, vID = None, accID = None):
         if vID is None:

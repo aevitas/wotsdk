@@ -1,6 +1,7 @@
 # Embedded file name: scripts/common/DictPackers.py
 import copy
 from debug_utils import *
+from binascii import crc32
 
 def roundToInt(val):
     return int(round(val))
@@ -54,10 +55,12 @@ class DictPacker(object):
 
     def __init__(self, *metaData):
         self._metaData = tuple(metaData)
+        self._checksum = self.checksum(self._metaData)
 
     def pack(self, dataDict):
         metaData = self._metaData
-        l = [None] * len(metaData)
+        l = [None] * (len(metaData) + 1)
+        l[0] = self._checksum
         for index, metaEntry in enumerate(metaData):
             try:
                 name, transportType, default, packer, aggFunc = metaEntry
@@ -69,11 +72,11 @@ class DictPacker(object):
                     v = None
                 elif packer is not None:
                     v = packer.pack(v)
-                elif transportType is not None and type(v) is not transportType:
+                elif transportType is not None and not isinstance(v, transportType):
                     v = transportType(v)
                     if v == default:
                         v = None
-                l[index] = v
+                l[index + 1] = v
             except Exception as e:
                 LOG_ERROR('error while packing:', index, metaEntry, str(e))
                 raise
@@ -82,17 +85,33 @@ class DictPacker(object):
 
     def unpack(self, dataList):
         ret = {}
-        for index, meta in enumerate(self._metaData):
-            val = dataList[index]
-            name, _, default, packer, aggFunc = meta
-            default = copy.deepcopy(default)
-            if val is None:
-                val = default
-            elif packer is not None:
-                val = packer.unpack(val)
-            ret[name] = val
+        if len(dataList) == 0 or dataList[0] != self._checksum:
+            return
+        else:
+            for index, meta in enumerate(self._metaData):
+                val = dataList[index + 1]
+                name, _, default, packer, aggFunc = meta
+                default = copy.deepcopy(default)
+                if val is None:
+                    val = default
+                elif packer is not None:
+                    val = packer.unpack(val)
+                ret[name] = val
 
-        return ret
+            return ret
+
+    @staticmethod
+    def checksum(metaData):
+        meta_descriptor = []
+        for entry in tuple(metaData):
+            name, entry_type, default, packer, aggregatorName = entry
+            meta_descriptor.append(''.join([name,
+             str(entry_type),
+             str(default),
+             str(type(packer)),
+             str(aggregatorName)]))
+
+        return crc32(''.join(meta_descriptor))
 
 
 class SimpleDictPacker(object):

@@ -3,9 +3,6 @@ from gui.Scaleform.framework.entities.abstract.AbstractWindowView import Abstrac
 
 class VehicleSellDialogMeta(AbstractWindowView):
 
-    def getDialogSettings(self):
-        self._printOverrideError('getDialogSettings')
-
     def setDialogSettings(self, isOpen):
         self._printOverrideError('setDialogSettings')
 
@@ -21,9 +18,9 @@ class VehicleSellDialogMeta(AbstractWindowView):
     def checkControlQuestion(self, dismiss):
         self._printOverrideError('checkControlQuestion')
 
-    def as_setDataS(self, vehicle, onVehicle, inInventory, removePrices, gold):
+    def as_setDataS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setData(vehicle, onVehicle, inInventory, removePrices, gold)
+            return self.flashObject.as_setData(data)
 
     def as_checkGoldS(self, gold):
         if self._isDAAPIInited():
@@ -37,14 +34,6 @@ class VehicleSellDialogMeta(AbstractWindowView):
         if self._isDAAPIInited():
             return self.flashObject.as_enableButton(value)
 
-    def as_setCtrlQuestionS(self, value):
+    def as_setControlQuestionDataS(self, isGold, value, question):
         if self._isDAAPIInited():
-            return self.flashObject.as_setCtrlQuestion(value)
-
-    def as_setControlNumberS(self, isGold, value):
-        if self._isDAAPIInited():
-            return self.flashObject.as_setControlNumber(isGold, value)
-
-    def as_cleanInputSummS(self):
-        if self._isDAAPIInited():
-            return self.flashObject.as_cleanInputSumm()
+            return self.flashObject.as_setControlQuestionData(isGold, value, question)

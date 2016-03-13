@@ -10,12 +10,6 @@ from gui.prb_control.functional import prequeue
 from gui.prb_control.items import SelectResult
 from gui.prb_control.settings import FUNCTIONAL_FLAG, PREBATTLE_ACTION_NAME
 
-class TutorialPreQueueEntry(prequeue.PreQueueEntry):
-
-    def __init__(self):
-        super(TutorialPreQueueEntry, self).__init__(QUEUE_TYPE.TUTORIAL, FUNCTIONAL_FLAG.UNDEFINED)
-
-
 class _TutorialQueueEventsSubscriber(prequeue.PlayersEventsSubscriber):
 
     def subscribe(self, functional):

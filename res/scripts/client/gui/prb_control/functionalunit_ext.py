@@ -366,8 +366,7 @@ class InventoryVehiclesWatcher(object):
             if not roster.checkVehicleList(vehCDs, pInfo.slotIdx) and not pInfo.isCreator():
                 self.__functional.request(unit_ctx.AssignUnitCtx(pInfo.dbID, UNIT_SLOT.REMOVE, 'prebattle/assign'))
             else:
-                vInfo = self.__functional.getVehicleInfo()
-                resultCtx = vInfo.updateInventory(vehCDs)
+                resultCtx = self.__functional.invalidateSelectedVehicles(vehCDs)
                 if resultCtx is not None:
                     self.__functional.request(resultCtx)
                 elif update:

@@ -176,7 +176,7 @@ def _makeStats(totalStats):
 
 
 def _makeAchievements(dossier):
-    return AchievementsUtils.packAchievementList(dossier.getTotalStats().getSignificantAchievements(), dossier.getDossierType(), dumpDossier(dossier), True, False)
+    return AchievementsUtils.packAchievementList(dossier.getTotalStats().getTopAchievements(), dossier.getDossierType(), dumpDossier(dossier), True, False)
 
 
 def _getMapsList(totalStats):

@@ -39,7 +39,7 @@ class ValueReplayConnector(object):
         if length == 2:
             f, s = subitems
             if f not in cont:
-                raise KeyError, item
+                raise KeyError(item)
             return self.__getSecondValueByName(cont[f], s)[0][1][1]
         return cont[subitems[0]]
 
@@ -50,7 +50,7 @@ class ValueReplayConnector(object):
         if length == 2:
             f, s = subitems
             if f not in cont:
-                raise KeyError, item
+                raise KeyError(item)
             idx = self.__getSecondValueByName(cont[f], s)[0][0]
             cont[f][idx] = (s, value)
             return
@@ -136,7 +136,7 @@ class ValueReplay:
 
     def __setitem__(self, key, value):
         if self.__connector.index(key) not in self.__appliedValues or key == self.__recordName or key in self.__tags:
-            raise Exception, 'Cannot overload item %s:%s' % (key, value)
+            raise Exception('Cannot overload item %s:%s' % (key, value))
         self.__overiddenValues[key] = value
 
     def __getitem__(self, item):
@@ -154,7 +154,7 @@ class ValueReplay:
 
     def __delitem__(self, key):
         if self.__connector.index(key) not in self.__appliedValues or key == self.__recordName or key in self.__tags:
-            raise Exception, 'Unexpected arg %s' % (key,)
+            raise Exception('Unexpected arg %s' % (key,))
         del self.__overiddenValues[key]
 
     def __add__(self, other):
@@ -181,7 +181,7 @@ class ValueReplay:
     def tag(self, other):
         idx = self.__validate(other)
         if self.__tags:
-            raise Exception, 'Just one tag is allowed %s, %s' % (other, self.__tags)
+            raise Exception('Just one tag is allowed %s, %s' % (other, self.__tags))
         self.__appliedValues.add(idx)
         self.__connector[other] = self.__tags[other] = self.__OPERATORS[self.TAG](self, other)
         self.__replay.append(ValueReplay.makeStepCompDescr(self.TAG, idx))
@@ -190,7 +190,7 @@ class ValueReplay:
     def applyFactorToTag(self, other):
         idx = self.__validate(other)
         if not self.__tags:
-            raise Exception, 'There is no any tagged values %s' % (other,)
+            raise Exception('There is no any tagged values %s' % (other,))
         self.__appliedValues.add(idx)
         self.__connector[self.__recordName] = self.__OPERATORS[self.FACTOR](self, other)
         self.__replay.append(ValueReplay.makeStepCompDescr(self.FACTOR, idx))
@@ -203,7 +203,7 @@ class ValueReplay:
 
     def __iter__(self):
         if not self.__replay:
-            raise Exception, 'Invalid usage of __iter__'
+            raise Exception('Invalid usage of __iter__')
         finalResult = 0
         tags = self.__tags
         connector = self.__connector
@@ -222,18 +222,18 @@ class ValueReplay:
 
     def __validate(self, other, initial = False):
         if other == self.__recordName:
-            raise Exception, 'Invalid usage %s. Cannot apply wrapped value to itself.' % (other,)
+            raise Exception('Invalid usage %s. Cannot apply wrapped value to itself.' % (other,))
         if not initial and not self.__appliedValues:
-            raise Exception, 'Invalid usage %s. Call __setInitial before.' % (other,)
+            raise Exception('Invalid usage %s. Call __setInitial before.' % (other,))
         idx = self.__connector.index(other)
         if idx in self.__appliedValues:
-            raise Exception, 'Unexpected arg %s. Argument has been already applied.' % (other,)
+            raise Exception('Unexpected arg %s. Argument has been already applied.' % (other,))
         return idx
 
     def __setInitial(self, other):
         idx = self.__validate(other, initial=True)
         if self.__appliedValues or self.__replay:
-            raise Exception, 'Invalid usage %s' % (other,)
+            raise Exception('Invalid usage %s' % (other,))
         self.__appliedValues.add(idx)
         self.__connector[self.__recordName] = self.__OPERATORS[self.SET](self, other)
         self.__replay.append(ValueReplay.makeStepCompDescr(self.SET, idx))

@@ -15,6 +15,14 @@ def isInEventBattlesQueue():
     return getattr(BigWorld.player(), 'isInEventBattles', False)
 
 
+def isInFalloutClassic():
+    return getattr(BigWorld.player(), 'isInFalloutClassic', False)
+
+
+def isInFalloutMultiteam():
+    return getattr(BigWorld.player(), 'isInFalloutMultiteam', False)
+
+
 def isInSandboxQueue():
     return getattr(BigWorld.player(), 'isInSandboxQueue', False)
 
@@ -25,6 +33,10 @@ def getQueueType():
         queueType = QUEUE_TYPE.RANDOMS
     elif isInEventBattlesQueue():
         queueType = QUEUE_TYPE.EVENT_BATTLES
+    elif isInFalloutClassic():
+        queueType = QUEUE_TYPE.FALLOUT_CLASSIC
+    elif isInFalloutMultiteam():
+        queueType = QUEUE_TYPE.FALLOUT_MULTITEAM
     elif isInTutorialQueue():
         queueType = QUEUE_TYPE.TUTORIAL
     elif isInSandboxQueue():
@@ -116,11 +128,15 @@ _ARENA_GUI_TYPE_BY_PRB_TYPE = {PREBATTLE_TYPE.SQUAD: ARENA_GUI_TYPE.RANDOM,
  PREBATTLE_TYPE.TRAINING: ARENA_GUI_TYPE.TRAINING,
  PREBATTLE_TYPE.COMPANY: ARENA_GUI_TYPE.COMPANY}
 _ARENA_GUI_TYPE_BY_QUEUE_TYPE = {QUEUE_TYPE.RANDOMS: ARENA_GUI_TYPE.RANDOM,
- QUEUE_TYPE.EVENT_BATTLES: ARENA_GUI_TYPE.EVENT_BATTLES}
+ QUEUE_TYPE.EVENT_BATTLES: ARENA_GUI_TYPE.EVENT_BATTLES,
+ QUEUE_TYPE.FALLOUT_CLASSIC: ARENA_GUI_TYPE.FALLOUT_CLASSIC,
+ QUEUE_TYPE.FALLOUT_MULTITEAM: ARENA_GUI_TYPE.FALLOUT_MULTITEAM}
 
 def getArenaGUIType(prbType = None, queueType = None):
     if prbType is None:
         prbType = getPrebattleType()
+    if queueType is None:
+        queueType = getQueueType()
     arenaGuiType = ARENA_GUI_TYPE.RANDOM
     if prbType is not None:
         arenaGuiType = ARENA_GUI_TYPE.UNKNOWN

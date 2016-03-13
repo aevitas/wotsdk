@@ -11,7 +11,7 @@ import Settings
 import SoundGroups
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR
 from Math import Vector3
-import FMOD
+import WWISE
 ENVIRONMENT_EFFECTS_CONFIG_FILE = 'scripts/environment_effects.xml'
 
 class DebugGizmo:
@@ -87,8 +87,7 @@ class FlockLike:
             flockDataSect = ResMgr.openSection(ENVIRONMENT_EFFECTS_CONFIG_FILE + '/birds')
             for value in flockDataSect.values():
                 modelName = value.readString('modelName', '')
-                if FMOD.enabled:
-                    soundName = value.readString('sound', '')
+                soundName = value.readString('wwsound', '')
                 if modelName != '' and soundName != '':
                     FlockLike.__SoundNames[modelName] = soundName
 

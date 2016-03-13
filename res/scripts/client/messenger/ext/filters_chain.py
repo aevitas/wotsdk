@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/messenger/ext/filters/_chain.py
+from itertools import ifilter
 from debug_utils import LOG_WARNING, LOG_DEBUG
 
 class IIncomingMessageFilter(object):
@@ -85,6 +86,14 @@ class FiltersChain(object):
             text = filterInfo['filter'].filter(text, limits)
 
         return text
+
+    def reset(self, contactId):
+        if self.__getInFilterByName('floodFilter') is not None:
+            self.__getInFilterByName('floodFilter')['filter'].resetHistory(contactId)
+        return
+
+    def __getInFilterByName(self, name):
+        return next(ifilter(lambda inFilter: inFilter['name'] == name, self.__inFilters), None)
 
     def __doRemoveInFilter(self, name):
         result = False

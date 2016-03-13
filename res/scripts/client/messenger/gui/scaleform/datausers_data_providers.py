@@ -8,7 +8,7 @@ from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
 
 def makeEmptyUserItem():
-    return {'dbID': 0L,
+    return {'dbID': 0,
      'userName': '',
      'fullName': '',
      'tags': [],

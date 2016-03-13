@@ -146,8 +146,8 @@ class GlobalListener(IGlobalListener):
 
     def startGlobalListening(self):
         if self.prbDispatcher:
-            self.prbDispatcher.addGlobalListener(self)
+            self.prbDispatcher.addListener(self)
 
     def stopGlobalListening(self):
         if self.prbDispatcher:
-            self.prbDispatcher.removeGlobalListener(self)
+            self.prbDispatcher.removeListener(self)

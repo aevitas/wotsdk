@@ -24,9 +24,9 @@ class TankCarouselMeta(BaseDAAPIComponent):
     def moveVehiclesSelectionSlot(self, vehicleInventoryId):
         self._printOverrideError('moveVehiclesSelectionSlot')
 
-    def as_setMultiselectionModeS(self, enabled, formattedMessage, showSlots, slots):
+    def as_setMultiselectionModeS(self, data):
         if self._isDAAPIInited():
-            return self.flashObject.as_setMultiselectionMode(enabled, formattedMessage, showSlots, slots)
+            return self.flashObject.as_setMultiselectionMode(data)
 
     def as_setMultiselectionButtonLabelsS(self, activateLabel, deactivateLabel, disabledTooltip):
         if self._isDAAPIInited():

@@ -82,7 +82,7 @@ class _SelectorItem(object):
         return False
 
     def isInSquad(self, state):
-        return state.isInUnit(PREBATTLE_TYPE.SQUAD)
+        return state.isInUnit(PREBATTLE_TYPE.SQUAD) or state.isInUnit(PREBATTLE_TYPE.FALLOUT)
 
     def setLocked(self, value):
         self._isLocked = value
@@ -265,7 +265,7 @@ class _FalloutItem(_SelectorItem):
 
     def _update(self, state):
         falloutCtrl = getFalloutCtrl()
-        self._isSelected = state.isQueueSelected(QUEUE_TYPE.EVENT_BATTLES)
+        self._isSelected = state.isInFallout()
         self._isDisabled = state.hasLockedState
         self._isVisible = falloutCtrl.isAvailable()
 
@@ -346,7 +346,7 @@ def _createItems():
     settings = g_lobbyContext.getServerSettings()
     if settings.isTutorialEnabled():
         _addTutorialBattleType(items, isInRoaming)
-    if g_eventsCache.isEventEnabled():
+    if g_eventsCache.isFalloutEnabled():
         _addFalloutBattleType(items)
     if settings.isSandboxEnabled() and not isInRoaming:
         _addSandboxType(items)

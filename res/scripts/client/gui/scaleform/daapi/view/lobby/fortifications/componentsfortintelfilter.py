@@ -89,7 +89,7 @@ class FortIntelFilter(FortIntelFilterMeta, FortViewHelper):
                         status = FORTIFICATIONS.FORTINTELLIGENCE_FORTINTELFILTER_STATUS_APPLIEDFILTERANDCLAN
                     elif cache.isFilterApplied():
                         status = FORTIFICATIONS.FORTINTELLIGENCE_FORTINTELFILTER_STATUS_APPLIEDFILTER
-                    elif cache.ifDefaultQueryResult():
+                    else:
                         status = FORTIFICATIONS.FORTINTELLIGENCE_FORTINTELFILTER_STATUS_ALL
                 elif self.__getSelectedFilterType() == FORTIFICATION_ALIASES.CLAN_TYPE_FILTER_STATE_BOOKMARKS:
                     status = FORTIFICATIONS.FORTINTELLIGENCE_FORTINTELFILTER_STATUS_APPLIEDBOOKMARKEDFILTER

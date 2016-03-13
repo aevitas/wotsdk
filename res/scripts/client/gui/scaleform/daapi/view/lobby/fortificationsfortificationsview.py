@@ -9,9 +9,11 @@ from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 from gui.Scaleform.locale.WAITING import WAITING
 from gui.shared.fortifications.settings import CLIENT_FORT_STATE
 from gui.shared import events, EVENT_BUS_SCOPE
+from gui.sounds.ambients import FortEnv
 from gui.ClientUpdateManager import g_clientUpdateManager
 
 class FortificationsView(LobbySubView, FortificationsViewMeta, FortViewHelper):
+    __sound_env__ = FortEnv
 
     def __init__(self, ctx = None):
         super(FortificationsView, self).__init__()

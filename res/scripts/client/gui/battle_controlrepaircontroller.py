@@ -4,6 +4,7 @@ import BigWorld
 import Event
 from constants import REPAIR_POINT_ACTION
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
+from gui.battle_control.avatar_getter import getSoundNotifications
 
 class _REPAIR_STATE(object):
     PROGRESS = 'progress'
@@ -38,7 +39,7 @@ class RepairController(object):
                 self.__ui.showTimer(timeLeft, _REPAIR_STATE.PROGRESS, INGAME_GUI.REPAIRPOINT_TITLE, None)
             elif action == REPAIR_POINT_ACTION.COMPLETE_REPAIR:
                 self.__ui.showTimer(timeLeft, _REPAIR_STATE.COOLDOWN, INGAME_GUI.REPAIRPOINT_TITLE, INGAME_GUI.REPAIRPOINT_UNAVAILABLE)
-                BigWorld.player().soundNotifications.play(self.__repairSndName)
+                getSoundNotifications().play(self.__repairSndName)
             elif action == REPAIR_POINT_ACTION.ENTER_WHILE_CD:
                 self.__ui.showTimer(timeLeft, _REPAIR_STATE.COOLDOWN, INGAME_GUI.REPAIRPOINT_TITLE, INGAME_GUI.REPAIRPOINT_UNAVAILABLE)
             elif action in (REPAIR_POINT_ACTION.LEAVE_WHILE_CD, REPAIR_POINT_ACTION.CANCEL_REPAIR, REPAIR_POINT_ACTION.BECOME_DISABLED):

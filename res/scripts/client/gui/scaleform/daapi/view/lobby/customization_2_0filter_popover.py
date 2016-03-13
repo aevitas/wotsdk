@@ -58,14 +58,21 @@ class FilterPopover(CustomizationFiltersPopoverMeta):
                 self.__filter.set(FILTER_TYPE.GROUP, self.__filterTypeGroup)
 
     def changeFilter(self, filterGroup, filterGroupValue):
+        applyFilter = True
         if filterGroup == FILTER_TYPE.GROUP:
             filterGroupValue = self.__groupsMap[self.__filter.currentType][filterGroupValue][0]
-        if filterGroup == FILTER_TYPE.PURCHASE_TYPE:
+            if self.__filter.currentGroup == filterGroupValue:
+                applyFilter = False
+        elif filterGroup == FILTER_TYPE.PURCHASE_TYPE:
             filterGroupValue = self.__purchaseTypeList[filterGroupValue]
-            self.__switchIGRFilter(filterGroupValue == PURCHASE_TYPE.IGR)
-        self.__filter.set(filterGroup, filterGroupValue)
-        self.__filter.apply()
-        self.as_enableDefBtnS(not self.__filter.isDefaultFilterSet())
+            if self.__filter.purchaseType == filterGroupValue:
+                applyFilter = False
+            else:
+                self.__switchIGRFilter(filterGroupValue == PURCHASE_TYPE.IGR)
+        if applyFilter:
+            self.__filter.set(filterGroup, filterGroupValue)
+            self.__filter.apply()
+            self.as_enableDefBtnS(not self.__filter.isDefaultFilterSet())
 
     def createInitVO(self):
         isTypeNotCamouflage = self.__filter.currentType != CUSTOMIZATION_TYPE.CAMOUFLAGE

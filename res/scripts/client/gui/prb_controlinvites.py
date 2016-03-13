@@ -58,8 +58,8 @@ _PrbInviteData = namedtuple('_PrbInviteData', ' '.join(['clientID',
 class PrbInviteWrapper(_PrbInviteData):
 
     @staticmethod
-    def __new__(cls, clientID = -1L, createTime = None, type = 0, comment = str(), creator = str(), creatorDBID = -1L, creatorClanAbbrev = None, receiver = str(), receiverDBID = -1L, receiverClanAbbrev = None, state = None, count = 0, peripheryID = 0, prebattleID = 0, extraData = None, alwaysAvailable = None, ownerDBID = -1L, expiryTime = None, id = -1L, **kwargs):
-        if ownerDBID < 0L:
+    def __new__(cls, clientID = -1, createTime = None, type = 0, comment = str(), creator = str(), creatorDBID = -1, creatorClanAbbrev = None, receiver = str(), receiverDBID = -1, receiverClanAbbrev = None, state = None, count = 0, peripheryID = 0, prebattleID = 0, extraData = None, alwaysAvailable = None, ownerDBID = -1, expiryTime = None, id = -1, **kwargs):
+        if ownerDBID < 0:
             ownerDBID = creatorDBID
         result = _PrbInviteData.__new__(cls, clientID, createTime, type, comment, creator, creatorDBID, creatorClanAbbrev, receiver, receiverDBID, receiverClanAbbrev, state, count, peripheryID, prebattleID, extraData or {}, alwaysAvailable, ownerDBID, expiryTime, id)
         result.showAt = 0
@@ -152,7 +152,7 @@ class PrbInviteWrapper(_PrbInviteData):
         data = {}
         if other.creator:
             data['creator'] = other.creator
-        if other.creatorDBID > 0L:
+        if other.creatorDBID > 0:
             data['creatorDBID'] = other.creatorDBID
         if other.creatorClanAbbrev:
             data['creatorClanAbbrev'] = other.creatorClanAbbrev
@@ -182,7 +182,7 @@ class PrbInviteWrapper(_PrbInviteData):
 class PrbInvitationWrapper(PrbInviteWrapper):
 
     @staticmethod
-    def __new__(cls, clientID = -1L, id = -1L, type = 0, status = None, sentAt = None, expiresAt = None, ownerID = -1L, senderDBID = -1L, receiverDBID = -1L, info = None, sender = str(), senderClanAbbrev = None, receiver = str(), receiverClanAbbrev = None, **kwargs):
+    def __new__(cls, clientID = -1, id = -1, type = 0, status = None, sentAt = None, expiresAt = None, ownerID = -1, senderDBID = -1, receiverDBID = -1, info = None, sender = str(), senderClanAbbrev = None, receiver = str(), receiverClanAbbrev = None, **kwargs):
         info = info or {}
         peripheryID, prbID = cls.getPrbInfo(info)
         result = PrbInviteWrapper.__new__(cls, clientID, sentAt, type, info.get('comment', ''), sender, senderDBID, senderClanAbbrev, receiver, receiverDBID, receiverClanAbbrev, status, 1, peripheryID, prbID, info, False, ownerID, expiresAt, id, **kwargs)

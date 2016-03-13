@@ -1,7 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/Flash.py
 from collections import defaultdict
 import json
-import GUI, _Scaleform, weakref
+import GUI
+import _Scaleform
+import weakref
 from gui.Scaleform import SCALEFORM_SWF_PATH
 from debug_utils import LOG_DEBUG, LOG_CODEPOINT_WARNING, LOG_ERROR, LOG_GUI
 
@@ -10,6 +12,7 @@ class Flash(object):
     def __init__(self, swf, className = 'Flash', args = None, path = SCALEFORM_SWF_PATH):
         if args is None:
             args = []
+        super(Flash, self).__init__()
         self.__fsCbs = defaultdict(set)
         self.__exCbs = defaultdict(set)
         movieDefinition = _Scaleform.MovieDef(''.join((path, '/', swf)))

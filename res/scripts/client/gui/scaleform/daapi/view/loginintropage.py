@@ -12,7 +12,7 @@ class IntroPage(IntroPageMeta):
     def __init__(self, _ = None):
         super(IntroPage, self).__init__()
         self.__movieFiles = GuiDirReader.getAvailableIntroVideoFiles()
-        self.__soundValue = SoundGroups.g_instance.getMasterVolume() / 2
+        self.__soundValue = SoundGroups.g_instance.getMasterVolume() / 4
 
     def stopVideo(self):
         if self.__movieFiles is not None and len(self.__movieFiles):

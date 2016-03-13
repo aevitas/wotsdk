@@ -352,7 +352,7 @@ class VehicleCustomization(VehicleCustomizationMeta, View):
                     hasMatches = self.__hasNewItemsDuplicates(newItemsByType, newItems, interface._type)
                     if not hasMatches:
                         costValue = interface.getSelectedItemCost()
-                        if type(costValue) is list:
+                        if isinstance(costValue, list):
                             for price in costValue:
                                 cost = price.get('cost')
                                 isGold = price.get('isGold')

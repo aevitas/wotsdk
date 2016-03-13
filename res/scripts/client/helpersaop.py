@@ -258,7 +258,7 @@ class Pointcut(list):
         return getattr(imported, name, None)
 
     def addAspect(self, aspect, *args, **kwargs):
-        if type(aspect) is AspectType:
+        if isinstance(aspect, AspectType):
             for item in self:
                 aspect(*args, **kwargs)(item)
 
@@ -289,7 +289,7 @@ class Weaver(object):
         pointcut = kwargs.pop('pointcut', Pointcut)
         aspects = kwargs.pop('aspects', [])
         avoid = kwargs.pop('avoid', False)
-        if type(pointcut) is PointcutType:
+        if isinstance(pointcut, PointcutType):
             try:
                 pointcut = pointcut(*args, **kwargs)
             except ImportError:
@@ -317,7 +317,7 @@ class Weaver(object):
                 LOG_CURRENT_EXCEPTION()
 
     def findPointcut(self, pointcut):
-        if type(pointcut) is PointcutType:
+        if isinstance(pointcut, PointcutType):
             clazz = pointcut
         else:
             clazz = pointcut.__class__

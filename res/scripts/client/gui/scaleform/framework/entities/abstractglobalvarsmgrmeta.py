@@ -56,3 +56,6 @@ class GlobalVarsMgrMeta(BaseDAAPIModule):
 
     def isPotapovQuestEnabled(self):
         self._printOverrideError('isPotapovQuestEnabled')
+
+    def isLoginLoadedAtFirstTime(self):
+        self._printOverrideError('isLoginLoadedAtFirstTime')

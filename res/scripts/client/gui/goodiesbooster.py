@@ -3,11 +3,13 @@ import BigWorld
 from goodies.goodie_constants import GOODIE_RESOURCE_TYPE, GOODIE_STATE
 from gui import GUI_SETTINGS
 from gui.Scaleform.locale.MENU import MENU
+from gui.shared.formatters import text_styles
 from shared_utils import CONST_CONTAINER
 from helpers import time_utils
 from helpers.i18n import makeString as _ms
 _BOOSTER_ICON_PATH = '../maps/icons/boosters/%s.png'
 _BOOSTER_BIG_ICON_PATH = '../maps/icons/boosters/%s_big.png'
+_BOOSTER_TT_BIG_ICON_PATH = '../maps/icons/boosters/%s_tt_big.png'
 _BOOSTER_QUALITY_SOURCE_PATH = '../maps/icons/boosters/booster_quality_%s.png'
 _BOOSTER_TYPE_LOCALE = '#menu:booster/userName/%s'
 _BOOSTER_DESCRIPTION_LOCALE = '#menu:booster/description/%s'
@@ -27,6 +29,11 @@ _BOOSTER_TYPE_NAMES = {GOODIE_RESOURCE_TYPE.GOLD: 'booster_gold',
  GOODIE_RESOURCE_TYPE.XP: 'booster_xp',
  GOODIE_RESOURCE_TYPE.CREW_XP: 'booster_crew_xp',
  GOODIE_RESOURCE_TYPE.FREE_XP: 'booster_free_xp'}
+BOOSTERS_ORDERS = {GOODIE_RESOURCE_TYPE.XP: 0,
+ GOODIE_RESOURCE_TYPE.CREW_XP: 1,
+ GOODIE_RESOURCE_TYPE.FREE_XP: 2,
+ GOODIE_RESOURCE_TYPE.CREDITS: 3,
+ GOODIE_RESOURCE_TYPE.GOLD: 4}
 
 class Booster(object):
 
@@ -55,6 +62,10 @@ class Booster(object):
     @property
     def bigIcon(self):
         return _BOOSTER_BIG_ICON_PATH % self.boosterGuiType
+
+    @property
+    def bigTooltipIcon(self):
+        return _BOOSTER_TT_BIG_ICON_PATH % self.boosterGuiType
 
     @property
     def boosterGuiType(self):
@@ -107,8 +118,12 @@ class Booster(object):
         return _ms(_BOOSTER_TYPE_LOCALE % self.boosterGuiType)
 
     @property
+    def fullUserName(self):
+        return _ms(MENU.BOOSTERSWINDOW_BOOSTERSTABLERENDERER_HEADER, boosterName=self.userName, quality=self.qualityStr)
+
+    @property
     def description(self):
-        return _ms(_BOOSTER_DESCRIPTION_LOCALE % self.boosterGuiType, effectValue=self.effectValue) + _ms(MENU.BOOSTER_DESCRIPTION_EFFECTTIME, effectTime=self.getEffectTimeStr())
+        return _ms(_BOOSTER_DESCRIPTION_LOCALE % self.boosterGuiType, effectValue=self.getFormattedValue(text_styles.neutral)) + _ms(MENU.BOOSTER_DESCRIPTION_EFFECTTIME, effectTime=self.getEffectTimeStr())
 
     def getCooldownAsPercent(self):
         percent = 0
@@ -143,3 +158,10 @@ class Booster(object):
 
     def _getLocalizedTime(self, seconds, locale):
         return time_utils.getTillTimeString(seconds, locale)
+
+    def getFormattedValue(self, formatter):
+        if self.effectValue > 0:
+            value = '+%s%%' % self.effectValue
+        else:
+            value = '%s%%' % self.effectValue
+        return formatter(value)

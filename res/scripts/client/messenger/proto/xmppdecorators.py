@@ -53,7 +53,7 @@ _QUERY_SIGN_VALIDATORS = {QUERY_SIGN.DATABASE_ID: _validateDatabaseID,
  QUERY_SIGN.NOTE_TEXT: _validateNoteText}
 _QUERY_OPT_SIGNS = (QUERY_SIGN.OPT_GROUP_NAME,)
 
-class local_query(object):
+class local_query(ClientHolder):
     __slots__ = ('_sign',)
 
     def __init__(self, *args):
@@ -97,7 +97,8 @@ class local_query(object):
             return None
 
 
-class xmpp_query(local_query, ClientHolder):
+class xmpp_query(local_query):
+    __slots__ = ()
 
     def _validate(self, *args):
         client = self.client()

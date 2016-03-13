@@ -203,7 +203,7 @@ class IsInSandBoxPreQueueTrigger(Trigger, GlobalListener):
 
     def isOn(self):
         state = self.prbDispatcher.getFunctionalState()
-        return state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX)
+        return bool(state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX))
 
     def onPreQueueSettingsChanged(self, _):
         self.toggle(isOn=self.isOn())
@@ -212,7 +212,12 @@ class IsInSandBoxPreQueueTrigger(Trigger, GlobalListener):
         self.toggle(isOn=self.isOn())
 
     def onPreQueueFunctionalFinished(self):
-        self.toggle(isOn=self.isOn())
+        state = self.prbDispatcher.getFunctionalState()
+        if state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX):
+            self.toggle(isOn=self.isOn())
+
+    def toggle(self, isOn = True, **kwargs):
+        super(IsInSandBoxPreQueueTrigger, self).toggle(isOn=isOn, benefit=False)
 
     def clear(self):
         if self.isSubscribed:
@@ -226,6 +231,11 @@ class IsInSandBoxOrRandomPreQueueTrigger(IsInSandBoxPreQueueTrigger):
     def isOn(self):
         state = self.prbDispatcher.getFunctionalState()
         return state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX) or state.isInPreQueue(queueType=QUEUE_TYPE.RANDOMS)
+
+    def onPreQueueFunctionalFinished(self):
+        state = self.prbDispatcher.getFunctionalState()
+        if state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX) or state.isInPreQueue(queueType=QUEUE_TYPE.RANDOMS):
+            self.toggle(isOn=self.isOn())
 
 
 class FightButtonDisabledTrigger(Trigger, GlobalListener):

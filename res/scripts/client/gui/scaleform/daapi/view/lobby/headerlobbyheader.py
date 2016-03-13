@@ -11,13 +11,13 @@ from gui.Scaleform.genConsts.CYBER_SPORT_ALIASES import CYBER_SPORT_ALIASES
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import getFalloutCtrl
 from gui.gold_fish import isGoldFishActionActive, isTimeToShowGoldFishPromo
-from gui.goodies.GoodiesCache import g_goodiesCache
+from gui.goodies import g_goodiesCache
 from gui.prb_control.prb_helpers import GlobalListener
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME, REQUEST_TYPE, UNIT_RESTRICTION, PREBATTLE_RESTRICTION, QUEUE_RESTRICTION
 from gui.shared.formatters.ranges import toRomanRangeString
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.utils.requesters.ItemsRequester import REQ_CRITERIA
-from helpers import i18n, time_utils, int2roman
+from helpers import i18n, time_utils, int2roman, isPlayerAccount
 from debug_utils import LOG_ERROR
 from shared_utils import CONST_CONTAINER, findFirst
 from gui import makeHtmlString, game_control
@@ -108,8 +108,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             self.__updatePrebattleControls()
 
     def onUnitPlayerStateChanged(self, pInfo):
-        if pInfo.isCurrentPlayer():
-            self.__updatePrebattleControls()
+        self.__updatePrebattleControls()
 
     def onPrbFunctionalInited(self):
         self.__updatePrebattleControls()
@@ -216,17 +215,22 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             LOG_ERROR('Prebattle dispatcher is not defined')
 
     def __setClanInfo(self, clanInfo):
-        name = BigWorld.player().name
-        if clanInfo and len(clanInfo) > 1:
-            clanAbbrev = clanInfo[1]
+        if not isPlayerAccount():
+            return
         else:
-            clanAbbrev = None
-        hasNew = not AccountSettings.getFilter(BOOSTERS)['wasShown']
-        hasActiveBooster = len(g_goodiesCache.getBoosters(criteria=REQ_CRITERIA.BOOSTER.ACTIVE)) > 0
-        self.as_nameResponseS(g_lobbyContext.getPlayerFullName(name, clanInfo=clanInfo), name, clanAbbrev, g_itemsCache.items.stats.isTeamKiller, g_clanCache.isInClan, hasNew, hasActiveBooster, TOOLTIPS.HEADER_ACCOUNT, TOOLTIP_TYPES.COMPLEX)
-        if g_clanCache.clanDBID:
-            self.requestClanEmblem32x32(g_clanCache.clanDBID)
-        return
+            name = BigWorld.player().name
+            if clanInfo and len(clanInfo) > 1:
+                clanAbbrev = clanInfo[1]
+            else:
+                clanAbbrev = None
+            hasNew = not AccountSettings.getFilter(BOOSTERS)['wasShown']
+            hasActiveBooster = len(g_goodiesCache.getBoosters(criteria=REQ_CRITERIA.BOOSTER.ACTIVE)) > 0
+            self.as_nameResponseS(g_lobbyContext.getPlayerFullName(name, clanInfo=clanInfo), name, clanAbbrev, g_itemsCache.items.stats.isTeamKiller, g_clanCache.isInClan, hasNew, hasActiveBooster, TOOLTIPS.HEADER_ACCOUNT, TOOLTIP_TYPES.COMPLEX)
+            if g_clanCache.clanDBID:
+                self.requestClanEmblem32x32(g_clanCache.clanDBID)
+            else:
+                self.as_setClanEmblemS(None)
+            return
 
     def __onPremiumExpireTimeChanged(self, timestamp):
         self.updateAccountAttrs()
@@ -323,8 +327,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             view.update()
 
     def __getFightBtnTooltipData(self, state):
-        falloutCtrl = getFalloutCtrl()
-        config = falloutCtrl.getConfig()
+        config = self.__falloutCtrl.getConfig()
         if state == PREBATTLE_RESTRICTION.VEHICLE_FALLOUT_ONLY:
             header = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutOnly/header')
             body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutOnly/body')
@@ -372,8 +375,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             else:
                 isInSquad = False
                 self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, self.prbDispatcher.getFunctionalCollection().canCreateSquad())
-            falloutCtrl = getFalloutCtrl()
-            isFallout = falloutCtrl.isSelected()
+            isFallout = self.__falloutCtrl.isSelected()
             if isInSquad:
                 tooltip = TOOLTIPS.HEADER_SQUAD_MEMBER
             else:
@@ -381,11 +383,12 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX)
             isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled()
             if isFightBtnDisabled and not state.hasLockedState:
-                isEventVehicle = g_currentVehicle.isPresent() and g_currentVehicle.item.isEvent
                 if state.isInPreQueue(queueType=QUEUE_TYPE.SANDBOX) and canDoMsg == QUEUE_RESTRICTION.LIMIT_LEVEL:
                     self.as_setFightBtnTooltipDataS(self.__getSandboxTooltipData())
-                elif isEventVehicle and not state.isInPrebattle(PREBATTLE_TYPE.COMPANY) or isFallout:
+                elif isFallout:
                     self.as_setFightBtnTooltipDataS(self.__getFightBtnTooltipData(canDoMsg))
+                else:
+                    self.as_setFightBtnTooltipDataS(None)
             else:
                 self.as_setFightBtnTooltipDataS(None)
             self.as_disableFightButtonS(isFightBtnDisabled)
@@ -446,7 +449,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
     def __onItemsChanged(self, updateReason, invalidItems):
         vehiclesDiff = invalidItems.get(GUI_ITEM_TYPE.VEHICLE)
         if vehiclesDiff is not None:
-            falloutVehicle = findFirst(lambda v: v.intCD in vehiclesDiff, getFalloutCtrl().getSelectedVehicles())
+            falloutVehicle = findFirst(lambda v: v.intCD in vehiclesDiff, self.__falloutCtrl.getSelectedVehicles())
             if falloutVehicle is not None:
                 self.__updatePrebattleControls()
         return

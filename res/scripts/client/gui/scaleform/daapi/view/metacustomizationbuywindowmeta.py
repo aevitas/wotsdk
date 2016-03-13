@@ -12,6 +12,9 @@ class CustomizationBuyWindowMeta(AbstractWindowView):
     def deselectItem(self, id):
         self._printOverrideError('deselectItem')
 
+    def changePriceItem(self, id, priceMode):
+        self._printOverrideError('changePriceItem')
+
     def as_getPurchaseDPS(self):
         if self._isDAAPIInited():
             return self.flashObject.as_getPurchaseDP()

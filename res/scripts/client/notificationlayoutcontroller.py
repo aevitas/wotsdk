@@ -30,7 +30,7 @@ class LayoutController(BaseMessagesController, EventSystemEntity):
             self.__onSomeViewSelected({})
         self.addListener(VIEW_ALIAS.LOBBY_HANGAR, self.__onHangarViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(VIEW_ALIAS.LOBBY_INVENTORY, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
-        self.addListener(VIEW_ALIAS.LOBBY_SHOP, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
+        self.addListener(VIEW_ALIAS.LOBBY_STORE, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(VIEW_ALIAS.LOBBY_PROFILE, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(VIEW_ALIAS.LOBBY_TECHTREE, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.addListener(VIEW_ALIAS.LOBBY_RESEARCH, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
@@ -59,7 +59,7 @@ class LayoutController(BaseMessagesController, EventSystemEntity):
     def cleanUp(self):
         self.removeListener(VIEW_ALIAS.LOBBY_HANGAR, self.__onHangarViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.removeListener(VIEW_ALIAS.LOBBY_INVENTORY, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
-        self.removeListener(VIEW_ALIAS.LOBBY_SHOP, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
+        self.removeListener(VIEW_ALIAS.LOBBY_STORE, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.removeListener(VIEW_ALIAS.LOBBY_PROFILE, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.removeListener(VIEW_ALIAS.LOBBY_TECHTREE, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)
         self.removeListener(VIEW_ALIAS.LOBBY_RESEARCH, self.__onSomeViewSelected, EVENT_BUS_SCOPE.LOBBY)

@@ -205,6 +205,14 @@ class CyberSportClubsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
          'searchByNameEnable': True})
         return
 
+    def _setDummyData(self, text, btnVisible = False, btnLabel = '', btnTooltip = '', icon = None):
+        self.as_setDummyS({'iconSource': icon,
+         'htmlText': text,
+         'alignCenter': False,
+         'btnVisible': btnVisible,
+         'btnLabel': btnLabel,
+         'btnTooltip': btnTooltip})
+
     def __setNavigationData(self, isCooldown = False):
         self.as_updateNavigationBlockS({'previousVisible': True,
          'previousEnabled': not isCooldown and self.__paginator.canMoveLeft(),
@@ -238,7 +246,8 @@ class CyberSportClubsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
         if not result:
             text = '\n'.join([text_styles.middleTitle(CYBERSPORT.WINDOW_UNITLISTVIEW_NOSEARCHRESULTS_HEADER), text_styles.standard(CYBERSPORT.WINDOW_UNITLISTVIEW_NOSEARCHRESULTS_DESCRIPTION)])
             self.__onClubsListUpdated(None, True, False, [])
-            self.as_noSearchResultsS(text, True)
+            self._setDummyData(text, True, CYBERSPORT.WINDOW_UNITLISTVIEW_NOSEARCHRESULTS_BTN)
+            self.as_setDummyVisibleS(True)
         else:
             self.__onClubsListUpdated(selectedID, isFullUpdate, isReqInCoolDown, result)
         return

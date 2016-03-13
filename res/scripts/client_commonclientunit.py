@@ -47,23 +47,18 @@ class _FortBattleExtra(namedtuple('_FortBattleExtra', ('clanEquipments', 'lastEq
         return result
 
 
-class _SquadExtra(namedtuple('_SquadExtra', ('eventType', 'accountVehicles'))):
-    pass
-
-
-_SquadExtra.__new__.__defaults__ = (0, {})
 _EXTRA_BY_PRB_TYPE = {PREBATTLE_TYPE.CLUBS: _ClubExtra,
  PREBATTLE_TYPE.SORTIE: _SortieExtra,
- PREBATTLE_TYPE.FORT_BATTLE: _FortBattleExtra,
- PREBATTLE_TYPE.SQUAD: _SquadExtra}
+ PREBATTLE_TYPE.FORT_BATTLE: _FortBattleExtra}
 
 class ClientUnit(UnitBase):
 
-    def __init__(self, slotDefs = {}, slotCount = 0, packedRoster = '', extrasInit = None, packedUnit = ''):
+    def __init__(self, limitsDefs = {}, slotDefs = {}, slotCount = 0, packedRoster = '', extrasInit = None, packedUnit = ''):
         self.__eManager = Event.EventManager()
         self.onUnitFlagsChanged = Event.Event(self.__eManager)
         self.onUnitReadyMaskChanged = Event.Event(self.__eManager)
         self.onUnitVehicleChanged = Event.Event(self.__eManager)
+        self.onUnitVehiclesChanged = Event.Event(self.__eManager)
         self.onUnitSettingChanged = Event.Event(self.__eManager)
         self.onUnitPlayerRoleChanged = Event.Event(self.__eManager)
         self.onUnitRosterChanged = Event.Event(self.__eManager)
@@ -75,8 +70,8 @@ class ClientUnit(UnitBase):
         self.onUnitPlayerInfoChanged = Event.Event(self.__eManager)
         self.onUnitExtraChanged = Event.Event(self.__eManager)
         self.onUnitUpdated = Event.Event(self.__eManager)
-        self._creatorDBID = 0L
-        UnitBase.__init__(self, slotDefs, slotCount, packedRoster, extrasInit, packedUnit)
+        self._creatorDBID = 0
+        UnitBase.__init__(self, limitsDefs, slotDefs, slotCount, packedRoster, extrasInit, packedUnit)
 
     def destroy(self):
         self.__eManager.clear()
@@ -190,6 +185,9 @@ class ClientUnit(UnitBase):
     def isSquad(self):
         return self._prebattleTypeID == PREBATTLE_TYPE.SQUAD
 
+    def isFalloutSquad(self):
+        return self._prebattleTypeID == PREBATTLE_TYPE.FALLOUT
+
     def isFortBattle(self):
         return self._prebattleTypeID == PREBATTLE_TYPE.FORT_BATTLE
 
@@ -238,6 +236,10 @@ class ClientUnit(UnitBase):
     def _setVehicle(self, accountDBID, vehTypeCompDescr, vehInvID):
         UnitBase._setVehicle(self, accountDBID, vehTypeCompDescr, vehInvID)
         self.onUnitVehicleChanged(accountDBID, vehInvID, vehTypeCompDescr)
+
+    def _setVehicleList(self, accountDBID, vehDataList):
+        UnitBase._setVehicleList(self, accountDBID, vehDataList)
+        self.onUnitVehiclesChanged(accountDBID, vehDataList)
 
     def _clearVehicle(self, accountDBID):
         UnitBase._clearVehicle(self, accountDBID)
@@ -315,3 +317,9 @@ class ClientUnit(UnitBase):
         self.onUnitRosterChanged()
         self.onUnitMembersListChanged()
         self.onUnitSettingChanged(UNIT_OP.CHANGE_DIVISION, division)
+
+    def _changeFalloutQueueType(self, queueType):
+        UnitBase._changeFalloutQueueType(self, queueType)
+        self.onUnitRosterChanged()
+        self.onUnitMembersListChanged()
+        self.onUnitSettingChanged(UNIT_OP.CHANGE_FALLOUT_TYPE, queueType)

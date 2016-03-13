@@ -34,13 +34,5 @@ def setGUIVisibility(flag):
     g_eventBus.handleEvent(GameEvent(GameEvent.GUI_VISIBILITY, {'visible': flag}), scope=_SCOPE)
 
 
-def showGUICursor():
-    g_eventBus.handleEvent(GameEvent(GameEvent.SHOW_CURSOR), scope=_SCOPE)
-
-
-def hideGUICursor():
-    g_eventBus.handleEvent(GameEvent(GameEvent.HIDE_CURSOR), scope=_SCOPE)
-
-
 def setPlayingTimeOnArena(playingTime):
     g_eventBus.handleEvent(GameEvent(GameEvent.PLAYING_TIME_ON_ARENA, {'time': playingTime}), scope=_SCOPE)

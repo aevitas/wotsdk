@@ -11,6 +11,7 @@ from gui.battle_control import g_sessionProvider
 from gui.battle_control.arena_info import getArenaType, hasGasAttack
 from gui.battle_control.avatar_getter import getPlayerVehicleID, getPlayerName
 from helpers import i18n
+from gui import makeHtmlString
 _TEAM_PROPS = {'tf_width': 140,
  'tf_padding': 140,
  'y_position': 4}
@@ -147,7 +148,7 @@ class _FalloutScorePanel(FalloutScorePanelMeta, _IScorePanel):
         g_settingsCore.onSettingsChanged += self.__onSettingsChanged
         arenaType = getArenaType()
         if arenaType is not None:
-            self._maxScore = win_points.g_cache[getArenaType().winPoints].pointsCAP
+            self._maxScore = win_points.g_cache[getArenaType().winPointsSettings].pointsCAP
         self.as_initWarningValue(self.WARNING_RATIO * self._maxScore)
         self._makeData()
         return
@@ -229,6 +230,8 @@ class _MultiteamFalloutPanel(_FalloutScorePanel):
             playerName = i18n.makeString(INGAME_GUI.SCOREPANEL_MYSQUADLBL)
         else:
             playerName = getPlayerName()
+            if arenaDP.isTeamKiller(playerVehID):
+                playerName = makeHtmlString('html_templates:battle', 'fallouScorePanelTeamKiller', playerName)
         self.__allyScore = allyScore
         self.__enemyScore = enemyScore
         self.as_setDataS(self._contextType, self._maxScore, 0, allyScore, enemyScore, playerName, enemyName, _TEAM_PROPS)
@@ -244,8 +247,8 @@ class _MultiteamFalloutPanel(_FalloutScorePanel):
         self.as_stopScoreHighlightAnim()
 
 
-def scorePanelFactory(parentUI, isEvent = False, isMutlipleTeams = False):
-    if isEvent:
+def scorePanelFactory(parentUI, isFallout = False, isMutlipleTeams = False):
+    if isFallout:
         if isMutlipleTeams:
             return _MultiteamFalloutPanel(parentUI, 'multi')
         return _FalloutScorePanel(parentUI, 'single')

@@ -1,8 +1,10 @@
 # Embedded file name: scripts/client/messenger/proto/xmpp/extensions/error.py
+from shared_utils import findFirst
 from messenger.proto.xmpp.extensions import PyExtension
 from messenger.proto.xmpp.extensions.ext_constants import XML_TAG_NAME as _TAG
 from messenger.proto.xmpp.extensions.ext_constants import XML_NAME_SPACE as _NS
 from messenger.proto.xmpp.gloox_constants import ERROR_TYPE
+from messenger.proto.xmpp.xmpp_constants import MUC_CREATION_ERROR
 STANZA_ERRORS = {'bad-request': ERROR_TYPE.MODIFY,
  'conflict': ERROR_TYPE.CANCEL,
  'feature-not-implemented': ERROR_TYPE.CANCEL,
@@ -53,3 +55,23 @@ class StanzaErrorExtension(PyExtension):
     @classmethod
     def getDefaultData(cls):
         return (ERROR_TYPE.CANCEL, DEF_STANZA_ERROR_CONDITION)
+
+
+class WgErrorExtension(PyExtension):
+
+    def __init__(self):
+        super(WgErrorExtension, self).__init__(_TAG.ERROR)
+        self.setXmlNs(_NS.WG_EXTENSION)
+
+    @classmethod
+    def getDefaultData(cls):
+        return MUC_CREATION_ERROR.UNDEFINED
+
+    def parseTag(self, pyGlooxTag):
+        tag = findFirst(None, pyGlooxTag.filterXPath(self.getXPath(suffix='status')))
+        code = self.getDefaultData()
+        if tag is not None:
+            found = tag.findAttribute('code')
+            if found and found.isdigit():
+                code = int(found)
+        return code

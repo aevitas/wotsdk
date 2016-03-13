@@ -99,6 +99,10 @@ class EventDispatcher(object):
         self.__addSquadToCarousel(isTeamReady)
         self.__showSquadWindow(ctx and ctx.get('showInvitesWindow', False))
 
+    def loadFalloutSquad(self, ctx = None, isTeamReady = False):
+        self.__addFalloutSquadToCarousel(isTeamReady)
+        self.__showFalloutSquadWindow(ctx and ctx.get('showInvitesWindow', False))
+
     def loadPreArenaUnit(self, prbType, modeFlags = 0):
         utils.showInvitationInWindowsBar()
         self.app.containerManager.clear()
@@ -232,6 +236,13 @@ class EventDispatcher(object):
         if prbType in (PREBATTLE_TYPE.SORTIE, PREBATTLE_TYPE.FORT_BATTLE):
             from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
             self._fireEvent(events.LoadViewEvent(FORTIFICATION_ALIASES.FORT_BATTLE_ROOM_WINDOW_ALIAS, ctx={'flags': flags}))
+        elif prbType == PREBATTLE_TYPE.CLAN:
+            from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
+            self._fireEvent(events.LoadViewEvent(CLANS_ALIASES.CLAN_BATTLE_ROOM_WINDOW_PY, 'temp window', {'viewID': 1}), EVENT_BUS_SCOPE.LOBBY)
+        elif prbType == PREBATTLE_TYPE.SQUAD:
+            self.__showSquadWindow()
+        elif prbType == PREBATTLE_TYPE.FALLOUT:
+            self.__showFalloutSquadWindow()
         else:
             self._fireShowEvent(CYBER_SPORT_ALIASES.CYBER_SPORT_WINDOW_PY)
 
@@ -249,6 +260,9 @@ class EventDispatcher(object):
         self._handleRemoveRequest(clientID)
 
     def setUnitProgressInCarousel(self, prbType, isInProgress):
+        if prbType in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
+            LOG_DEBUG('No unit progress for squad.')
+            return
         clientID = channel_num_gen.getClientID4Prebattle(prbType)
         if not clientID:
             LOG_ERROR('Client ID not found', 'setUnitProgressInCarousel', prbType)
@@ -281,6 +295,12 @@ class EventDispatcher(object):
             self._fireEvent(events.LoadViewEvent(PREBATTLE_ALIASES.SEND_INVITES_WINDOW_PY, ctx={'prbName': 'squad',
              'ctrlType': CTRL_ENTITY_TYPE.UNIT}))
 
+    def __showFalloutSquadWindow(self, showInvitesWindow = False):
+        self._fireShowEvent(PREBATTLE_ALIASES.FALLOUT_SQUAD_WINDOW_PY)
+        if showInvitesWindow:
+            self._fireEvent(events.LoadViewEvent(PREBATTLE_ALIASES.SEND_INVITES_WINDOW_PY, ctx={'prbName': 'squad',
+             'ctrlType': CTRL_ENTITY_TYPE.UNIT}))
+
     def showCompanyWindow(self):
         self._fireShowEvent(PREBATTLE_ALIASES.COMPANY_WINDOW_PY, self.__getCompanyWindowContext())
 
@@ -307,10 +327,9 @@ class EventDispatcher(object):
 
     def unloadFallout(self):
         self.removeFalloutFromCarousel()
-        self._fireHideEvent(events.HideWindowEvent.HIDE_FALLOUT_WINDOW)
 
     def addFalloutToCarousel(self):
-        clientID = channel_num_gen.getClientID4PreQueue(QUEUE_TYPE.EVENT_BATTLES)
+        clientID = channel_num_gen.getClientID4SpecialWindow(SPECIAL_CLIENT_WINDOWS.FALLOUT)
         if not clientID:
             LOG_ERROR('Client ID not found', 'addFalloutToCarousel')
             return
@@ -318,7 +337,7 @@ class EventDispatcher(object):
         self._handleAddPreBattleRequest(clientID, currCarouselItemCtx._asdict())
 
     def removeFalloutFromCarousel(self):
-        clientID = channel_num_gen.getClientID4PreQueue(QUEUE_TYPE.EVENT_BATTLES)
+        clientID = channel_num_gen.getClientID4SpecialWindow(SPECIAL_CLIENT_WINDOWS.FALLOUT)
         if not clientID:
             LOG_ERROR('Client ID not found', 'removeFalloutFromCarousel')
             return
@@ -442,6 +461,14 @@ class EventDispatcher(object):
             LOG_ERROR('Client ID not found', 'addSquadToCarousel')
             return
         currCarouselItemCtx = _defCarouselItemCtx._replace(label=CHAT.CHANNELS_SQUAD, icon=RES_ICONS.MAPS_ICONS_MESSENGER_SQUAD_ICON, criteria={POP_UP_CRITERIA.VIEW_ALIAS: PREBATTLE_ALIASES.SQUAD_WINDOW_PY}, openHandler=self.__showSquadWindow, readyData=self.__getReadyPrbData(isTeamReady), tooltipData=self.__getTooltipPrbData(CHAT.CHANNELS_SQUADREADY_TOOLTIP if isTeamReady else CHAT.CHANNELS_SQUADNOTREADY_TOOLTIP))
+        self._handleAddPreBattleRequest(clientID, currCarouselItemCtx._asdict())
+
+    def __addFalloutSquadToCarousel(self, isTeamReady = False):
+        clientID = channel_num_gen.getClientID4Prebattle(PREBATTLE_TYPE.FALLOUT)
+        if not clientID:
+            LOG_ERROR('Client ID not found', 'addSquadToCarousel')
+            return
+        currCarouselItemCtx = _defCarouselItemCtx._replace(label=CHAT.CHANNELS_SQUAD, icon=RES_ICONS.MAPS_ICONS_MESSENGER_SQUAD_ICON, criteria={POP_UP_CRITERIA.VIEW_ALIAS: PREBATTLE_ALIASES.FALLOUT_SQUAD_WINDOW_PY}, openHandler=self.__showFalloutSquadWindow, readyData=self.__getReadyPrbData(isTeamReady), tooltipData=self.__getTooltipPrbData(CHAT.CHANNELS_SQUADREADY_TOOLTIP if isTeamReady else CHAT.CHANNELS_SQUADNOTREADY_TOOLTIP))
         self._handleAddPreBattleRequest(clientID, currCarouselItemCtx._asdict())
 
 

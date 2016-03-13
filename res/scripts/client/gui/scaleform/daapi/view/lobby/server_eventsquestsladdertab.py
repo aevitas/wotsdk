@@ -28,8 +28,8 @@ class QuestsLadderTab(QuestsCurrentTab):
          'isSortable': False,
          'totalTasks': len(svrEvents)})
 
-    def _filterFunc(self, a):
-        return not self._hideCompleted or not a.isCompleted()
+    def _filterFunc(self, event):
+        return not self._hideCompleted or not event.isCompleted()
 
     @classmethod
     def _sortFunc(cls, a, b):

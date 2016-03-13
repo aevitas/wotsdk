@@ -90,7 +90,7 @@ class Inventory(InventoryMeta):
                     if module.repairCost > 0:
                         continue
                 if type == self._VEHICLE and 'locked' not in extra:
-                    if not module.isUnlocked:
+                    if module.isLocked:
                         continue
                 if type == self._VEHICLE and 'premiumIGR' not in extra:
                     if module.isPremiumIGR:

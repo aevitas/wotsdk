@@ -7,7 +7,6 @@ from gui.clans.items import ClanCommonData, formatField, isValueAvailable
 from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_INVITE_STATES
 from gui.Scaleform.daapi.view.lobby.clans.invites.ClanInvitesViewWithTable import ClanInvitesAbstractDataProvider
 from gui.Scaleform.daapi.view.meta.ClanPersonalInvitesViewMeta import ClanPersonalInvitesViewMeta
-from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.Scaleform.locale.CLANS import CLANS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.shared.events import CoolDownEvent
@@ -16,18 +15,21 @@ from gui.shared.formatters import text_styles
 from gui.shared.view_helpers import CooldownHelper
 from gui.shared.utils import getPlayerDatabaseID
 from helpers.i18n import makeString as _ms
+from helpers.html import escape
 
 class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta, ClanListener):
-    __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION,
-     CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE,
-     CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION,
-     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE,
-     CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES]
 
     def __init__(self):
         super(ClanPersonalInvitesView, self).__init__()
         self._paginator = ClanPersonalInvitesPaginator(g_clanCtrl, getPlayerDatabaseID(), [CLAN_INVITE_STATES.ACTIVE])
-        self._cooldown = CooldownHelper(self.__coolDownRequests, self._onCooldownHandle, CoolDownEvent.CLAN)
+        self._cooldown = CooldownHelper([CLAN_REQUESTED_DATA_TYPE.ACCEPT_APPLICATION,
+         CLAN_REQUESTED_DATA_TYPE.ACCEPT_INVITE,
+         CLAN_REQUESTED_DATA_TYPE.DECLINE_APPLICATION,
+         CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITE,
+         CLAN_REQUESTED_DATA_TYPE.DECLINE_INVITES,
+         CLAN_REQUESTED_DATA_TYPE.CLANS_INFO,
+         CLAN_REQUESTED_DATA_TYPE.CLAN_RATINGS,
+         CLAN_REQUESTED_DATA_TYPE.ACCOUNT_INVITES], self._onCooldownHandle, CoolDownEvent.CLAN)
 
     def declineAllSelectedInvites(self):
         self._paginator.declineList(self.dataProvider.getCheckedIDs())
@@ -101,7 +103,7 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta, ClanListener):
         return
 
     def _onCooldownHandle(self, isInCooldown):
-        self.showWaiting(isInCooldown)
+        self.dataProvider.allowActions(not isInCooldown)
 
     def _onListUpdated(self, selectedID, isFullUpdate, isReqInCoolDown, result):
         self._updateSortField(self._paginator.getLastSort())
@@ -109,7 +111,7 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta, ClanListener):
         if status is True:
             self._enableRefreshBtn(False)
             if len(data) == 0:
-                self.as_showDummyS(CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_PERSONAL_INVITES)
+                self._showDummy(CLANS.CLANPERSONALINVITESWINDOW_NOINVITES)
                 self.dataProvider.rebuildList(None, False)
             else:
                 g_clanCtrl.updateClanCommonDataCache([ ClanCommonData.fromClanPersonalInviteWrapper(item) for item in data ])
@@ -117,7 +119,7 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta, ClanListener):
                 self.as_hideDummyS()
         else:
             self._enableRefreshBtn(True, toolTip=CLANS.CLANINVITESWINDOW_TOOLTIPS_REFRESHBUTTON_ENABLEDTRYTOREFRESH)
-            self.as_showDummyS(CLANS_ALIASES.INVITE_WINDOW_DUMMY_SERVER_ERROR)
+            self._showDummy(CLANS.CLANINVITESWINDOW_DUMMY_SERVERERROR_TITLE, CLANS.CLANINVITESWINDOW_DUMMY_SERVERERROR_TEXT, RES_ICONS.MAPS_ICONS_LIBRARY_ALERTBIGICON, alignCenter=False)
         self._updateDeclineSelectedGroup()
         self.showWaiting(False)
         return
@@ -140,7 +142,7 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta, ClanListener):
         return ('createdAt',)
 
     def _makeHeaders(self):
-        return [self._packHeaderColumnData('clanName', CLANS.CLANPERSONALINVITESWINDOW_TABLE_CLANNAME, 233, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_INVITES_CLANNAME, textAlign='left', enabled=True),
+        return [self._packHeaderColumnData('clanName', CLANS.CLANPERSONALINVITESWINDOW_TABLE_CLANNAME, 233, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_INVITES_CLANNAME, textAlign='left', enabled=True, defaultSortDirection='ascending'),
          self._packHeaderColumnData('message', '', 73, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_INVITES_MESSAGE, RES_ICONS.MAPS_ICONS_CLANS_INVITESWINDOW_ICON_STATISTICS_CLAN_INVITE_098, enabled=True),
          self._packHeaderColumnData('personalRating', '', 98, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_INVITES_RATING, RES_ICONS.MAPS_ICONS_STATISTIC_RATING24, enabled=True),
          self._packHeaderColumnData('battlesCount', '', 98, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_INVITES_BATTLESCOUNT, RES_ICONS.MAPS_ICONS_STATISTIC_BATTLES24, enabled=True),
@@ -148,12 +150,6 @@ class ClanPersonalInvitesView(ClanPersonalInvitesViewMeta, ClanListener):
          self._packHeaderColumnData('awgExp', '', 98, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_INVITES_AWGEXP, RES_ICONS.MAPS_ICONS_STATISTIC_AVGEXP24, enabled=True),
          self._packHeaderColumnData('status', CLANS.CLANPERSONALINVITESWINDOW_TABLE_STATUS, 160, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_INVITES_STATUS, enabled=True),
          self._packHeaderColumnData('actions', CLANS.CLANPERSONALINVITESWINDOW_TABLE_ACTIONS, 132, CLANS.CLANPERSONALINVITESWINDOW_TOOLTIPS_TABLE_REQUESTS_ACTIONS, enabled=False)]
-
-    def _makeTexts(self):
-        texts = super(ClanPersonalInvitesView, self)._makeTexts()
-        texts.append({'alias': CLANS_ALIASES.INVITE_WINDOW_DUMMY_NO_PERSONAL_INVITES,
-         'title': CLANS.CLANPERSONALINVITESWINDOW_NOINVITES})
-        return texts
 
     def _enableRefreshBtn(self, enable, toolTip = None):
         if enable:
@@ -246,7 +242,7 @@ class PersonalInvitesDataProvider(ClanInvitesAbstractDataProvider):
                     'tooltip': self._makeTooltip(body=self._makeRequestTooltip(status=item.getStatus(), user=formatField(getter=item.getSenderName), date=formatField(getter=item.getUpdatedAt, formatter=formatters.formatShortDateShortTimeString)))},
          'enabled': status == CLAN_INVITE_STATES.ACTIVE or status == CLAN_INVITE_STATES.ERROR,
          'canShowContextMenu': True,
-         'messageTooltip': self._makeTooltip(body=item.getComment() if isValueAvailable(getter=item.getComment) else str()),
+         'messageTooltip': self._makeTooltip(body=escape(item.getComment()) if isValueAvailable(getter=item.getComment) else str()),
          'actions': self.__buildActionsSection(item.getStatus())}
         return outcome
 

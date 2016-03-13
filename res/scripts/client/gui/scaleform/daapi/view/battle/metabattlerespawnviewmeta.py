@@ -10,19 +10,31 @@ class BattleRespawnViewMeta(BattleComponentMeta):
         raise NotImplementedError
 
     def as_updateRespawnViewS(self, vehicleName, slotsStatesData):
-        self._flashObject.as_updateRespawnView(vehicleName, slotsStatesData)
+        if self._flashObject is not None:
+            self._flashObject.as_updateRespawnView(vehicleName, slotsStatesData)
+        return
 
     def as_showRespawnViewS(self, vehicleName, slotsStatesData):
-        self._flashObject.as_showRespawnView(vehicleName, slotsStatesData)
+        if self._flashObject is not None:
+            self._flashObject.as_showRespawnView(vehicleName, slotsStatesData)
+        return
 
     def as_hideRespawnViewS(self):
-        self._flashObject.as_hideRespawnView()
+        if self._flashObject is not None:
+            self._flashObject.as_hideRespawnView()
+        return
 
     def as_respawnViewUpdateTimerS(self, mainTimer, slots):
-        self._flashObject.as_respawnViewUpdateTimer(mainTimer, slots)
+        if self._flashObject is not None:
+            self._flashObject.as_respawnViewUpdateTimer(mainTimer, slots)
+        return
 
     def as_initializeS(self, mainData, slots, helpText):
-        self._flashObject.as_initialize(mainData, slots, helpText)
+        if self._flashObject is not None:
+            self._flashObject.as_initialize(mainData, slots, helpText)
+        return
 
     def as_showGasAtackMode(self):
-        self._flashObject.as_showGasAtackMode()
+        if self._flashObject is not None:
+            self._flashObject.as_showGasAtackMode()
+        return

@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/clans/contexts.py
 from shared_utils import makeTupleByDict
 from gui.clans import items
-from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, SEND_INVITES_COOLDOWN
+from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, SEND_INVITES_COOLDOWN, ACCEPT_INVITES_COOLDOWN, DECLINE_INVITES_COOLDOWN
 from gui.clubs.settings import DEFAULT_COOLDOWN
 from gui.shared.utils.decorators import ReprInjector
 from gui.shared.utils.requesters import RequestCtx
@@ -600,6 +600,9 @@ class AcceptApplicationCtx(CommonClanRequestCtx):
     def isAuthorizationRequired(self):
         return True
 
+    def getCooldown(self):
+        return ACCEPT_INVITES_COOLDOWN
+
 
 @ReprInjector.withParent(('getInviteDbID', 'inviteDbID'))
 
@@ -714,6 +717,9 @@ class DeclineApplicationCtx(CommonClanRequestCtx):
 
     def isAuthorizationRequired(self):
         return True
+
+    def getCooldown(self):
+        return DECLINE_INVITES_COOLDOWN
 
 
 @ReprInjector.withParent(('getInviteDbID', 'inviteDbID'))

@@ -1,12 +1,12 @@
 # Embedded file name: scripts/client/gui/customization_2_0/controller.py
 from carousel import Carousel
-from data_aggregator import DataAggregator, CUSTOMIZATION_TYPE
+from data_aggregator import DataAggregator
 from gui.shared.utils.HangarSpace import g_hangarSpace
 
 class Controller(object):
 
     def __init__(self):
-        self.__aData = None
+        self.__aData = DataAggregator()
         self.__carousel = None
         self.__header = None
         self.__cart = None
@@ -14,7 +14,7 @@ class Controller(object):
         return
 
     def init(self):
-        self.__aData = DataAggregator()
+        self.__aData.init()
         self.__carousel = Carousel(self.__aData)
         self.__hangarCameraLocation = g_hangarSpace.space.getCameraLocation()
         g_hangarSpace.space.locateCameraToPreview()
@@ -23,7 +23,6 @@ class Controller(object):
     def fini(self):
         self.__carousel.fini()
         self.__aData.fini()
-        self.__aData = None
         self.__carousel = None
         self.__header = None
         g_hangarSpace.onSpaceCreate -= self.__onHangarSpaceCreate
@@ -48,8 +47,8 @@ class Controller(object):
         return self.__carousel
 
     @property
-    def associatedQuests(self):
-        return self.__aData.associatedQuests
+    def dataAggregator(self):
+        return self.__aData
 
     def __onHangarSpaceCreate(self):
         if g_hangarSpace.space is not None:

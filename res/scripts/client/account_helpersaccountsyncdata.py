@@ -99,7 +99,7 @@ class AccountSyncData(object):
             return
 
     def _resynchronize(self):
-        LOG_MX('resynchronize')
+        LOG_DEBUG('resynchronize')
         if self.__ignore:
             return
         else:

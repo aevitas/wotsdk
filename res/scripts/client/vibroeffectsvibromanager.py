@@ -91,8 +91,9 @@ class VibroManager:
             for groupName in EffectsSettings.Groups.AllGroupNames:
                 groupSection = groupsSettingsSection[groupName]
                 if groupSection is not None:
-                    self.__groupsSettings[groupName].enabled = groupSection.readBool('enabled', True)
-                    self.__groupsSettings[groupName].gain = groupSection.readFloat('gain', 1.0)
+                    gain = groupSection.readFloat('gain', 1.0)
+                    self.__groupsSettings[groupName].enabled = gain > 0
+                    self.__groupsSettings[groupName].gain = gain
 
             return
 
@@ -121,6 +122,7 @@ class VibroManager:
         self.__groupsSettings = copy.deepcopy(settings)
         for groupSettings in self.__groupsSettings.values():
             groupSettings.gain = self.__clampGain(groupSettings.gain)
+            groupSettings.enabled = groupSettings.gain > 0
 
     def isGroupEnabled(self, groupName):
         if groupName in self.__groupsSettings:
@@ -137,6 +139,7 @@ class VibroManager:
         if groupName in self.__groupsSettings:
             groupSettings = self.__groupsSettings[groupName]
             groupSettings.gain = self.__clampGain(value)
+            groupSettings.enabled = groupSettings.gain > 0
 
     def isEnabledByUser(self):
         return self.__isEnabledByUser

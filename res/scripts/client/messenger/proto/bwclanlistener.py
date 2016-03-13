@@ -114,9 +114,9 @@ class ClanListener(object):
             else:
                 gos = GAME_ONLINE_STATUS.ONLINE
             if playerID == dbID:
-                user = CurrentUserEntity(dbID, name=name, clanInfo=ClanInfo(0L, clanAbbrev, roleFlags))
+                user = CurrentUserEntity(dbID, name=name, clanInfo=ClanInfo(0, clanAbbrev, roleFlags))
             else:
-                user = SharedUserEntity(dbID, name=name, clanInfo=ClanInfo(0L, clanAbbrev, roleFlags), gos=gos, tags={USER_TAG.CLAN_MEMBER})
+                user = SharedUserEntity(dbID, name=name, clanInfo=ClanInfo(0, clanAbbrev, roleFlags), gos=gos, tags={USER_TAG.CLAN_MEMBER})
             members.append(user)
 
         self.usersStorage._setClanMembersList(members)

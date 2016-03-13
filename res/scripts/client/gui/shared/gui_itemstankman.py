@@ -130,6 +130,10 @@ class Tankman(GUIItem, HasStrCD):
         return self.descriptor.roleLevel
 
     @property
+    def isFemale(self):
+        return self.descriptor.isFemale
+
+    @property
     def icon(self):
         return getIconName(self.nationID, self.descriptor.iconID)
 
@@ -269,13 +273,16 @@ class TankmanSkill(GUIItem):
         self.isActive = False
         self.isEnable = False
         self.isFemale = False
+        self.isPermanent = False
         if tankman is not None:
             tdescr = tankman.descriptor
-            self.isFemale = tdescr.isFemale
-            self.level = tdescr.lastSkillLevel if tdescr.skills.index(self.name) == len(tdescr.skills) - 1 else tankmen.MAX_SKILL_LEVEL
+            skills = tdescr.skills
+            self.isFemale = tankman.isFemale
+            self.level = tdescr.lastSkillLevel if skills.index(self.name) == len(skills) - 1 else tankmen.MAX_SKILL_LEVEL
             self.roleType = self.__getSkillRoleType(skillName)
             self.isActive = self.__getSkillActivity(tankman)
             self.isEnable = self.__getEnabledSkill(tankman)
+            self.isPermanent = skills.index(self.name) < tdescr.freeSkillsNumber
         return
 
     def __getEnabledSkill(self, tankman):
@@ -314,14 +321,20 @@ class TankmanSkill(GUIItem):
 
     @property
     def userName(self):
-        if self.name == 'brotherhood' and self.isFemale:
-            return i18n.makeString('#item_types:tankman/skills/brotherhood_female')
+        if self.name == 'brotherhood':
+            if self.isFemale:
+                return i18n.makeString('#item_types:tankman/skills/brotherhood_female')
+            if self.isPermanent:
+                return i18n.makeString('#item_types:tankman/skills/brotherhood_permanent')
         return getSkillUserName(self.name)
 
     @property
     def description(self):
-        if self.name == 'brotherhood' and self.isFemale:
-            return i18n.makeString('#item_types:tankman/skills/brotherhood_female_descr')
+        if self.name == 'brotherhood':
+            if self.isFemale:
+                return i18n.makeString('#item_types:tankman/skills/brotherhood_female_descr')
+            if self.isPermanent:
+                return i18n.makeString('#item_types:tankman/skills/brotherhood_permanent_descr')
         return getSkillUserDescription(self.name)
 
     @property

@@ -6,7 +6,7 @@ from helpers.time_utils import getCurrentTimestamp
 from club_shared import SUBSCRIPTION_EXPIRY_TIME as _SET
 from shared_utils import forEach
 from gui.shared.utils.decorators import ReprInjector
-from gui.shared.utils.ListenersCollection import ListenersCollection
+from gui.shared.utils.listeners_collection import ListenersCollection
 from gui.shared.utils.scheduled_notifications import PeriodicNotifier, Notifiable
 from shared_utils import BoundMethodWeakref
 from gui.clubs import contexts as club_ctx
@@ -27,10 +27,6 @@ class ClubsListeners(ListenersCollection):
 
     def notify(self, eventType, *args):
         self._invokeListeners(eventType, *args)
-
-    def clear(self):
-        while len(self._listeners):
-            self._listeners.pop()
 
     def addListener(self, listener):
         if not self.hasListener(listener):
@@ -78,9 +74,6 @@ class _Subscription(Notifiable, ClubsListeners):
         self.stopNotification()
         if self.isSubscribed():
             self.__doUnsubscribe()
-
-    def clear(self):
-        super(_Subscription, self).clear()
 
     def fini(self):
         self.stop()

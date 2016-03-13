@@ -4,7 +4,7 @@ import ResMgr
 from debug_utils import *
 from items import _xml
 
-class GuiColorsLoader(object):
+class _GuiColorsLoader(object):
     XML_PATH = 'gui/gui_colors.xml'
     DEFAULT_ALIAS_COLOR = None
     DEFAULT_RGBA_COLOR = Math.Vector4(255, 255, 255, 255)
@@ -115,8 +115,8 @@ class GuiColorsLoader(object):
         offset = self.DEFAULT_TRANSFORM_COLOR_OFFSET
         processed = section['transform']
         if processed is not None:
-            mult = self.__readVector4(processed, 'mult', self.DEFAULT_TRANSFORM_COLOR_MULT)
-            offset = self.__readVector4(processed, 'offset', self.DEFAULT_TRANSFORM_COLOR_OFFSET)
+            mult = self.__readVector4(processed, 'mult')
+            offset = self.__readVector4(processed, 'offset')
         return {'mult': mult,
          'offset': offset}
 
@@ -173,3 +173,18 @@ class GuiColorsLoader(object):
             return scheme[group]
         else:
             return scheme['default']
+
+
+_g_instance = None
+
+def load():
+    global _g_instance
+    if _g_instance is None:
+        _g_instance = _GuiColorsLoader()
+        try:
+            _g_instance.load()
+        except Exception:
+            LOG_ERROR('There is error while loading colors xml data')
+            LOG_CURRENT_EXCEPTION()
+
+    return _g_instance

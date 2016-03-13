@@ -6,7 +6,7 @@ class _ParametrizeInitAspect(aop.Aspect):
 
     def atCall(self, cd):
         cd.avoid()
-        return [False, False]
+        return [False, False, False]
 
 
 class ParametrizeInitPointcut(aop.Pointcut):

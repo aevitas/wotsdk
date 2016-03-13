@@ -29,10 +29,10 @@ class XMLCtx(object):
         self.__filePath = filePath
         if xpath is None:
             self.__xpath = []
-        elif type(xpath) is types.ListType:
+        elif isinstance(xpath, types.ListType):
             self.__xpath = xpath
         else:
-            raise ValueError, 'xpath must be list.'
+            raise ValueError('xpath must be list.')
         return
 
     def next(self, section):

@@ -532,7 +532,7 @@ class ClientFortifiedRegion(FortifiedRegionBase):
         attacksInFight = self.getAttacks(clanFortInfo.getClanDBID(), filterInFight)
         if attacksInFight:
             return ATTACK_PLAN_RESULT.WAR_DECLARED
-        elif clanFortInfo.closestAttackInCooldown is not None and dayTimestamp < clanFortInfo.closestAttackInCooldown.getStartTime() + time_utils.ONE_DAY * 7 and not clanFortInfo.counterAttacked:
+        elif clanFortInfo.closestAttackInCooldown is not None and not clanFortInfo.counterAttacked:
             return ATTACK_PLAN_RESULT.IN_COOLDOWN
         hasAvailableDirections, hasFreeDirections = False, False
         for direction in self.getOpenedDirections():
@@ -660,9 +660,19 @@ class ClientFortifiedRegion(FortifiedRegionBase):
         if ressignPlayer:
             self.onPlayerAttached(FORT_BUILDING_TYPE.MILITARY_BASE)
 
+    def _setBuildingResource(self, buildingTypeID, resCount):
+        reason = BUILDING_UPDATE_REASON.UPDATED
+        previousState = self.getBuilding(buildingTypeID)
+        FortifiedRegionBase._setBuildingResource(self, buildingTypeID, resCount)
+        newState = self.getBuilding(buildingTypeID)
+        if previousState.level == 0 and newState.level > 0:
+            reason = BUILDING_UPDATE_REASON.COMPLETED
+        self.onBuildingChanged(buildingTypeID, reason)
+
     def _addOrders(self, buildingTypeID, count, timeFinish, initiatorDBID):
         FortifiedRegionBase._addOrders(self, buildingTypeID, count, timeFinish, initiatorDBID)
-        self.onBuildingChanged(buildingTypeID, BUILDING_UPDATE_REASON.UPDATED)
+        orderTypeID = self.getBuildingOrder(buildingTypeID)
+        self.onOrderChanged(orderTypeID, ORDER_UPDATE_REASON.ADDED)
 
     def _activateOrder(self, orderTypeID, timeExpiration, effectValue, count, level, initiatorDBID):
         FortifiedRegionBase._activateOrder(self, orderTypeID, timeExpiration, effectValue, count, level, initiatorDBID)
@@ -671,6 +681,16 @@ class ClientFortifiedRegion(FortifiedRegionBase):
     def _delOrders(self, orderTypeID):
         FortifiedRegionBase._delOrders(self, orderTypeID)
         self.onOrderChanged(orderTypeID, ORDER_UPDATE_REASON.DELETED)
+
+    def _updateOrders(self, orderTypeID, buildingTypeID, newLevel, newCount, resLeft):
+        oldCount, oldLevel = self.orders.get(orderTypeID, (0, newLevel))
+        FortifiedRegionBase._updateOrders(self, orderTypeID, buildingTypeID, newLevel, newCount, resLeft)
+        if newCount > oldCount and newLevel == oldLevel:
+            self.onOrderChanged(orderTypeID, ORDER_UPDATE_REASON.ADDED)
+        elif newCount < oldCount and newLevel == oldLevel:
+            self.onOrderChanged(orderTypeID, ORDER_UPDATE_REASON.DELETED)
+        else:
+            self.onOrderChanged(orderTypeID, ORDER_UPDATE_REASON.UPDATED)
 
     def _transport(self, fromBuildTypeID, toBuildTypeID, resCount, timeCooldown):
         reason = BUILDING_UPDATE_REASON.UPDATED

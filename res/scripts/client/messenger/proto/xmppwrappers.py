@@ -8,7 +8,7 @@ from messenger.proto.entities import ClanInfo
 from messenger.proto.xmpp.gloox_constants import CHAT_STATE
 from messenger.proto.xmpp.xmpp_constants import XMPP_BAN_COMPONENT
 from messenger.proto.xmpp.xmpp_constants import ANY_ITEM_LITERAL
-XMPPChannelData = namedtuple('XMPPChannelData', ('name', 'msgType'))
+XMPPChannelData = namedtuple('XMPPChannelData', ('name',))
 
 class ChatMessage(object):
     __slots__ = ('uuid', 'accountDBID', 'accountName', 'body', 'state', 'sentAt', 'requestID', 'isFinalInHistory')
@@ -25,7 +25,7 @@ class ChatMessage(object):
         self.isFinalInHistory = False
 
     def isHistory(self):
-        return len(self.requestID)
+        return len(self.requestID) > 0
 
 
 ClientInfo = namedtuple('ClientInfo', ('igrID', 'igrRoomID', 'gameHost', 'arenaLabel'))
@@ -56,7 +56,8 @@ class BanInfo(object):
         return self.getFirstActiveItem(game=game, components=components) is not None
 
 
-WGExtsInfo = namedtuple('WGExtsInfo', ('client', 'clan', 'ban'))
+WGExtsInfo = namedtuple('WGExtsInfo', ('dbID', 'nickname', 'client', 'clan', 'ban'))
+MucInfo = namedtuple('MucInfo', ('affiliation', 'role', 'statuses'))
 
 def makeClientInfo(*args):
     if len(args) < 4:
@@ -112,3 +113,29 @@ def makeBanInfo(*args):
     else:
         info = None
     return info
+
+
+def makeMucInfo(info):
+    if not info:
+        return None
+    else:
+        if 'affiliation' in info:
+            affiliation = info['affiliation']
+        else:
+            affiliation = ''
+        if 'role' in info:
+            role = info['role']
+        else:
+            role = ''
+        if 'status_codes' in info:
+
+            def __convert(code):
+                if code.isdigit():
+                    return int(code)
+                else:
+                    return 0
+
+            statuses = map(__convert, info['status_codes'])
+        else:
+            statuses = ()
+        return MucInfo(affiliation, role, statuses)

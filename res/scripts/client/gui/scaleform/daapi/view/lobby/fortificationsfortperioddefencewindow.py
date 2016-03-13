@@ -5,6 +5,7 @@ from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortSoundController import g_fortSoundController
 from gui.Scaleform.daapi.view.meta.FortPeriodDefenceWindowMeta import FortPeriodDefenceWindowMeta
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
+from gui.shared.utils.functions import makeTooltip
 from gui.shared.formatters import text_styles
 from gui.shared.fortifications.context import SettingsCtx
 from gui.shared.fortifications.fort_helpers import adjustDefenceHourToUTC, adjustOffDayToUTC, adjustDefenceHourToLocal, adjustDefenceHoursListToLocal
@@ -58,7 +59,7 @@ class FortPeriodDefenceWindow(FortPeriodDefenceWindowMeta, FortViewHelper):
     def __updateData(self):
         if self.fortCtrl.getFort().isDefenceHourEnabled():
             return self.destroy()
-        self.as_setTextDataS(self.__createTexts())
+        self.as_setInitDataS(self.__createTexts())
         self.as_setDataS(self.__createData())
 
     def __createTexts(self):
@@ -72,7 +73,10 @@ class FortPeriodDefenceWindow(FortPeriodDefenceWindowMeta, FortViewHelper):
          'holidayLbl': text_styles.neutral(FORTIFICATIONS.PERIODDEFENCEWINDOW_HOLIDAY),
          'holidayDescr': text_styles.standard(FORTIFICATIONS.PERIODDEFENCEWINDOW_HOLIDAY_DESCRIPTION),
          'acceptBtn': FORTIFICATIONS.PERIODDEFENCEWINDOW_BTN_ACTIVATE,
-         'cancelBtn': FORTIFICATIONS.PERIODDEFENCEWINDOW_BTN_NOTNOW}
+         'cancelBtn': FORTIFICATIONS.PERIODDEFENCEWINDOW_BTN_NOTNOW,
+         'cancelBtnTooltip': makeTooltip(None, FORTIFICATIONS.PERIODDEFENCEWINDOW_NOTNOW_BODY),
+         'acceptBtnEnabledTooltip': makeTooltip(None, FORTIFICATIONS.PERIODDEFENCEWINDOW_BTN_POINTSAREFILLED_BODY),
+         'acceptBtnDisabledTooltip': makeTooltip(None, FORTIFICATIONS.PERIODDEFENCEWINDOW_BTN_POINTSARENOTFILLED_BODY)}
 
     def __createData(self):
         fort = self.fortCtrl.getFort()

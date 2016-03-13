@@ -46,9 +46,7 @@ class QuestChapter(Chapter):
             return EVENT_STATUS.NOT_AVAILABLE
         elif self.isBonusReceived(completed):
             return EVENT_STATUS.COMPLETED
-        elif unlockChapter is None:
-            return EVENT_STATUS.NONE
-        elif unlockChapter is not None and unlockChapter.isBonusReceived(completed):
+        elif unlockChapter is None or unlockChapter.isBonusReceived(completed):
             return EVENT_STATUS.NONE
         else:
             return EVENT_STATUS.NOT_AVAILABLE

@@ -25,6 +25,10 @@ class PQ_BRANCH:
     TYPE_TO_NAME = dict(zip(NAME_TO_TYPE.values(), NAME_TO_TYPE.keys()))
 
 
+def isPotapovQuestEnabled(gameParams, branch):
+    return not (branch == PQ_BRANCH.REGULAR and not gameParams['misc_settings']['isRegularQuestEnabled'] or branch == PQ_BRANCH.FALLOUT and not gameParams['misc_settings']['isFalloutQuestEnabled'])
+
+
 class PQ_STATE:
     NONE = 0
     UNLOCKED = 1
@@ -64,7 +68,7 @@ class SeasonCache:
 
     def getSeasonInfo(self, seasonID):
         if seasonID not in self.__seasonsInfo:
-            raise Exception, 'Invalid season id (%s)' % (seasonID,)
+            raise Exception('Invalid season id (%s)' % (seasonID,))
         return self.__seasonsInfo[seasonID]
 
     def __readSeasons(self):
@@ -99,7 +103,7 @@ class TileCache(object):
 
     def getTileInfo(self, tileID):
         if tileID not in self.__tilesInfo:
-            raise Exception, 'Invalid tile id (%s)' % (tileID,)
+            raise Exception('Invalid tile id (%s)' % (tileID,))
         return self.__tilesInfo[tileID]
 
     def __iter__(self):
@@ -165,7 +169,7 @@ class PQCache(object):
 
     def questByPotapovQuestID(self, potapovQuestID):
         if potapovQuestID not in self.__potapovQuestIDToQuestType:
-            raise Exception, 'Invalid potapov quest id (%s)' % (potapovQuestID,)
+            raise Exception('Invalid potapov quest id (%s)' % (potapovQuestID,))
         return self.__potapovQuestIDToQuestType[potapovQuestID]
 
     def hasPotapovQuest(self, potapovQuestID):
@@ -237,7 +241,7 @@ class PQCache(object):
              'requiredUnlocks': frozenset(map(int, _xml.readString(ctx, qsection, 'requiredUnlocks').split()))}
             rewardByDemand = qsection.readInt('rewardByDemand', 0)
             if rewardByDemand != 0 and rewardByDemand not in PQ_REWARD_BY_DEMAND.keys():
-                raise Exception, 'Unexpected value for rewardByDemand'
+                raise Exception('Unexpected value for rewardByDemand')
             basicInfo['rewardByDemand'] = rewardByDemand
             tags = _readTags(ctx, qsection, 'tags')
             basicInfo['tags'] = tags
@@ -339,7 +343,7 @@ class PQType(object):
             return self.vehClasses[0]
         if self.branch == PQ_BRANCH.FALLOUT:
             return self.falloutTypes[0]
-        raise Exception, 'wrong potapov quest branch: %i' % self.branch
+        raise Exception('wrong potapov quest branch: %i' % self.branch)
 
     def maySelectQuest(self, unlockedQuests):
         return len(self.requiredUnlocks - frozenset(unlockedQuests)) == 0

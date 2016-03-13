@@ -143,7 +143,7 @@ class PackageImporter(object):
         try:
             settings = imported.getViewSettings()
         except AttributeError:
-            raise Exception, 'Package {0} does not have method getViewSettings'.format(path)
+            raise Exception('Package {0} does not have method getViewSettings'.format(path))
 
         aliases = g_entitiesFactories.initSettings(settings)
         handlers = imported.getBusinessHandlers()
@@ -153,7 +153,7 @@ class PackageImporter(object):
                 for handler in processed:
                     handler.fini()
 
-                raise Exception, 'Package {0} has invalid business handler {1}'.format(path, handler.__class__.__name__)
+                raise Exception('Package {0} has invalid business handler {1}'.format(path, handler.__class__.__name__))
             handler.init()
             processed.add(handler)
 

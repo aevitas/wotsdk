@@ -88,14 +88,15 @@ class MessengerEntry(object):
     def __pe_onAccountBecomePlayer(self):
         scope = MESSENGER_SCOPE.LOBBY
         g_settings.update()
-        self.__storage.init()
+        self.__storage.switch(scope)
         self.__protoPlugins.setFilters(self.__msgFiltersChain)
         self.__protoPlugins.connect(scope)
         self.__gui.switch(scope)
 
     def __pe_onAvatarBecomePlayer(self):
+        scope = MESSENGER_SCOPE.BATTLE
         g_settings.update()
-        self.__storage.init()
+        self.__storage.switch(scope)
         self.__protoPlugins.setFilters(self.__msgFiltersChain)
         self.__playerHelper.onAvatarBecomePlayer()
 

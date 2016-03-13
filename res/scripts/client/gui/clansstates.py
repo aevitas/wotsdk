@@ -142,7 +142,7 @@ class _ClanWebState(_ClanState):
 
     def init(self):
         super(_ClanWebState, self).init()
-        self.__webRequester = g_clanFactory.createWebRequester(g_lobbyContext.getServerSettings().clanProfile.getSettingsJSON(), client_lang=getClientLanguage())
+        self.__webRequester = g_clanFactory.createWebRequester(g_lobbyContext.getServerSettings().clanProfile, client_lang=getClientLanguage())
         self.__requestsCtrl = g_clanFactory.createClanRequestsController(self._clanCtrl, g_clanFactory.createClanRequester(self.__webRequester))
 
     def fini(self):

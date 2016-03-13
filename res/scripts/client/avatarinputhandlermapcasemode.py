@@ -85,7 +85,7 @@ class _VehiclesSelector():
         vehicles = [ v for v in BigWorld.player().vehicles if v.isAlive() ]
         selected = self.__intersectChecker(vehicles)
         for v in selected:
-            if v.isPlayer:
+            if v.isPlayerVehicle:
                 edgeType = 0
             elif BigWorld.player().team == v.publicInfo['team']:
                 edgeType = 2
@@ -156,7 +156,7 @@ class _ArtilleryStrikeSelector(_DefaultStrikeSelector, _VehiclesSelector):
         return True
 
     def __markerForceUpdate(self):
-        self.__marker.update(self.hitPosition, Vector3(0, 0, 1), 10, 1000, None)
+        self.__marker.update(self.hitPosition, Vector3(0.0, 0.0, 1.0), (10.0, 10.0), 1000.0, None)
         return
 
     def processHover(self, position, force = False):
@@ -165,7 +165,7 @@ class _ArtilleryStrikeSelector(_DefaultStrikeSelector, _VehiclesSelector):
             self.__marker.setPosition(position)
             BigWorld.callback(SERVER_TICK_LENGTH, self.__markerForceUpdate)
         else:
-            self.__marker.update(position, Vector3(0, 0, 1), 10, SERVER_TICK_LENGTH, None)
+            self.__marker.update(position, Vector3(0.0, 0.0, 1.0), (10.0, 10.0), SERVER_TICK_LENGTH, None)
         self.hitPosition = position
         self.writeStateToReplay()
         return
@@ -176,7 +176,7 @@ class _ArtilleryStrikeSelector(_DefaultStrikeSelector, _VehiclesSelector):
     def processReplayHover(self):
         replayCtrl = BattleReplay.g_replayCtrl
         _, self.hitPosition, direction = replayCtrl.getGunMarkerParams(self.hitPosition, Math.Vector3(0.0, 0.0, 0.0))
-        self.__marker.update(self.hitPosition, Vector3(0, 0, 1), 10, SERVER_TICK_LENGTH, None)
+        self.__marker.update(self.hitPosition, Vector3(0.0, 0.0, 1.0), (10.0, 10.0), SERVER_TICK_LENGTH, None)
         return
 
     def writeStateToReplay(self):
@@ -338,7 +338,9 @@ class MapCaseControlMode(IControlMode, CallbackDelayer):
     def destroy(self):
         CallbackDelayer.destroy(self)
         self.disable()
-        self.__activeSelector = None
+        if self.__activeSelector is not None:
+            self.__activeSelector.destroy()
+            self.__activeSelector = None
         self.__cam.destroy()
         self.__aih = None
         return

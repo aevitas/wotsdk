@@ -17,9 +17,9 @@ class EntityFactory(object):
         clazz = settings.clazz
         alias = settings.alias
         if alias is None or not len(alias):
-            raise Exception, 'Invalid alias in settings {0}'.format(settings)
+            raise Exception('Invalid alias in settings {0}'.format(settings))
         if clazz is None:
-            raise Exception, 'Invalid class in settings {0}'.format(settings)
+            raise Exception('Invalid class in settings {0}'.format(settings))
         return
 
     def create(self, settings, *args, **kwargs):
@@ -45,10 +45,10 @@ class DAAPIModuleFactory(EntityFactory):
     def validate(self, settings):
         super(DAAPIModuleFactory, self).validate(settings)
         if BaseDAAPIModule not in getattr(settings.clazz, '__mro__', tuple()):
-            raise Exception, 'Class does not extend BaseDAAPIModule in settings {0}'.format(settings)
+            raise Exception('Class does not extend BaseDAAPIModule in settings {0}'.format(settings))
 
     def castType(self, clazz):
-        return type(clazz) is DAAPIModuleType
+        return isinstance(clazz, DAAPIModuleType)
 
     def initialize(self, pyEntity, gfxEntity, extra = None):
         pyEntity.setFlashObject(gfxEntity, autoPopulate=False)
@@ -61,9 +61,9 @@ class ViewFactory(DAAPIModuleFactory):
         super(ViewFactory, self).validate(settings)
         url = settings.url
         if url is None or not len(url):
-            raise Exception, 'Invalid url in settings {0}'.format(settings)
+            raise Exception('Invalid url in settings {0}'.format(settings))
         if View not in getattr(settings.clazz, '__mro__', tuple()):
-            raise Exception, 'Class does not extend View in settings {0}'.format(settings)
+            raise Exception('Class does not extend View in settings {0}'.format(settings))
         return
 
     def create(self, settings, *args, **kwargs):
@@ -111,7 +111,7 @@ class EntitiesFactories(object):
     def addSettings(self, settings):
         viewType = settings.type
         if viewType not in self.__viewTypes:
-            raise Exception, 'Invalid type in settings {0}'.format(settings)
+            raise Exception('Invalid type in settings {0}'.format(settings))
         factory = self.__factories[self.__viewTypes[viewType]]
         factory.validate(settings)
         alias = settings.alias

@@ -3,7 +3,6 @@ import json
 import random
 from collections import defaultdict, namedtuple
 import BigWorld
-import MusicController
 import ResMgr
 import Settings
 import constants
@@ -30,7 +29,7 @@ from helpers.i18n import makeString as _ms
 from gui.login import g_loginManager
 from helpers.time_utils import makeLocalServerTime
 from predefined_hosts import AUTO_LOGIN_QUERY_URL, AUTO_LOGIN_QUERY_ENABLED, g_preDefinedHosts
-from external_strings_utils import isAccountLoginValid, isPasswordValid
+from external_strings_utils import isAccountLoginValid, isPasswordValid, _PASSWORD_MIN_LENGTH, _PASSWORD_MAX_LENGTH
 from external_strings_utils import _LOGIN_NAME_MIN_LENGTH
 
 class INVALID_FIELDS:
@@ -131,8 +130,6 @@ class LoginView(LoginPageMeta):
         g_playerEvents.onAccountShowGUI += self._clearLoginView
         self.as_setVersionS(getFullClientVersion())
         self.as_setCopyrightS(_ms(MENU.COPY), _ms(MENU.LEGAL))
-        MusicController.g_musicController.stopAmbient()
-        MusicController.g_musicController.play(MusicController.MUSIC_EVENT_LOGIN)
         self.__loadRandomBgImage()
         if self.__capsLockCallbackID is None:
             self.__capsLockCallbackID = BigWorld.callback(0.1, self.__checkUserInputState)
@@ -223,6 +220,18 @@ class LoginView(LoginPageMeta):
             self.__loginRejectedUpdateNeeded()
         else:
             self.as_setErrorMessageS(_ms('#menu:login/status/' + loginStatus), _STATUS_TO_INVALID_FIELDS_MAPPING[loginStatus])
+            self.__clearFields(_STATUS_TO_INVALID_FIELDS_MAPPING[loginStatus])
+        self._dropLoginQueue(loginStatus)
+
+    def _dropLoginQueue(self, loginStatus):
+        """Safely drop login queue considering login status and current state of login queue.
+        """
+        if loginStatus != LOGIN_STATUS.LOGIN_REJECTED_RATE_LIMITED and self.__loginRetryDialogShown:
+            self.__closeLoginQueueDialog()
+
+    def __clearFields(self, invalidField):
+        if invalidField == INVALID_FIELDS.PWD_INVALID:
+            self.as_resetPasswordS()
 
     @process
     def __loginRejectedUpdateNeeded(self):
@@ -294,7 +303,7 @@ class LoginView(LoginPageMeta):
         else:
             if len(userName) < _LOGIN_NAME_MIN_LENGTH:
                 isValid = False
-                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN_LENGTH) % {'count': _LOGIN_NAME_MIN_LENGTH}
+                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_LOGIN_LENGTH, count=_LOGIN_NAME_MIN_LENGTH)
                 invalidFields = INVALID_FIELDS.LOGIN_INVALID
             elif not isAccountLoginValid(userName):
                 isValid = False
@@ -302,8 +311,8 @@ class LoginView(LoginPageMeta):
                 invalidFields = INVALID_FIELDS.LOGIN_INVALID
             elif not isPasswordValid(password):
                 isValid = False
-                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_PASSWORD)
-                invalidFields = INVALID_FIELDS.LOGIN_PWD_INVALID
+                errorMessage = _ms(MENU.LOGIN_STATUS_INVALID_PASSWORD, minLength=_PASSWORD_MIN_LENGTH, maxLength=_PASSWORD_MAX_LENGTH)
+                invalidFields = INVALID_FIELDS.PWD_INVALID
             return _ValidateCredentialsResult(isValid, errorMessage, invalidFields)
 
     def __loadRandomBgImage(self):

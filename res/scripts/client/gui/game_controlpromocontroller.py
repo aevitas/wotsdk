@@ -1,8 +1,10 @@
 # Embedded file name: scripts/client/gui/game_control/PromoController.py
 from account_helpers import getAccountDatabaseID
-from account_helpers.AccountSettings import AccountSettings, PROMO
-from debug_utils import LOG_DEBUG
+from account_helpers.AccountSettings import AccountSettings, PROMO, LAST_PROMO_PATCH_VERSION
+from account_shared import parseVersion, readClientServerVersion
+from debug_utils import LOG_DEBUG, LOG_ERROR
 from adisp import async, process
+from gui import GUI_SETTINGS
 from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
@@ -10,7 +12,7 @@ from gui.game_control import gc_constants
 from gui.game_control.controllers import Controller
 from gui.game_control.links import URLMarcos
 from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
-from helpers import getClientVersion, i18n
+from helpers import i18n, isPlayerAccount
 
 class PromoController(Controller):
     PROMO_AUTO_VIEWS_TEST_VALUE = 5
@@ -34,6 +36,8 @@ class PromoController(Controller):
         return
 
     def onLobbyInited(self, event):
+        if not isPlayerAccount():
+            return
         self._updatePromo(self._getPromoEventNotifications())
         self._getEventsFotificationController().onEventNotificationsChanged += self.__onEventNotification
         self._getBrowserController().onBrowserDeleted += self.__onBrowserDeleted
@@ -48,10 +52,14 @@ class PromoController(Controller):
 
     @process
     def showPatchPromo(self, isAsync = False):
-        self.__currentVersionBrowserID = yield self.__showPromoBrowser(self.__currentVersionPromoUrl, i18n.makeString(MENU.PROMO_PATCH_TITLE, version=getClientVersion()), browserID=self.__currentVersionBrowserID, isAsync=isAsync)
+        self.__currentVersionBrowserID = yield self.__showPromoBrowser(self.__currentVersionPromoUrl, i18n.makeString(MENU.PROMO_PATCH_TITLE), browserID=self.__currentVersionBrowserID, isAsync=isAsync)
 
     def isPatchPromoAvailable(self):
         return self.__currentVersionPromoUrl is not None
+
+    def isPatchChanged(self):
+        mainVersion = self.__getClientMainVersion()
+        return mainVersion is not None and AccountSettings.getSettings(LAST_PROMO_PATCH_VERSION) != mainVersion
 
     def _stop(self):
         self.__currentVersionPromoUrl = None
@@ -64,10 +72,9 @@ class PromoController(Controller):
     @process
     def _processPromo(self, promo):
         yield lambda callback: callback(True)
-        if self.isPatchPromoAvailable() and self.__currentVersionPromoUrl not in self.__promoShown and self.isPromoAutoViewsEnabled() and not self._isPromoShown:
+        if self.isPatchPromoAvailable() and self.isPatchChanged() and self.isPromoAutoViewsEnabled() and not self._isPromoShown:
             LOG_DEBUG('Showing patchnote promo:', self.__currentVersionPromoUrl)
-            self.__promoShown.add(self.__currentVersionPromoUrl)
-            self.__savePromoShown()
+            AccountSettings.setSettings(LAST_PROMO_PATCH_VERSION, self.__getClientMainVersion())
             self.__currentVersionBrowserShown = True
             self._isPromoShown = True
             self.showPatchPromo(isAsync=True)
@@ -76,7 +83,7 @@ class PromoController(Controller):
         for actionPromo in actionsPromo:
             promoUrl = yield self.__urlMacros.parse(actionPromo.data)
             promoTitle = actionPromo.text
-            if promoUrl not in self.__promoShown and not self._isPromoShown:
+            if promoUrl not in self.__promoShown and not self._isPromoShown and promoUrl != self.__currentVersionPromoUrl:
                 LOG_DEBUG('Showing action promo:', promoUrl)
                 self.__promoShown.add(promoUrl)
                 self.__savePromoShown()
@@ -87,12 +94,12 @@ class PromoController(Controller):
     @process
     def _updatePromo(self, promosData):
         yield lambda callback: callback(True)
-        for item in filter(lambda item: item.eventType in (gc_constants.PROMO.TEMPLATE.PATCH, gc_constants.PROMO.TEMPLATE.ACTION), promosData):
+        for item in filter(lambda item: item.eventType == gc_constants.PROMO.TEMPLATE.ACTION, promosData):
             promoUrl = yield self.__urlMacros.parse(item.data)
             self.__availablePromo.add(promoUrl)
-            if item.eventType == gc_constants.PROMO.TEMPLATE.PATCH and self.__currentVersionPromoUrl is None:
-                self.__currentVersionPromoUrl = promoUrl
 
+        if self.__currentVersionPromoUrl is None:
+            self.__currentVersionPromoUrl = yield self.__urlMacros.parse(GUI_SETTINGS.promoscreens)
         promoShownSource = AccountSettings.getFilter(PROMO)
         self.__promoShown = {url for url in promoShownSource if url in self.__availablePromo}
         self.__savePromoShown()
@@ -102,7 +109,7 @@ class PromoController(Controller):
         return self._proxy.getController(gc_constants.CONTROLLER.EVENTS_NOTIFICATION).getEventsNotifications()
 
     def _getPromoEventNotifications(self):
-        filterFunc = lambda item: item.eventType in (gc_constants.PROMO.TEMPLATE.PATCH, gc_constants.PROMO.TEMPLATE.ACTION)
+        filterFunc = lambda item: item.eventType == gc_constants.PROMO.TEMPLATE.ACTION
         return self._getEventsFotificationController().getEventsNotifications(filterFunc)
 
     def _getBrowserController(self):
@@ -117,6 +124,17 @@ class PromoController(Controller):
     def __onEventNotification(self, added, removed):
         self._updatePromo(self._getPromoEventNotifications())
         self._processPromo(added)
+
+    def __getClientMainVersion(self):
+        mainVersion = None
+        try:
+            _, clentVersion = readClientServerVersion()
+            parsedVersion = parseVersion(clentVersion)
+            _, mainVersion, _ = parsedVersion
+        except:
+            LOG_ERROR('Can not read or parse client-server version')
+        finally:
+            return mainVersion
 
     def __onBrowserDeleted(self, browserID):
         if self.__currentVersionBrowserID == browserID:

@@ -12,7 +12,6 @@ from gui.prb_control.prb_helpers import GlobalListener, prbInvitesProperty
 from gui.shared.notifications import MsgCustomEvents
 from gui.shared.utils import showInvitationInWindowsBar
 from gui.shared.view_helpers.UsersInfoHelper import UsersInfoHelper
-from gui.wgnc.proxy_data import ClanApplicationItem
 from gui.wgnc.settings import WGNC_DATA_PROXY_TYPE
 from helpers import time_utils
 from messenger.m_constants import PROTO_TYPE, USER_ACTION_ID
@@ -465,13 +464,18 @@ class _ClanNotificationsCommonListener(_NotificationListener, ClanListener):
         raise NotImplementedError
 
     def _canBeShown(self):
-        return self.clansCtrl.isEnabled() and g_settingsCore.getSetting('receiveClanInvitesNotifications')
+        return self.clansCtrl.isEnabled() and self.clansCtrl.getAccountProfile() is not None and g_settingsCore.getSetting('receiveClanInvitesNotifications')
 
     def _updateAllNotifications(self):
         pass
 
     def _removeAllNotifications(self):
         pass
+
+    def _removeNotifications(self, notificationList):
+        model = self._model()
+        for notDecorator in model.collection.getListIterator(notificationList):
+            model.removeNotification(notDecorator.getType(), notDecorator.getID())
 
 
 class _ClanAppsListener(_ClanNotificationsCommonListener, UsersInfoHelper):
@@ -539,14 +543,12 @@ class _ClanAppsListener(_ClanNotificationsCommonListener, UsersInfoHelper):
             model.updateNotification(notifications.getType(), notifications.getID(), notifications.getEntity(), False)
 
     def _removeAllNotifications(self):
-        model = self._model()
-        for notDecorator in model.collection.getListIterator((NOTIFICATION_TYPE.CLAN_APP, NOTIFICATION_TYPE.CLAN_APPS, NOTIFICATION_TYPE.CLAN_INVITE_ACTION)):
-            model.removeNotification(notDecorator.getType(), notDecorator.getID())
+        self._removeNotifications((NOTIFICATION_TYPE.CLAN_APP, NOTIFICATION_TYPE.CLAN_APPS, NOTIFICATION_TYPE.CLAN_INVITE_ACTION))
 
     def _canBeShown(self):
         canBeShown = super(_ClanAppsListener, self)._canBeShown()
         profile = self.clansCtrl.getAccountProfile()
-        return profile.isInClan() and profile.getMyClanPermissions().canHandleClanInvites() and canBeShown
+        return canBeShown and profile.isInClan() and profile.getMyClanPermissions().canHandleClanInvites()
 
     def __addUserNotification(self, clazz, args, item):
         userDatabaseID = item.getAccountID()
@@ -620,17 +622,12 @@ class _ClanPersonalInvitesListener(_ClanNotificationsCommonListener):
             model.updateNotification(notDecorator.getType(), notDecorator.getID(), notDecorator.getEntity(), False)
 
     def _removeAllNotifications(self):
-        for decoratorType in ():
-            self._model().removeNotificationsByType(decoratorType)
-
-        model = self._model()
-        for notDecorator in model.collection.getListIterator((NOTIFICATION_TYPE.CLAN_INVITE, NOTIFICATION_TYPE.CLAN_INVITES, NOTIFICATION_TYPE.CLAN_APP_ACTION)):
-            model.removeNotification(notDecorator.getType(), notDecorator.getID())
+        self._removeNotifications((NOTIFICATION_TYPE.CLAN_INVITE, NOTIFICATION_TYPE.CLAN_INVITES, NOTIFICATION_TYPE.CLAN_APP_ACTION))
 
     def _canBeShown(self):
         isCtrlrEnabled = super(_ClanPersonalInvitesListener, self)._canBeShown()
         profile = self.clansCtrl.getAccountProfile()
-        return not profile.isInClan() and isCtrlrEnabled
+        return isCtrlrEnabled and not profile.isInClan()
 
 
 class WGNCListener(_NotificationListener):

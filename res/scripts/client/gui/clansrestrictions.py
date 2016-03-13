@@ -6,6 +6,7 @@ from account_helpers import isOutOfWallet, isClanEnabled
 from gui.shared import g_itemsCache
 from gui.clans.settings import error, success, CLIENT_CLAN_RESTRICTIONS as _CCR
 from gui.clans.settings import isValidPattern
+MAY_SEE_TREASURY = CLAN_MEMBER_FLAGS.LEADER | CLAN_MEMBER_FLAGS.VICE_LEADER | CLAN_MEMBER_FLAGS.TREASURER
 
 class ClanMemberPermissions(object):
 
@@ -34,7 +35,7 @@ class ClanMemberPermissions(object):
         return self.__checkFlags(CLAN_MEMBER_FLAGS.MAY_REMOVE_CLAN)
 
     def canTrade(self):
-        return self.__checkFlags(CLAN_MEMBER_FLAGS.MAY_TRADE)
+        return self.__checkFlags(MAY_SEE_TREASURY)
 
     def canExchangeMoney(self):
         return self.__checkFlags(CLAN_MEMBER_FLAGS.MAY_EXCHANGE_MONEY)

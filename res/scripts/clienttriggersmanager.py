@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/TriggersManager.py
 import BigWorld
-import Math, math
+import Math
+import math
 import PlayerEvents
 from debug_utils import *
 from constants import ARENA_PERIOD

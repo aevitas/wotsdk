@@ -57,7 +57,7 @@ class DossierCache(object):
             return
 
     def resynchronize(self):
-        LOG_MX('resynchronize', self.__maxChangeTime)
+        LOG_DEBUG('resynchronize', self.__maxChangeTime)
         if self.__ignore:
             return
         else:
@@ -115,7 +115,7 @@ class DossierCache(object):
             return
         else:
             actualCacheVersion, dossiersList = data
-            LOG_MX('__onSyncComplete', actualCacheVersion, len(dossiersList))
+            LOG_DEBUG('__onSyncComplete', actualCacheVersion, len(dossiersList))
             if actualCacheVersion != self.__version:
                 self.__cache.clear()
                 self.__version = actualCacheVersion

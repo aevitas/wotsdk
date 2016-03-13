@@ -59,7 +59,7 @@ class _ClientUpdateManager(object):
         else:
             for key in diffpath.split(self.EVENT_TYPE_DELIMITER):
                 key = (key[:-2], '_r') if key.endswith('_r') else (key if not key.isdigit() else int(key))
-                if type(diff_ptr) != dict or key not in diff_ptr:
+                if not isinstance(diff_ptr, dict) or key not in diff_ptr:
                     return (False, None)
                 diff_ptr = diff_ptr[key]
 

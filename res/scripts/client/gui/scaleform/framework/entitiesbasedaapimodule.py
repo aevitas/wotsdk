@@ -26,7 +26,7 @@ class BaseDAAPIModule(BaseDAAPIModuleMeta):
             try:
                 self.turnDAAPIon(setScript, movieClip)
             except:
-                raise Exception, 'Can not initialize daapi in ' + str(self)
+                raise Exception('Can not initialize daapi in ' + str(self))
 
             if autoPopulate:
                 if self._isCreated():

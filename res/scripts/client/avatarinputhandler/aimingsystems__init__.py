@@ -50,7 +50,7 @@ def getGunJointMat(vehicleTypeDescriptor, turretMatrix, gunPitch):
 def getPlayerTurretMats(turretYaw = 0.0, gunPitch = 0.0):
     player = BigWorld.player()
     vehicleTypeDescriptor = player.vehicleTypeDescriptor
-    vehicleMatrix = player.getOwnVehicleMatrix()
+    vehicleMatrix = player.getOwnVehicleStabilisedMatrix()
     turretMat = getTurretJointMat(vehicleTypeDescriptor, vehicleMatrix, turretYaw)
     return (turretMat, getGunJointMat(vehicleTypeDescriptor, turretMat, gunPitch))
 

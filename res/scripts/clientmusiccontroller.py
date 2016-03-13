@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/MusicController.py
-import FMOD
 g_musicController = None
 MUSIC_EVENT_NONE = 0
 MUSIC_EVENT_LOGIN = 1
@@ -33,6 +32,13 @@ _CLIENT_OVERRIDDEN = 1
 
 def init():
     global g_musicController
-    if FMOD.enabled:
-        import MusicControllerFMOD
-        g_musicController = MusicControllerFMOD.MusicController()
+    import MusicControllerWWISE
+    g_musicController = MusicControllerWWISE.MusicController()
+
+
+def fini():
+    global g_musicController
+    if g_musicController is not None:
+        g_musicController.destroy()
+        g_musicController = None
+    return

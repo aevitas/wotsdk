@@ -29,10 +29,10 @@ def _LOG_EXECUTING_TIME(startTime, methodName, deltaTime = 0.1):
 def parseHttpTime(t):
     if t is None:
         return
-    elif type(t) == int:
+    elif isinstance(t, int):
         return t
     else:
-        if type(t) == str:
+        if isinstance(t, str):
             try:
                 parts = t.split()
                 weekdays = ['mon',
@@ -198,7 +198,7 @@ class WorkerThread(threading.Thread):
             last_modified = expires = None
             req = urllib2.Request(url)
             req.add_header('User-Agent', _CLIENT_VERSION)
-            if modified_time and type(modified_time) == str:
+            if modified_time and isinstance(modified_time, str):
                 req.add_header('If-Modified-Since', modified_time)
                 opener = urllib2.build_opener(NotModifiedHandler())
                 fh = opener.open(req, timeout=10)
@@ -437,7 +437,7 @@ class CustomFilesCache(object):
             crc, f, ver = data[2:5]
             if crc != binascii.crc32(f) or _CACHE_VERSION != ver:
                 LOG_DEBUG('Old file was found.', url)
-                raise Exception, 'Invalid data.'
+                raise Exception('Invalid data.')
         except:
             data = None
 

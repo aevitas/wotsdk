@@ -11,15 +11,13 @@ from gui.shared.utils.key_mapping import getScaleformKey, BW_TO_SCALEFORM
 from debug_utils import LOG_ERROR
 from gui.Scaleform.windows import UIInterface
 import CommandMapping
-import FMOD
 
 class RadialMenu(UIInterface):
     DEFAULT_CUT = 'default'
     ALLY_CUT = 'ally'
     ENEMY_CUT = 'enemy'
     ENEMY_SPG_CUT = 'enemy_spg'
-    if FMOD.enabled:
-        SELECT_EFFECT_SND = 'effects.select_radial_button'
+    SELECT_EFFECT_SND = 'effects.wwselect_radial_button'
     INDEX_REFERENCES = (2, 1, 5, 4, 0, 3)
     ALL_SHORTCUTS = {DEFAULT_CUT: {'labels': ['attack',
                               'backToBase',

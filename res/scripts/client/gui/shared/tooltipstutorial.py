@@ -120,8 +120,6 @@ class NationsPacker(HeaderPacker):
         items = super(NationsPacker, self)._packBlocks(*args, **kwargs)
         nationItems = []
         for nation in GUI_NATIONS:
-            if nation == 'czech':
-                continue
             nationItems.append(formatters.packImageTextBlockData(desc=text_styles.main('#tooltips:hangarTutorial/nations/%s' % nation), img='../maps/icons/filters/nations/%s.png' % nation, imgPadding={'left': 4,
              'top': 4}, txtGap=1, txtOffset=36))
 

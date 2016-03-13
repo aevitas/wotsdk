@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/trainings/Trainings.py
 import ArenaType
-import MusicController
 from adisp import process
 from gui.LobbyContext import g_lobbyContext
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
@@ -13,6 +12,7 @@ from gui.prb_control.prb_helpers import PrbListener
 from gui.shared import events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.utils.functions import getArenaFullName
+from gui.sounds.ambients import LobbySubViewEnv
 from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.view.meta.TrainingFormMeta import TrainingFormMeta
 from gui.prb_control.dispatcher import g_prbLoader
@@ -22,6 +22,7 @@ from gui.shared.formatters import text_styles
 from helpers import i18n
 
 class Trainings(LobbySubView, TrainingFormMeta, PrbListener):
+    __sound_env__ = LobbySubViewEnv
 
     def __init__(self, _ = None):
         super(Trainings, self).__init__()
@@ -31,8 +32,6 @@ class Trainings(LobbySubView, TrainingFormMeta, PrbListener):
     def _populate(self):
         super(Trainings, self)._populate()
         self.startPrbListening()
-        MusicController.g_musicController.play(MusicController.MUSIC_EVENT_LOBBY)
-        MusicController.g_musicController.play(MusicController.AMBIENT_EVENT_LOBBY)
         self.addListener(events.TrainingSettingsEvent.UPDATE_TRAINING_SETTINGS, self.__createTrainingRoom, scope=EVENT_BUS_SCOPE.LOBBY)
         self.sendData([], 0)
 

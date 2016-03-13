@@ -42,9 +42,10 @@ class OfflineFlag(OfflineEntity):
             return
 
     def onLeaveWorld(self):
-        self.show(False)
-        self.__parent.flagLeaveWorld()
-        self.__parent = None
+        if self.__parent is not None:
+            self.show(False)
+            self.__parent.flagLeaveWorld()
+            self.__parent = None
         return
 
     def show(self, isVisible):

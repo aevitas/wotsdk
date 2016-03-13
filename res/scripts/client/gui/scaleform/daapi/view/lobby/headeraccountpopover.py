@@ -2,6 +2,7 @@
 import BigWorld
 from PlayerEvents import g_playerEvents
 from account_helpers.AccountSettings import AccountSettings, BOOSTERS
+from helpers import isPlayerAccount
 from helpers.i18n import makeString
 from gui.Scaleform.genConsts.CLANS_ALIASES import CLANS_ALIASES
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
@@ -26,7 +27,7 @@ from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.view_helpers.emblems import ClubEmblemsHelper, ClanEmblemsHelper
 from gui.prb_control.prb_helpers import GlobalListener
 from gui.shared import event_dispatcher as shared_events
-from gui.shared.formatters import text_styles
+from gui.shared.formatters import text_styles, icons
 
 class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanListener, ClubEmblemsHelper, ClanEmblemsHelper):
 
@@ -196,9 +197,10 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
         return
 
     def __populateUserInfo(self):
-        self.__setUserInfo()
-        self.__syncUserInfo()
-        self.__setReferralData()
+        if isPlayerAccount():
+            self.__setUserInfo()
+            self.__syncUserInfo()
+            self.__setReferralData()
 
     def __setUserInfo(self):
         self.__setInfoButtonState()
@@ -289,10 +291,14 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
              'formationName': club.getUserName(),
              'position': member.getRoleUserName(),
              'btnLabel': makeString(MENU.HEADER_ACCOUNT_POPOVER_CREW_BTNLABEL),
-             'btnEnabled': not BigWorld.player().isLongDisconnectedFromCenter and self.__infoBtnEnabled}
+             'btnEnabled': self._crewDataButtonStatus()['isEnabled']}
         if self.__crewData is not None:
             self.as_setCrewDataS(self.__crewData)
         return
+
+    def _crewDataButtonStatus(self):
+        return {'isEnabled': not BigWorld.player().isLongDisconnectedFromCenter and self.__infoBtnEnabled,
+         'disabledTooltip': ''}
 
     def __syncUserInfo(self):
         clanProfile = self.clansCtrl.getAccountProfile()
@@ -303,11 +309,13 @@ class AccountPopover(AccountPopoverMeta, GlobalListener, MyClubListener, ClanLis
             envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPEOPENED
         else:
             envelopeIcon = RES_ICONS.MAPS_ICONS_BUTTONS_ENVELOPE
+        title = text_styles.middleTitle(MENU.HEADER_ACCOUNT_POPOVER_BOOSTERS_BLOCKTITLE) + ' ' + icons.info()
         userVO = {'userData': self.__userData,
          'isInClan': clanProfile.isInClan() or not self.clansCtrl.isEnabled(),
          'isTeamKiller': g_itemsCache.items.stats.isTeamKiller,
          'openInviteBtnIcon': envelopeIcon,
-         'boostersBlockTitle': text_styles.middleTitle(MENU.HEADER_ACCOUNT_POPOVER_BOOSTERS_BLOCKTITLE)}
+         'boostersBlockTitle': title,
+         'boostersBlockTitleTooltip': TOOLTIPS.HEADER_ACCOUNTPOPOVER_BOOSTERSTITLE}
         userVO.update(self._getMyInvitesBtnParams())
         self.as_setDataS(userVO)
 

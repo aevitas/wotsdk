@@ -3,7 +3,7 @@ import cgi
 import time
 import BigWorld
 from CurrentVehicle import g_currentVehicle
-from UnitBase import UNIT_SLOT, INV_ID_CLEAR_VEHICLE, UNIT_ROLE, UNIT_ERROR
+from UnitBase import UNIT_SLOT, INV_ID_CLEAR_VEHICLE, UNIT_ROLE, UNIT_ERROR, ROSTER_TYPE
 from UnitBase import SORTIE_DIVISION
 import account_helpers
 from gui.prb_control.functional import action_handlers
@@ -13,7 +13,7 @@ from gui.shared.fortifications import getClientFortMgr
 from messenger.ext import passCensor
 from account_helpers.AccountSettings import AccountSettings
 from adisp import process
-from constants import PREBATTLE_TYPE, REQUEST_COOLDOWN, FALLOUT_BATTLE_TYPE
+from constants import PREBATTLE_TYPE, REQUEST_COOLDOWN, QUEUE_TYPE
 from debug_utils import LOG_ERROR, LOG_DEBUG, LOG_CURRENT_EXCEPTION
 from gui.clubs import contexts as clubs_ctx
 from gui.clubs.club_helpers import ClubListener
@@ -26,14 +26,15 @@ from gui.prb_control.functional import unit_ext
 from gui.prb_control.items import unit_items, SelectResult
 from gui.prb_control.prb_cooldown import UnitCooldownManager
 from gui.prb_control.restrictions import permissions
-from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE
+from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE, PREBATTLE_ACTION_NAME_TO_QUEUE_TYPE
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from gui.shared import g_itemsCache, REQ_CRITERIA
-from gui.shared.utils.ListenersCollection import ListenersCollection
+from gui.shared.utils.listeners_collection import ListenersCollection
 from helpers import time_utils
 from items import vehicles as core_vehicles
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.items.unit_items import DynamicRosterSettings
+from shared_utils import findFirst
 
 class UnitIntro(interfaces.IPrbEntry):
 
@@ -124,20 +125,20 @@ class SquadEntry(UnitEntry):
         unitMgr.createSquad()
 
 
-class EventSquadEntry(UnitEntry):
+class FalloutSquadEntry(UnitEntry):
 
-    def __init__(self, battleType, accountsToInvite = None):
-        super(EventSquadEntry, self).__init__(accountsToInvite=accountsToInvite)
-        self.__battleType = battleType
+    def __init__(self, queueType, accountsToInvite = None):
+        super(FalloutSquadEntry, self).__init__(accountsToInvite=accountsToInvite)
+        self.__queueType = queueType
 
     def makeDefCtx(self):
-        return unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', flags=FUNCTIONAL_FLAG.SWITCH, accountsToInvite=self._accountsToInvite)
+        return unit_ctx.SquadSettingsCtx(PREBATTLE_TYPE.FALLOUT, waitingID='prebattle/create', flags=FUNCTIONAL_FLAG.SWITCH, accountsToInvite=self._accountsToInvite)
 
     def select(self, ctx, callback = None):
         self.create(ctx, callback=callback)
 
     def _doCreate(self, unitMgr, ctx):
-        unitMgr.createEventSquad(self.__battleType)
+        unitMgr.createFalloutSquad(self.__queueType)
 
 
 class FortBattleEntry(interfaces.IPrbEntry):
@@ -221,6 +222,10 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
         self._showLeadershipNotification = False
         return
 
+    def fini(self, **kwargs):
+        self.clear()
+        return super(_UnitFunctional, self).fini(**kwargs)
+
     def getFunctionalFlags(self):
         return self._flags
 
@@ -275,7 +280,7 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                 inSlots = unit.getPlayerSlots()
                 if dbID in inSlots:
                     isPlayerReady = unit.isPlayerReadyInSlot(inSlots[dbID])
-            if self.getEntityType() == PREBATTLE_TYPE.SQUAD:
+            if self.getEntityType() in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
                 return permissions.SquadPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
             else:
                 return permissions.UnitPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
@@ -330,34 +335,47 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
 
         return result
 
+    def getRosterType(self, unitIdx = None):
+        unitIdx, unit = self.getUnit(unitIdx=unitIdx, safe=True)
+        if unit is not None:
+            return unit.getRosterType()
+        else:
+            return
+
     def getRoster(self, unitIdx = None):
-        unitIdx, unit = self.getUnit(unitIdx=unitIdx)
-        if unit:
+        unitIdx, unit = self.getUnit(unitIdx=unitIdx, safe=True)
+        if unit is not None:
             return unit.getRoster()
         else:
-            return None
+            return
 
-    def getVehicleInfo(self, dbID = None, unitIdx = None):
+    def getVehiclesInfo(self, dbID = None, unitIdx = None):
         if dbID is None:
             dbID = account_helpers.getAccountDatabaseID()
         _, unit = self.getUnit(unitIdx=unitIdx)
         if unit:
-            extra = unit.getExtra()
-            if unit.isSquad() and extra.eventType != FALLOUT_BATTLE_TYPE.UNDEFINED:
-                vehicles = extra.accountVehicles.get(dbID, ())
-                vehInvIDs, vehCDs = (), ()
-                if vehicles:
-                    vehInvIDs, vehCDs = zip(*extra.accountVehicles.get(dbID, ()))
-                result = unit_items.FalloutVehiclesInfo(vehInvIDs, vehCDs)
-            else:
-                vehicles = unit.getVehicles()
-                if dbID in vehicles:
-                    result = unit_items.VehicleInfo(**vehicles[dbID])
+            vehicles = unit.getVehicles()
+            if dbID in vehicles:
+                return map(lambda vehicle: unit_items.VehicleInfo(**vehicle._asdict()), vehicles[dbID])
+        return super(_UnitFunctional, self).getVehiclesInfo(dbID, unitIdx)
+
+    def invalidateSelectedVehicles(self, vehInvCDs):
+        newVehicleIDs = []
+        hasInvalidation = False
+        for vInfo in self.getVehiclesInfo():
+            if vInfo is not None:
+                if vInfo.vehTypeCD and vInfo.vehTypeCD not in vehInvCDs:
+                    newVehicleIDs.append(INV_ID_CLEAR_VEHICLE)
+                    hasInvalidation = True
                 else:
-                    result = unit_items.VehicleInfo()
+                    newVehicleIDs.append(vInfo.vehInvID)
+
+        if hasInvalidation:
+            if self._prbType != PREBATTLE_TYPE.FALLOUT:
+                return unit_ctx.SetVehicleUnitCtx(waitingID='prebattle/change_settings')
+            return unit_ctx.SetVehiclesCtx(newVehicleIDs, waitingID='prebattle/change_settings')
         else:
-            result = unit_items.VehicleInfo()
-        return result
+            return
 
     def getUnitFullData(self, unitIdx = None):
         unitIdx, unit = self.getUnit(unitIdx=unitIdx)
@@ -486,7 +504,11 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
             else:
                 curTotalLevel += 1
 
-        levelsSeq = map(lambda vehicle: vehicle.get('vehLevel', 0), unit.getVehicles().itervalues())
+        levelsSeq = []
+        for vehicles in unit.getVehicles().itervalues():
+            for vehicle in vehicles:
+                levelsSeq.append(vehicle.vehLevel if vehicle is not None else 0)
+
         levelsSeq.sort()
         return unit_items.UnitStats(readyCount, occupiedSlotsCount, openedSlotsCount, freeSlotsCount, curTotalLevel, levelsSeq, self._rosterSettings.getMinTotalLevel(), self._rosterSettings.getMaxTotalLevel())
 
@@ -508,8 +530,8 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                 dbID = members[slotIdx].get('accountDBID', -1L)
                 if dbID in players:
                     player = unit_items.PlayerUnitInfo(dbID, unitIdx, unit, isReady=isPlayerReady(slotIdx), isInSlot=True, slotIdx=slotIdx, **players[dbID])
-                if dbID in vehicles:
-                    vehicle = vehicles.get(dbID)
+                if dbID in vehicles and vehicles[dbID]:
+                    vehicle = vehicles[dbID][0]
             yield unit_items.SlotInfo(slotIdx, state, player, vehicle)
 
         return
@@ -522,6 +544,12 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                 callback(False)
             result = True
         return result
+
+    def getClubsPaginator(self):
+        return None
+
+    def getClubsFinder(self):
+        return None
 
 
 class IntroFunctional(_UnitFunctional):
@@ -552,9 +580,7 @@ class IntroFunctional(_UnitFunctional):
         self._clubsFinder = ClubFinder(g_clubsCtrl)
         self._clubsFinder.init()
         g_eventDispatcher.loadUnit(self._prbType, self._flags & FUNCTIONAL_FLAG.ACTIONS_BITMASK)
-        for listener in self._listeners:
-            listener.onIntroUnitFunctionalInited()
-
+        self._invokeListeners('onIntroUnitFunctionalInited')
         g_eventDispatcher.updateUI()
         return FUNCTIONAL_FLAG.LOAD_WINDOW
 
@@ -570,14 +596,12 @@ class IntroFunctional(_UnitFunctional):
             self._clubsFinder = None
         self._requestHandlers.clear()
         self._hasEntity = False
-        for listener in self._listeners:
-            listener.onIntroUnitFunctionalFinished()
-
+        self._invokeListeners('onIntroUnitFunctionalFinished')
         if self._flags & FUNCTIONAL_FLAG.SWITCH == 0:
             g_eventDispatcher.unloadUnit(self._prbType)
             g_eventDispatcher.updateUI()
         unit_ext.destroyListReq()
-        return FUNCTIONAL_FLAG.UNDEFINED
+        return super(IntroFunctional, self).fini()
 
     def canPlayerDoAction(self):
         return (not self._hasEntity, '')
@@ -610,7 +634,7 @@ class IntroFunctional(_UnitFunctional):
         return
 
     def initEvents(self, listener):
-        if listener in self._listeners:
+        if listener in self.getListenersIterator():
             if self._searchHandler:
                 self._searchHandler.initEvents(listener)
         else:
@@ -683,11 +707,12 @@ class UnitFunctional(_UnitFunctional):
          RQ_TYPE.GIVE_LEADERSHIP: self.giveLeadership,
          RQ_TYPE.CHANGE_RATED: self.changeRated,
          RQ_TYPE.CHANGE_DIVISION: self.changeDivision,
-         RQ_TYPE.SET_ES_VEHICLE_LIST: self.setEventSquadVehicleList,
-         RQ_TYPE.SET_ES_PLAYER_STATE: self.setEventSquadReady,
-         RQ_TYPE.CHANGE_ES_TYPE: self.changeEventSquadType}
+         RQ_TYPE.SET_VEHICLE_LIST: self.setVehicleList,
+         RQ_TYPE.CHANGE_FALLOUT_QUEUE_TYPE: self.changeFalloutQueueType}
         if prbType == PREBATTLE_TYPE.SQUAD:
             self._actionHandler = action_handlers.SquadActionsHandler(self)
+        elif prbType == PREBATTLE_TYPE.FALLOUT:
+            self._actionHandler = action_handlers.FalloutSquadActionsHandler(self)
         else:
             self._actionHandler = action_handlers.CommonUnitActionsHandler(self)
         super(UnitFunctional, self).__init__(handlers, interfaces.IUnitListener, prbType, rosterSettings, flags & FUNCTIONAL_FLAG.UNIT_BITMASK)
@@ -710,6 +735,7 @@ class UnitFunctional(_UnitFunctional):
         self._requestsProcessor.init()
         initResult = self._actionHandler.executeInit(ctx)
         self._vehiclesWatcher = unit_ext.InventoryVehiclesWatcher(self)
+        self._vehiclesWatcher.validate()
         self._vehiclesWatcher.init()
         self._addClientUnitListeners()
         idle = flags.isInIdle()
@@ -717,7 +743,7 @@ class UnitFunctional(_UnitFunctional):
             timeLeftInIdle = self._getTimeLeftInIdle()
         else:
             timeLeftInIdle = 0
-        for listener in self._listeners:
+        for listener in self.getListenersIterator():
             listener.onUnitFunctionalInited()
             if idle:
                 listener.onUnitFlagsChanged(flags, timeLeftInIdle)
@@ -736,9 +762,7 @@ class UnitFunctional(_UnitFunctional):
         self._hasEntity = False
         if not woEvents:
             try:
-                for listener in self._listeners:
-                    listener.onUnitFunctionalFinished()
-
+                self._invokeListeners('onUnitFunctionalFinished')
             except:
                 LOG_CURRENT_EXCEPTION()
 
@@ -767,7 +791,7 @@ class UnitFunctional(_UnitFunctional):
                 g_eventDispatcher.requestToDestroyPrbChannel(PREBATTLE_TYPE.UNIT)
             g_eventDispatcher.updateUI()
             self._deferredReset = False
-            return FUNCTIONAL_FLAG.UNDEFINED
+            return super(UnitFunctional, self).fini()
 
     def addListener(self, listener):
         super(UnitFunctional, self).addListener(listener)
@@ -783,15 +807,14 @@ class UnitFunctional(_UnitFunctional):
     def rejoin(self):
         self._addClientUnitListeners()
         LOG_DEBUG('onUnitRejoin')
-        for listener in self._listeners:
-            listener.onUnitRejoin()
+        self._invokeListeners('onUnitRejoin')
 
     def initEvents(self, listener):
         flags = self.getFlags()
         idle = flags.isInIdle()
         if idle:
             g_eventDispatcher.setUnitProgressInCarousel(self._prbType, True)
-        if listener in self._listeners:
+        if listener in self.getListenersIterator():
             if idle:
                 listener.onUnitFlagsChanged(flags, self._getTimeLeftInIdle())
         else:
@@ -811,7 +834,7 @@ class UnitFunctional(_UnitFunctional):
         result = True
         if unit.isSortie():
             result = not self.getPlayerInfo().isLegionary()
-        elif unit.isSquad():
+        elif unit.isSquad() or unit.isFalloutSquad():
             result = False
         return result
 
@@ -841,17 +864,17 @@ class UnitFunctional(_UnitFunctional):
         flags = self.getFlags()
         return pInfo.isInSlot and (flags.isInSearch() or flags.isInQueue() or flags.isInPreArena() or flags.isInArena() and pInfo.isInArena())
 
-    def isVehicleReadyToBattle(self):
-        valid, restriction = self._actionValidator.validateVehicles(self.getVehicleInfo(), self.getFlags())
+    def isVehiclesReadyToBattle(self):
+        valid, restriction = self._actionValidator.validateVehicles(self.getVehiclesInfo(), self.getFlags())
         return valid
 
-    def validateLevels(self, stats = None, flags = None, vInfo = None, pInfo = None, slots = None):
+    def validateLevels(self, stats = None, flags = None, vInfos = None, pInfo = None, slots = None):
         stats = stats or self.getStats()
         flags = flags or self.getFlags()
-        vInfo = vInfo or self.getVehicleInfo()
+        vInfos = vInfos or self.getVehiclesInfo()
         pInfo = pInfo or self.getPlayerInfo()
         slots = slots or self.getSlotsIterator(*self.getUnit())
-        return (self._actionValidator.canCreatorDoAction(pInfo, stats, flags, vInfo, slots)[0], self._actionValidator.getRestrictionByLevel(stats, flags))
+        return (self._actionValidator.canCreatorDoAction(pInfo, stats, flags, vInfos, slots)[0], self._actionValidator.getRestrictionByLevel(stats, flags))
 
     def getUnitInvalidLevels(self, stats = None):
         return self._actionValidator.getUnitInvalidLevels(stats or self.getStats())
@@ -941,14 +964,15 @@ class UnitFunctional(_UnitFunctional):
             if callback:
                 callback(True)
             return
-        if not self.isVehicleReadyToBattle():
-            LOG_DEBUG('Vehicle is not ready to battle', ctx)
+        if not self.isVehiclesReadyToBattle():
+            LOG_DEBUG('Vehicles are not ready to battle', ctx)
             if callback:
                 callback(False)
             return
         if isReady:
-            vehInfo = self.getVehicleInfo()
-            g_currentVehicle.selectVehicle(vehInfo.vehInvID)
+            vehInfos = self.getVehiclesInfo()
+            if vehInfos:
+                g_currentVehicle.selectVehicle(vehInfos[0].vehInvID)
         if self._isInCoolDown(settings.REQUEST_TYPE.SET_PLAYER_STATE, coolDown=ctx.getCooldown()):
             return
         pPermissions = self.getPermissions()
@@ -1086,13 +1110,14 @@ class UnitFunctional(_UnitFunctional):
                 if callback:
                     callback(True)
                 return
-            if not self.isVehicleReadyToBattle():
-                LOG_ERROR('Vehicle is not ready to battle', ctx)
+            if not self.isVehiclesReadyToBattle():
+                LOG_ERROR('Vehicles are not ready to battle', ctx)
                 if callback:
                     callback(False)
                 return
-            vehInfo = self.getVehicleInfo()
-            g_currentVehicle.selectVehicle(vehInfo.vehInvID)
+            vehInfos = self.getVehiclesInfo()
+            if vehInfos:
+                g_currentVehicle.selectVehicle(vehInfos[0].vehInvID)
             stats = self.getStats()
             if stats.curTotalLevel >= stats.maxTotalLevel:
                 LOG_ERROR('Total level is invalid', stats)
@@ -1129,13 +1154,14 @@ class UnitFunctional(_UnitFunctional):
                 if callback:
                     callback(False)
                 return
-            if not self.isVehicleReadyToBattle():
-                LOG_ERROR('Vehicle is not ready to battle', ctx)
+            if not self.isVehiclesReadyToBattle():
+                LOG_ERROR('Vehicles are not ready to battle', ctx)
                 if callback:
                     callback(False)
                 return
-            vehInfo = self.getVehicleInfo()
-            g_currentVehicle.selectVehicle(vehInfo.vehInvID)
+            vehInfos = self.getVehiclesInfo()
+            if vehInfos:
+                g_currentVehicle.selectVehicle(vehInfos[0].vehInvID)
             stats = self.getStats()
             if stats.curTotalLevel > stats.maxTotalLevel:
                 LOG_ERROR('Total level is invalid', stats)
@@ -1163,13 +1189,9 @@ class UnitFunctional(_UnitFunctional):
             self._requestsProcessor.doRawRequest('stopAutoSearch')
         elif pInfo.isReady:
             if not flags.isInIdle():
-                if self.getEntityType() == PREBATTLE_TYPE.SQUAD and self.getExtra().eventType:
-                    ctx = unit_ctx.SetReadyEventSquadCtx(False)
-                    self.setEventSquadReady(ctx)
-                else:
-                    ctx = unit_ctx.SetReadyUnitCtx(False)
-                    ctx.resetVehicle = True
-                    self.setPlayerReady(ctx)
+                ctx = unit_ctx.SetReadyUnitCtx(False)
+                ctx.resetVehicle = True
+                self.setPlayerReady(ctx)
             else:
                 self._deferredReset = True
         g_eventDispatcher.updateUI()
@@ -1180,10 +1202,6 @@ class UnitFunctional(_UnitFunctional):
             waitingID = 'prebattle/player_ready'
         else:
             waitingID = 'prebattle/player_not_ready'
-        if self.getEntityType() == PREBATTLE_TYPE.SQUAD and self.getExtra().eventType:
-            ctx = unit_ctx.SetReadyEventSquadCtx(notReady, waitingID=waitingID)
-            self.setEventSquadReady(ctx)
-            return
         if launchChain:
             if notReady:
                 selVehCtx = unit_ctx.SetVehicleUnitCtx(vTypeCD=g_currentVehicle.item.intCD, waitingID='prebattle/change_settings')
@@ -1202,17 +1220,24 @@ class UnitFunctional(_UnitFunctional):
     def doSelectAction(self, action):
         result = False
         name = action.actionName
+        if name == PREBATTLE_ACTION_NAME.SQUAD and self._prbType in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
+            g_eventDispatcher.showUnitWindow(self._prbType)
+            result = True
         if name == PREBATTLE_ACTION_NAME.FORT and self._prbType in (PREBATTLE_TYPE.SORTIE, PREBATTLE_TYPE.FORT_BATTLE):
             g_eventDispatcher.showUnitWindow(self._prbType)
             result = True
         if name == PREBATTLE_ACTION_NAME.UNIT and self._prbType in (PREBATTLE_TYPE.CLUBS,):
             g_eventDispatcher.showUnitWindow(self._prbType)
             result = True
-        if name == PREBATTLE_ACTION_NAME.FALLOUT and self._prbType in (PREBATTLE_TYPE.SQUAD,):
-            extra = self.getExtra()
-            if extra is not None and extra.eventType:
-                g_eventDispatcher.showFalloutWindow()
-                result = True
+        if name == PREBATTLE_ACTION_NAME.FALLOUT and self._prbType in (PREBATTLE_TYPE.FALLOUT,):
+            g_eventDispatcher.showFalloutWindow()
+            result = True
+        if name in (PREBATTLE_ACTION_NAME.FALLOUT_CLASSIC, PREBATTLE_ACTION_NAME.FALLOUT_MULTITEAM) and self._prbType in (PREBATTLE_TYPE.FALLOUT,):
+            rosterType = self.getRosterType()
+            if name == PREBATTLE_ACTION_NAME.FALLOUT_CLASSIC and rosterType != ROSTER_TYPE.FALLOUT_CLASSIC_ROSTER or name == PREBATTLE_ACTION_NAME.FALLOUT_MULTITEAM and rosterType != ROSTER_TYPE.FALLOUT_MULTITEAM_ROSTER:
+                ctx = unit_ctx.ChangeFalloutQueueTypeCtx(PREBATTLE_ACTION_NAME_TO_QUEUE_TYPE[name], 'prebattle/change_settings')
+                self.changeFalloutQueueType(ctx)
+            result = True
         return SelectResult(result)
 
     def doAction(self, action = None):
@@ -1285,8 +1310,8 @@ class UnitFunctional(_UnitFunctional):
     def exitFromQueue(self):
         self._actionHandler.exitFromQueue()
 
-    def setEventSquadVehicleList(self, ctx, callback = None):
-        if self._isInCoolDown(settings.REQUEST_TYPE.SET_ES_VEHICLE_LIST, coolDown=ctx.getCooldown()):
+    def setVehicleList(self, ctx, callback = None):
+        if self._isInCoolDown(settings.REQUEST_TYPE.SET_VEHICLE_LIST, coolDown=ctx.getCooldown()):
             return
         else:
             pPermissions = self.getPermissions()
@@ -1304,49 +1329,18 @@ class UnitFunctional(_UnitFunctional):
                             callback(False)
                         return
 
-            self._requestsProcessor.doRequest(ctx, 'setEventSquadVehicleList', vehicleList=vehsList)
-            self._cooldown.process(settings.REQUEST_TYPE.SET_ES_VEHICLE_LIST, coolDown=ctx.getCooldown())
+            self._requestsProcessor.doRequest(ctx, 'setVehicleList', vehicleList=vehsList)
+            self._cooldown.process(settings.REQUEST_TYPE.SET_VEHICLE_LIST, coolDown=ctx.getCooldown())
             return
 
-    def setEventSquadReady(self, ctx, callback = None):
-        isReady = ctx.isReady()
-        pInfo = self.getPlayerInfo()
-        if isReady and self.isParentControlActivated(callback=callback):
-            return
-        if not pInfo.isInSlot:
-            LOG_ERROR('Player is not in slot', ctx)
-            if callback:
-                callback(False)
-            return
-        if pInfo.isReady is isReady:
-            LOG_DEBUG('Player already ready', ctx)
-            if callback:
-                callback(True)
-            return
-        if not self.isVehicleReadyToBattle():
-            LOG_DEBUG('Vehicle is not ready to battle', ctx)
-            if callback:
-                callback(False)
-            return
-        if self._isInCoolDown(settings.REQUEST_TYPE.SET_ES_PLAYER_STATE, coolDown=ctx.getCooldown()):
-            return
-        pPermissions = self.getPermissions()
-        if not pPermissions.canSetReady():
-            LOG_ERROR('Player can not set ready state', pPermissions)
-            if callback:
-                callback(False)
-            return
-        self._requestsProcessor.doRequest(ctx, 'setEventSquadReady', isReady)
-        self._cooldown.process(settings.REQUEST_TYPE.SET_ES_PLAYER_STATE, coolDown=ctx.getCooldown())
-
-    def changeEventSquadType(self, ctx, callback = None):
+    def changeFalloutQueueType(self, ctx, callback = None):
         battleType = ctx.getBattleType()
-        if battleType not in FALLOUT_BATTLE_TYPE.ALL:
+        if battleType not in QUEUE_TYPE.FALLOUT:
             LOG_ERROR('Incorrect value of battle type', battleType)
             if callback:
                 callback(False)
             return
-        if self._isInCoolDown(settings.REQUEST_TYPE.CHANGE_ES_TYPE, coolDown=ctx.getCooldown()):
+        if self._isInCoolDown(settings.REQUEST_TYPE.CHANGE_FALLOUT_QUEUE_TYPE, coolDown=ctx.getCooldown()):
             return
         pPermissions = self.getPermissions()
         if not pPermissions.canChangeRosters():
@@ -1354,8 +1348,8 @@ class UnitFunctional(_UnitFunctional):
             if callback:
                 callback(False)
             return
-        self._requestsProcessor.doRequest(ctx, 'changeEventSquadType', newEventType=battleType)
-        self._cooldown.process(settings.REQUEST_TYPE.CHANGE_ES_TYPE, coolDown=ctx.getCooldown())
+        self._requestsProcessor.doRequest(ctx, 'changeFalloutType', newQueueType=battleType)
+        self._cooldown.process(settings.REQUEST_TYPE.CHANGE_FALLOUT_QUEUE_TYPE, coolDown=ctx.getCooldown())
 
     def unit_onUnitFlagsChanged(self, prevFlags, nextFlags):
         unitIdx, unit = self.getUnit()
@@ -1371,9 +1365,7 @@ class UnitFunctional(_UnitFunctional):
         if not flags.isInIdle() and self._deferredReset:
             self._deferredReset = False
             self.reset()
-        for listener in self._listeners:
-            listener.onUnitFlagsChanged(flags, timeLeftInIdle)
-
+        self._invokeListeners('onUnitFlagsChanged', flags, timeLeftInIdle)
         if not flags.isOnlyRosterWaitChanged():
             self._actionHandler.setUnitChanged(flags)
         members = unit.getMembers()
@@ -1386,7 +1378,7 @@ class UnitFunctional(_UnitFunctional):
                 pInfo = self.getPlayerInfo(dbID=dbID, unitIdx=unitIdx)
                 diff.append(pInfo)
 
-        for listener in self._listeners:
+        for listener in self.getListenersIterator():
             for pInfo in diff:
                 listener.onUnitPlayerStateChanged(pInfo)
 
@@ -1404,9 +1396,27 @@ class UnitFunctional(_UnitFunctional):
             vehicle = g_itemsCache.items.getItemByCD(vInfo.vehTypeCD)
             if vehicle is not None:
                 g_currentVehicle.selectVehicle(vehicle.invID)
-        for listener in self._listeners:
-            listener.onUnitVehicleChanged(dbID, vInfo)
+        self._invokeListeners('onUnitVehiclesChanged', dbID, (vInfo,))
+        g_eventDispatcher.updateUI()
+        return
 
+    def unit_onUnitVehiclesChanged(self, dbID, vehicles):
+        vInfos = []
+        for vehInvID, vehTypeCD in vehicles:
+            if vehTypeCD:
+                _, nationID, itemID = core_vehicles.parseIntCompactDescr(vehTypeCD)
+                vehLevel = core_vehicles.g_cache.vehicle(nationID, itemID).level
+            else:
+                vehLevel = 0
+            vInfo = unit_items.VehicleInfo(vehInvID, vehTypeCD, vehLevel)
+            if dbID == account_helpers.getAccountDatabaseID() and not vInfo.isEmpty():
+                vehicle = g_itemsCache.items.getItemByCD(vInfo.vehTypeCD)
+                if vehicle is not None:
+                    g_currentVehicle.selectVehicle(vehicle.invID)
+            vInfos.append(vInfo)
+
+        LOG_DEBUG('onUnitVehiclesChanged', dbID, vInfos)
+        self._invokeListeners('onUnitVehiclesChanged', dbID, vInfos)
         g_eventDispatcher.updateUI()
         return
 
@@ -1428,7 +1438,7 @@ class UnitFunctional(_UnitFunctional):
                 diff.append(pInfo)
 
         LOG_DEBUG('onUnitPlayerStateChanged', diff)
-        for listener in self._listeners:
+        for listener in self.getListenersIterator():
             for pInfo in diff:
                 listener.onUnitPlayerStateChanged(pInfo)
 
@@ -1443,7 +1453,7 @@ class UnitFunctional(_UnitFunctional):
         isCreatorChanged = diff & UNIT_ROLE.CREATOR > 0
         inArenaChanged = diff & UNIT_ROLE.IN_ARENA > 0
         LOG_DEBUG('onUnitPlayerRolesChanged', pInfo, pPermissions)
-        for listener in self._listeners:
+        for listener in self.getListenersIterator():
             if isOnlineChanged:
                 listener.onUnitPlayerOnlineStatusChanged(pInfo)
             if isCreatorChanged:
@@ -1503,6 +1513,7 @@ class UnitFunctional(_UnitFunctional):
         unit.onUnitFlagsChanged += self.unit_onUnitFlagsChanged
         unit.onUnitReadyMaskChanged += self.unit_onUnitReadyMaskChanged
         unit.onUnitVehicleChanged += self.unit_onUnitVehicleChanged
+        unit.onUnitVehiclesChanged += self.unit_onUnitVehiclesChanged
         unit.onUnitSettingChanged += self.unit_onUnitSettingChanged
         unit.onUnitPlayerRoleChanged += self.unit_onUnitPlayerRoleChanged
         unit.onUnitMembersListChanged += self.unit_onUnitMembersListChanged
@@ -1520,6 +1531,7 @@ class UnitFunctional(_UnitFunctional):
             unit.onUnitFlagsChanged -= self.unit_onUnitFlagsChanged
             unit.onUnitReadyMaskChanged -= self.unit_onUnitReadyMaskChanged
             unit.onUnitVehicleChanged -= self.unit_onUnitVehicleChanged
+            unit.onUnitVehiclesChanged -= self.unit_onUnitVehiclesChanged
             unit.onUnitSettingChanged -= self.unit_onUnitSettingChanged
             unit.onUnitPlayerRoleChanged -= self.unit_onUnitPlayerRoleChanged
             unit.onUnitMembersListChanged -= self.unit_onUnitMembersListChanged
@@ -1596,25 +1608,29 @@ class UnitFunctional(_UnitFunctional):
             if callback:
                 callback(False)
             return
-        vInfo = self.getVehicleInfo()
-        if vInfo.vehInvID == vehInvID:
+        vInfos = self.getVehiclesInfo()
+        if findFirst(lambda vInfo: vInfo.vehInvID == vehInvID, vInfos) is not None:
             LOG_DEBUG('Player already selected vehicle', ctx)
             if callback:
                 callback(True)
             return
-        setReadyAfterVehicleSelect = ctx.setReady
-        self._requestsProcessor.doRequest(ctx, 'setVehicle', vehInvID=vehInvID, setReady=setReadyAfterVehicleSelect)
-        if setReadyAfterVehicleSelect:
-            self._cooldown.process(settings.REQUEST_TYPE.SET_PLAYER_STATE, coolDown=ctx.getCooldown())
+        else:
+            setReadyAfterVehicleSelect = ctx.setReady
+            self._requestsProcessor.doRequest(ctx, 'setVehicle', vehInvID=vehInvID, setReady=setReadyAfterVehicleSelect)
+            if setReadyAfterVehicleSelect:
+                self._cooldown.process(settings.REQUEST_TYPE.SET_PLAYER_STATE, coolDown=ctx.getCooldown())
+            return
 
     def _clearVehicle(self, ctx, callback = None):
-        vInfo = self.getVehicleInfo()
-        if not vInfo.vehInvID:
+        vInfos = self.getVehiclesInfo()
+        if findFirst(lambda vInfo: vInfo.vehInvID, vInfos) is None:
             LOG_DEBUG('There is not vehicle in slot', ctx)
             if callback:
                 callback(True)
             return
-        self._requestsProcessor.doRequest(ctx, 'setVehicle', INV_ID_CLEAR_VEHICLE)
+        else:
+            self._requestsProcessor.doRequest(ctx, 'setVehicle', INV_ID_CLEAR_VEHICLE)
+            return
 
     def _getTimeLeftInIdle(self):
         _, unit = self.getUnit()

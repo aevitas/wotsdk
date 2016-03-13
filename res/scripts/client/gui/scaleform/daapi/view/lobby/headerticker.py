@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/header/Ticker.py
-import BigWorld, time, constants
+import BigWorld
+import time
+import constants
 from debug_utils import LOG_DEBUG, LOG_ERROR
 from gui.Scaleform.daapi.view.meta.TickerMeta import TickerMeta
 from gui import GUI_SETTINGS, game_control

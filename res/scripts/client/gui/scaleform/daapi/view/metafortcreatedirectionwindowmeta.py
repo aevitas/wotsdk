@@ -13,9 +13,9 @@ class FortCreateDirectionWindowMeta(AbstractWindowView):
         if self._isDAAPIInited():
             return self.flashObject.as_setDescription(value)
 
-    def as_setupButtonS(self, enabled, visible, ttHeader, ttDescr):
+    def as_setupButtonS(self, enabled, visible, tooltip):
         if self._isDAAPIInited():
-            return self.flashObject.as_setupButton(enabled, visible, ttHeader, ttDescr)
+            return self.flashObject.as_setupButton(enabled, visible, tooltip)
 
     def as_setDirectionsS(self, data):
         if self._isDAAPIInited():

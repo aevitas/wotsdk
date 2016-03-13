@@ -85,7 +85,6 @@ class SettingsWindow(SettingsWindowMeta):
         VibroManager.g_instance.onDisconnect += self.onVibroManagerDisconnect
         g_guiResetters.add(self.onRecreateDevice)
         BigWorld.wg_setAdapterOrdinalNotifyCallback(self.onRecreateDevice)
-        SoundGroups.g_instance.enableVoiceSounds(True)
 
     def _update(self):
         self.as_setDataS(self.__getSettings())
@@ -93,10 +92,9 @@ class SettingsWindow(SettingsWindowMeta):
         self.as_openTabS(self.__initialTabIdx)
 
     def _dispose(self):
-        if not g_sessionProvider.getCtx().isInBattle:
-            SoundGroups.g_instance.enableVoiceSounds(False)
         g_guiResetters.discard(self.onRecreateDevice)
         BigWorld.wg_setAdapterOrdinalNotifyCallback(None)
+        self.stopVoicesPreview()
         VibroManager.g_instance.onConnect -= self.onVibroManagerConnect
         VibroManager.g_instance.onDisconnect -= self.onVibroManagerDisconnect
         super(SettingsWindow, self)._dispose()
@@ -180,6 +178,12 @@ class SettingsWindow(SettingsWindowMeta):
         setting = g_settingsCore.options.getSetting(settings_constants.SOUND.ALT_VOICES)
         if setting is not None:
             setting.playPreviewSound()
+        return
+
+    def stopVoicesPreview(self):
+        setting = g_settingsCore.options.getSetting(settings_constants.SOUND.ALT_VOICES)
+        if setting is not None:
+            setting.clearPreviewSound()
         return
 
     def isSoundModeValid(self):
