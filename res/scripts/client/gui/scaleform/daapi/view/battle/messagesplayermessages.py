@@ -41,7 +41,7 @@ class PlayerMessages(FadingMessages):
 
     def __onShowPlayerMessageByCode(self, code, postfix, targetID, attackerID, equipmentID):
         LOG_DEBUG('onShowPlayerMessage', code, postfix, targetID, attackerID, equipmentID)
-        getFullName = g_sessionProvider.getCtx().getFullPlayerName
+        getFullName = g_sessionProvider.getCtx().getPlayerFullName
         if equipmentID:
             equipment = vehicles.g_cache.equipments().get(equipmentID)
             if equipment is not None:
@@ -62,7 +62,7 @@ class PlayerMessages(FadingMessages):
         battleCxt = g_sessionProvider.getCtx()
         if not battleCxt.isCurrentPlayer(shooterID):
             equipment = vehicles.g_cache.equipments().get(eqID)
-            getFullName = battleCxt.getFullPlayerName
+            getFullName = battleCxt.getPlayerFullName
             if equipment is not None:
                 postfix = equipment.name.split('_')[0].upper()
                 self.showMessage('COMBAT_EQUIPMENT_USED', {'player': getFullName(shooterID, showClan=False)}, extra=(('player', shooterID),), postfix=postfix)

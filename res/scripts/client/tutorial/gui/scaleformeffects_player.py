@@ -4,13 +4,15 @@ from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.Scaleform.genConsts.TUTORIAL_TRIGGER_TYPES import TUTORIAL_TRIGGER_TYPES
 from tutorial.data.events import GUI_EVENT_TYPE
 from tutorial.logger import LOG_ERROR, LOG_DEBUG
-from gui.app_loader.decorators import sf_lobby
 
 class GUIEffect(object):
+    __slots__ = ()
 
-    @sf_lobby
-    def app(self):
-        return None
+    def __init__(self):
+        super(GUIEffect, self).__init__()
+
+    def clear(self):
+        pass
 
     def play(self, effectData):
         return False
@@ -24,31 +26,78 @@ class GUIEffect(object):
     def isStillRunning(self, effectID = None):
         return False
 
+
+class ApplicationEffect(GUIEffect):
+    __slots__ = ('_app',)
+
+    def __init__(self):
+        super(GUIEffect, self).__init__()
+        self._app = None
+        return
+
+    def clear(self):
+        self._app = None
+        super(ApplicationEffect, self).clear()
+        return
+
+    def setApplication(self, app):
+        self._app = app
+
     def _getContainer(self, viewType):
-        if self.app is None:
+        if self._app is None:
             return
         else:
-            manager = self.app.containerManager
+            manager = self._app.containerManager
             if manager is None:
                 return
             return manager.getContainer(viewType)
 
     def _getTutorialLayout(self):
-        if self.app is None:
+        if self._app is None:
             return
         else:
-            return self.app.tutorialManager
+            return self._app.tutorialManager
 
 
-class ShowDialogEffect(GUIEffect):
+class ComponentEffect(GUIEffect):
+    __slots__ = ('_component',)
+
+    def __init__(self):
+        super(GUIEffect, self).__init__()
+        self._component = None
+        return
+
+    def clear(self):
+        self._component = None
+        super(ComponentEffect, self).clear()
+        return
+
+    def setComponent(self, component):
+        self._component = component
+
+    def play(self, effectData):
+        if self._component is not None:
+            return self._doPlay(effectData)
+        else:
+            LOG_ERROR('Component still is not found to play effect', self)
+            return False
+
+    def _doPlay(self, effectData):
+        raise NotImplemented
+
+
+class ShowDialogEffect(ApplicationEffect):
+    __slots__ = ('_aliasMap', '_dialogID')
 
     def __init__(self, aliasMap):
+        super(ShowDialogEffect, self).__init__()
         self._aliasMap = aliasMap
         self._dialogID = None
         return
 
     def clear(self):
         self._dialogID = None
+        super(ShowDialogEffect, self).clear()
         return
 
     def play(self, effectData):
@@ -63,7 +112,7 @@ class ShowDialogEffect(GUIEffect):
             if dialogType in self._aliasMap:
                 alias = self._aliasMap[dialogType]
                 self._dialogID = dialogID
-                self.app.loadView(alias, dialogID, effectData)
+                self._app.loadView(alias, dialogID, effectData)
                 result = True
             else:
                 LOG_ERROR('Alias of dialog not found', effectData, self._aliasMap)
@@ -96,14 +145,17 @@ class ShowDialogEffect(GUIEffect):
         return result
 
 
-class ShowWindowEffect(GUIEffect):
+class ShowWindowEffect(ApplicationEffect):
+    __slots__ = ('_aliasMap', '_windowIDs')
 
     def __init__(self, aliasMap):
+        super(ShowWindowEffect, self).__init__()
         self._aliasMap = aliasMap
         self._windowIDs = set()
 
     def clear(self):
         self._windowIDs.clear()
+        super(ShowWindowEffect, self).clear()
 
     def play(self, effectData):
         windowID, windowType, content = effectData
@@ -111,7 +163,7 @@ class ShowWindowEffect(GUIEffect):
         if windowType in self._aliasMap:
             alias = self._aliasMap[windowType]
             self._windowIDs.add(windowID)
-            self.app.loadView(alias, windowID, content)
+            self._app.loadView(alias, windowID, content)
             result = True
         else:
             LOG_ERROR('Alias of window not found', windowType, self._aliasMap)
@@ -151,7 +203,8 @@ _GUI_EVENT_TO_TRIGGER_TYPE = {GUI_EVENT_TYPE.CLICK: TUTORIAL_TRIGGER_TYPES.CLICK
  GUI_EVENT_TYPE.CLICK_OUTSIDE: TUTORIAL_TRIGGER_TYPES.CLICK_OUTSIDE_TYPE,
  GUI_EVENT_TYPE.ESC: TUTORIAL_TRIGGER_TYPES.ESCAPE}
 
-class ShowChainHint(GUIEffect):
+class ShowChainHint(ApplicationEffect):
+    __slots__ = ('_hintID', '_itemID')
 
     def __init__(self):
         super(ShowChainHint, self).__init__()
@@ -217,6 +270,7 @@ class ShowChainHint(GUIEffect):
 
 
 class ShowOnceOnlyHint(ShowChainHint):
+    __slots__ = ()
 
     def stop(self, effectID = None):
         if effectID is not None:
@@ -229,7 +283,8 @@ class ShowOnceOnlyHint(ShowChainHint):
         return
 
 
-class UpdateContentEffect(GUIEffect):
+class UpdateContentEffect(ApplicationEffect):
+    __slots__ = ()
 
     def play(self, effectData):
         effectData = effectData[0]
@@ -255,7 +310,8 @@ class UpdateContentEffect(GUIEffect):
         return result
 
 
-class SetCriteriaEffect(GUIEffect):
+class SetCriteriaEffect(ApplicationEffect):
+    __slots__ = ()
 
     def play(self, effectData):
         itemID, value, noCached = effectData
@@ -268,7 +324,8 @@ class SetCriteriaEffect(GUIEffect):
 _ACTION_TO_TRIGGER_TYPE = {GUI_EVENT_TYPE.CLICK: TUTORIAL_TRIGGER_TYPES.CLICK_TYPE,
  GUI_EVENT_TYPE.CLICK_OUTSIDE: TUTORIAL_TRIGGER_TYPES.CLICK_OUTSIDE_TYPE}
 
-class SetTriggerEffect(GUIEffect):
+class SetTriggerEffect(ApplicationEffect):
+    __slots__ = ('_itemsIDs',)
 
     def __init__(self):
         super(SetTriggerEffect, self).__init__()
@@ -305,13 +362,25 @@ class SetTriggerEffect(GUIEffect):
 
 
 class EffectsPlayer(object):
+    __slots__ = ('_effects',)
 
     def __init__(self, effects):
         super(EffectsPlayer, self).__init__()
         self._effects = effects
 
+    def iterEffects(self):
+        for name, effect in self._effects.iteritems():
+            yield (name, effect)
+
+    def filterByName(self, *names):
+        for name, effect in self._effects.iteritems():
+            if name in names:
+                yield effect
+
     def clear(self):
-        self._effects.clear()
+        while self._effects:
+            _, effect = self._effects.popitem()
+            effect.clear()
 
     def play(self, effectName, effectData):
         result = False

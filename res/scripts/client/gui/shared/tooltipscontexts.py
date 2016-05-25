@@ -2,9 +2,11 @@
 import constants
 import gui
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
-from CurrentVehicle import g_currentVehicle
+from CurrentVehicle import g_currentVehicle, g_currentPreviewVehicle
 from collections import namedtuple
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
+from gui.shared.items_parameters import params_helper
+from gui.shared.items_parameters.formatters import NO_BONUS_SIMPLIFIED_FORMATTERS, SIMPLIFIED_FORMATTERS
 from shared_utils import findFirst
 from gui.server_events import g_eventsCache
 from gui.shared import g_itemsCache
@@ -12,7 +14,9 @@ from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.Tankman import TankmanSkill
 from gui.shared.gui_items.dossier import factories, loadDossier
 from gui.shared.tooltips import TOOLTIP_COMPONENT
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.fortifications.FortOrder import FortOrder
+from gui.shared.formatters import text_styles
 from helpers.i18n import makeString
 from items import vehicles
 from gui.Scaleform.genConsts.CUSTOMIZATION_ITEM_TYPE import CUSTOMIZATION_ITEM_TYPE
@@ -193,6 +197,26 @@ class QuestContext(ToolTipContext):
         return g_eventsCache.getEvents().get(eventID, None)
 
 
+class HangarParamContext(ToolTipContext):
+
+    def __init__(self):
+        super(HangarParamContext, self).__init__(TOOLTIP_COMPONENT.HANGAR)
+        self.formatters = NO_BONUS_SIMPLIFIED_FORMATTERS
+
+    def getComparator(self):
+        return params_helper.idealCrewComparator(g_currentVehicle.item)
+
+
+class PreviewParamContext(HangarParamContext):
+
+    def __init__(self):
+        super(PreviewParamContext, self).__init__()
+        self.formatters = NO_BONUS_SIMPLIFIED_FORMATTERS
+
+    def getComparator(self):
+        return params_helper.vehiclesComparator(g_currentPreviewVehicle.item, g_currentPreviewVehicle.defaultItem)
+
+
 class HangarContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
@@ -202,9 +226,12 @@ class HangarContext(ToolTipContext):
         self._historicalBattleID = -1
         return
 
+    def getVehicle(self):
+        return g_currentVehicle.item
+
     def buildItem(self, intCD, slotIdx = 0, historicalBattleID = -1):
         self._slotIdx = int(slotIdx)
-        self._vehicle = g_currentVehicle.item
+        self._vehicle = self.getVehicle()
         self._historicalBattleID = historicalBattleID
         return g_itemsCache.items.getItemByCD(int(intCD))
 
@@ -236,6 +263,12 @@ class HangarContext(ToolTipContext):
         value.vehicle = self._vehicle
         value.historicalBattleID = self._historicalBattleID
         return value
+
+
+class PreviewContext(HangarContext):
+
+    def getVehicle(self):
+        return g_currentPreviewVehicle.item
 
 
 class TankmanHangarContext(HangarContext):
@@ -304,7 +337,6 @@ class TechMainContext(HangarContext):
 
 
 class PersonalCaseContext(ToolTipContext):
-    SKILL_MOCK = namedtuple('SkillMock', ('userName', 'shortDescription', 'description', 'count', 'level'))
 
     def __init__(self, fieldsToExclude = None):
         super(PersonalCaseContext, self).__init__(TOOLTIP_COMPONENT.PERSONAL_CASE, fieldsToExclude)
@@ -318,13 +350,17 @@ class PersonalCaseContext(ToolTipContext):
 
 
 class NewSkillContext(PersonalCaseContext):
+    SKILL_MOCK = namedtuple('SkillMock', ('header', 'userName', 'shortDescription', 'description', 'count', 'level'))
 
     def buildItem(self, tankmanID):
         tankman = g_itemsCache.items.getTankman(int(tankmanID))
         skillsCount, lastSkillLevel = (0, 0)
         if tankman is not None:
             skillsCount, lastSkillLevel = tankman.newSkillCount
-        return self.SKILL_MOCK(makeString('#tooltips:personal_case/skills/new/header'), makeString('#tooltips:personal_case/skills/new/body'), makeString('#tooltips:personal_case/skills/new/body'), skillsCount, lastSkillLevel)
+        header = text_styles.main(TOOLTIPS.BUYSKILL_HEADER)
+        if skillsCount > 1 or lastSkillLevel > 0:
+            header = text_styles.highTitle(TOOLTIPS.BUYSKILL_HEADER)
+        return self.SKILL_MOCK(header, makeString('#tooltips:personal_case/skills/new/header'), makeString('#tooltips:personal_case/skills/new/body'), makeString('#tooltips:personal_case/skills/new/body'), skillsCount, lastSkillLevel)
 
 
 class ProfileContext(ToolTipContext):
@@ -478,6 +514,10 @@ class SettingsMinimapContext(ToolTipContext):
     pass
 
 
+class SquadRestrictionContext(ToolTipContext):
+    pass
+
+
 class TechCustomizationContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
@@ -488,3 +528,9 @@ class BoosterContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
         super(BoosterContext, self).__init__(TOOLTIP_COMPONENT.BOOSTER, fieldsToExclude)
+
+
+class HangarServerStatusContext(ToolTipContext):
+
+    def __init__(self, fieldsToExclude = None):
+        super(HangarServerStatusContext, self).__init__(TOOLTIP_COMPONENT.HANGAR, fieldsToExclude)

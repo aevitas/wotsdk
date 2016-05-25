@@ -8,7 +8,7 @@ class ContextMenuManager(ContextMenuManagerMeta):
 
     def __init__(self, app):
         super(ContextMenuManager, self).__init__()
-        self.seEnvironment(app)
+        self.setEnvironment(app)
         self.__currentHandler = None
         self._handlersMap = self._initializeHandlers(self._handlersMap)
         return

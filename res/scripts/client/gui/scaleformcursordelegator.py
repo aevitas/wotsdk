@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/CursorDelegator.py
 import BigWorld
 import GUI
-from debug_utils import LOG_DEBUG
 
 class CursorDelegator(object):
     RESIZE = 'RESIZE'
@@ -56,8 +55,8 @@ class CursorDelegator(object):
 
     def setForcedGuiControlMode(self, flash, hold):
         flash.call('Cursor.Hold', [hold])
-        if hasattr(BigWorld.player(), 'setForcedGuiControlMode'):
-            BigWorld.player().setForcedGuiControlMode(hold)
+        from gui.battle_control import avatar_getter
+        avatar_getter.setForcedGuiControlMode(hold)
 
 
 g_cursorDelegator = CursorDelegator()

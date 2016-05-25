@@ -53,8 +53,10 @@ class GameEvent(HasCtxEvent):
     MINIMAP_CMD = 'game/minimapCmd'
     RADIAL_MENU_CMD = 'game/radialMenuCmd'
     GUI_VISIBILITY = 'game/guiVisibility'
+    FULL_STATS = 'game/fullStats'
     SHOW_CURSOR = 'game/showCursor'
     HIDE_CURSOR = 'game/hideCursor'
+    NEXT_PLAYERS_PANEL_MODE = 'game/nextPlayersPanelMode'
     PLAYING_TIME_ON_ARENA = 'game/playingTimeOnArena'
     CHANGE_APP_RESOLUTION = 'game/changeAppResolution'
 
@@ -116,13 +118,13 @@ class ShowDialogEvent(SharedEvent):
     SHOW_DESTROY_DEVICE_DIALOG = 'showDestroyDeviceDialog'
     SHOW_CONFIRM_MODULE = 'showConfirmModule'
     SHOW_SYSTEM_MESSAGE_DIALOG = 'showSystemMessageDialog'
-    SHOW_CAPTCHA_DIALOG = 'showCaptchaDialog'
     SHOW_DISMISS_TANKMAN_DIALOG = 'showDismissTankmanDialog'
     SHOW_CYBER_SPORT_DIALOG = 'showCyberSportDialog'
     SHOW_CONFIRM_ORDER_DIALOG = 'showConfirmOrderDialog'
     SHOW_PUNISHMENT_DIALOG = 'showPunishmentDialog'
     SHOW_EXCHANGE_DIALOG = 'showExchangeDialog'
     SHOW_CHECK_BOX_DIALOG = 'showCheckBoxDialog'
+    SHOW_DESERTER_DLG = 'showDeserterDialog'
 
     def __init__(self, meta, handler):
         super(ShowDialogEvent, self).__init__(meta.getEventType())
@@ -166,6 +168,7 @@ class LoginEventEx(LoginEvent):
 
 class HideWindowEvent(HasCtxEvent):
     HIDE_COMPANY_WINDOW = 'hideCompanyWindow'
+    HIDE_BATTLE_RESULT_WINDOW = 'hideBattleResultsWindow'
     HIDE_BATTLE_SESSION_WINDOW = 'hideBattleSessionWindow'
     HIDE_UNIT_WINDOW = 'hideUnitWindow'
     HIDE_VEHICLE_SELECTOR_WINDOW = 'showVehicleSelectorWindow'
@@ -181,7 +184,6 @@ class HidePopoverEvent(HasCtxEvent):
 
 class LobbySimpleEvent(HasCtxEvent):
     UPDATE_TANK_PARAMS = 'updateTankParams'
-    HIGHLIGHT_TANK_PARAMS = 'highlightTankParams'
     SHOW_HELPLAYOUT = 'showHelplayout'
     CLOSE_HELPLAYOUT = 'closeHelplayout'
     EVENTS_UPDATED = 'questUpdated'
@@ -295,6 +297,8 @@ class ChannelManagementEvent(HasCtxEvent):
     REQUEST_TO_ACTIVATE = 'rqActivateChannel'
     REQUEST_TO_DEACTIVATE = 'rqDeactivateChannel'
     REQUEST_TO_EXIT = 'rqExitChannel'
+    REGISTER_BATTLE = 'registerBattleComponent'
+    UNREGISTER_BATTLE = 'unregisterBattleComponent'
 
     def __init__(self, clientID, eventType = None, ctx = None):
         super(ChannelManagementEvent, self).__init__(eventType, ctx)
@@ -449,3 +453,7 @@ class WGNCShowItemEvent(SharedEvent):
 
     def getTarget(self):
         return self.__target
+
+
+class ScoreEvent(HasCtxEvent):
+    FRAGS_UPDATED = 'score/frags'

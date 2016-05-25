@@ -1,9 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/teams_bases_panel.py
 from debug_utils import LOG_DEBUG
+from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
 from gui.battle_control import arena_info
 from gui.battle_control.battle_team_bases_ctrl import ITeamBasesPanel
 from gui.shared.utils.functions import isControlPointExists, getBattleSubTypeBaseNumder
-from helpers import i18n
+from helpers import i18n, time_utils
 
 class _TeamBaseSettingItem(object):
     __slots__ = ('_weight', '_color', '_capturing', '_captured', '_arenaTypeID', '_team', '_baseID')
@@ -72,27 +73,33 @@ class TeamBasesPanel(ITeamBasesPanel):
     def setOffsetForEnemyPoints(self):
         self.__callFlash('init', [True])
 
-    def addCapturingTeamBase(self, clientID, playerTeam, points, rate, capturingStopped):
+    def addCapturingTeamBase(self, clientID, playerTeam, points, rate, timeLeft, invadersCnt, capturingStopped):
         item = getSettingItem(clientID, playerTeam)
         self.__callFlash('add', [clientID,
          item.getWeight(),
          item.getColor(),
          item.getCapturingString(),
          points,
-         rate])
+         rate,
+         time_utils.getTimeLeftFormat(timeLeft),
+         self.__getInvadersCountStr(invadersCnt)])
         if capturingStopped:
             self.__callFlash('stop', [clientID, points])
 
-    def addCapturedTeamBase(self, clientID, playerTeam):
+    def addCapturedTeamBase(self, clientID, playerTeam, timeLeft, invadersCnt):
         item = getSettingItem(clientID, playerTeam)
         self.__callFlash('add', [clientID,
-         item.getColor(),
          item.getWeight(),
+         item.getColor(),
          item.getCapturedString(),
          100])
 
-    def updateTeamBasePoints(self, clientID, points, rate):
-        self.__callFlash('updatePoints', [clientID, points, rate])
+    def updateTeamBasePoints(self, clientID, points, rate, timeLeft, invadersCnt):
+        self.__callFlash('updateCaptureData', [clientID,
+         points,
+         rate,
+         time_utils.getTimeLeftFormat(timeLeft),
+         self.__getInvadersCountStr(invadersCnt)])
 
     def stopTeamBaseCapturing(self, clientID, points):
         self.__callFlash('stop', [clientID, points])
@@ -109,3 +116,11 @@ class TeamBasesPanel(ITeamBasesPanel):
 
     def __callFlash(self, funcName, args):
         self.__ui.call('battle.teamBasesPanel.{0:>s}'.format(funcName), args)
+
+    @staticmethod
+    def __getInvadersCountStr(count):
+        MAX_INVADERS_COUNT = 3
+        if count < MAX_INVADERS_COUNT:
+            return str(count)
+        else:
+            return str(MAX_INVADERS_COUNT)

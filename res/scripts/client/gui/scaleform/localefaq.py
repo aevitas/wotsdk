@@ -2,6 +2,12 @@
 from debug_utils import LOG_WARNING
 
 class FAQ(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     QUESTION_1 = '#faq:question_1'
     ANSWER_1 = '#faq:answer_1'
     QUESTION_2 = '#faq:question_2'
@@ -73,6 +79,10 @@ class FAQ(object):
 
     @staticmethod
     def question(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#faq:question_%s' % key
         if outcome not in FAQ.QUESTION_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -82,6 +92,10 @@ class FAQ(object):
 
     @staticmethod
     def answer(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#faq:answer_%s' % key
         if outcome not in FAQ.ANSWER_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')

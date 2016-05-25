@@ -64,6 +64,10 @@ class AmmunitionPanel(AmmunitionPanelMeta):
             self.as_setVehicleHasTurretS(vehicle.hasTurrets)
             devices = []
             for slotType in AmmunitionPanel.__FITTING_SLOTS:
+                if slotType == FITTING_TYPES.VEHICLE_TURRET and not vehicle.hasTurrets:
+                    tooltipType = ''
+                else:
+                    tooltipType = TOOLTIPS_CONSTANTS.HANGAR_MODULE
                 data = g_itemsCache.items.getItems(GUI_ITEM_TYPE_INDICES[slotType], REQ_CRITERIA.VEHICLE.SUITABLE([vehicle], [GUI_ITEM_TYPE_INDICES[slotType]])).values()
                 data.sort(reverse=True)
                 if slotType in AmmunitionPanel.__ARTEFACTS_SLOTS:
@@ -90,7 +94,8 @@ class AmmunitionPanel(AmmunitionPanelMeta):
                      'price': price,
                      'currency': 'credits' if price[1] == 0 else 'gold',
                      'actionPriceData': action,
-                     'moduleLabel': module.getGUIEmblemID()}
+                     'moduleLabel': module.getGUIEmblemID(),
+                     'tooltipType': tooltipType}
                     if slotType == ITEM_TYPE_NAMES[4]:
                         if module.isClipGun(vehicle.descriptor):
                             moduleData[EXTRA_MODULE_INFO] = CLIP_ICON_PATH
@@ -129,12 +134,12 @@ class AmmunitionPanel(AmmunitionPanelMeta):
 
                 if slotType in AmmunitionPanel.__ARTEFACTS_SLOTS:
                     for i in xrange(3):
-                        self.__addDevice(devices, dataProvider[i], slotType, i)
+                        self.__addDevice(devices, dataProvider[i], slotType, tooltipType, i)
 
                 else:
-                    self.__addDevice(devices, dataProvider, slotType)
+                    self.__addDevice(devices, dataProvider, slotType, tooltipType)
 
-            self.as_setDataS(devices)
+            self.as_setDataS({'devices': devices})
             statusId, msg, msgLvl = g_currentVehicle.getHangarMessage()
             rentAvailable = False
             if statusId == Vehicle.VEHICLE_STATE.RENTAL_IS_ORVER:
@@ -143,39 +148,32 @@ class AmmunitionPanel(AmmunitionPanelMeta):
             isBackground = False
             if statusId == Vehicle.VEHICLE_STATE.NOT_PRESENT:
                 isBackground = True
-            isSuitableVeh = not (self.__falloutCtrl.isSelected() and not g_currentVehicle.item.isFalloutAvailable) and g_currentVehicle.item.getCustomState() != Vehicle.VEHICLE_STATE.UNSUITABLE_TO_QUEUE
-            if not isSuitableVeh:
-                msg = i18n.makeString('#menu:tankCarousel/vehicleStates/%s' % Vehicle.VEHICLE_STATE.NOT_SUITABLE)
-                msgLvl = Vehicle.VEHICLE_STATE_LEVEL.WARNING
             msgString = makeHtmlString('html_templates:vehicleStatus', msgLvl, {'message': i18n.makeString(msg)})
             self.as_updateVehicleStatusS({'message': msgString,
              'rentAvailable': rentAvailable,
              'isBackground': isBackground})
         return
 
-    def __addDevice(self, seq, dp, slotType, slotIndex = 0):
+    def __addDevice(self, seq, dp, slotType, tooltipType, slotIndex = 0):
         device = {'slotType': slotType,
          'slotIndex': slotIndex,
          'selectedIndex': self.__getSelectedItemIndex(dp),
          'availableDevices': dp,
          'tooltip': '',
-         'tooltipType': TOOLTIPS_CONSTANTS.HANGAR_MODULE}
-        self.updateDeviceTooltip(device, slotType)
+         'tooltipType': tooltipType}
+        self.__updateDeviceTooltip(device, slotType)
         seq.append(device)
 
-    def updateDeviceTooltip(self, device, slotType):
+    def __updateDeviceTooltip(self, device, slotType):
         if device['selectedIndex'] == -1:
             if slotType == FITTING_TYPES.OPTIONAL_DEVICE:
-                device['tooltipType'] = TOOLTIPS_CONSTANTS.COMPLEX
                 device['tooltip'] = TOOLTIPS.HANGAR_AMMO_PANEL_DEVICE_EMPTY
-            elif slotType == FITTING_TYPES.EQUIPMENT:
                 device['tooltipType'] = TOOLTIPS_CONSTANTS.COMPLEX
+            elif slotType == FITTING_TYPES.EQUIPMENT:
                 device['tooltip'] = TOOLTIPS.HANGAR_AMMO_PANEL_EQUIPMENT_EMPTY
+                device['tooltipType'] = TOOLTIPS_CONSTANTS.COMPLEX
             else:
                 LOG_ERROR('Wrong device state! Module cannot be unselected!')
-        else:
-            device['tooltipType'] = TOOLTIPS_CONSTANTS.HANGAR_MODULE
-            device['tooltip'] = ''
 
     def __getSelectedItemIndex(self, seq):
         for idx, item in enumerate(seq):
@@ -216,9 +214,6 @@ class AmmunitionPanel(AmmunitionPanelMeta):
 
     def showCustomization(self):
         self.fireEvent(LoadViewEvent(VIEW_ALIAS.LOBBY_CUSTOMIZATION), EVENT_BUS_SCOPE.LOBBY)
-
-    def highlightParams(self, type):
-        self.fireEvent(LobbySimpleEvent(LobbySimpleEvent.HIGHLIGHT_TANK_PARAMS, {'type': type}), EVENT_BUS_SCOPE.LOBBY)
 
     def toRentContinue(self):
         if g_currentVehicle.isPresent():

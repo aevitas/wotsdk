@@ -4,13 +4,11 @@ from operator import attrgetter
 from account_helpers.AccountSettings import AccountSettings, BOOSTERS_FILTER
 from adisp import process
 import constants
-from constants import EVENT_TYPE
 from goodies.goodie_constants import GOODIE_RESOURCE_TYPE
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
-from gui.shared.ItemsCache import g_itemsCache
 from helpers.i18n import makeString as _ms
-from gui import SystemMessages
+from gui import SystemMessages, makeHtmlString
 from gui import DialogsInterface
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.view.lobby.boosters.BoostersPanelComponent import ADD_BOOSTER_ID
@@ -29,10 +27,10 @@ from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta
 from gui.Scaleform.daapi.view.dialogs import DIALOG_BUTTON_ID
-from potapov_quests import PQ_BRANCH
 from shared_utils import BitmaskHelper
 
 class FILTER_STATE(BitmaskHelper):
+    ALL = 0
     SMALL = 1
     MEDIUM = 2
     BIG = 4
@@ -66,7 +64,7 @@ class BoostersWindow(BoostersWindowMeta):
 
     def requestBoostersArray(self, isReceivedBoostersTab):
         self.__isReceivedBoostersTab = isReceivedBoostersTab
-        self.as_setListDataS(self.__getBoostersVOs(self.__isReceivedBoostersTab), False)
+        self.as_setListDataS(self.__getBoostersVOs(), False)
         self.__setCommonData()
 
     @process
@@ -90,6 +88,14 @@ class BoostersWindow(BoostersWindowMeta):
             elif self.__questsDescriptor and self.__questsDescriptor.getChapter(questID):
                 quests_events.showEventsWindow(questID, constants.EVENT_TYPE.TUTORIAL)
         return
+
+    def onFiltersChange(self, filters):
+        self.__setFilters(filters)
+        self.__update()
+
+    def onResetFilters(self):
+        self.__setFilters(FILTER_STATE.ALL)
+        self.__update(FILTER_STATE.ALL)
 
     def _populate(self):
         super(BoostersWindow, self)._populate()
@@ -122,15 +128,14 @@ class BoostersWindow(BoostersWindowMeta):
         self.__activeBoosters = self.__getActiveBoosters()
         self.__update()
 
-    def __update(self):
+    def __update(self, filterState = -1):
         self.__availableBoosters = self.__getAvailableBoosters()
-        self.__boostersInQuestCount = sum((count for _, _, _, count in self.__qBooostersIterator()))
-        self.__setCommonData()
-        self.as_setListDataS(self.__getBoostersVOs(self.__isReceivedBoostersTab), False)
+        self.__boostersInQuestCount = sum((count for _, _, _, count in self.__qBoostersIterator(checkFilters=True)))
+        self.__setCommonData(filterState)
+        self.as_setListDataS(self.__getBoostersVOs(), False)
 
     def __setStaticData(self):
-        self.as_setStaticDataS({'noInfoData': self.___packNoInfo(),
-         'windowTitle': _ms(MENU.BOOSTERSWINDOW_TITLE),
+        self.as_setStaticDataS({'windowTitle': _ms(MENU.BOOSTERSWINDOW_TITLE),
          'closeBtnLabel': _ms(MENU.BOOSTERSWINDOW_CLOSEBTN_LABEL),
          'noInfoBgSource': RES_ICONS.MAPS_ICONS_BOOSTERS_NOINFOBG,
          'filtersData': {'qualityFiltersLabel': text_styles.main(MENU.BOOSTERSWINDOW_LEVELFILTERS_LABEL),
@@ -139,8 +144,18 @@ class BoostersWindow(BoostersWindowMeta):
                          'typeFilters': self.__packFiltersData(self.__packTypeFiltersItems())}})
 
     def ___packNoInfo(self):
-        return {'title': text_styles.middleTitle(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_TITLE),
-         'message': text_styles.standard(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_MESSAGE)}
+        if self.__isReceivedBoostersTab and self.__getAvailableTotal() > 0 or not self.__isReceivedBoostersTab and self.__getNotAvailableTotal() > 0:
+            title = text_styles.middleTitle(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_NOTFOUND_TITLE)
+            message = text_styles.main(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_NOTFOUND_MESSAGE)
+            returnBtnLabel = _ms(MENU.BOOSTERSWINDOW_RETURNBTN_LABEL)
+        else:
+            title = ''
+            message = makeHtmlString('html_templates:lobby/textStyle', 'alignText', {'align': 'center',
+             'message': text_styles.standard(MENU.BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_EMPTY_MESSAGE)})
+            returnBtnLabel = ''
+        return {'title': title,
+         'message': message,
+         'returnBtnLabel': returnBtnLabel}
 
     def __packFiltersData(self, items):
         return {'items': items,
@@ -161,44 +176,36 @@ class BoostersWindow(BoostersWindowMeta):
          self.__packFilterItem(RES_ICONS.MAPS_ICONS_BOOSTERS_BOOSTER_FREE_XP_SMALL_BW, FILTER_STATE.FREE_XP, TOOLTIPS.BOOSTER_FILTERS_TYPEFREEXP_BODY, GOODIE_RESOURCE_TYPE.FREE_XP in self.__boosterTypes),
          self.__packFilterItem(RES_ICONS.MAPS_ICONS_BOOSTERS_BOOSTER_CREDITS_SMALL_BW, FILTER_STATE.CREDITS, TOOLTIPS.BOOSTER_FILTERS_TYPECREDITS_BODY, GOODIE_RESOURCE_TYPE.CREDITS in self.__boosterTypes)]
 
-    def onFiltersChange(self, filters):
-        self.__setFilters(filters)
-        self.__update()
-
-    def __setCommonData(self):
-        isHaveNotInfo = not self.__boostersInQuestCount
+    def __setCommonData(self, filterState = -1):
+        isHaveNotInfo = not self.__boostersInQuestCount or self.__getNotAvailableTotal() == 0
         if self.__isReceivedBoostersTab:
-            isHaveNotInfo = not len(self.__availableBoosters)
+            isHaveNotInfo = not len(self.__availableBoosters) or self.__getAvailableTotal() == 0
         self.as_setDataS({'isHaveNotInfo': isHaveNotInfo,
+         'noInfoData': self.___packNoInfo(),
          'availableTabLabel': self.__getAvailableTabLabel(),
          'notAvailableTabLabel': self.__getNotAvailableTabLabel(),
          'activeText': self.__getActiveText(),
-         'isReceivedBoostersTab': self.__isReceivedBoostersTab})
+         'isReceivedBoostersTab': self.__isReceivedBoostersTab,
+         'filterState': filterState})
 
     def __getAvailableTabLabel(self):
         boostersCount = sum((booster.count for booster in self.__availableBoosters))
-        return _ms(MENU.BOOSTERSWINDOW_TABS_AVAILABLELABEL, availableNo=boostersCount)
+        return _ms(MENU.BOOSTERSWINDOW_TABS_AVAILABLELABEL, availableNo=boostersCount, totalNo=str(self.__getAvailableTotal()))
 
     def __getNotAvailableTabLabel(self):
-        return _ms(MENU.BOOSTERSWINDOW_TABS_NOTAVAILABLELABEL, notAvailableNo=self.__boostersInQuestCount)
+        return _ms(MENU.BOOSTERSWINDOW_TABS_NOTAVAILABLELABEL, notAvailableNo=self.__boostersInQuestCount, totalNo=str(self.__getNotAvailableTotal()))
 
     def __getActiveText(self):
         return text_styles.highTitle(_ms(MENU.BOOSTERSWINDOW_ACTIVEBOOSTERS, activeNo=len(self.__activeBoosters), allNo=MAX_ACTIVE_BOOSTERS_COUNT))
 
-    def __getBoostersVOs(self, isReceivedBoostersTab):
+    def __getBoostersVOs(self):
         boosterVOs = []
-        if isReceivedBoostersTab:
+        if self.__isReceivedBoostersTab:
             for booster in self.__availableBoosters:
                 boosterVOs.append(self.__makeBoosterVO(booster, booster.isReadyToActivate))
 
         else:
-            qBoosters = []
-            for questID, qUserName, booster, count in self.__qBooostersIterator():
-                qBoosters.append((questID,
-                 qUserName,
-                 booster,
-                 count))
-
+            qBoosters = [ boosterInfo for boosterInfo in self.__qBoostersIterator(checkFilters=True) ]
             for questID, qUserName, booster, count in sorted(qBoosters, self._sortQuestsBoosters):
                 boosterVOs.append(self.__makeBoosterVO(booster, questID is not None, questID, qUserName, count))
 
@@ -210,14 +217,17 @@ class BoostersWindow(BoostersWindowMeta):
         booster2 = b[2]
         return cls._sortAvailableBoosters(booster1, booster2)
 
-    def __qBooostersIterator(self):
+    def __qBoostersIterator(self, checkFilters = True):
         for (questID, qUserName), boosters in self.__boosterQuests.iteritems():
             for booster, count in boosters:
-                if self.__isBoosterValid(booster):
-                    yield (questID,
-                     qUserName,
-                     booster,
-                     count)
+                if checkFilters:
+                    if self.__isBoosterValid(booster):
+                        yield (questID,
+                         qUserName,
+                         booster,
+                         count)
+                else:
+                    yield count
 
     def __getBoosterFullName(self, booster):
         return text_styles.middleTitle(booster.fullUserName)
@@ -266,15 +276,16 @@ class BoostersWindow(BoostersWindowMeta):
         criteria = REQ_CRITERIA.BOOSTER.IN_ACCOUNT | REQ_CRITERIA.CUSTOM(self.__isBoosterValid)
         return sorted(g_goodiesCache.getBoosters(criteria=criteria).values(), self._sortAvailableBoosters)
 
+    def __getAvailableTotal(self):
+        boosters = g_goodiesCache.getBoosters(criteria=REQ_CRITERIA.BOOSTER.IN_ACCOUNT).values()
+        return sum((booster.count for booster in boosters))
+
+    def __getNotAvailableTotal(self):
+        return sum(self.__qBoostersIterator(checkFilters=False))
+
     @classmethod
     def _sortAvailableBoosters(cls, a, b):
-        res = cmp(a.quality, b.quality)
-        if res:
-            return res
-        res = cmp(BOOSTERS_ORDERS[a.boosterType], BOOSTERS_ORDERS[b.boosterType])
-        if res:
-            return res
-        return cmp(b.effectValue, a.effectValue)
+        return cmp(a.quality, b.quality) or cmp(BOOSTERS_ORDERS[a.boosterType], BOOSTERS_ORDERS[b.boosterType]) or cmp(b.effectValue, a.effectValue)
 
     def __getActiveBoosters(self):
         return g_goodiesCache.getBoosters(criteria=REQ_CRITERIA.BOOSTER.ACTIVE).values()
@@ -289,12 +300,8 @@ class BoostersWindow(BoostersWindowMeta):
 
     def __getBoosterQuests(self):
         result = defaultdict(list)
-        quests = g_eventsCache.getAllQuests(lambda q: q.isAvailable()[0] and not q.isCompleted(), includePotapovQuests=True)
-        hasTopVehicle = len(g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | REQ_CRITERIA.VEHICLE.LEVEL(10)))
+        quests = events_helpers.getBoosterQuests()
         for q in quests.itervalues():
-            if q.getType() == EVENT_TYPE.POTAPOV_QUEST:
-                if q.getPQType().branch == PQ_BRANCH.FALLOUT and not hasTopVehicle:
-                    continue
             bonuses = q.getBonuses('goodies')
             for b in bonuses:
                 boosters = b.getBoosters()

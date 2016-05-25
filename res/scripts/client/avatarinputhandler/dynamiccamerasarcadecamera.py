@@ -1,23 +1,23 @@
 # Embedded file name: scripts/client/AvatarInputHandler/DynamicCameras/ArcadeCamera.py
 from collections import namedtuple
+import math
+import weakref
 import BigWorld
 import Math
 import Keys
 from Math import Vector2, Vector3, Vector4, Matrix
-import math
-import random
-import weakref
 from AvatarInputHandler import mathUtils, cameras
 from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
 from AvatarInputHandler.DynamicCameras import createOscillatorFromSection, CameraDynamicConfig, AccelerationSmoother
 from AvatarInputHandler.AimingSystems.ArcadeAimingSystem import ArcadeAimingSystem
 from AvatarInputHandler.Oscillator import Oscillator, CompoundOscillator
 from AvatarInputHandler.VideoCamera import KeySensor
-from AvatarInputHandler.cameras import ICamera, readFloat, readVec2, readBool, readVec3, ImpulseReason, FovExtended
+from AvatarInputHandler.cameras import ICamera, readFloat, readVec2, ImpulseReason, FovExtended
 import BattleReplay
 import Settings
 import constants
 from debug_utils import LOG_WARNING, LOG_ERROR
+from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 
 def getCameraAsSettingsHolder(settingsDataSec):
     return ArcadeCamera(settingsDataSec, None)
@@ -136,7 +136,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.__curSense = 0
         self.__curScrollSense = 0
         self.__postmortemMode = False
-        self.__modelsToCollideWith = []
+        self.__vehiclesToCollideWith = set()
         self.__focalPointDist = 1.0
         self.__autoUpdateDxDyDz = Vector3(0.0)
         self.__defaultAimOffset = (0.0, 0.0)
@@ -194,30 +194,31 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
     def setPivotSettings(self, heightAboveBase, focusRadius):
         self.__aimingSystem.setPivotSettings(heightAboveBase, focusRadius)
 
-    def addVehicleToCollideWith(self, vehicleAppearance):
-        modelsDesc = vehicleAppearance.modelsDesc
-        self.__modelsToCollideWith.append(modelsDesc['hull']['model'])
-        self.__modelsToCollideWith.append(modelsDesc['turret']['model'])
-        self.__setModelsToCollideWith(self.__modelsToCollideWith)
+    def addVehicleToCollideWith(self, vehicle):
+        self.__vehiclesToCollideWith.add(vehicle)
+        self.__setModelsToCollideWith(self.__vehiclesToCollideWith)
 
-    def removeVehicleToCollideWith(self, vehicleAppearance):
-        modelsDesc = vehicleAppearance.modelsDesc
-        for model in (modelsDesc['hull']['model'], modelsDesc['turret']['model']):
-            for existingModel in self.__modelsToCollideWith:
-                if existingModel is model:
-                    self.__modelsToCollideWith.remove(model)
-
-        self.__setModelsToCollideWith(self.__modelsToCollideWith)
+    def removeVehicleToCollideWith(self, vehicle):
+        lengthBefore = len(self.__vehiclesToCollideWith)
+        self.__vehiclesToCollideWith = set([ v for v in self.__vehiclesToCollideWith if v.id != vehicle.id ])
+        if lengthBefore != len(self.__vehiclesToCollideWith):
+            self.__setModelsToCollideWith(self.__vehiclesToCollideWith)
 
     def clearVehicleToCollideWith(self):
-        self.__modelsToCollideWith = []
-        self.__setModelsToCollideWith(self.__modelsToCollideWith)
+        self.__vehiclesToCollideWith = set()
+        self.__setModelsToCollideWith(self.__vehiclesToCollideWith)
 
-    def __setModelsToCollideWith(self, models):
-        self.__cam.setModelsToCollideWith(models)
-        if self.__aimingSystem is not None:
-            self.__aimingSystem.setModelsToCollideWith(models)
-        return
+    def __setModelsToCollideWith(self, vehicles):
+        colliders = []
+        for vehicle in vehicles:
+            vehicleAppearance = vehicle.appearance
+            compound = vehicleAppearance.compoundModel
+            colliders.append((compound.node(TankPartNames.HULL), compound.bounds, compound.getPartGeometryLink(TankPartIndexes.HULL)))
+            if not vehicle.isTurretDetached:
+                colliders.append((compound.node(TankPartNames.TURRET), compound.bounds, compound.getPartGeometryLink(TankPartIndexes.TURRET)))
+
+        self.__cam.setDynamicColliders(colliders)
+        self.__aimingSystem.setDynamicColliders(colliders)
 
     def focusOnPos(self, preferredPos):
         self.__aimingSystem.focusOnPos(preferredPos)
@@ -264,7 +265,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         else:
             self.__inputInertia.teleport(self.__calcRelativeDist())
         self.vehicleMProv = vehicleMProv
-        self.__setModelsToCollideWith(self.__modelsToCollideWith)
+        self.__setModelsToCollideWith(self.__vehiclesToCollideWith)
         BigWorld.camera(self.__cam)
         self.__aimingSystem.enable(preferredPos, turretYaw, gunPitch)
         self.__aimingSystem.aimMatrix = self.__calcAimMatrix()
@@ -332,6 +333,9 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
 
     def restoreDefaultsState(self):
         LOG_ERROR('ArcadeCamera::restoreDefaultState is obsolete!')
+
+    def getConfigValue(self, name):
+        return self.__cfg.get(name)
 
     def getUserConfigValue(self, name):
         return self.__userCfg.get(name)
@@ -609,6 +613,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         from account_helpers.settings_core.SettingsCore import g_settingsCore
         ucfg['horzInvert'] = g_settingsCore.getSetting('mouseHorzInvert')
         ucfg['vertInvert'] = g_settingsCore.getSetting('mouseVertInvert')
+        ucfg['sniperModeByShift'] = g_settingsCore.getSetting('sniperModeByShift')
         ucfg['keySensitivity'] = readFloat(ds, 'keySensitivity', 0.0, 10.0, 1.0)
         ucfg['sensitivity'] = readFloat(ds, 'sensitivity', 0.0, 10.0, 1.0)
         ucfg['scrollSensitivity'] = readFloat(ds, 'scrollSensitivity', 0.0, 10.0, 1.0)
@@ -634,6 +639,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         cfg['startDist'] = ucfg['startDist']
         cfg['startAngle'] = ucfg['startAngle']
         cfg['fovMultMinMaxDist'] = ucfg['fovMultMinMaxDist']
+        cfg['sniperModeByShift'] = ucfg['sniperModeByShift']
         enableShift = dataSec.readBool('shift', False)
         if enableShift:
             movementMappings = dict()

@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/common.py
 import cPickle
+from collections import namedtuple
 import types
 import math
 from operator import methodcaller, itemgetter
@@ -8,6 +9,8 @@ import BigWorld
 import constants
 import ArenaType
 import fortified_regions
+from account_helpers.settings_core import g_settingsCore
+from gui.Scaleform.genConsts.ICON_TEXT_FRAMES import ICON_TEXT_FRAMES
 from shared_utils import findFirst, CONST_CONTAINER
 from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import ProfileUtils
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
@@ -27,9 +30,10 @@ from gui.shared.view_helpers import UsersInfoHelper
 from gui.LobbyContext import g_lobbyContext
 from gui.shared.tooltips import efficiency
 from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter, makeClanFullName, makeClubFullName, makeContactStatusDescription
-from predefined_hosts import g_preDefinedHosts
+from predefined_hosts import g_preDefinedHosts, HOST_AVAILABILITY, getPingStatus, PING_STATUSES
+from ConnectionManager import connectionManager
 from constants import PREBATTLE_TYPE, WG_GAMES, VISIBILITY
-from debug_utils import LOG_WARNING
+from debug_utils import LOG_WARNING, LOG_ERROR
 from helpers import i18n, time_utils, html, int2roman
 from helpers.i18n import makeString as ms, makeString
 from gui.Scaleform.daapi.view.lobby.fortifications.fort_utils.FortViewHelper import FortViewHelper
@@ -56,6 +60,8 @@ from items import vehicles
 from messenger.storage import storage_getter
 from messenger.m_constants import USER_TAG
 from gui.shared.tooltips import formatters
+from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
+_UNAVAILABLE_DATA_PLACEHOLDER = '--'
 
 class FortOrderParamField(ToolTipParameterField):
 
@@ -251,7 +257,7 @@ class ContactTooltipData(ToolTipBaseData):
             currentUnit = ''
             if USER_TAG.IGNORED in tags:
                 currentUnit += self.__makeIconUnitStr('contactIgnored.png', TOOLTIPS.CONTACT_UNITS_STATUS_DESCRIPTION_IGNORED)
-            elif USER_TAG.SUB_TO not in tags and (userEntity.isFriend() or USER_TAG.SUB_PENDING_IN in tags):
+            elif USER_TAG.SUB_TO not in tags and (USER_TAG.SUB_PENDING_IN in tags or userEntity.isFriend() and USER_TAG.SUB_FROM not in tags):
                 currentUnit += self.__addBR(currentUnit)
                 currentUnit += self.__makeIconUnitStr('contactConfirmNeeded.png', TOOLTIPS.CONTACT_UNITS_STATUS_DESCRIPTION_PENDINGFRIENDSHIP)
             if USER_TAG.BAN_CHAT in tags:
@@ -320,8 +326,12 @@ class SortieDivisionTooltipData(ToolTipBaseData):
         divisions = makeDivisionData()
         for division in divisions:
             minLvl, maxLvl = division['vehLvls']
+            if maxLvl == minLvl:
+                divisLevels = fort_formatters.getTextLevel(maxLvl)
+            else:
+                divisLevels = fort_formatters.getTextLevel(minLvl) + ' - ' + fort_formatters.getTextLevel(maxLvl)
             divisionsData.append({'divisName': division['label'],
-             'divisLevels': text_styles.main(fort_formatters.getTextLevel(minLvl) + ' - ' + fort_formatters.getTextLevel(maxLvl)),
+             'divisLevels': text_styles.main(divisLevels),
              'divisBonus': self.__getBonusStr(division['profit']),
              'divisPlayers': self.__getPlayerLimitsStr(*self.__getPlayerLimits(division['level']))})
 
@@ -371,32 +381,76 @@ class SettingsControlTooltipData(ToolTipBaseData):
         return result
 
 
-class SettingsButtonTooltipData(ToolTipBaseData):
+class SettingsButtonTooltipData(BlocksTooltipData):
 
     def __init__(self, context):
         super(SettingsButtonTooltipData, self).__init__(context, TOOLTIP_TYPE.CONTROL)
+        self.item = None
+        self._setContentMargin(top=15, left=19, bottom=5, right=10)
+        self._setMargins(afterBlock=15, afterSeparator=15)
+        self._setWidth(295)
+        return
 
-    def getDisplayableData(self):
-        from ConnectionManager import connectionManager
-        serverName = ''
+    def _packBlocks(self, *args, **kwargs):
+        self.item = self.context.buildItem(*args, **kwargs)
+        items = super(SettingsButtonTooltipData, self)._packBlocks(*args, **kwargs)
+        items.append(formatters.packBuildUpBlockData([formatters.packTextBlockData(text_styles.highTitle(TOOLTIPS.HEADER_MENU_HEADER)), formatters.packTextBlockData(text_styles.standard(TOOLTIPS.HEADER_MENU_DESCRIPTION))]))
+        serverBlocks = list()
+        serverBlocks.append(formatters.packTextBlockData(text_styles.middleTitle(TOOLTIPS.HEADER_MENU_SERVER), padding=formatters.packPadding(0, 0, 4)))
+        simpleHostList = g_preDefinedHosts.getSimpleHostsList(g_preDefinedHosts.hostsWithRoaming())
+        pings = g_preDefinedHosts.getPingResult()
+        isColorBlind = g_settingsCore.getSetting('isColorBlind')
         if connectionManager.peripheryID == 0:
-            serverName = connectionManager.serverUserName
-        else:
-            hostsList = g_preDefinedHosts.getSimpleHostsList(g_preDefinedHosts.hostsWithRoaming())
-            for key, name, csisStatus, peripheryID in hostsList:
-                if connectionManager.peripheryID == peripheryID:
-                    serverName = name
-                    break
+            serverBlocks.append(self.__packServerBlock(self.__wrapServerName(connectionManager.serverUserName), pings.get(connectionManager.url, -1), HOST_AVAILABILITY.IGNORED, True, isColorBlind))
+        if len(simpleHostList):
+            currServUrl = connectionManager.url
+            for key, name, csisStatus, peripheryID in simpleHostList:
+                serverBlocks.append(self.__packServerBlock(name, pings.get(key, -1), csisStatus, currServUrl == key, isColorBlind))
 
+        items.append(formatters.packBuildUpBlockData(serverBlocks, linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE))
         serversStats = None
         if constants.IS_SHOW_SERVER_STATS:
             serversStats, _ = game_control.g_instance.serverStats.getFormattedStats()
-        return {'name': i18n.makeString(TOOLTIPS.HEADER_MENU_HEADER),
-         'description': i18n.makeString(TOOLTIPS.HEADER_MENU_DESCRIPTION),
-         'serverHeader': i18n.makeString(TOOLTIPS.HEADER_MENU_SERVER),
-         'serverName': serverName,
-         'playersOnServer': i18n.makeString(TOOLTIPS.HEADER_MENU_PLAYERSONSERVER),
-         'serversStats': serversStats}
+        if not constants.IS_CHINA:
+            items.append(formatters.packBuildUpBlockData([formatters.packTextBlockData(text_styles.middleTitle(TOOLTIPS.HEADER_MENU_PLAYERSONSERVER)), formatters.packImageTextBlockData('', serversStats, RES_ICONS.MAPS_ICONS_LIBRARY_CREW_ONLINE, imgPadding=formatters.packPadding(-4, -10), padding=formatters.packPadding(5))]))
+        return items
+
+    @classmethod
+    def __packServerBlock(cls, name, ping, csisStatus, isSelected = False, isColorBlind = False):
+        separator = '  '
+        pingStatus = getPingStatus(ping)
+        if csisStatus != HOST_AVAILABILITY.NOT_AVAILABLE and pingStatus != PING_STATUSES.UNDEFINED:
+            if pingStatus == PING_STATUSES.LOW:
+                formattedPing = text_styles.success(ping)
+            else:
+                formattedPing = text_styles.main(ping) if isSelected else text_styles.standard(ping)
+        else:
+            ping = _UNAVAILABLE_DATA_PLACEHOLDER
+            pingStatus = PING_STATUSES.UNDEFINED
+            formattedPing = text_styles.standard(ping)
+        colorBlindName = ''
+        if isColorBlind and pingStatus == PING_STATUSES.HIGH:
+            colorBlindName = '_color_blind'
+        pingStatusIcon = cls.__formatPingStatusIcon(RES_ICONS.maps_icons_pingstatus_stairs_indicator(str(pingStatus) + colorBlindName + '.png'))
+        return formatters.packTextParameterBlockData(cls.__formatServerName(name, isSelected), text_styles.concatStylesToSingleLine(formattedPing, separator, pingStatusIcon), valueWidth=55, gap=2, padding=formatters.packPadding(left=40))
+
+    @classmethod
+    def __formatServerName(cls, name, isSelected = False):
+        if isSelected:
+            result = text_styles.main(name + ' ' + ms(TOOLTIPS.HEADER_MENU_SERVER_CURRENT))
+        else:
+            result = text_styles.standard(name)
+        return result
+
+    @classmethod
+    def __formatPingStatusIcon(cls, icon):
+        return icons.makeImageTag(icon, 16, 16, -4)
+
+    @staticmethod
+    def __wrapServerName(name):
+        if constants.IS_CHINA:
+            return makeHtmlString('html_templates:lobby/serverStats', 'serverName', {'name': name})
+        return name
 
 
 class CustomizationItemTooltipData(ToolTipBaseData):
@@ -1078,13 +1132,6 @@ class QuestVehiclesBonusTooltipData(ToolTipBaseData):
          'columns': columns}
 
 
-class FortConsumableOrderTooltipData(ToolTipData):
-
-    def __init__(self, context):
-        super(FortConsumableOrderTooltipData, self).__init__(context, TOOLTIP_TYPE.EQUIPMENT)
-        self.fields = (ToolTipAttrField(self, 'name', 'userName'), ToolTipMethodField(self, 'type', 'getUserType'), FortOrderParamField(self, 'params'))
-
-
 class LadderTooltipData(ToolTipBaseData):
 
     def __init__(self, context):
@@ -1208,6 +1255,23 @@ class SettingsMinimapCircles(BlocksTooltipData):
         return blocks
 
 
+class SquadRestrictionsInfo(BlocksTooltipData):
+
+    def __init__(self, context):
+        super(SquadRestrictionsInfo, self).__init__(context, TOOLTIP_TYPE.CONTROL)
+        self._setContentMargin(top=15, left=19, bottom=6, right=20)
+        self._setMargins(afterBlock=14)
+        self._setWidth(364)
+
+    def _packBlocks(self, *args):
+        tooltipBlocks = super(SquadRestrictionsInfo, self)._packBlocks()
+        tooltipBlocks.append(formatters.packTitleDescBlock(text_styles.highTitle(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_HEADER)))
+        tooltipBlocks.append(formatters.packImageTextBlockData(text_styles.stats(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_TITLE0), text_styles.standard(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_BODY0), RES_ICONS.MAPS_ICONS_LIBRARY_DONE, imgPadding=formatters.packPadding(left=-21, right=10), padding=formatters.packPadding(-22, 20)))
+        tooltipBlocks.append(formatters.packImageTextBlockData(text_styles.stats(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_TITLE1), text_styles.standard(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_BODY1), RES_ICONS.MAPS_ICONS_LIBRARY_ATTENTIONICONFILLEDBIG, imgPadding=formatters.packPadding(left=-21, right=12), padding=formatters.packPadding(-22, 20, 1)))
+        tooltipBlocks.append(formatters.packImageTextBlockData(text_styles.stats(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_TITLE2), text_styles.standard(TOOLTIPS.SQUADWINDOW_INFOICON_TECHRESTRICTIONS_BODY2), RES_ICONS.MAPS_ICONS_LIBRARY_ICON_ALERT_32X32, imgPadding=formatters.packPadding(left=-21, right=10), padding=formatters.packPadding(-22, 20, 11)))
+        return tooltipBlocks
+
+
 class LadderRegulations(ToolTipBaseData):
 
     def __init__(self, context):
@@ -1257,3 +1321,18 @@ class LadderRegulations(ToolTipBaseData):
              'allRules': '\n'.join(allRules),
              'hasRules': len(allRules) != 0})
         return data
+
+
+_CurrencySetting = namedtuple('_CurrencySetting', 'text, icon, textStyle, frame')
+CURRENCY_SETTINGS = {'buyCreditsPrice': _CurrencySetting(TOOLTIPS.VEHICLE_BUY_PRICE, icons.credits(), text_styles.credits, ICON_TEXT_FRAMES.CREDITS),
+ 'buyGoldPrice': _CurrencySetting(TOOLTIPS.VEHICLE_BUY_PRICE, icons.gold(), text_styles.gold, ICON_TEXT_FRAMES.GOLD),
+ 'sellPrice': _CurrencySetting(TOOLTIPS.VEHICLE_SELL_PRICE, icons.credits(), text_styles.credits, ICON_TEXT_FRAMES.CREDITS),
+ 'unlockPrice': _CurrencySetting(TOOLTIPS.VEHICLE_UNLOCK_PRICE, icons.xp(), text_styles.expText, ICON_TEXT_FRAMES.XP)}
+
+def getCurrencySetting(key):
+    if key in CURRENCY_SETTINGS:
+        return CURRENCY_SETTINGS[key]
+    else:
+        LOG_ERROR('Unsupported currency type "' + key + '"!')
+        return None
+        return None

@@ -64,6 +64,12 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
     VOICE_CHAT_INIT_TIMEOUT = 10
     MAX_OPENED_ANOTHER_DOSSIERS = 4
     ENABLE_DEBUG_DYNAMICS_INFO = False
+    if IS_CLIENT:
+        import ResMgr
+        IS_CLIENT_BUILD = not ResMgr.isFile('version.xml')
+    else:
+        IS_CLIENT_BUILD = False
+    HAS_DEV_RESOURCES = IS_DEVELOPMENT and not IS_CLIENT_BUILD
 
     class SPT_MATKIND:
         SOLID = 71
@@ -86,6 +92,7 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         FORTIFIED_REGIONS = 8
         RATED7X7 = 16
         CLUB = 32
+        CLAN = 64
 
 
     ARENA_GAMEPLAY_NAMES = ('ctf', 'domination', 'assault', 'nations', 'ctf2', 'domination2', 'assault2', 'fallout', 'fallout2', 'fallout3', 'fallout4', 'fallout5', 'fallout6', 'sandbox')
@@ -257,7 +264,8 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         GAS_ATTACK_MECHANICS = 288230376151711744L
         DOSSIER_ACHIEVEMENTS_FALLOUT = 576460752303423488L
         SQUADS = 1152921504606846976L
-        REGULAR = RESULTS | DAMAGE_VEHICLE | CREDITS | CREDITS_FACTOR_15X15 | XP | XP_FACTOR_15X15 | REWARD_FOR_ACHIEVEMENT | QUESTS | DOSSIER_TOTAL | DOSSIER_KILL_LIST | DOSSIER_15X15 | DOSSIER_ACHIEVEMENTS_15X15 | DOSSIER_MAX15X15 | TKILL_RATING | REF_SYSTEM_BONUS | DAILY_MULTIPLIED_XP | RENT_BATTLES_COUNTED | REPAIR_MECHANICS | BOOSTERS | SQUADS
+        SQUAD_XP = 2305843009213693952L
+        REGULAR = RESULTS | DAMAGE_VEHICLE | CREDITS | CREDITS_FACTOR_15X15 | XP | XP_FACTOR_15X15 | REWARD_FOR_ACHIEVEMENT | QUESTS | DOSSIER_TOTAL | DOSSIER_KILL_LIST | DOSSIER_15X15 | DOSSIER_ACHIEVEMENTS_15X15 | DOSSIER_MAX15X15 | TKILL_RATING | REF_SYSTEM_BONUS | DAILY_MULTIPLIED_XP | RENT_BATTLES_COUNTED | REPAIR_MECHANICS | BOOSTERS | SQUADS | SQUAD_XP
         TRAINING = RESULTS | REPAIR_MECHANICS
         COMPANY = RESULTS | DAMAGE_VEHICLE | CREDITS | CREDITS_FACTOR_15X15 | XP | XP_FACTOR_15X15 | RANSOM_IN | RANSOM_OUT | QUESTS | DOSSIER_TOTAL | DOSSIER_KILL_LIST | DOSSIER_15X15 | DOSSIER_COMPANY | DOSSIER_MAX15X15 | TKILL_RATING | DAILY_MULTIPLIED_XP | RENT_BATTLES_COUNTED | REPAIR_MECHANICS
         TOURNAMENT = RESULTS | TKILL_RATING | REPAIR_MECHANICS | QUESTS | BOOSTERS
@@ -357,7 +365,6 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         WRONG_VEHICLE = 4
         TEAM_IS_FULL = 5
         WRONG_ARGS = 6
-        CAPTCHA = 7
         WRONG_ARENA_STATE = 8
         CANNOT_CREATE = 9
         PRIVACY = 10
@@ -795,7 +802,7 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
         CIRCULAR_AOI_HYSTERESIS_MARGIN = 5.0
 
 
-    ATTACK_REASONS = ('shot', 'fire', 'ramming', 'world_collision', 'death_zone', 'drowning', 'gas_attack')
+    ATTACK_REASONS = ('shot', 'fire', 'ramming', 'world_collision', 'death_zone', 'drowning', 'gas_attack', 'overturn')
     ATTACK_REASON_INDICES = dict(((value, index) for index, value in enumerate(ATTACK_REASONS)))
     DEATH_REASON_ALIVE = -1
 
@@ -909,6 +916,7 @@ if not sum([IS_CHINA, IS_KOREA, IS_SINGAPORE]) <= 1:
 
     VEHICLE_CLASSES = ('lightTank', 'mediumTank', 'heavyTank', 'SPG', 'AT-SPG')
     VEHICLE_CLASS_INDICES = dict(((x[1], x[0]) for x in enumerate(VEHICLE_CLASSES)))
+    MIN_VEHICLE_LEVEL = 1
     MAX_VEHICLE_LEVEL = 10
 
     class TEAMS_IN_ARENA:
@@ -1090,12 +1098,6 @@ class REQUEST_COOLDOWN:
     SEND_INVITATION_COOLDOWN = 1.0
 
 
-class CAPTCHA_API:
-    RE_CAPTCHA = 1
-    KONG = 2
-
-
-CURRENT_CAPTCHA_API = IS_CHINA and CAPTCHA_API.KONG or CAPTCHA_API.RE_CAPTCHA
 IS_SHOW_INGAME_HELP_FIRST_TIME = False
 
 class DENUNCIATION:
@@ -1342,8 +1344,8 @@ INT_USER_SETTINGS_KEYS = {USER_SERVER_SETTINGS.VERSION: 'Settings version',
  60: 'Fallout',
  61: 'Tutorial',
  62: 'Fallout carousel filter',
- 63: 'Reserver',
- 64: 'Reserver',
+ 63: 'Arcade aim setting',
+ 64: 'Sniper aim setting',
  65: 'Reserver',
  66: 'Reserver',
  67: 'Reserver',
@@ -1351,6 +1353,10 @@ INT_USER_SETTINGS_KEYS = {USER_SERVER_SETTINGS.VERSION: 'Settings version',
  69: 'Reserver',
  70: 'Once only hints',
  71: 'Keyboard section settings',
+ 73: 'Carousel filter',
+ 74: 'Carousel filter',
+ 75: 'Fallout carousel filter',
+ 76: 'Fallout carousel filter',
  USER_SERVER_SETTINGS.HIDE_MARKS_ON_GUN: 'Hide marks on gun'}
 
 class WG_GAMES:
@@ -1545,6 +1551,8 @@ class EVENT_CLIENT_DATA:
     FORT_QUEST_REV = 14
     FALLOUT = 15
     FALLOUT_REV = 16
+    SQUAD_BONUSES = 17
+    SQUAD_BONUSES_REV = 18
 
     @staticmethod
     def REVISION(id):
@@ -1655,11 +1663,6 @@ class VEHICLE_PHYSICS_MODE:
     DETAILED = 1
 
 
-class VEHICLE_DAMAGE_VERSION:
-    VER0 = 0
-    VER1 = 1
-
-
 class CONTENT_TYPE:
     DEFAULT = 0
     SD_TEXTURES = 1
@@ -1715,3 +1718,15 @@ class VISIBILITY:
 
 
 VEHICLE_ATTRS_TO_SYNC = frozenset(['circularVisionRadius'])
+
+class OBSTACLE_KIND:
+    CHUNK_DESTRUCTIBLE = 1
+    ENTITY_DESTRUCTIBLE = 2
+
+
+class SHELL_TYPES(object):
+    HOLLOW_CHARGE = 'HOLLOW_CHARGE'
+    HIGH_EXPLOSIVE = 'HIGH_EXPLOSIVE'
+    ARMOR_PIERCING = 'ARMOR_PIERCING'
+    ARMOR_PIERCING_HE = 'ARMOR_PIERCING_HE'
+    ARMOR_PIERCING_CR = 'ARMOR_PIERCING_CR'

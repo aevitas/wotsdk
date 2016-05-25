@@ -799,11 +799,6 @@ class PlayerAccount(BigWorld.Entity, ClientChat):
             return
         self._doCmdInt3(AccountCommands.CMD_PRB_CH_GAMEPLAYSMASK, gameplaysMask, 0, 0, lambda requestID, resultID, errorStr: callback(resultID))
 
-    def challengeCaptcha(self, challenge, response, callback):
-        if events.isPlayerEntityChanging:
-            return
-        self._doCmdInt2Str(AccountCommands.CMD_CAPTCHA_CHALLENGE, len(challenge), 0, challenge + response, lambda requestID, resultID, errorCode: callback(resultID, errorCode))
-
     def setLanguage(self, language):
         self._doCmdStr(AccountCommands.CMD_SET_LANGUAGE, language, None)
         return

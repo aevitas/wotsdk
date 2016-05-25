@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/battle_control/avatar_getter.py
 import BigWorld
-import constants
+from gui import GUI_CTRL_MODE_FLAG
 from debug_utils import LOG_WARNING, LOG_CURRENT_EXCEPTION
 
 def isForcedGuiControlMode(avatar = None):
@@ -15,11 +15,35 @@ def isForcedGuiControlMode(avatar = None):
     return result
 
 
-def setForcedGuiControlMode(value, stopVehicle = True, enableAiming = True):
+def getForcedGuiControlModeFlags(avatar = None):
+    if avatar is None:
+        avatar = BigWorld.player()
     try:
-        BigWorld.player().setForcedGuiControlMode(value, stopVehicle=stopVehicle, enableAiming=enableAiming)
+        result = avatar.getForcedGuiControlModeFlags()
     except AttributeError:
-        pass
+        LOG_WARNING('Attribute "getForcedGuiControlModeFlags" is not found')
+        result = 0
+
+    return result
+
+
+def setForcedGuiControlMode(value, stopVehicle = False, enableAiming = True, cursorVisible = True, locked = True):
+    if value:
+        flags = GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED
+        if stopVehicle:
+            flags |= GUI_CTRL_MODE_FLAG.MOVING_DISABLED
+        if enableAiming:
+            flags |= GUI_CTRL_MODE_FLAG.AIMING_ENABLED
+        if cursorVisible:
+            flags |= GUI_CTRL_MODE_FLAG.CURSOR_VISIBLE
+        if locked:
+            flags |= GUI_CTRL_MODE_FLAG.CTRL_LOCKED
+    else:
+        flags = GUI_CTRL_MODE_FLAG.CURSOR_DETACHED
+    try:
+        return BigWorld.player().setForcedGuiControlMode(flags)
+    except AttributeError:
+        return False
 
 
 def getPlayerName(avatar = None):
@@ -163,15 +187,6 @@ def getArenaUniqueID(avatar = None):
     return None
 
 
-def getMaxTeamsOnArena(avatar = None):
-    try:
-        return getArena(avatar).arenaType.maxTeamsInArena
-    except AttributeError:
-        LOG_WARNING('Attribute "arenaType" or "maxTeamsInArena" is not found')
-
-    return constants.TEAMS_IN_ARENA.MIN_TEAMS
-
-
 def updateVehicleSetting(code, value, avatar = None):
     if avatar is None:
         avatar = BigWorld.player()
@@ -217,12 +232,12 @@ def leaveArena(avatar = None):
     return
 
 
-def refreshShotDispersionAngle(avatar = None):
+def switchToOtherPlayer(vehicleID, avatar = None):
     if avatar is None:
         avatar = BigWorld.player()
     try:
-        avatar.getOwnVehicleShotDispersionAngle(avatar.gunRotator.turretRotationSpeed, 1)
+        avatar.selectPlayer(vehicleID)
     except AttributeError:
-        LOG_WARNING('Attribute "getOwnVehicleShotDispersionAngle" is not found')
+        LOG_WARNING('Attribute "selectPlayer" is not found')
 
     return

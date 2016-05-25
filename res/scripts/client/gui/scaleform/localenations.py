@@ -2,6 +2,12 @@
 
 
 class NATIONS(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     USSR = '#nations:ussr'
     GERMANY = '#nations:germany'
     USA = '#nations:usa'
@@ -21,7 +27,11 @@ class NATIONS(object):
 
     @staticmethod
     def all(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#nations:%s' % key
         if outcome not in NATIONS.all_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome

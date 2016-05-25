@@ -153,13 +153,10 @@ class Aim(Flash):
              self.__aimSettings['net'],
              self.__aimSettings['netType'],
              self.__aimSettings['reloader'],
-             0,
              self.__aimSettings['condition'],
-             0,
              self.__aimSettings['cassette'],
-             0,
              self.__aimSettings['reloaderTimer'],
-             0])
+             self.__aimSettings['zoomIndicator']])
         return
 
     def enable(self):
@@ -391,6 +388,10 @@ class Aim(Flash):
             self._flashCall('setHealth', [cur / max])
         return
 
+    def _setZoom(self, zoomFactorInt):
+        zoomStr = i18n.makeString(INGAME_GUI.AIM_ZOOM, zoom=zoomFactorInt)
+        self._flashCall('onZoomUpdate', [zoomStr])
+
     def _setAmmoStock(self, quantity, quantityInClip, clipReloaded = False):
         isLow, state = self.getAmmoState(quantity, quantityInClip)
         self._flashCall('setAmmoStock', [quantity,
@@ -504,8 +505,7 @@ class PostMortemAim(Aim):
     def changeVehicle(self, vID):
         self.__vID = vID
         self.updateAdjust()
-        if vID == BigWorld.player().playerVehicleID:
-            self.updateAmmoState(True)
+        self.updateAmmoState(True)
 
     def updateAdjust(self):
         scheme = _ColorSchemeManager.getSubScheme('vm_ally', self._isColorBlind())
@@ -516,7 +516,7 @@ class PostMortemAim(Aim):
         if self.__vID is not None:
             vehicle = BigWorld.entity(self.__vID)
             if vehicle is not None:
-                playerName = g_sessionProvider.getCtx().getFullPlayerName(vID=self.__vID, showVehShortName=False)
+                playerName = g_sessionProvider.getCtx().getPlayerFullName(vID=self.__vID, showVehShortName=False)
                 type = Vehicle.getUserName(vehicleType=vehicle.typeDescriptor.type, textPrefix=True)
                 healthPercent = math.ceil(100.0 * max(0, vehicle.health) / vehicle.typeDescriptor.maxHealth)
                 self.__setText(playerName, type, healthPercent)

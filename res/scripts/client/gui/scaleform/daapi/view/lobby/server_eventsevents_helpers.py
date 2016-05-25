@@ -6,7 +6,10 @@ import types
 from collections import namedtuple, defaultdict
 import BigWorld
 import constants
+from constants import EVENT_TYPE
+from gui.LobbyContext import g_lobbyContext
 from gui.server_events.bonuses import getTutorialBonusObj
+from gui.shared.utils.requesters.ItemsRequester import FALLOUT_QUESTS_CRITERIA
 from potapov_quests import PQ_BRANCH
 from debug_utils import LOG_ERROR
 from dossiers2.custom.records import RECORD_DB_IDS
@@ -700,6 +703,12 @@ def getTutorialQuestsBoosters():
                         result[chapter].append((booster, count))
 
     return result
+
+
+def getBoosterQuests():
+    hasTopVehicle = len(g_itemsCache.items.getVehicles(FALLOUT_QUESTS_CRITERIA.TOP_VEHICLE))
+    isFalloutQuestEnabled = g_lobbyContext.getServerSettings().isFalloutQuestEnabled()
+    return g_eventsCache.getAllQuests(lambda q: q.isAvailable()[0] and not q.isCompleted() and len(q.getBonuses('goodies')) and not (q.getType() == EVENT_TYPE.POTAPOV_QUEST and q.getPQType().branch == PQ_BRANCH.FALLOUT and (not isFalloutQuestEnabled or not hasTopVehicle)), includePotapovQuests=True)
 
 
 class _PotapovDependenciesResolver(object):

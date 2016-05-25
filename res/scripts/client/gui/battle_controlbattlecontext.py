@@ -1,50 +1,17 @@
 # Embedded file name: scripts/client/gui/battle_control/BattleContext.py
-from collections import namedtuple
 import BigWorld
 import Settings
-from gui.battle_control import avatar_getter
-from gui.LobbyContext import g_lobbyContext
-defNormalizePNameFunction = lambda pName: pName
-
-def _getDefaultTeamName(isAlly):
-    if isAlly:
-        return '#menu:loading/teams/allies'
-    else:
-        return '#menu:loading/teams/enemies'
-
+from gui.battle_control.arena_info import player_format
+from unit_roster_config import SquadRoster
 
 class BattleContext(object):
-
-    class FORMAT_MASK:
-        NONE = 0
-        VEHICLE = 1
-        CLAN = 16
-        REGION = 256
-        VEH_CLAN = VEHICLE | CLAN
-        VEH_REGION = VEHICLE | REGION
-        REG_CLAN = CLAN | REGION
-        ALL = VEHICLE | CLAN | REGION
-
-    __playerFullNameFormats = {FORMAT_MASK.VEHICLE: '{0:>s} ({2:>s})',
-     FORMAT_MASK.CLAN: '{0:>s}[{1:>s}]',
-     FORMAT_MASK.VEH_CLAN: '{0:>s}[{1:>s}] ({2:>s})',
-     FORMAT_MASK.REGION: '{0:>s} {3:>s}',
-     FORMAT_MASK.VEH_REGION: '{0:>s} {3:>s} ({2:>s})',
-     FORMAT_MASK.REG_CLAN: '{0:>s}[{1:>s}] {3:>s}',
-     FORMAT_MASK.ALL: '{0:>s}[{1:>s}] {3:>s} ({2:>s})'}
-    __normalizePName = staticmethod(defNormalizePNameFunction)
-
-    def setNormalizePlayerName(self, function):
-        BattleContext.__normalizePName = staticmethod(function)
-
-    def resetNormalizePlayerName(self):
-        BattleContext.__normalizePName = staticmethod(defNormalizePNameFunction)
 
     def __init__(self):
         super(BattleContext, self).__init__()
         self.__arenaDP = None
         self.__isShowVehShortName = True
         self.__lastArenaWinStatus = None
+        self.__playerFormatter = player_format.PlayerFullNameFormatter()
         self.lastArenaUniqueID = None
         self.isInBattle = False
         self.wasInBattle = False
@@ -69,57 +36,59 @@ class BattleContext(object):
     def getVehIDByAccDBID(self, accDBID):
         return self.__arenaDP.getVehIDByAccDBID(accDBID)
 
-    def getFullPlayerNameWithParts(self, vID = None, accID = None, pName = None, showVehShortName = True, showClan = True, showRegion = True):
-        FM = self.FORMAT_MASK
-        key = FM.NONE
-        vehShortName = ''
-        vehName = ''
+    def setPlayerFullNameFormatter(self, formatter):
+        self.__playerFormatter = formatter
+
+    def resetPlayerFullNameFormatter(self):
+        self.__playerFormatter = player_format.PlayerFullNameFormatter()
+
+    def createPlayerFullNameFormatter(self, showVehShortName = True, showClan = True, showRegion = True):
+        """
+        Creates configured player's name formatter.
+        :param showVehShortName: is vehicle's short name shown.
+        :param showClan: is player's clan shown.
+        :param showRegion: is player's region code shown.
+        :return: instance of PlayerFullNameFormatter.
+        """
+        return self.__playerFormatter.create(showVehShortName and self.__isShowVehShortName, showClan, showRegion)
+
+    def getPlayerFullNameParts(self, vID = None, accID = None, pName = None, showVehShortName = True, showClan = True, showRegion = True):
+        """
+        Gets player display name and all parts of this name. The full name of the player consists of:
+            <player name>[<clanAbbrev>]* (<vehicle short name>)*
+                clanAbbrev if vData['clanAbbrev'] isn't empty
+                vehicle short name if given setting is enabled.
+        :param vID: long containing vehicle's entity ID.
+        :param accID: long containing account's database ID.
+        :param pName: string containing player's name.
+        :param showVehShortName: is vehicle's short name shown.
+        :param showClan: is player's region code shown.
+        :param showRegion: is player's region code shown.
+        :return: namedtuple with formatted full name and all parts, composing it.
+        """
         if vID is None:
             vID = self.__arenaDP.getVehIDByAccDBID(accID)
         vInfo = self.__arenaDP.getVehicleInfo(vID)
-        if accID is None:
-            accID = vInfo.player.accountDBID
-        vehType = vInfo.vehicleType
-        if vehType is not None:
-            if showVehShortName and self.__isShowVehShortName:
-                vehName = vehShortName = vehType.shortNameWithPrefix
-                key |= FM.VEHICLE
-            else:
-                vehName = vehType.name
-        if pName is None:
-            pName = vInfo.player.name
-        pName = self.__normalizePName(pName)
-        clanAbbrev = ''
-        if showClan:
-            clanAbbrev = vInfo.player.clanAbbrev
-            if clanAbbrev is not None and len(clanAbbrev) > 0:
-                key |= FM.CLAN
-        regionCode = ''
-        if showRegion:
-            regionCode = self.getRegionCode(accID)
-            if regionCode:
-                key |= FM.REGION
-        if key == FM.NONE:
-            fullName = pName
-        else:
-            fullName = self.__playerFullNameFormats.get(key, '{0:>s}').format(pName, clanAbbrev, vehShortName, regionCode)
-        return (fullName,
-         pName,
-         clanAbbrev,
-         regionCode,
-         vehName)
+        self.__playerFormatter.setVehicleShortNameShown(showVehShortName and self.__isShowVehShortName)
+        self.__playerFormatter.setClanShown(showClan)
+        self.__playerFormatter.setRegionShown(showRegion)
+        return self.__playerFormatter.format(vInfo, playerName=pName)
 
-    def getFullPlayerName(self, vID = None, accID = None, pName = None, showVehShortName = True, showClan = True, showRegion = True):
-        return self.getFullPlayerNameWithParts(vID, accID, pName, showVehShortName, showClan, showRegion)[0]
-
-    def getRegionCode(self, dbID):
-        regionCode = None
-        serverSettings = g_lobbyContext.getServerSettings()
-        if serverSettings:
-            roaming = serverSettings.roaming
-            if dbID and not roaming.isSameRealm(dbID):
-                _, regionCode = roaming.getPlayerHome(dbID)
-        return regionCode
+    def getPlayerFullName(self, vID = None, accID = None, pName = None, showVehShortName = True, showClan = True, showRegion = True):
+        """
+        Gets player display name. The full name of the player consists of:
+            <player name>[<clanAbbrev>]* (<vehicle short name>)*
+                clanAbbrev if vData['clanAbbrev'] isn't empty
+                vehicle short name if given setting is enabled.
+        :param vID: long containing vehicle's entity ID.
+        :param accID: long containing account's database ID
+        :param pName: string containing player's name.
+        :param showVehShortName: is vehicle's short name shown.
+        :param showClan: is player's region code shown.
+        :param showRegion: is player's region code shown.
+        :return: string containing player's full name.
+        """
+        return self.getPlayerFullNameParts(vID, accID, pName, showVehShortName, showClan, showRegion).playerFullName
 
     def isSquadMan(self, vID = None, accID = None, prebattleID = None):
         if vID is None:
@@ -152,13 +121,48 @@ class BattleContext(object):
     def getPlayerGuiProps(self, vID, team):
         return self.__arenaDP.getPlayerGuiProps(vID, team)
 
-    def getTeamName(self, teamIdx):
-        arena = avatar_getter.getArena()
-        teamName = _getDefaultTeamName(teamIdx in self.__arenaDP.getAllyTeams())
-        if arena and 'opponents' in (arena.extraData or {}):
-            opponents = arena.extraData['opponents']
-            teamName = opponents.get('%s' % teamIdx, {}).get('name', teamName)
-        return teamName
+    def getArenaTypeName(self, isInBattle = True):
+        return self.__arenaDP.getPersonalDescription().getTypeName(isInBattle)
+
+    def getArenaDescriptionString(self, isInBattle = True):
+        return self.__arenaDP.getPersonalDescription().getDescriptionString(isInBattle)
+
+    def getArenaWinString(self, isInBattle = True):
+        return self.__arenaDP.getPersonalDescription().getWinString(isInBattle)
+
+    def getArenaFrameLabel(self, isLegacy = False):
+        if isLegacy:
+            return self.__arenaDP.getPersonalDescription().getLegacyFrameLabel()
+        else:
+            return self.__arenaDP.getPersonalDescription().getFrameLabel()
+
+    def getGuiEventType(self):
+        return self.__arenaDP.getPersonalDescription().getGuiEventType()
+
+    def isInvitationEnabled(self):
+        return self.__arenaDP.getPersonalDescription().isInvitationEnabled()
+
+    def hasSquadRestrictions(self):
+        limit = False
+        vInfo = self.__arenaDP.getVehicleInfo()
+        if vInfo.isSquadMan():
+            if vInfo.isSquadCreator():
+                limit = self.__arenaDP.getVehiclesCountInPrebattle(vInfo.team, vInfo.prebattleID) >= SquadRoster.MAX_SLOTS
+            else:
+                limit = True
+        return limit
+
+    def getQuestInfo(self):
+        return self.__arenaDP.getPersonalDescription().getQuestInfo()
+
+    def getTeamName(self, enemy = False):
+        return self.__arenaDP.getPersonalDescription().getTeamName(self.__arenaDP.getNumberOfTeam(enemy=enemy))
+
+    def getArenaSmallIcon(self):
+        return self.__arenaDP.getPersonalDescription().getSmallIcon()
+
+    def getArenaScreenIcon(self):
+        return self.__arenaDP.getPersonalDescription().getScreenIcon()
 
     def setLastArenaWinStatus(self, winStatus):
         self.__lastArenaWinStatus = winStatus

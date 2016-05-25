@@ -1,10 +1,10 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/processors/plugins.py
 from collections import namedtuple
-from constants import MAX_VEHICLE_LEVEL
 from adisp import process, async
 from account_helpers.AccountSettings import AccountSettings
 from gui import DialogsInterface
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.server_events import g_eventsCache
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, I18nInfoDialogMeta, DIALOG_BUTTON_ID, IconPriceDialogMeta, IconDialogMeta, DemountDeviceDialogMeta, DestroyDeviceDialogMeta, DismissTankmanDialogMeta, HtmlMessageDialogMeta, HtmlMessageLocalDialogMeta, CheckBoxDialogMeta
@@ -331,6 +331,22 @@ class FreeTankmanValidator(SyncValidator):
         if not g_itemsCache.items.stats.freeTankmenLeft:
             return makeError('free_tankmen_limit')
         return makeSuccess()
+
+
+class TankmanDropSkillValidator(SyncValidator):
+    """
+    Validates that there is at least one skill for dropping.
+    """
+
+    def __init__(self, tankman, isEnabled = True):
+        super(TankmanDropSkillValidator, self).__init__(isEnabled)
+        self.__tankman = tankman
+
+    def _validate(self):
+        if self.__tankman is not None and len(self.__tankman.skills):
+            return makeSuccess()
+        else:
+            return makeError('server_error')
 
 
 class GroupOperationsValidator(SyncValidator):

@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/prb_windows/CompanyMainWindow.py
+import weakref
 from adisp import process
 from constants import PREBATTLE_COMPANY_DIVISION
 from debug_utils import LOG_ERROR
@@ -109,6 +110,11 @@ class CompanyMainWindow(CompanyMainWindowMeta, PrbListener):
         self.removeListener(events.HideWindowEvent.HIDE_COMPANY_WINDOW, self.__handleWindowHide, scope=EVENT_BUS_SCOPE.LOBBY)
         self.stopPrbListening()
         super(CompanyMainWindow, self)._dispose()
+
+    def _onRegisterFlashComponent(self, viewPy, alias):
+        if alias == PREBATTLE_ALIASES.COMPANY_LIST_VIEW_PY:
+            self.as_showWaitingS('#waiting:Flash', {})
+            viewPy.setProxy(weakref.proxy(self))
 
     def __handleWindowHide(self, _):
         self.destroy()

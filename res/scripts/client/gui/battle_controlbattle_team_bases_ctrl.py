@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/battle_control/battle_team_bases_ctrl.py
 from collections import defaultdict
-import weakref
 import BattleReplay
 import BigWorld
 import SoundGroups
@@ -8,6 +7,7 @@ from constants import TEAMS_IN_ARENA
 from debug_utils import LOG_CURRENT_EXCEPTION
 from gui.battle_control import arena_info
 from gui.battle_control.arena_info.interfaces import ITeamsBasesController
+from gui.battle_control.view_components import IViewComponentsController
 from gui.shared.utils.functions import getArenaSubTypeName
 _BASE_CAPTURE_SOUND_NAME_ENEMY = 'base_capture_2'
 _BASE_CAPTURE_SOUND_NAME_ALLY = 'base_capture_1'
@@ -16,17 +16,20 @@ _UPDATE_POINTS_DELAY = 1.0
 _ENEMY_OFFSET_DISABLED_BY_GAMEPLAY = ('assault', 'assault2', 'domination')
 
 class ITeamBasesPanel(object):
+    """
+    View component that shows the team bases points.
+    """
 
     def setOffsetForEnemyPoints(self):
         raise NotImplementedError
 
-    def addCapturingTeamBase(self, clientID, playerTeam, points, rate, capturingStopped):
+    def addCapturingTeamBase(self, clientID, playerTeam, points, rate, timeLeft, invadersCnt, capturingStopped):
         raise NotImplementedError
 
-    def addCapturedTeamBase(self, clientID, playerTeam):
+    def addCapturedTeamBase(self, clientID, playerTeam, timeLeft, invadersCnt):
         raise NotImplementedError
 
-    def updateTeamBasePoints(self, clientID, points, rate):
+    def updateTeamBasePoints(self, clientID, points, rate, timeLeft, invadersCnt):
         raise NotImplementedError
 
     def stopTeamBaseCapturing(self, clientID, points):
@@ -42,7 +45,11 @@ class ITeamBasesPanel(object):
         raise NotImplementedError
 
 
-class BattleTeamsBasesController(ITeamsBasesController):
+class BattleTeamsBasesController(ITeamsBasesController, IViewComponentsController):
+    """
+    Controller adds, updates indicators in UI. It plays sounds when some base is
+    capturing.
+    """
     __slots__ = ('__ui', '__battleCtx', '__clientIDs', '__points', '__sounds', '__callbackIDs', '__snap', '__captured')
 
     def __init__(self):
@@ -60,25 +67,35 @@ class BattleTeamsBasesController(ITeamsBasesController):
     def setBattleCtx(self, battleCtx):
         self.__battleCtx = battleCtx
 
-    def setUI(self, ui):
-        if not ui:
+    def setViewComponents(self, panel):
+        """
+        Sets view component.
+        :param panel: instance of view component.
+        """
+        if not panel:
             return
-        self.__ui = weakref.proxy(ui)
+        self.__ui = panel
         typeID = arena_info.getArenaTypeID()
         if typeID and getArenaSubTypeName(typeID) not in _ENEMY_OFFSET_DISABLED_BY_GAMEPLAY:
             self.__ui.setOffsetForEnemyPoints()
         playerTeam = self.__battleCtx.getArenaDP().getNumberOfTeam()
-        for clientID, (points, stopped) in self.__points.iteritems():
+        for clientID, (points, timeLeft, invadersCnt, stopped) in self.__points.iteritems():
             if clientID in self.__captured:
-                self.__ui.addCapturedTeamBase(clientID, playerTeam)
+                self.__ui.addCapturedTeamBase(clientID, playerTeam, timeLeft, invadersCnt)
             elif points:
-                self.__ui.addCapturingTeamBase(clientID, playerTeam, points, self._getProgressRate(), stopped)
+                self.__ui.addCapturingTeamBase(clientID, playerTeam, points, self._getProgressRate(), timeLeft, invadersCnt, stopped)
 
-    def clearUI(self):
+    def clearViewComponents(self):
+        """
+        Clears reference to view component.
+        """
         self.__ui = None
         return
 
     def clear(self):
+        """
+        Clears data.
+        """
         self.__clearUpdateCallbacks()
         self.__stopCaptureSounds()
         self.__ui = None
@@ -89,22 +106,45 @@ class BattleTeamsBasesController(ITeamsBasesController):
         return
 
     def getTeamBasePoints(self, clientID):
+        """
+        Gets capture points for specified team base.
+        :param clientID: integer containing generated ID by makeClientTeamBaseID.
+        :return: integer containing value of points.
+        """
         points = 0
         if clientID in self.__points:
-            points, _ = self.__points[clientID]
+            points, _, _, _ = self.__points[clientID]
         return points
 
     def isTeamBaseCaptured(self, clientID):
+        """
+        Is base captured.
+        :param clientID: integer containing generated ID by makeClientTeamBaseID.
+        :return: bool.
+        """
         return clientID in self.__captured
 
-    def invalidateTeamBasePoints(self, baseTeam, baseID, points, capturingStopped):
+    def invalidateTeamBasePoints(self, baseTeam, baseID, points, timeLeft, invadersCnt, capturingStopped):
+        """
+        Adds/Updates indicator for base that is capturing in UI.
+        :param baseTeam: number of base's team.
+        :param baseID: integer containing unique ID of base.
+        :param points: integer containing value of points (0 ... 100).
+        :param timeLeft: time left until base will be captured
+        :param invadersCnt: count of invaders
+        :param capturingStopped: is capture stopped.
+        :return:
+        """
         if baseTeam not in _AVAILABLE_TEAMS_NUMBERS:
             return
         clientID = arena_info.makeClientTeamBaseID(baseTeam, baseID)
         arenaDP = self.__battleCtx.getArenaDP()
         playerTeam = arenaDP.getNumberOfTeam()
         isEnemyBase = arenaDP.isEnemyTeam(baseTeam)
-        self.__points[clientID] = (points, capturingStopped)
+        self.__points[clientID] = (points,
+         timeLeft,
+         invadersCnt,
+         capturingStopped)
         if not points:
             if clientID in self.__clientIDs:
                 self.__clearUpdateCallback(clientID)
@@ -120,7 +160,7 @@ class BattleTeamsBasesController(ITeamsBasesController):
             else:
                 self.__clientIDs.add(clientID)
                 if self.__ui:
-                    self.__ui.addCapturingTeamBase(clientID, playerTeam, points, self._getProgressRate(), capturingStopped)
+                    self.__ui.addCapturingTeamBase(clientID, playerTeam, points, self._getProgressRate(), timeLeft, invadersCnt, capturingStopped)
                 self.__addUpdateCallback(clientID)
             if not capturingStopped:
                 self.__playCaptureSound(playerTeam, baseTeam)
@@ -128,6 +168,11 @@ class BattleTeamsBasesController(ITeamsBasesController):
                 self.__stopCaptureSound(baseTeam)
 
     def invalidateTeamBaseCaptured(self, baseTeam, baseID):
+        """
+        Adds/Updates indicator for base that is captured in UI.
+        :param baseTeam: number of base's team.
+        :param baseID: integer containing unique ID of base.
+        """
         if baseTeam not in _AVAILABLE_TEAMS_NUMBERS:
             return
         clientID = arena_info.makeClientTeamBaseID(baseTeam, baseID)
@@ -138,11 +183,17 @@ class BattleTeamsBasesController(ITeamsBasesController):
                 self.__ui.setTeamBaseCaptured(clientID, playerTeam)
         else:
             self.__clientIDs.add(clientID)
+            timeLeft = invadersCnt = 0
+            if clientID in self.__points:
+                _, timeLeft, invadersCnt, _ = self.__points[clientID]
             if self.__ui:
-                self.__ui.addCapturedTeamBase(clientID, playerTeam)
+                self.__ui.addCapturedTeamBase(clientID, playerTeam, timeLeft, invadersCnt)
         self.__stopCaptureSound(baseTeam)
 
     def removeTeamsBases(self):
+        """
+        Removes all teams base from UI, stop plays sounds.
+        """
         if self.__ui:
             self.__ui.removeTeamsBases()
         self.__stopCaptureSounds()
@@ -188,11 +239,11 @@ class BattleTeamsBasesController(ITeamsBasesController):
     def __updatePoints(self, clientID):
         if clientID not in self.__clientIDs:
             return
-        points, _ = self.__points[clientID]
+        points, timeLeft, invadersCnt, _ = self.__points[clientID]
         rate = self._getProgressRate()
-        if self.__ui and self.__snap[clientID] != (points, rate):
-            self.__snap[clientID] = (points, rate)
-            self.__ui.updateTeamBasePoints(clientID, points, rate)
+        if self.__ui and self.__snap[clientID] != (points, rate, timeLeft):
+            self.__snap[clientID] = (points, rate, timeLeft)
+            self.__ui.updateTeamBasePoints(clientID, points, rate, timeLeft, invadersCnt)
 
     def __tickToUpdatePoints(self, clientID):
         self.__callbackIDs.pop(clientID, None)
@@ -218,6 +269,9 @@ class BattleTeamsBasesController(ITeamsBasesController):
 
 
 class BattleTeamsBasesPlayer(BattleTeamsBasesController):
+    """
+    There is controller in replays.
+    """
 
     def _getProgressRate(self):
         rate = BattleReplay.g_replayCtrl.playbackSpeed

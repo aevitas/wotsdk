@@ -7,13 +7,12 @@ from gui.battle_control.arena_info.interfaces import IArenaLoadController
 
 class ArenaLoadController(IArenaLoadController):
 
-    def __init__(self, isMultiTeam = False):
+    def __init__(self):
         super(ArenaLoadController, self).__init__()
-        self.__isMultiTeam = isMultiTeam
 
     def spaceLoadStarted(self):
         game_control.g_instance.gameSession.incBattlesCounter()
-        g_appLoader.showBattleLoading(arenaGuiType=getArenaGuiType(), isMultiTeam=self.__isMultiTeam)
+        g_appLoader.showBattleLoading(arenaGuiType=getArenaGuiType())
         BigWorld.wg_setReducedFpsMode(True)
 
     def spaceLoadCompleted(self):
@@ -23,5 +22,5 @@ class ArenaLoadController(IArenaLoadController):
         BigWorld.wg_setReducedFpsMode(False)
         from messenger import MessengerEntry
         MessengerEntry.g_instance.onAvatarShowGUI()
-        g_appLoader.showBattle()
+        g_appLoader.showBattle(arenaGuiType=getArenaGuiType())
         BigWorld.wg_clearTextureReuseList()

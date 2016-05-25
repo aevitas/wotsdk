@@ -192,8 +192,8 @@ class ClientArena(object):
         return
 
     def __onBasePointsUpdate(self, argStr):
-        team, baseID, points, capturingStopped = cPickle.loads(argStr)
-        self.onTeamBasePointsUpdate(team, baseID, points, capturingStopped)
+        team, baseID, points, timeLeft, invadersCnt, capturingStopped = cPickle.loads(argStr)
+        self.onTeamBasePointsUpdate(team, baseID, points, timeLeft, invadersCnt, capturingStopped)
 
     def __onBaseCaptured(self, argStr):
         team, baseID = cPickle.loads(argStr)
@@ -295,10 +295,7 @@ def _convertToList(vec4):
 
 
 def _pointInBB(bottomLeft2D, upperRight2D, point3D, minMaxHeight):
-    if bottomLeft2D[0] < point3D[0] < upperRight2D[0] and bottomLeft2D[1] < point3D[2] < upperRight2D[1] and minMaxHeight[0] < point3D[1] < minMaxHeight[1]:
-        return True
-    else:
-        return False
+    return bottomLeft2D[0] < point3D[0] < upperRight2D[0] and bottomLeft2D[1] < point3D[2] < upperRight2D[1] and minMaxHeight[0] < point3D[1] < minMaxHeight[1]
 
 
 class _BBCollider():

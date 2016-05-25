@@ -138,7 +138,10 @@ class StoreComponent(LobbySubView, StoreComponentMeta):
             return LOG_ERROR('There is error while attempting to show vehicle info window: ', str(dataCompactId))
         else:
             if item.itemTypeID == GUI_ITEM_TYPE.VEHICLE:
-                shared_events.showVehicleInfo(item.intCD)
+                if item.isPreviewAllowed():
+                    shared_events.showVehiclePreview(item.intCD, VIEW_ALIAS.LOBBY_STORE)
+                else:
+                    shared_events.showVehicleInfo(item.intCD)
             else:
                 self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.MODULE_INFO_WINDOW, getViewName(VIEW_ALIAS.MODULE_INFO_WINDOW, item.intCD), {'moduleCompactDescr': str(item.intCD),
                  'isAdditionalInfoShow': i18n.makeString(MENU.MODULEINFO_ADDITIONALINFO)}), EVENT_BUS_SCOPE.LOBBY)

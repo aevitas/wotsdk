@@ -2,6 +2,12 @@
 
 
 class CUSTOMIZATION(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     TYPESWITCHSCREEN_TYPENAME_0 = '#customization:typeSwitchScreen/typeName/0'
     TYPESWITCHSCREEN_TYPENAME_1 = '#customization:typeSwitchScreen/typeName/1'
     TYPESWITCHSCREEN_TYPENAME_2 = '#customization:typeSwitchScreen/typeName/2'

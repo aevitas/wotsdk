@@ -27,6 +27,7 @@ class ClientSelectableObject(BigWorld.Entity):
             model = prereqs[self.modelName]
             self.model = model
             self.filter = BigWorld.DumbFilter()
+            self.model.addMotor(BigWorld.Servo(self.matrix))
             if not self.__bspModel.setModel(self.model):
                 LOG_ERROR('ClientSelectableObject failed to setModel', self.modelName)
 
@@ -34,6 +35,7 @@ class ClientSelectableObject(BigWorld.Entity):
         if self.__clickSound is not None:
             if self.__clickSound.isPlaying:
                 self.__clickSound.stop()
+            self.__clickSound.releaseMatrix()
             self.__clickSound = None
         self.highlight(False)
         return

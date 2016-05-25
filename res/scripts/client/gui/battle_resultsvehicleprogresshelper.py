@@ -102,10 +102,10 @@ class VehicleProgressHelper(object):
     def __getNewSkilledTankmen(self, tankmenXps):
         skilledTankmans = []
         for slotIdx, tman in self.__vehicle.crew:
-            if tman is not None:
+            if tman is not None and tman.hasSkillToLearn():
                 tmanBattleXp = tankmenXps.get(tman.invID, 0)
                 avgBattles2NewSkill = 0
-                if tman.hasNewSkill:
+                if tman.hasNewSkill(useCombinedRoles=True):
                     if tmanBattleXp - tman.descriptor.freeXP > 0:
                         skilledTankmans.append(self.__makeTankmanVO(tman, avgBattles2NewSkill))
                 else:

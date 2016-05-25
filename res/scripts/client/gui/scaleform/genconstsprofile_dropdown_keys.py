@@ -2,6 +2,12 @@
 
 
 class PROFILE_DROPDOWN_KEYS(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     ALL = 'all'
     FALLOUT = 'fallout'
     HISTORICAL = 'historical'

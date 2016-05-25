@@ -49,7 +49,7 @@ class CombatEquipmentManager(object):
         else:
             p = Vector3(BigWorld.camera().position)
             d = BigWorld.camera().direction
-            collRes = BigWorld.wg_collideSegment(BigWorld.player().spaceID, p, p + d * 1000, 18, lambda matKind, collFlags, itemId, chunkId: collFlags & 8)
+            collRes = BigWorld.wg_collideSegment(BigWorld.player().spaceID, p, p + d * 1000, 18, 8)
             if collRes is None:
                 return
             strikePos = collRes[0]

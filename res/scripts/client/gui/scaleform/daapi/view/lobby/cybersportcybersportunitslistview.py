@@ -2,7 +2,6 @@
 from functools import partial
 from UnitBase import UNIT_BROWSER_TYPE
 from constants import PREBATTLE_TYPE
-from gui import makeHtmlString
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.view.lobby.rally.rally_dps import ManualSearchDataProvider
 from gui.Scaleform.daapi.view.meta.CyberSportUnitsListMeta import CyberSportUnitsListMeta
@@ -15,7 +14,8 @@ from gui.clubs.settings import getLadderChevron64x64, CLIENT_CLUB_STATE
 from gui.prb_control.functional import unit_ext
 from gui.prb_control.prb_helpers import UnitListener
 from gui.prb_control.settings import REQUEST_TYPE
-from gui.shared import events, g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import events, g_itemsCache
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.events import CSVehicleSelectEvent
 from gui.clubs import events_dispatcher as club_events
@@ -33,6 +33,8 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
         self._selectedVehicles = self.unitFunctional.getSelectedVehicles(self._section)
         self._unitTypeFlags = UNIT_BROWSER_TYPE.ALL
         self._cooldown = CooldownHelper(self.getCoolDownRequests(), self._onCooldownHandle, events.CoolDownEvent.PREBATTLE)
+        self.__currentEmblem = None
+        return
 
     def onUnitFunctionalInited(self):
         self.unitFunctional.setEntityType(PREBATTLE_TYPE.UNIT)
@@ -80,11 +82,14 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
             listReq.request(req=REQUEST_TYPE.UNITS_REFRESH)
 
     def getRallyDetails(self, index):
+        if index != self._searchDP.selectedRallyIndex:
+            self.__currentEmblem = None
         cfdUnitID, vo = self._searchDP.getRally(index)
         listReq = unit_ext.getListReq()
         if listReq:
             listReq.setSelectedID(cfdUnitID)
         self.__setDetailsData(cfdUnitID, vo)
+        return
 
     def showRallyProfile(self, clubDBID):
         club_events.showClubProfile(clubDBID)
@@ -191,7 +196,10 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
             clubID = clubExtraData.clubDBID
             division = clubExtraData.divisionID
             description = vo['description']
-            self.requestClubEmblem64x64(clubID, clubExtraData.getEmblem64x64(), partial(self.__onClubEmblem64x64Received, unitID))
+            if self.__currentEmblem is None:
+                self.requestClubEmblem64x64(clubID, clubExtraData.getEmblem64x64(), partial(self.__onClubEmblem64x64Received, unitID))
+            else:
+                icon = self.__currentEmblem
             buttonLabel = CYBERSPORT.WINDOW_UNITLISTVIEW_ENTERBTN_LEGIONARY
             buttonInfo = CYBERSPORT.WINDOW_UNITLISTVIEW_ENTERTEXT_LEGIONARY
             buttonTooltip = TOOLTIPS.CYBERSPORT_UNITLIST_JOINTOSTATICASLEGIONARY
@@ -239,4 +247,5 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
     def __onClubEmblem64x64Received(self, cfdUnitID, clubDbID, emblem):
         selectedCfdUnitID, _ = self._searchDP.getRally(self._searchDP.selectedRallyIndex)
         if emblem and cfdUnitID == selectedCfdUnitID:
-            self.as_updateRallyIconS(self.getMemoryTexturePath(emblem))
+            self.__currentEmblem = self.getMemoryTexturePath(emblem)
+            self.as_updateRallyIconS(self.__currentEmblem)

@@ -71,7 +71,6 @@ class ClanListener(object):
             for user in self.usersStorage.getClanMembersIterator():
                 user.update(gosBit=-GAME_ONLINE_STATUS.IN_CLAN_CHAT)
 
-            g_messengerEvents.users.onClanMembersListChanged()
         return
 
     def __refreshClanMembers(self):
@@ -147,6 +146,9 @@ class ClanListener(object):
     def __ce_onChannelDestroyed(self, channel):
         if self.__channelCriteria.filter(channel):
             self.__clearClanChannel()
+            if self.__clanChannel is not None:
+                g_messengerEvents.users.onClanMembersListChanged()
+        return
 
     def __ce_onMembersListChanged(self):
         self.__refreshClanMembers()

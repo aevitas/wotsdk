@@ -2,7 +2,7 @@
 from collections import namedtuple
 import BigWorld
 import Math
-from constants import EVENT_TYPE as _ET
+from constants import EVENT_TYPE as _ET, DOSSIER_TYPE
 from gui.Scaleform.genConsts.BOOSTER_CONSTANTS import BOOSTER_CONSTANTS
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
@@ -313,7 +313,13 @@ class VehiclesBonus(SimpleBonus):
                 tmanRoleLevel = None
             vInfoLabels = []
             if 'rent' in vehInfo:
-                rentDays = vehInfo.get('rent', {}).get('expires', {}).get('after', None)
+                time = vehInfo.get('rent', {}).get('time', None)
+                rentDays = None
+                if time:
+                    if time == float('inf'):
+                        pass
+                    elif time <= time_utils.DAYS_IN_YEAR:
+                        rentDays = int(time)
                 if rentDays:
                     rentDaysStr = makeHtmlString('html_templates:lobby/quests/bonuses', 'rentDays', {'value': str(rentDays)})
                     vInfoLabels.append(rentDaysStr)
@@ -348,10 +354,14 @@ class VehiclesBonus(SimpleBonus):
 class DossierBonus(SimpleBonus):
 
     def getRecords(self):
+        records = set()
         if self._value is not None:
-            return set((name for name in self._value.iterkeys()))
-        else:
-            return set()
+            for dossierType in self._value:
+                if dossierType != DOSSIER_TYPE.CLAN:
+                    for name in self._value[dossierType]:
+                        records.add(name)
+
+        return records
 
     def format(self):
         return ', '.join(self.formattedList())

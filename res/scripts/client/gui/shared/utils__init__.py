@@ -251,3 +251,13 @@ def weightedAvg(*args):
         return float(valSum) / weightSum
     else:
         return 0
+
+
+class QUALIFIER_TYPE:
+    ALL = 'all'
+    RADIOMAN = 'radioman'
+    COMMANDER = 'commander'
+    DRIVER = 'driver'
+    GUNNER = 'gunner'
+    LOADER = 'loader'
+    CAMOUFLAGE = 'camouflage'

@@ -2,9 +2,10 @@
 from functools import partial
 import weakref
 import BigWorld
+from gui.battle_control.battle_constants import HIT_INDICATOR_MAX_ON_SCREEN
+from gui.battle_control.view_components import IViewComponentsController
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import GameEvent
-_HIT_INDICATOR_MAX_ON_SCREEN = 5
 
 class IHitIndicator(object):
 
@@ -108,13 +109,13 @@ class _HitDirection(object):
             self.__indicator.hideHitDirection(self.__idx)
 
 
-class HitDirectionController(object):
-    __slots__ = ('__pull', '__ui', '__isVisible', '__offset', '__callbackIDs')
+class HitDirectionController(IViewComponentsController):
+    __slots__ = ('__pull', '__ui', '__isVisible', '__offset', '__callbackIDs', '__weakref__')
 
     def __init__(self):
         super(HitDirectionController, self).__init__()
-        raise _HIT_INDICATOR_MAX_ON_SCREEN or AssertionError('Can not be zero')
-        self.__pull = [ _HitDirection(idx) for idx in xrange(_HIT_INDICATOR_MAX_ON_SCREEN) ]
+        raise HIT_INDICATOR_MAX_ON_SCREEN or AssertionError('Can not be zero')
+        self.__pull = [ _HitDirection(idx_) for idx_ in xrange(HIT_INDICATOR_MAX_ON_SCREEN) ]
         self.__ui = None
         self.__isVisible = True
         self.__offset = (0.0, 0.0)
@@ -151,8 +152,8 @@ class HitDirectionController(object):
         if self.__ui:
             self.__ui.setVisible(flag)
 
-    def setUI(self, ui):
-        self.__ui = ui.createDamageIndicator(_HIT_INDICATOR_MAX_ON_SCREEN)
+    def setViewComponents(self, component):
+        self.__ui = component
         self.__ui.setVisible(self.__isVisible)
         self.__ui.setOffset(self.__offset)
         proxy = weakref.proxy(self.__ui)
@@ -162,7 +163,7 @@ class HitDirectionController(object):
             if duration:
                 self.__callbackIDs[idx] = BigWorld.callback(duration, partial(self.__tickToHideHit, idx))
 
-    def clearUI(self):
+    def clearViewComponents(self):
         for hit in self.__pull:
             hit.clear()
 

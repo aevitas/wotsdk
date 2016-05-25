@@ -92,22 +92,24 @@ class FalloutLocalStorage(LocalStorage):
         return filter(None, map(g_itemsCache.items.getItemByCD, self.__intCDs.get(self.getBattleType(), ())))
 
     def validateSelectedVehicles(self):
-        maxVehs = self.getConfig().maxVehiclesPerPlayer
-        valid = [INV_ID_CLEAR_VEHICLE] * maxVehs
+        config = self.getConfig()
         battleType = self.getBattleType()
         vehicles = self.__intCDs.get(battleType, ())
-        vehGetter = g_itemsCache.items.getItemByCD
-        for idx, intCD in enumerate(vehicles[:maxVehs]):
-            invVehicle = vehGetter(intCD)
-            if invVehicle is not None and invVehicle.isInInventory:
-                valid[idx] = intCD
+        if not config.hasRequiredVehicles():
+            valid = ()
+        else:
+            maxVehs = config.maxVehiclesPerPlayer
+            valid = [INV_ID_CLEAR_VEHICLE] * maxVehs
+            vehGetter = g_itemsCache.items.getItemByCD
+            for idx, intCD in enumerate(vehicles[:maxVehs]):
+                invVehicle = vehGetter(intCD)
+                if invVehicle is not None and invVehicle.isInInventory:
+                    valid[idx] = intCD
 
         if valid != vehicles:
             self.__intCDs[battleType] = valid
             AccountSettings.setFavorites(FALLOUT_VEHICLES, self.__intCDs)
-            return True
-        else:
-            return False
+        return
 
     def getConfig(self):
         return g_eventsCache.getFalloutConfig(self.getBattleType())

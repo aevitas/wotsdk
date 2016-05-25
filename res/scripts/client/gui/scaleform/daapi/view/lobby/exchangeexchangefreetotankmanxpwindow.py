@@ -77,7 +77,7 @@ class ExchangeFreeToTankmanXpWindow(ExchangeFreeToTankmanXpWindowMeta):
         self.as_setInitDataS(data)
 
     def __getCurrentTankmanLevelCost(self, tankman):
-        if tankman.roleLevel != MAX_SKILL_LEVEL or not tankman.hasNewSkill:
+        if tankman.roleLevel != MAX_SKILL_LEVEL or len(tankman.skills) and tankman.descriptor.lastSkillLevel != MAX_SKILL_LEVEL:
             tankmanDescriptor = tankman.descriptor
             lastSkillNumberValue = tankmanDescriptor.lastSkillNumber - tankmanDescriptor.freeSkillsNumber
             if lastSkillNumberValue == 0 or tankman.roleLevel != MAX_SKILL_LEVEL:

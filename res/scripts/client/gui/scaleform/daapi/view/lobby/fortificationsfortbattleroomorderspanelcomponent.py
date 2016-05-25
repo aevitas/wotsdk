@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/FortBattleRoomOrdersPanelComponent.py
 import fortified_regions
+from gui.LobbyContext import g_lobbyContext
 from helpers import i18n
 from collections import namedtuple
 from gui.prb_control.prb_helpers import UnitListener
@@ -27,8 +28,8 @@ def _makeSlotVO(orderID, slotIdx, buildingLabel = '', level = None, orderIcon = 
     return _SlotDataVO(orderID, slotIdx, buildingLabel, level, orderType, orderIcon, orderGroup, orderTypeID, isInactive)._asdict()
 
 
-def _makeEmptySlotVO(slotIdx):
-    return _makeSlotVO(ORDER_TYPES.EMPTY_ORDER, slotIdx, orderIcon=RES_ICONS.MAPS_ICONS_ARTEFACT_EMPTYORDER)
+def _makeEmptySlotVO(slotIdx, isInactive):
+    return _makeSlotVO(ORDER_TYPES.EMPTY_ORDER, slotIdx, isInactive=isInactive, orderIcon=RES_ICONS.MAPS_ICONS_ARTEFACT_EMPTYORDER)
 
 
 class FortBattleRoomOrdersPanelComponent(SlotsPanelMeta, FortViewHelper, UnitListener):
@@ -72,28 +73,6 @@ class FortBattleRoomOrdersPanelComponent(SlotsPanelMeta, FortViewHelper, UnitLis
     def _isConsumablesAvailable(self):
         return self.unitFunctional.getExtra().canUseEquipments
 
-    def __updateSlots(self):
-        if not self._isConsumablesAvailable():
-            return
-        else:
-            extra = self.unitFunctional.getExtra()
-            canActivateConsumables = self.fortCtrl.getPermissions().canActivateConsumable() and self.unitFunctional.getPermissions().canChangeConsumables()
-            result = []
-            if extra is not None:
-                activeConsumes = extra.getConsumables()
-                for slotIdx in xrange(fortified_regions.g_cache.consumablesSlotCount):
-                    if slotIdx in activeConsumes:
-                        orderTypeID, level = activeConsumes[slotIdx]
-                        orderItem = FortOrder(orderTypeID)
-                        building = FortBuilding(typeID=orderItem.buildingID)
-                        result.append(_makeSlotVO(self.getOrderUIDbyID(orderTypeID), slotIdx, building.userName, level, orderItem.icon, orderTypeID, not canActivateConsumables))
-                    elif canActivateConsumables:
-                        result.append(_makeEmptySlotVO(slotIdx))
-
-            self.as_setPanelPropsS(dict(self._getSlotsProps()))
-            self.as_setSlotsS(result)
-            return
-
     def _getSlotsProps(self):
         return {'slotsCount': 3,
          'groupCount': 1,
@@ -104,3 +83,26 @@ class FortBattleRoomOrdersPanelComponent(SlotsPanelMeta, FortViewHelper, UnitLis
          'offsetSlot': -2,
          'useOnlyLeftBtn': True,
          'popoverAlias': FORTIFICATION_ALIASES.FORT_ORDER_SELECT_POPOVER_ALIAS}
+
+    def __updateSlots(self):
+        if not self._isConsumablesAvailable():
+            return
+        else:
+            extra = self.unitFunctional.getExtra()
+            consumablesVisible = self.fortCtrl.getPermissions().canActivateConsumable() and self.unitFunctional.getPermissions().canChangeConsumables()
+            consumablesDisabled = not g_lobbyContext.getServerSettings().isFortsEnabled()
+            result = []
+            if extra is not None:
+                activeConsumes = extra.getConsumables()
+                for slotIdx in xrange(fortified_regions.g_cache.consumablesSlotCount):
+                    if slotIdx in activeConsumes:
+                        orderTypeID, level = activeConsumes[slotIdx]
+                        orderItem = FortOrder(orderTypeID)
+                        building = FortBuilding(typeID=orderItem.buildingID)
+                        result.append(_makeSlotVO(self.getOrderUIDbyID(orderTypeID), slotIdx, building.userName, level, orderItem.icon, orderTypeID, not consumablesVisible or consumablesDisabled))
+                    elif consumablesVisible:
+                        result.append(_makeEmptySlotVO(slotIdx, consumablesDisabled))
+
+            self.as_setPanelPropsS(dict(self._getSlotsProps()))
+            self.as_setSlotsS(result)
+            return

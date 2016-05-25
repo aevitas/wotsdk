@@ -1,4 +1,5 @@
 # Embedded file name: scripts/common/unit_roster_config.py
+from constants import IS_CHINA
 import fortified_regions
 import clubs_settings
 from UnitRoster import BaseUnitRoster, BaseUnitRosterSlot, BaseUnitRosterLimits
@@ -31,15 +32,15 @@ class RosterSlot10(BaseUnitRosterSlot):
 
 
 class SortieSlot6(BaseUnitRosterSlot):
-    DEFAULT_LEVELS = (4, 6)
+    DEFAULT_LEVELS = (4, 6) if not IS_CHINA else (10, 10)
 
 
 class SortieSlot8(BaseUnitRosterSlot):
-    DEFAULT_LEVELS = (6, 8)
+    DEFAULT_LEVELS = (6, 8) if not IS_CHINA else (10, 10)
 
 
 class SortieSlot10(BaseUnitRosterSlot):
-    DEFAULT_LEVELS = (8, 10)
+    DEFAULT_LEVELS = (8, 10) if not IS_CHINA else (10, 10)
 
 
 class BaseSortieRoster(BaseUnitRoster):
@@ -53,7 +54,7 @@ class SortieRoster6(BaseSortieRoster):
     MAX_EMPTY_SLOTS = 1
     SLOT_TYPE = SortieSlot6
     DEFAULT_SLOT_PACK = SortieSlot6().pack()
-    MAX_UNIT_POINTS_SUM = 42
+    MAX_UNIT_POINTS_SUM = 7 * max(SortieSlot6.DEFAULT_LEVELS)
     LIMITS_TYPE = BaseUnitRosterLimits
 
 
@@ -62,7 +63,7 @@ class SortieRoster8(BaseSortieRoster):
     MAX_EMPTY_SLOTS = 2
     SLOT_TYPE = SortieSlot8
     DEFAULT_SLOT_PACK = SortieSlot8().pack()
-    MAX_UNIT_POINTS_SUM = 80
+    MAX_UNIT_POINTS_SUM = 10 * max(SortieSlot8.DEFAULT_LEVELS)
     LIMITS_TYPE = BaseUnitRosterLimits
 
 
@@ -71,7 +72,7 @@ class SortieRoster10(BaseSortieRoster):
     MAX_EMPTY_SLOTS = 3
     SLOT_TYPE = SortieSlot10
     DEFAULT_SLOT_PACK = SortieSlot10().pack()
-    MAX_UNIT_POINTS_SUM = 150
+    MAX_UNIT_POINTS_SUM = 15 * max(SortieSlot10.DEFAULT_LEVELS)
     LIMITS_TYPE = BaseUnitRosterLimits
 
 

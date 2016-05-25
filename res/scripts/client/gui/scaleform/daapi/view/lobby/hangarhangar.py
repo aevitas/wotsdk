@@ -28,17 +28,10 @@ from gui.shared.events import LobbySimpleEvent
 from ConnectionManager import connectionManager
 from helpers.i18n import makeString as _ms
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
+from gui.Scaleform.genConsts.HANGAR_ALIASES import HANGAR_ALIASES
 
 class Hangar(LobbySubView, HangarMeta, GlobalListener):
     __background_alpha__ = 0.0
-
-    class COMPONENTS:
-        CAROUSEL = 'tankCarousel'
-        PARAMS = 'params'
-        CREW = 'crew'
-        AMMO_PANEL = 'ammunitionPanel'
-        RESEARCH_PANEL = 'researchPanel'
-        TMEN_XP_PANEL = 'tmenXpPanel'
 
     def __init__(self, _ = None):
         LobbySubView.__init__(self, 0)
@@ -202,23 +195,23 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener):
 
     @property
     def tankCarousel(self):
-        return self.components.get(self.COMPONENTS.CAROUSEL)
+        return self.getComponent(HANGAR_ALIASES.TANK_CAROUSEL)
 
     @property
     def ammoPanel(self):
-        return self.components.get(self.COMPONENTS.AMMO_PANEL)
+        return self.getComponent(HANGAR_ALIASES.AMMUNITION_PANEL)
 
     @property
     def paramsPanel(self):
-        return self.components.get(self.COMPONENTS.PARAMS)
+        return self.getComponent(HANGAR_ALIASES.VEHICLE_PARAMETERS)
 
     @property
     def crewPanel(self):
-        return self.components.get(self.COMPONENTS.CREW)
+        return self.getComponent(HANGAR_ALIASES.CREW)
 
     @property
     def researchPanel(self):
-        return self.components.get(self.COMPONENTS.RESEARCH_PANEL)
+        return self.getComponent(HANGAR_ALIASES.RESEARCH_PANEL)
 
     def onCacheResync(self, reason, diff):
         if reason == CACHE_SYNC_REASON.SHOP_RESYNC:
@@ -227,6 +220,7 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener):
         else:
             if reason in (CACHE_SYNC_REASON.STATS_RESYNC, CACHE_SYNC_REASON.INVENTORY_RESYNC, CACHE_SYNC_REASON.CLIENT_UPDATE):
                 self.__updateCarouselParams()
+                self.__updateCarouselEnabled()
             if diff is not None and GUI_ITEM_TYPE.VEHICLE in diff:
                 self.__updateCarouselVehicles(diff.get(GUI_ITEM_TYPE.VEHICLE))
                 self.__updateAmmoPanel()
@@ -251,6 +245,12 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener):
         self.__onFunctionalChanged()
 
     def onUnitFunctionalFinished(self):
+        self.__onFunctionalChanged()
+
+    def onEnqueued(self, queueType, *args):
+        self.__onFunctionalChanged()
+
+    def onDequeued(self, queueType, *args):
         self.__onFunctionalChanged()
 
     def __onVehicleBecomeElite(self, vehTypeCompDescr):
@@ -290,6 +290,7 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener):
         icon = makeHtmlString('html_templates:igr/iconBig', 'premium' if type == IGR_TYPE.PREMIUM else 'basic', {})
         self.as_setIsIGRS(type != IGR_TYPE.NONE, i18n.makeString(MENU.IGR_INFO, igrIcon=icon))
         self.__updateVehIGRStatus()
+        self.__updateParams()
 
     def __updateVehIGRStatus(self):
         vehicleIgrTimeLeft = ''
@@ -304,13 +305,17 @@ class Hangar(LobbySubView, HangarMeta, GlobalListener):
     def __updateState(self):
         state = g_currentVehicle.getViewState()
         self.as_setCrewEnabledS(state.isCrewOpsEnabled())
-        self.as_setCarouselEnabledS(not state.isLocked())
+        self.__updateCarouselEnabled()
         if state.isOnlyForEventBattles():
             customizationTooltip = makeTooltip(_ms(TOOLTIPS.HANGAR_TUNING_DISABLEDFOREVENTVEHICLE_HEADER), _ms(TOOLTIPS.HANGAR_TUNING_DISABLEDFOREVENTVEHICLE_BODY))
         else:
             customizationTooltip = makeTooltip(_ms(TOOLTIPS.HANGAR_TUNING_HEADER), _ms(TOOLTIPS.HANGAR_TUNING_BODY))
         self.as_setupAmmunitionPanelS(state.isMaintenanceEnabled(), makeTooltip(_ms(TOOLTIPS.HANGAR_MAINTENANCE_HEADER), _ms(TOOLTIPS.HANGAR_MAINTENANCE_BODY)), state.isCustomizationEnabled(), customizationTooltip)
         self.as_setControlsVisibleS(state.isUIShown())
+
+    def __updateCarouselEnabled(self):
+        state = g_currentVehicle.getViewState()
+        self.as_setCarouselEnabledS(not state.isLocked())
 
     def __onStatsReceived(self, stats):
         if IS_SHOW_SERVER_STATS:

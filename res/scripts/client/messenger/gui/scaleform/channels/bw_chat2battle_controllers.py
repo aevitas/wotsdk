@@ -6,7 +6,7 @@ from gui.battle_control.arena_info import isArenaInWaiting
 from messenger.ext import isBattleChatEnabled
 from messenger.formatters import chat_message
 from messenger.formatters.users_messages import getBroadcastIsInCoolDownMessage
-from messenger.gui.Scaleform.channels._layout import _BattleLayout
+from messenger.gui.Scaleform.channels.layout import BattleLayout
 from messenger.m_constants import PROTO_TYPE, MESSENGER_COMMAND_TYPE
 from messenger.ext.player_helpers import isCurrentPlayer
 from messenger.proto import proto_getter
@@ -26,7 +26,7 @@ def _checkArenaInWaiting(func):
     return wrapper
 
 
-class _ChannelController(_BattleLayout):
+class _ChannelController(BattleLayout):
 
     def __init__(self, channel, messageBuilder, isSecondaryChannelCtrl = False):
         super(_ChannelController, self).__init__(channel, messageBuilder, isSecondaryChannelCtrl)

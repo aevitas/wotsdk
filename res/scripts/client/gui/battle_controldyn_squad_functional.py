@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/battle_control/dyn_squad_functional.py
+import Event
 import BigWorld
 import CommandMapping
 import Keys
@@ -6,15 +7,19 @@ from account_helpers.settings_core import g_settingsCore
 from account_helpers.settings_core.settings_constants import SOUND
 from constants import IS_CHINA
 from debug_utils import LOG_DEBUG
-from gui.battle_control import avatar_getter, arena_info
+from gui.app_loader.decorators import sf_battle
+from gui.battle_control import avatar_getter
 from gui.battle_control.arena_info.interfaces import IArenaVehiclesController
 from gui.battle_control.arena_info.settings import INVALIDATE_OP
+from gui.battle_control.battle_constants import PLAYER_GUI_PROPS
 from gui.prb_control.prb_helpers import prbInvitesProperty
 from gui.shared.SoundEffectsId import SoundEffectsId
+from gui.Scaleform.locale.READABLE_KEY_NAMES import READABLE_KEY_NAMES
 from helpers.i18n import makeString
 from messenger.m_constants import USER_TAG
 from messenger.proto.events import g_messengerEvents
-from messenger.proto.shared_messages import ClientActionMessage, ACTION_MESSAGE_TYPE
+from messenger.proto.shared_messages import ClientActionMessage
+from messenger.proto.shared_messages import ACTION_MESSAGE_TYPE
 SQUAD_MEMBERS_COUNT = 2
 FULL_SQUAD_MEMBERS_COUNT = 3
 
@@ -38,46 +43,13 @@ def _getVIOPState(key):
         return 'enableVOIP'
 
 
-class IDynSquadEntityClient(object):
-
-    def updateSquadmanVeh(self, vehID):
-        raise NotImplementedError('This method invokes by DynSquadEntityController it must be implemented %s' % self)
-
-
-class _DynSquadEntityController(IArenaVehiclesController):
-    __slots__ = ('__clients',)
-
-    def __init__(self, clients):
-        super(_DynSquadEntityController, self).__init__()
-        self.__clients = clients
-
-    def setBattleCtx(self, battleCtx):
-        pass
-
-    def invalidateVehicleInfo(self, flags, playerVehVO, arenaDP):
-        if arena_info.isRandomBattle():
-            if flags & INVALIDATE_OP.PREBATTLE_CHANGED and playerVehVO.squadIndex > 0:
-                vID = playerVehVO.vehicleID
-                squadMansToUpdate = ()
-                avatarVehID = avatar_getter.getPlayerVehicleID()
-                aVehInfo = arenaDP.getVehicleInfo(avatarVehID)
-                if vID == avatarVehID:
-                    squadMansToUpdate = arenaDP.getVehIDsByPrebattleID(aVehInfo.team, aVehInfo.prebattleID) or tuple()
-                    if avatarVehID in squadMansToUpdate:
-                        del squadMansToUpdate[squadMansToUpdate.index(avatarVehID)]
-                elif aVehInfo.team == playerVehVO.team:
-                    if arenaDP.isSquadMan(vID):
-                        squadMansToUpdate = (vID,)
-                for sqVehID in squadMansToUpdate:
-                    for client in self.__clients:
-                        client.updateSquadmanVeh(sqVehID)
-
-    def destroy(self):
-        self.__clients = None
-        return
+def _getReadableKey(key):
+    """Get a human readable key name.
+    """
+    return makeString(READABLE_KEY_NAMES.all('KEY_%s' % BigWorld.keyToString(key)))
 
 
-class DynSquadArenaController(IArenaVehiclesController):
+class DynSquadArenaController(object):
 
     def __init__(self):
         super(DynSquadArenaController, self).__init__()
@@ -92,33 +64,32 @@ class DynSquadArenaController(IArenaVehiclesController):
     def prbInvites(self):
         return None
 
-    def invalidateVehicleInfo(self, flags, playerVehVO, arenaDP):
+    def process(self, playerVehVO, arenaDP):
         voSquadIndex = playerVehVO.squadIndex
-        if flags & INVALIDATE_OP.PREBATTLE_CHANGED and voSquadIndex > 0:
-            squadMembersCount = arenaDP.getPrbVehCount(playerVehVO.team, playerVehVO.prebattleID)
-            if squadMembersCount == SQUAD_MEMBERS_COUNT:
-                myAvatarVehicle = arenaDP.getVehicleInfo(avatar_getter.getPlayerVehicleID())
-                if playerVehVO.prebattleID == myAvatarVehicle.prebattleID:
-                    if myAvatarVehicle.player.isPrebattleCreator:
-                        self._squadCreatedImOwner(squadNum=voSquadIndex)
-                    else:
-                        self._squadCreatedImRecruit(squadNum=voSquadIndex)
-                elif myAvatarVehicle.team == playerVehVO.team:
-                    self._squadCreatedByAllies(squadNum=voSquadIndex)
+        squadMembersCount = arenaDP.getVehiclesCountInPrebattle(playerVehVO.team, playerVehVO.prebattleID)
+        if squadMembersCount == SQUAD_MEMBERS_COUNT:
+            myAvatarVehicle = arenaDP.getVehicleInfo(avatar_getter.getPlayerVehicleID())
+            if playerVehVO.prebattleID == myAvatarVehicle.prebattleID:
+                if myAvatarVehicle.player.isPrebattleCreator:
+                    self._squadCreatedImOwner(squadNum=voSquadIndex)
                 else:
-                    self._squadCreatedByEnemies(squadNum=voSquadIndex)
-            elif squadMembersCount == FULL_SQUAD_MEMBERS_COUNT:
-                myAvatarVehicle = arenaDP.getVehicleInfo(avatar_getter.getPlayerVehicleID())
-                playerVO = playerVehVO.player
-                if playerVO.accountDBID == myAvatarVehicle.player.accountDBID:
-                    self._iAmJoinedSquad(squadNum=voSquadIndex)
-                elif myAvatarVehicle.team == playerVehVO.team:
-                    if myAvatarVehicle.squadIndex == voSquadIndex:
-                        self._someoneJoinedMySquad(squadNum=voSquadIndex, receiver=playerVO.name)
-                    else:
-                        self._someoneJoinedAlliedSquad(squadNum=voSquadIndex, receiver=playerVO.name)
+                    self._squadCreatedImRecruit(squadNum=voSquadIndex)
+            elif myAvatarVehicle.team == playerVehVO.team:
+                self._squadCreatedByAllies(squadNum=voSquadIndex)
+            else:
+                self._squadCreatedByEnemies(squadNum=voSquadIndex)
+        elif squadMembersCount == FULL_SQUAD_MEMBERS_COUNT:
+            myAvatarVehicle = arenaDP.getVehicleInfo(avatar_getter.getPlayerVehicleID())
+            playerVO = playerVehVO.player
+            if playerVO.accountDBID == myAvatarVehicle.player.accountDBID:
+                self._iAmJoinedSquad(squadNum=voSquadIndex)
+            elif myAvatarVehicle.team == playerVehVO.team:
+                if myAvatarVehicle.squadIndex == voSquadIndex:
+                    self._someoneJoinedMySquad(squadNum=voSquadIndex, receiver=playerVO.name)
                 else:
-                    self._someoneJoinedEnemySquad(squadNum=voSquadIndex, receiver=playerVO.name)
+                    self._someoneJoinedAlliedSquad(squadNum=voSquadIndex, receiver=playerVO.name)
+            else:
+                self._someoneJoinedEnemySquad(squadNum=voSquadIndex, receiver=playerVO.name)
 
     def destroy(self):
         invitesManager = self.prbInvites
@@ -207,13 +178,13 @@ class DynSquadMessagesController(DynSquadArenaController):
         key = _getKey(CommandMapping.CMD_VOICECHAT_ENABLE)
         state = _getVIOPState(key)
         message = '#messenger:client/dynSquad/created/owner/%s' % state
-        self.__sendMessage(message, squadNum=squadNum, keyName=BigWorld.keyToString(key))
+        self.__sendMessage(message, squadNum=squadNum, keyName=_getReadableKey(key))
 
     def _squadCreatedImRecruit(self, squadNum):
         key = _getKey(CommandMapping.CMD_VOICECHAT_ENABLE)
         state = _getVIOPState(key)
         message = '#messenger:client/dynSquad/created/recruit/%s' % state
-        self.__sendMessage(message, squadNum=squadNum, keyName=BigWorld.keyToString(key))
+        self.__sendMessage(message, squadNum=squadNum, keyName=_getReadableKey(key))
 
     def _squadCreatedByAllies(self, squadNum):
         self.__sendMessage('#messenger:client/dynSquad/created/allies', squadNum=squadNum, squadType=DYN_SQUAD_TYPE.ALLY)
@@ -225,7 +196,7 @@ class DynSquadMessagesController(DynSquadArenaController):
         key = _getKey(CommandMapping.CMD_VOICECHAT_ENABLE)
         state = _getVIOPState(key)
         message = '#messenger:client/dynSquad/inviteAccepted/myself/%s' % state
-        self.__sendMessage(message, squadNum=squadNum, keyName=BigWorld.keyToString(key))
+        self.__sendMessage(message, squadNum=squadNum, keyName=_getReadableKey(key))
 
     def _someoneJoinedAlliedSquad(self, squadNum, receiver):
         self.__sendMessage('#messenger:client/dynSquad/inviteAccepted/user', squadNum=squadNum, receiver=receiver, squadType=DYN_SQUAD_TYPE.ALLY)
@@ -250,16 +221,11 @@ _DYN_SQUAD_ASSISTANCE_BEEN_REQUESTED = 'dyn_squad_assistance_been_requested'
 _DYN_SQUAD_PLAYER_JOINED_PLATOON = 'dyn_squad_player_joined_platoon'
 
 class _DynSquadSoundsController(DynSquadArenaController):
-    __slots__ = ('__soundManager',)
+    __slots__ = ()
 
-    def __init__(self, soundMgr):
-        super(_DynSquadSoundsController, self).__init__()
-        self.__soundManager = soundMgr
-
-    def destroy(self):
-        super(_DynSquadSoundsController, self).destroy()
-        self.__soundManager = None
-        return
+    @sf_battle
+    def app(self):
+        return None
 
     def _squadCreatedImOwner(self, squadNum):
         self.__playSound(_DYN_SQUAD_PLATOON_CREATED)
@@ -277,43 +243,44 @@ class _DynSquadSoundsController(DynSquadArenaController):
         self.__playSound(_DYN_SQUAD_PLAYER_JOINED_PLATOON)
 
     def __playSound(self, sound):
-        self.__soundManager.playSound('effects.%s' % SoundEffectsId.DYN_SQUAD_STARTING_DYNAMIC_PLATOON)
-        soundNotifications = avatar_getter.getSoundNotifications()
-        if soundNotifications and hasattr(soundNotifications, 'play'):
-            soundNotifications.play(sound)
+        app = self.app
+        if app is not None and app.soundManager is not None:
+            app.soundManager.playEffectSound(SoundEffectsId.DYN_SQUAD_STARTING_DYNAMIC_PLATOON)
+        notifications = avatar_getter.getSoundNotifications()
+        if notifications is not None and hasattr(notifications, 'play'):
+            notifications.play(sound)
+        return
 
 
-class DynSquadFunctional(object):
+class DynSquadFunctional(IArenaVehiclesController):
+    __slots__ = ('__soundCtrl', '__msgsCtrl', 'onPlayerBecomeSquadman')
 
     def __init__(self, isReplayPlaying = False):
         super(DynSquadFunctional, self).__init__()
-        self.__soundCtrl = None
-        self.__entitiesCtrl = None
-        self.__msgsCtrl = None
-        self.__inited = False
+        self.__soundCtrl = _DynSquadSoundsController()
+        self.__msgsCtrl = DynSquadMessagesController()
+        self.onPlayerBecomeSquadman = Event.Event()
         if isReplayPlaying:
             g_messengerEvents.users.onUsersListReceived({USER_TAG.FRIEND, USER_TAG.IGNORED})
-        return
 
-    def setUI(self, battleUI, sessionProviderRef):
-        self.__soundCtrl = _DynSquadSoundsController(battleUI.soundManager)
-        sessionProviderRef.addArenaCtrl(self.__soundCtrl)
-        self.__entitiesCtrl = _DynSquadEntityController((battleUI.getMinimap(), battleUI.markersManager))
-        sessionProviderRef.addArenaCtrl(self.__entitiesCtrl)
-        self.__msgsCtrl = DynSquadMessagesController()
-        sessionProviderRef.addArenaCtrl(self.__msgsCtrl)
-        self.__inited = True
-
-    def clearUI(self, sessionProviderRef):
-        if self.__inited:
-            sessionProviderRef.removeArenaCtrl(self.__soundCtrl)
+    def clear(self):
+        if self.__soundCtrl is not None:
             self.__soundCtrl.destroy()
-            sessionProviderRef.removeArenaCtrl(self.__entitiesCtrl)
-            self.__entitiesCtrl.destroy()
-            sessionProviderRef.removeArenaCtrl(self.__msgsCtrl)
-            self.__msgsCtrl.destroy()
             self.__soundCtrl = None
-            self.__entitiesCtrl = None
+        if self.__msgsCtrl is not None:
+            self.__msgsCtrl.destroy()
             self.__msgsCtrl = None
-        self.__inited = False
+        super(DynSquadFunctional, self).clear()
         return
+
+    def setBattleCtx(self, battleCtx):
+        pass
+
+    def invalidateVehicleInfo(self, flags, vo, arenaDP):
+        vehicleID = vo.vehicleID
+        props = arenaDP.getPlayerGuiProps(vehicleID, vo.team)
+        if props == PLAYER_GUI_PROPS.squadman:
+            self.onPlayerBecomeSquadman(vehicleID, props)
+        if flags & INVALIDATE_OP.PREBATTLE_CHANGED and vo.squadIndex:
+            self.__soundCtrl.process(vo, arenaDP)
+            self.__msgsCtrl.process(vo, arenaDP)

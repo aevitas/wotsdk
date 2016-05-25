@@ -3,7 +3,7 @@ import BigWorld
 import weakref
 from UnitBase import FALLOUT_QUEUE_TYPE_TO_ROSTER
 import constants
-import MusicController
+import MusicControllerWWISE
 from debug_utils import LOG_DEBUG
 from gui import makeHtmlString
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
@@ -181,8 +181,8 @@ class BattleQueue(BattleQueueMeta, LobbySubView):
         self.__updateQueueInfo()
         self.__updateTimer()
         self.__updateClientState()
-        MusicController.g_musicController.play(MusicController.MUSIC_EVENT_LOBBY)
-        MusicController.g_musicController.play(MusicController.AMBIENT_EVENT_LOBBY)
+        MusicControllerWWISE.play(MusicControllerWWISE.MUSIC_EVENT_LOBBY)
+        MusicControllerWWISE.play(MusicControllerWWISE.AMBIENT_EVENT_LOBBY)
 
     def _dispose(self):
         self.__stopUpdateScreen()

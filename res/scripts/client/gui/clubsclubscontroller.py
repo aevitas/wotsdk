@@ -3,13 +3,14 @@ import weakref
 from functools import partial
 from collections import namedtuple
 import BigWorld
+from account_helpers.settings_core.SettingsCore import g_settingsCore
 from adisp import async, process
 from debug_utils import LOG_DEBUG, LOG_ERROR, LOG_NOTE
 from PlayerEvents import g_playerEvents
 from messenger.storage import storage_getter
 from messenger.ext import isSenderIgnored
 from messenger.proto.events import g_messengerEvents
-from messenger.m_constants import USER_TAG
+from messenger.m_constants import USER_ACTION_ID, USER_TAG
 from club_shared import ACCOUNT_NOTIFICATION_TYPE, WEB_CMD_RESULT, CLUBS_SEASON_STATE
 from shared_utils import safeCancelCallback
 from gui import SystemMessages, DialogsInterface
@@ -20,7 +21,7 @@ from gui.shared.utils import getPlayerDatabaseID
 from gui.clubs import subscriptions, contexts as club_ctx, states, formatters as club_fmts
 from gui.clubs.items import Club, ClubInvite, ClubApplication, clearInvitesIDs, _UnitInfo
 from gui.clubs.items import SeasonState, SeasonInfo
-from gui.clubs.settings import BROKEN_WEB_CHECK_PERIOD, CLIENT_CLUB_STATE
+from gui.clubs.settings import BROKEN_WEB_CHECK_PERIOD, CLIENT_CLUB_STATE, CLUB_REQUEST_TYPE, OTHER_CLUB_SUBSCRIPTION
 from gui.clubs.club_helpers import getClientClubsMgr, isClubsEnabled, ClubsSeasonsCache
 from gui.clubs.requests import ClubRequestsController
 
@@ -345,11 +346,15 @@ class ClubsController(subscriptions.ClubsListeners):
 
     def init(self):
         g_messengerEvents.users.onUsersListReceived += self.__onUsersListReceived
+        g_messengerEvents.users.onUserStatusUpdated += self.__onUserStatusUpdated
+        g_messengerEvents.users.onUserActionReceived += self.__onUserActionReceived
         self._seasonsCache.init()
 
     def fini(self):
         self._seasonsCache.fini()
         g_messengerEvents.users.onUsersListReceived -= self.__onUsersListReceived
+        g_messengerEvents.users.onUserStatusUpdated -= self.__onUserStatusUpdated
+        g_messengerEvents.users.onUserActionReceived -= self.__onUserActionReceived
         self.stop()
         self._requestsCtrl.fini()
         self.__subscriptions.clear()
@@ -363,6 +368,7 @@ class ClubsController(subscriptions.ClubsListeners):
             clubsMgr.onClientClubsUnitInfoChanged += self.__onClientClubsUnitInfoChanged
         g_playerEvents.onCenterIsLongDisconnected += self.__onCenterIsLongDisconnected
         g_playerEvents.onIGRTypeChanged += self.__onIGRTypeChanged
+        g_settingsCore.onSettingsChanged += self.__onAccountSettingsChanged
         g_clientUpdateManager.addCallbacks({'cache.relatedToClubs': self.__onSpaAttrChanged,
          'cache.eSportSeasonState': self.__onSeasonStateChanged})
         self._accountProfile.resync(firstInit=True, callback=lambda : self._seasonsCache.start())
@@ -377,6 +383,7 @@ class ClubsController(subscriptions.ClubsListeners):
         g_clientUpdateManager.removeObjectCallbacks(self)
         g_playerEvents.onCenterIsLongDisconnected -= self.__onCenterIsLongDisconnected
         g_playerEvents.onIGRTypeChanged -= self.__onIGRTypeChanged
+        g_settingsCore.onSettingsChanged -= self.__onAccountSettingsChanged
         clubsMgr = getClientClubsMgr()
         if clubsMgr is not None:
             clubsMgr.onClientClubsNotification -= self.__onClientClubsNotification
@@ -408,7 +415,7 @@ class ClubsController(subscriptions.ClubsListeners):
     def addClubListener(self, clubDbID, listener, subscriptionType, forceResync = False):
         if not self._accountProfile.isSynced():
             self._accountProfile.resync(forceResync=forceResync)
-        s = self.__subscriptions.setdefault(clubDbID, subscriptions._Subscription(clubDbID, subscriptionType, self))
+        s = self.__setupSubscription(clubDbID, subscriptionType)
         s.addListener(listener)
         s.start()
 
@@ -480,6 +487,7 @@ class ClubsController(subscriptions.ClubsListeners):
                 return
 
         def _cbWrapper(result):
+            self.__preprocessResult(ctx, result)
             isNeedToChangeState = False
             if not result.isSuccess():
                 isNeedToChangeState = result.code in WEB_CMD_RESULT.WEB_UNAVAILABLE_ERRORS
@@ -512,6 +520,9 @@ class ClubsController(subscriptions.ClubsListeners):
         if clubDbID in self.__subscriptions:
             self.__subscriptions[clubDbID].stop()
 
+    def __setupSubscription(self, clubDbID, subscriptionType):
+        return self.__subscriptions.setdefault(clubDbID, subscriptions._Subscription(clubDbID, subscriptionType, self))
+
     def __onClientClubsChanged(self):
         self._accountProfile.resync()
 
@@ -540,11 +551,30 @@ class ClubsController(subscriptions.ClubsListeners):
     def __onIGRTypeChanged(self, *args):
         self.notify('onIGRTypeChanged')
 
+    def __onUserStatusUpdated(self, user):
+        self.notify('onUserStatusUpdated', user)
+
+    def __onAccountSettingsChanged(self, diff):
+        if 'isColorBlind' in diff:
+            self.notify('onColorBlindSettingsChanged')
+
+    def __onUserActionReceived(self, actionID, user):
+        if actionID in (USER_ACTION_ID.IGNORED_ADDED, USER_ACTION_ID.IGNORED_REMOVED):
+            self.notify('onUserActionIgnore', user)
+        if actionID in (USER_ACTION_ID.FRIEND_ADDED, USER_ACTION_ID.FRIEND_REMOVED):
+            self.notify('onUserActionFriend', user)
+
     def __onClientClubsUnitInfoChanged(self, clubDbID, unit):
         if clubDbID in self.__subscriptions:
             unitInfo = _UnitInfo(*unit) if unit else None
             self.__subscriptions[clubDbID].notify('onClubUnitInfoChanged', unitInfo)
         return
+
+    def __preprocessResult(self, ctx, result):
+        if ctx.getRequestType() == CLUB_REQUEST_TYPE.GET_CLUB and result.isSuccess():
+            clubDbID = ctx.getClubDbID()
+            s = self.__setupSubscription(clubDbID, OTHER_CLUB_SUBSCRIPTION)
+            s._onClubUpdated(clubDbID, result.data)
 
     def __repr__(self):
         return 'ClubsCtrl(profile = %s, subscriptions = %s)' % (str(self._accountProfile), self.__subscriptions.keys())

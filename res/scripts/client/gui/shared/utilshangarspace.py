@@ -172,19 +172,16 @@ class _HangarSpace(object):
         game_control.g_instance.gameSession.onPremiumNotify -= self.onPremiumChanged
         return
 
-    def _stripVehCompDescrIfRoaming(self, vehCompDescr):
-        serverSettings = g_lobbyContext.getServerSettings()
-        if serverSettings is not None and serverSettings.roaming.isInRoaming():
-            vehCompDescr = vehicles.stripCustomizationFromVehicleCompactDescr(vehCompDescr, True, True, False)[0]
-        return vehicles.VehicleDescr(compactDescr=vehCompDescr)
-
     def updateVehicle(self, vehicle):
         if self.__inited:
             Waiting.show('loadHangarSpaceVehicle', True)
-            igrRoomType = game_control.g_instance.igr.getRoomType()
-            igrLayout = g_itemsCache.items.inventory.getIgrCustomizationsLayout()
-            updatedVehCompactDescr = getCustomizedVehCompDescr(igrLayout, vehicle.invID, igrRoomType, vehicle.descriptor.makeCompactDescr())
-            self.__space.recreateVehicle(self._stripVehCompDescrIfRoaming(updatedVehCompactDescr), vehicle.modelState, self.__changeDone)
+            self.__space.recreateVehicle(vehicle.getCustomizedDescriptor(), vehicle.modelState, self.__changeDone)
+            self.__lastUpdatedVehicle = vehicle
+
+    def updatePreviewVehicle(self, vehicle):
+        if self.__inited:
+            Waiting.show('loadHangarSpaceVehicle', True)
+            self.__space.recreateVehicle(vehicle.descriptor, vehicle.modelState, self.__changeDone)
             self.__lastUpdatedVehicle = vehicle
 
     def removeVehicle(self):

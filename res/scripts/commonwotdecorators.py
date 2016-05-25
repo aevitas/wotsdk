@@ -44,3 +44,7 @@ def exposedtoclient(func):
             LOG_WRAPPED_CURRENT_EXCEPTION(wrapper.__name__, func.__name__, func.func_code.co_filename, func.func_code.co_firstlineno + 1)
 
     return wrapper
+
+
+def singleton(cls):
+    return cls()

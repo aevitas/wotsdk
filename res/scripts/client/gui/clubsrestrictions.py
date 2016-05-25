@@ -150,7 +150,10 @@ class RestrictionsCollection(object):
 
     def isRequestValid(self, requestTypeID):
         if requestTypeID in self.__restrictions:
-            return error(first(self.__restrictions[requestTypeID]).getReasonString())
+            for restriction in self.__restrictions[requestTypeID]:
+                if not restriction.isExpired():
+                    return error(restriction.getReasonString())
+
         return success()
 
     def getRequestRestrictions(self, requestTypeID):

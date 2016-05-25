@@ -181,8 +181,10 @@ class _RpmStateHandler(_StateHandler):
         :param rpm: True rpm value to be converted.
         :param vehicle: A reference to Vehicle(BW entity) object.
         """
-        if vehicle.appearance.gear > 0 and rpm < _RPM_MAX_VALUE:
-            return _RPM_SHIFT + rpm * _RPM_SHIFT_FACTOR
+        if vehicle.appearance.gear == _STOPPED_ENGINE_GEAR:
+            rpm = 0
+        elif vehicle.appearance.gear > 0 and rpm < _RPM_MAX_VALUE:
+            rpm = _RPM_SHIFT + rpm * _RPM_SHIFT_FACTOR
         return rpm
 
 
@@ -388,6 +390,7 @@ class _VehicleUpdater(object):
         :param vehicleID: Unique identifier of vehicle to be tracked
         """
         super(_VehicleUpdater, self).__init__()
+        self.__isAlive = True
         self.__handlers = None
         self.__ctrl = weakref.proxy(vehCtrl)
         self.__vehicleID = vehicleID
@@ -470,13 +473,12 @@ class _VehicleUpdater(object):
         states = []
         vehicle = BigWorld.entity(self.__vehicleID)
         if vehicle is not None and vehicle.isStarted:
-            if not vehicle.isAlive():
+            if not vehicle.isAlive() and self.__isAlive:
+                self.__isAlive = False
                 states.append((VEHICLE_VIEW_STATE.DESTROYED, None))
-                self.stop()
-            else:
-                for handler in self.__handlers:
-                    newStates = handler(vehicle)
-                    states.extend(newStates)
+            for handler in self.__handlers:
+                newStates = handler(vehicle)
+                states.extend(newStates)
 
         for item in states:
             self.onVehicleStateUpdated(*item)
@@ -527,6 +529,7 @@ class VehicleStateController(object):
         self.__vehicleID = 0
         self.__updater = None
         self.__isRqToSwitch = False
+        self.__isInPostmortem = False
         return
 
     def clear(self):
@@ -542,8 +545,13 @@ class VehicleStateController(object):
             self.__updater = None
         self.__vehicleID = 0
         self.__isRqToSwitch = False
+        self.__isInPostmortem = False
         self.__eManager.clear()
         return
+
+    @property
+    def isInPostmortem(self):
+        return self.__isInPostmortem
 
     def setPlayerVehicle(self, vehicleID):
         """
@@ -594,10 +602,11 @@ class VehicleStateController(object):
             self.__waitingTI.stop()
             if self.__updater is not None:
                 self.__updater.stop()
+        self.__isInPostmortem = True
         self.onPostMortemSwitched()
         return
 
-    def switchToAnother(self, vehicleID):
+    def switchToOther(self, vehicleID):
         """
         Switches to another vehicle.
         
@@ -606,7 +615,7 @@ class VehicleStateController(object):
         if self.__vehicleID == vehicleID or vehicleID is None:
             return
         else:
-            self.onVehicleStateUpdated(VEHICLE_VIEW_STATE.SWITCHING, self.__vehicleID)
+            self.onVehicleStateUpdated(VEHICLE_VIEW_STATE.SWITCHING, vehicleID)
             self.__waitingTI.stop()
             if self.__updater:
                 self.__updater.stop()
@@ -651,6 +660,7 @@ class VehicleStateController(object):
             SoundGroups.g_instance.soundModes.setCurrentNation(nations.NAMES[nationID])
         self.onVehicleControlling(vehicle)
         if not vehicle.isAlive():
+            self.__isAlive = False
             self.onVehicleStateUpdated(VEHICLE_VIEW_STATE.DESTROYED, None)
         elif self.__updater is not None:
             self.__updater.start()

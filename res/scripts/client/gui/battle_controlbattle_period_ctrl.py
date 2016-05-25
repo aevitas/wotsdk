@@ -4,25 +4,26 @@ import BattleReplay
 import BigWorld
 from ConnectionManager import connectionManager
 from constants import ARENA_PERIOD as _PERIOD, ARENA_GUI_TYPE
-from gui.Scaleform.locale.ARENAS import ARENAS
 from gui.battle_control import event_dispatcher, arena_info
 from gui.battle_control.arena_info import isFalloutBattle
 from gui.battle_control.arena_info.interfaces import IArenaPeriodController
 from gui.battle_control.battle_constants import COUNTDOWN_STATE
-from gui.shared.utils.functions import getArenaSubTypeName, getBattleSubTypeWinText
-from helpers import i18n
+from gui.battle_control.view_components import IViewComponentsController
 import SoundGroups
 _CRITICAL_TIME_LEVEL = 60.0
 _COUNTDOWN_HIDE_SPEED = 1.5
 _START_NOTIFICATION_TIME = 5.0
 
 def getTimeLevel(value):
+    if value is None:
+        return 1
     criticalTime = _CRITICAL_TIME_LEVEL
     if isFalloutBattle():
         criticalTime = 120.0
     if value <= criticalTime:
         return 1
-    return 0
+    else:
+        return 0
 
 
 class ITimersBar(object):
@@ -39,6 +40,9 @@ class ITimersBar(object):
     def hideCountdown(self, state, speed):
         raise NotImplementedError
 
+    def setWinConditionText(self, text):
+        raise NotImplementedError
+
 
 class IPlayersPanelsSwitcher(object):
 
@@ -49,8 +53,8 @@ class IPlayersPanelsSwitcher(object):
         raise NotImplementedError
 
 
-class ArenaPeriodController(IArenaPeriodController):
-    __slots__ = ('_callbackID', '_period', '_endTime', '_length', '_sound', '_battleTimerUI', '_preBattleTimerUI', '_cdState', '_ttState', '_isNotified', '_totalTime', '_countdown', '_playingTime', '_switcherUI', '_switcherState', '_battleCtx')
+class ArenaPeriodController(IArenaPeriodController, IViewComponentsController):
+    __slots__ = ('_callbackID', '_period', '_endTime', '_length', '_sound', '_battleTimerUI', '_preBattleTimerUI', '_cdState', '_ttState', '_isNotified', '_totalTime', '_countdown', '_playingTime', '_switcherUI', '_switcherState', '_battleCtx', '_battleEndWarning')
 
     def __init__(self):
         super(ArenaPeriodController, self).__init__()
@@ -70,6 +74,7 @@ class ArenaPeriodController(IArenaPeriodController):
         self._isNotified = False
         self._playingTime = 0
         self._battleCtx = None
+        self._battleEndWarning = None
         return
 
     def clear(self):
@@ -77,22 +82,26 @@ class ArenaPeriodController(IArenaPeriodController):
         self._stopSound()
         self._setPlayingTimeOnArena()
 
-    def setUI(self, battleTimerUI, preBattleTimerUI, switcherUI):
-        self._battleTimerUI = weakref.proxy(battleTimerUI)
-        self._preBattleTimerUI = weakref.proxy(preBattleTimerUI)
-        self._switcherUI = weakref.proxy(switcherUI)
+    def setViewComponents(self, battleTimerUI, preBattleTimerUI, switcherUI = None, battleEndWarning = None):
+        self._battleEndWarning = battleEndWarning
+        self._battleTimerUI = battleTimerUI
+        self._preBattleTimerUI = preBattleTimerUI
+        self._switcherUI = switcherUI
         if self._period == _PERIOD.BATTLE:
-            self._switcherUI.setInitialMode()
-            self._switcherState = 1
-        else:
+            if switcherUI is not None:
+                self._switcherUI.setInitialMode()
+                self._switcherState = 1
+        elif switcherUI is not None:
             self._switcherUI.setLargeMode()
             self._switcherState = 0
         if self._cdState in COUNTDOWN_STATE.VISIBLE:
             self._preBattleTimerUI.setCountdown(self._cdState, getTimeLevel(self._countdown), self._countdown)
-            self._setWinCondition()
+            if self._battleCtx is not None:
+                self._preBattleTimerUI.setWinConditionText(self._battleCtx.getArenaWinString())
         self._battleTimerUI.setTotalTime(getTimeLevel(self._totalTime), self._totalTime)
+        return
 
-    def clearUI(self):
+    def clearViewComponents(self):
         self._battleTimerUI = None
         self._preBattleTimerUI = None
         self._switcherUI = None
@@ -145,6 +154,8 @@ class ArenaPeriodController(IArenaPeriodController):
             self._totalTime = totalTime
             if self._battleTimerUI is not None:
                 self._battleTimerUI.setTotalTime(getTimeLevel(totalTime), totalTime)
+            if self._battleEndWarning is not None and self._battleEndWarning.isLoaded():
+                self._battleEndWarning.setCurrentTimeLeft(totalTime)
             return
 
     def _hideTotalTime(self):
@@ -160,20 +171,6 @@ class ArenaPeriodController(IArenaPeriodController):
             if self._preBattleTimerUI is not None:
                 self._preBattleTimerUI.setCountdown(state, getTimeLevel(timeLeft), timeLeft)
             return
-
-    def _setWinCondition(self):
-        from gui.battle_control import g_sessionProvider
-        arenaSubType = getArenaSubTypeName(BigWorld.player().arenaTypeID)
-        arenaDP = g_sessionProvider.getArenaDP()
-        if self._preBattleTimerUI is not None:
-            if not arena_info.isFalloutBattle():
-                winText = getBattleSubTypeWinText(BigWorld.player().arenaTypeID, arenaDP.getNumberOfTeam())
-            elif arena_info.isFalloutMultiTeam():
-                winText = i18n.makeString(ARENAS.TYPE_FALLOUTMUTLITEAM_DESCRIPTION)
-            else:
-                winText = i18n.makeString('#arenas:type/%s/description' % arenaSubType)
-            self._preBattleTimerUI.setWinConditionText(winText)
-        return
 
     def _hideCountdown(self, state, speed):
         self._countdown = None

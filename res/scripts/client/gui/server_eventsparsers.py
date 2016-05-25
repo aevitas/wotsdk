@@ -182,7 +182,8 @@ class VehicleRequirements(ConditionsParser):
         return False not in results
 
     def getSuitableVehicles(self):
-        from gui.shared import g_itemsCache, REQ_CRITERIA
+        from gui.shared.utils.requesters import REQ_CRITERIA
+        from gui.shared import g_itemsCache
         invVehs = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY).itervalues()
         return [ v for v in invVehs if self.isAvailable(v) ]
 
@@ -231,7 +232,7 @@ class PreBattleConditions(ConditionsParser):
                 return conditions.BattleSquad(uniqueName, data)
             if name == 'clanMembership':
                 return conditions.BattleClanMembership(uniqueName, data, self)
-            if name == 'camouflageKind':
+            if name == 'mapCamouflageKind':
                 return conditions.BattleCamouflage(uniqueName, data)
             if name == 'geometryNames':
                 return conditions.BattleMap(uniqueName, data)

@@ -1,11 +1,13 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/score_panel.py
 import itertools
 import win_points
+from gui.shared import events, EVENT_BUS_SCOPE
 from collections import defaultdict
 from account_helpers.settings_core import g_settingsCore
 from gui.Scaleform.daapi.view.battle.meta.FalloutScorePanelMeta import FalloutScorePanelMeta
 from gui.Scaleform.daapi.view.battle import FALLOUT_SCORE_PANEL
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
+from gui.shared import g_eventBus
 from gui.shared.gui_items.Vehicle import VEHICLE_BATTLE_TYPES_ORDER_INDICES
 from gui.battle_control import g_sessionProvider
 from gui.battle_control.arena_info import getArenaType, hasGasAttack
@@ -59,20 +61,24 @@ class _IScorePanel(object):
     def showVehiclesCounter(self, isShown):
         pass
 
+    def getCurrentScore(self):
+        """ Returns tuple(ally, enemy) or None """
+        pass
+
 
 class _FragCorrelationPanel(_IScorePanel):
 
     def __init__(self, parentUI):
         self.__ui = parentUI
+        self.__score = None
         self.clear()
+        return
 
     def populate(self):
         arenaDP = g_sessionProvider.getArenaDP()
         getTeamName = g_sessionProvider.getCtx().getTeamName
-        getNumberOfTeam = arenaDP.getNumberOfTeam
-        playerTeamIdx, enemyTeamIdx = getNumberOfTeam(), getNumberOfTeam(True)
-        _alliedTeamName = getTeamName(playerTeamIdx)
-        _enemyTeamName = getTeamName(enemyTeamIdx)
+        _alliedTeamName = getTeamName(enemy=False)
+        _enemyTeamName = getTeamName(enemy=True)
         self.__callFlash('setTeamNames', [_alliedTeamName, _enemyTeamName])
         self.showVehiclesCounter(g_settingsCore.getSetting('showVehiclesCounter'))
         self.updateScore()
@@ -92,6 +98,7 @@ class _FragCorrelationPanel(_IScorePanel):
         else:
             self.__teamsShortLists[team] = []
             self.__teamsDeaths[team] = 0
+        self.__score = None
         return
 
     def addKilled(self, team, count = 1):
@@ -111,6 +118,12 @@ class _FragCorrelationPanel(_IScorePanel):
                     enemy += score
 
             self.__callFlash('updateFrags', [ally, enemy])
+            self.__score = (ally, enemy)
+            g_eventBus.handleEvent(events.ScoreEvent(events.ScoreEvent.FRAGS_UPDATED, ctx={'ally': ally,
+             'enemy': enemy}), EVENT_BUS_SCOPE.BATTLE)
+
+    def getCurrentScore(self):
+        return self.__score
 
     def updateTeam(self, isEnemy, team):
         if not team:
@@ -142,6 +155,8 @@ class _FalloutScorePanel(FalloutScorePanelMeta, _IScorePanel):
         self._proxy = proxy
         self._contextType = ctxType
         self._maxScore = 0
+        self._score = None
+        return
 
     def populate(self):
         super(_FalloutScorePanel, self)._populate(self._proxy.getMember(FALLOUT_SCORE_PANEL))
@@ -181,6 +196,12 @@ class _FalloutScorePanel(FalloutScorePanelMeta, _IScorePanel):
                 enemyScore += points
 
         self.as_setDataS(self._contextType, self._maxScore, playerScore, allyScore, enemyScore, '', '', {})
+        self._score = (allyScore, enemyScore)
+        g_eventBus.handleEvent(events.ScoreEvent(events.ScoreEvent.FRAGS_UPDATED, ctx={'ally': allyScore,
+         'enemy': enemyScore}), EVENT_BUS_SCOPE.BATTLE)
+
+    def getCurrentScore(self):
+        return self._score
 
 
 class _MultiteamFalloutPanel(_FalloutScorePanel):
@@ -235,6 +256,9 @@ class _MultiteamFalloutPanel(_FalloutScorePanel):
         self.__allyScore = allyScore
         self.__enemyScore = enemyScore
         self.as_setDataS(self._contextType, self._maxScore, 0, allyScore, enemyScore, playerName, enemyName, _TEAM_PROPS)
+        self._score = (allyScore, enemyScore)
+        g_eventBus.handleEvent(events.ScoreEvent(events.ScoreEvent.FRAGS_UPDATED, ctx={'ally': allyScore,
+         'enemy': enemyScore}), EVENT_BUS_SCOPE.BATTLE)
 
     def __onGasAttackPreparing(self, state):
         if self.__allyScore != self.__enemyScore:

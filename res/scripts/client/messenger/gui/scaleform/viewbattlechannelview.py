@@ -78,11 +78,7 @@ class BattleChannelView(UIInterface, IBattleChannelView):
         if len(result):
             self.__flashCall(BTMS_COMMANDS.UpdateReceivers(), result)
 
-    def addMessage(self, message, isCurrentPlayer = False):
-        if isCurrentPlayer:
-            fillColor = FILL_COLORS.BROWN
-        else:
-            fillColor = FILL_COLORS.BLACK
+    def addMessage(self, message, fillColor = FILL_COLORS.BLACK):
         history = self.__sharedHistory()
         if history:
             history.addMessage(message, fillColor)

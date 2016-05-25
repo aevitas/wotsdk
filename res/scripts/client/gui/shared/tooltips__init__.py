@@ -35,6 +35,7 @@ class TOOLTIP_TYPE(CONST_CONTAINER):
     TECH_CUSTOMIZATION = 'techCustomization'
     TECH_CUSTOMIZATION_BONUS = 'techCustomizationBonus'
     BOOSTER = 'booster'
+    VEHICLE_FILTER = 'vehicleFilter'
 
 
 class TOOLTIP_COMPONENT(CONST_CONTAINER):
@@ -293,3 +294,16 @@ def getItemRentActionTooltipData(item, rentPackage):
      'newPrice': price,
      'oldPrice': defaultPrice,
      'rentPackage': rentPackage['days']}
+
+
+def getActionPriceData(item):
+    price = item.altPrice or item.buyPrice
+    defaultPrice = item.defaultAltPrice or item.defaultPrice
+    minRentPricePackage = item.getRentPackage()
+    action = None
+    if price != defaultPrice and not minRentPricePackage:
+        action = getItemActionTooltipData(item)
+    elif minRentPricePackage:
+        if minRentPricePackage['rentPrice'] != minRentPricePackage['defaultRentPrice']:
+            action = getItemRentActionTooltipData(item, minRentPricePackage)
+    return action

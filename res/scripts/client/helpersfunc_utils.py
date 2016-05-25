@@ -13,7 +13,7 @@ def callMethod(obj, methodName, *args):
         getattr(obj, methodName)(*args)
 
 
-def debug_delay(timeLag):
+def debugDelay(timeLag):
 
     def delayCallDecorator(func):
 

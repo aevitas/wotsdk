@@ -68,3 +68,10 @@ class ChannelComponent(ChannelComponentMeta):
         factory = UnitDataFactory()
         message = factory.messageVO(factory.broadcastArgs(text))
         self._controller().addMessage(message, False)
+
+    def getLastUnsentMessage(self):
+        result = ''
+        return result
+
+    def setLastUnsentMessage(self, message):
+        LOG_DEBUG('ChannelComponent setLastUnsentMessage ', message, self)

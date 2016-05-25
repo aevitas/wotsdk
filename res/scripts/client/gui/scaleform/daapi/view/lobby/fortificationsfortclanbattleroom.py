@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/FortClanBattleRoom.py
 import ArenaType
 from debug_utils import LOG_DEBUG, LOG_ERROR
+from gui.shared.utils.functions import makeTooltip
 from helpers import i18n, int2roman
 from UnitBase import UNIT_OP
 from adisp import process
@@ -106,7 +107,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
         if state.getStateID() == CLIENT_FORT_STATE.HAS_FORT:
             self.__initData()
             self.__makeData()
-        elif self.fortState.getStateID() == CLIENT_FORT_STATE.CENTER_UNAVAILABLE:
+        elif self.fortState.getStateID() in CLIENT_FORT_STATE.NOT_AVAILABLE_FORT:
             self.__leaveOnError()
 
     def onUnitRejoin(self):
@@ -136,7 +137,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
         if self.fortState.getStateID() == CLIENT_FORT_STATE.HAS_FORT:
             self.__initData()
             self.__makeData()
-        elif self.fortState.getStateID() == CLIENT_FORT_STATE.CENTER_UNAVAILABLE:
+        elif self.fortState.getStateID() in CLIENT_FORT_STATE.NOT_AVAILABLE_FORT:
             self.__leaveOnError()
 
     def _dispose(self):
@@ -253,8 +254,7 @@ class FortClanBattleRoom(FortClanBattleRoomMeta, UnitListener, FortViewHelper):
                             'buildingIndicatorTTBody': buildingIndicatorTTBody,
                             'revertArrowDirection': isReverse},
          'connectionIcon': connectionIcon,
-         'connectionIconTTHeader': connectionIconTTHeader,
-         'connectionIconTTBody': connectionIconTTBody}
+         'connectionIconTooltip': makeTooltip(connectionIconTTHeader, connectionIconTTBody)}
         self.as_updateDirectionsS(directionsData)
 
     def __defineArrowDirection(self):

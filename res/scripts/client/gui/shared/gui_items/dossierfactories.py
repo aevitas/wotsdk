@@ -161,6 +161,7 @@ _ACHIEVEMENTS_BY_NAME = {(_AB.TOTAL, 'tankExpert'): _NationAchieveFactory.get(_a
  (_AB.SINGLE, 'battleCitizen'): _AchieveFactory.get(_abstract_achievements.QuestAchievement),
  (_AB.SINGLE, 'WFC2014'): _CustomAchieveFactory.get(_as.WFC2014Achievement),
  (_AB.SINGLE, 'deathTrack'): _CustomAchieveFactory.get(_as.DeathTrackAchievement),
+ (_AB.SINGLE, 'moonSphere'): _CustomAchieveFactory.get(_as.MoonSphereAchievement),
  (_AB.SINGLE, 'aimer'): _CustomAchieveFactory.get(_as.AimerAchievement),
  (_AB.SINGLE, 'tankwomen'): _CustomAchieveFactory.get(_as.TankwomenAchievement),
  (_AB.SINGLE, 'operationWinter'): _AchieveFactory.get(_abstract_achievements.QuestAchievement),
@@ -201,6 +202,15 @@ _ACHIEVEMENTS_BY_NAME = {(_AB.TOTAL, 'tankExpert'): _NationAchieveFactory.get(_a
  (_AB.FALLOUT, 'stormLord'): _CustomAchieveFactory.get(_as.StormLordAchievement),
  (_AB.FALLOUT, 'winnerLaurels'): _CustomAchieveFactory.get(_as.WinnerLaurelsAchievement),
  (_AB.FALLOUT, 'sauronEye'): _CustomAchieveFactory.get(_as.SauronsEyeAchievement),
+ (_AB.FALLOUT, 'shoulderToShoulder'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'aloneInTheField'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'fallenFlags'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'effectiveSupport'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'falloutDieHard'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'predator'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'unreachable'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'champion'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
+ (_AB.FALLOUT, 'bannerman'): _AchieveFactory.get(_abstract_achievements.DeprecatedAchievement),
  WHITE_TIGER_RECORD: _CustomAchieveFactory.get(_as.WhiteTigerAchievement),
  RARE_STORAGE_RECORD: _RareAchievesFactory.get()}
 for _nID, _ in enumerate(nations.NAMES):

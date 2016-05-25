@@ -1,16 +1,13 @@
 # Embedded file name: scripts/client/MusicControllerWWISE.py
-import account_helpers
 import BigWorld
 import ResMgr
 import WWISE
-from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG
+import SoundGroups
 from constants import ARENA_PERIOD
 from items import _xml
 from PlayerEvents import g_playerEvents
 from helpers import isPlayerAvatar
-import SoundGroups
 MUSIC_EVENT_NONE = 0
-MUSIC_EVENT_LOGIN = 1
 MUSIC_EVENT_LOBBY = 2
 MUSIC_EVENT_COMBAT = 3
 MUSIC_EVENT_COMBAT_LOADING = 4
@@ -50,9 +47,49 @@ _SERVER_OVERRIDDEN = 0
 _CLIENT_OVERRIDDEN = 1
 g_musicController = None
 
-def init():
+def create():
     global g_musicController
-    g_musicController = MusicController()
+    if g_musicController is None:
+        g_musicController = MusicController()
+    return
+
+
+def init(arenaName):
+    global g_musicController
+    if g_musicController is None:
+        g_musicController = MusicController()
+    g_musicController.init(arenaName)
+    return
+
+
+def destroy():
+    if g_musicController is not None:
+        g_musicController.destroy()
+    return
+
+
+def onLeaveArena():
+    if g_musicController is not None:
+        g_musicController.onLeaveArena()
+    return
+
+
+def onEnterArena():
+    if g_musicController is not None:
+        g_musicController.onEnterArena()
+    return
+
+
+def unloadCustomSounds():
+    if g_musicController is not None:
+        g_musicController.unloadCustomSounds()
+    return
+
+
+def play(eventId):
+    if g_musicController is not None:
+        g_musicController.play(eventId)
+    return
 
 
 class MusicController(object):
@@ -111,7 +148,10 @@ class MusicController(object):
             return self.__eventID
 
         def isPlaying(self):
-            return self.__event is not None
+            if self.__event is not None:
+                return self.__event.isPlaying
+            else:
+                return False
 
         def destroy(self):
             if self.__event is not None:
@@ -173,14 +213,12 @@ class MusicController(object):
             return
 
     def stopMusic(self):
-        for musicEvent in self.__musicEvents:
-            musicEvent.destroy()
+        musicEvent = self.__musicEvents[MusicController._MUSIC_EVENT]
+        musicEvent.destroy()
 
     def stopAmbient(self):
         ambientEvent = self.__musicEvents[MusicController._AMBIENT_EVENT]
-        if ambientEvent is not None:
-            ambientEvent.destroy()
-        return
+        ambientEvent.destroy()
 
     def stop(self):
         self.stopAmbient()
@@ -191,6 +229,10 @@ class MusicController(object):
         if e is not None:
             e.stop()
         return
+
+    def muteMusic(self, isMute):
+        musicEvent = self.__musicEvents[MusicController._MUSIC_EVENT]
+        musicEvent.mute(isMute)
 
     def setEventParam(self, eventId, paramName, paramValue):
         WWISE.WW_setRTCPGlobal(paramName, paramValue)
@@ -206,7 +248,8 @@ class MusicController(object):
 
     def setAccountAttrs(self, accAttrs, restart = False):
         wasPremiumAccount = self.__isPremiumAccount
-        self.__isPremiumAccount = account_helpers.isPremiumAccount(accAttrs)
+        from account_helpers import isPremiumAccount
+        self.__isPremiumAccount = isPremiumAccount(accAttrs)
         musicEventId = self.__musicEvents[MusicController._MUSIC_EVENT].getEventId()
         if restart and self.__isPremiumAccount != wasPremiumAccount and musicEventId == MUSIC_EVENT_LOBBY:
             self.play(musicEventId)
@@ -275,7 +318,6 @@ class MusicController(object):
         for i in section.items():
             s = i[1]
             if i[0] == 'music':
-                eventNames[MUSIC_EVENT_LOGIN] = s.readString('wwlogin')
                 eventNames[MUSIC_EVENT_LOBBY] = (s.readString('wwlobby'), s.readString('wwlobby'))
                 eventNames[MUSIC_EVENT_COMBAT_VICTORY] = s.readString('wwcombat_victory')
                 eventNames[MUSIC_EVENT_COMBAT_LOSE] = s.readString('wwcombat_lose')

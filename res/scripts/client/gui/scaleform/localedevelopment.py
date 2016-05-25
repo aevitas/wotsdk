@@ -2,6 +2,12 @@
 
 
 class DEVELOPMENT(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     BOTS_TITLE = '#development:bots/title'
     BOTS_LABELS_VEHICLECLASS = '#development:bots/labels/vehicleClass'
     BOTS_LABELS_TEAMONE = '#development:bots/labels/teamOne'

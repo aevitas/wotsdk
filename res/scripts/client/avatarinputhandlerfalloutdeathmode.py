@@ -11,6 +11,7 @@ from mathUtils import clamp
 
 class FalloutDeathMode(IControlMode):
     curVehicleID = property(lambda self: self.__curVehicleID)
+    aimingMode = property(lambda self: self._aimingMode)
 
     def __init__(self, dataSection, avatarInputHandler):
         self.__aih = weakref.proxy(avatarInputHandler)
@@ -18,6 +19,7 @@ class FalloutDeathMode(IControlMode):
         self.__cam = ArcadeCamera(dataSection['camera'], self.__aim)
         self.__isEnabled = False
         self.__curVehicleID = None
+        self._aimingMode = 0
         return
 
     def create(self):

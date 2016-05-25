@@ -1,13 +1,14 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/__init__.py
-import nations
 from collections import namedtuple
+import BigWorld
+from gui.shared.items_parameters import params_helper, formatters
+import nations
 from debug_utils import *
 from helpers import i18n, time_utils
 from items import ITEM_TYPE_NAMES, vehicles, getTypeInfoByName, ITEM_TYPE_INDICES
 from shared_utils import CONST_CONTAINER
 from gui import nationCompareByIndex, GUI_SETTINGS
 from gui.shared.economics import getActionPrc
-from gui.shared.utils import ItemsParameters
 from gui.shared.utils.functions import getShortDescr, stripShortDescrTags
 CLAN_LOCK = 1
 _ICONS_MASK = '../maps/icons/%(type)s/%(subtype)s%(unicName)s.png'
@@ -219,27 +220,25 @@ class HasStrCD(object):
 _RentalInfoProvider = namedtuple('RentalInfoProvider', ('rentExpiryTime',
  'compensations',
  'battlesLeft',
- 'expiryState',
+ 'winsLeft',
  'isRented'))
-_RentalInfoProvider.__new__.__defaults__ = (0,
- (0, 0),
- 0,
- True,
- False)
 
 class RentalInfoProvider(_RentalInfoProvider):
 
-    def getTimeLeft(self):
-        return float(time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(self.rentExpiryTime)))
+    @staticmethod
+    def __new__(cls, additionalData = None, time = 0, battles = 0, wins = 0, isRented = False, *args, **kwargs):
+        additionalData = additionalData or {}
+        compensations = additionalData.get('compensation', (0, 0))
+        result = _RentalInfoProvider.__new__(cls, time, compensations, battles, wins, isRented)
+        return result
 
-    def getBattlesLeft(self):
-        return self.battlesLeft or 0
+    def getTimeLeft(self):
+        if self.rentExpiryTime != float('inf'):
+            return float(time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(self.rentExpiryTime)))
+        return float('inf')
 
     def getExpiryState(self):
-        if self.expiryState is not None:
-            return self.expiryState
-        else:
-            return True
+        return self.rentExpiryTime != float('inf') and self.battlesLeft <= 0 and self.winsLeft <= 0 and self.getTimeLeft() <= 0
 
 
 class FittingItem(GUIItem, HasIntCD):
@@ -278,6 +277,7 @@ class FittingItem(GUIItem, HasIntCD):
             if self.inventoryCount is None:
                 self.inventoryCount = 0
             self.isUnlocked = self.intCD in proxy.stats.unlocks
+            self.isInitiallyUnlocked = self.intCD in proxy.stats.initialUnlocks
             self.altPrice = self._getAltPrice(self.buyPrice, proxy.shop)
             self.defaultAltPrice = self._getAltPrice(self.defaultPrice, proxy.shop.defaults)
             self.sellActionPrc = -1 * getActionPrc(self.sellPrice, self.defaultSellPrice)
@@ -289,6 +289,14 @@ class FittingItem(GUIItem, HasIntCD):
     @property
     def buyPrice(self):
         return self._buyPrice
+
+    @property
+    def rentOrBuyPrice(self):
+        price = self.altPrice or self.buyPrice
+        minRentPricePackage = self.getRentPackage()
+        if minRentPricePackage:
+            return minRentPricePackage['rentPrice']
+        return price
 
     @property
     def actionPrc(self):
@@ -330,6 +338,9 @@ class FittingItem(GUIItem, HasIntCD):
     def rentLeftTime(self):
         return 0
 
+    def isPreviewAllowed(self):
+        return False
+
     @property
     def userType(self):
         return getTypeInfoByName(self.itemTypeName)['userString']
@@ -369,10 +380,13 @@ class FittingItem(GUIItem, HasIntCD):
     def _getShortInfo(self, vehicle = None, expanded = False):
         try:
             description = i18n.makeString('#menu:descriptions/' + self.itemTypeName + ('Full' if expanded else ''))
-            itemParams = dict(ItemsParameters.g_instance.getParameters(self.descriptor, vehicle.descriptor if vehicle is not None else None))
+            vehicleDescr = vehicle.descriptor if vehicle is not None else None
+            params = params_helper.getParameters(self, vehicleDescr)
+            formattedParametersDict = dict(formatters.getFormattedParamsList(self.descriptor, params))
             if self.itemTypeName == vehicles._VEHICLE:
-                itemParams['caliber'] = BigWorld.wg_getIntegralFormat(self.descriptor.gun['shots'][0]['shell']['caliber'])
-            return description % itemParams
+                formattedParametersDict['caliber'] = BigWorld.wg_getIntegralFormat(self.descriptor.gun['shots'][0]['shell']['caliber'])
+            result = description % formattedParametersDict
+            return result
         except Exception:
             LOG_CURRENT_EXCEPTION()
             return ''
@@ -385,7 +399,7 @@ class FittingItem(GUIItem, HasIntCD):
         return self._getShortInfo(vehicle, expanded)
 
     def getParams(self, vehicle = None):
-        return dict(ItemsParameters.g_instance.get(self.descriptor, vehicle.descriptor if vehicle is not None else None))
+        return dict(params_helper.get(self, vehicle.descriptor if vehicle is not None else None))
 
     def getRentPackage(self, days = None):
         return None
@@ -439,6 +453,12 @@ class FittingItem(GUIItem, HasIntCD):
         if priceCredits <= moneyGold * exchangeRate + moneyCredits:
             return True
         return False
+
+    def isPurchaseEnabled(self, money, exchangeRate):
+        canBuy, buyReason = self.mayPurchase(money)
+        canRentOrBuy, rentReason = self.mayRentOrBuy(money)
+        canBuyWithExchange = self.mayPurchaseWithExchange(money, exchangeRate)
+        return canRentOrBuy or canBuy or canBuyWithExchange and buyReason == 'credit_error'
 
     def mayPurchase(self, money):
         if getattr(BigWorld.player(), 'isLongDisconnectedFromCenter', False):

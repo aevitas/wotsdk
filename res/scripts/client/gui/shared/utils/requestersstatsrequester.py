@@ -146,6 +146,10 @@ class StatsRequester(AbstractSyncDataRequester):
         return self.getCacheValue('unlocks', list())
 
     @property
+    def initialUnlocks(self):
+        return self.getCacheValue(('initial', 'unlocks'), list())
+
+    @property
     def vehicleSlots(self):
         return self.getCacheValue('slots', 0)
 

@@ -7,6 +7,7 @@ import json
 from Event import Event
 from PlayerEvents import g_playerEvents
 from debug_utils import LOG_DEBUG, LOG_NOTE
+from shared_utils import nextTick
 from predefined_hosts import g_preDefinedHosts, AUTO_LOGIN_QUERY_URL
 from helpers import getClientLanguage
 from account_shared import isValidClientVersion
@@ -33,6 +34,7 @@ class LOGIN_STATUS():
     LOGIN_REJECTED_BAN = 'LOGIN_REJECTED_BAN'
     LOGIN_REJECTED_NO_SUCH_USER = 'LOGIN_REJECTED_NO_SUCH_USER'
     LOGIN_REJECTED_INVALID_PASSWORD = 'LOGIN_REJECTED_INVALID_PASSWORD'
+    SESSION_END = 'SESSION_END'
     LOGIN_REJECTED_ALREADY_LOGGED_IN = 'LOGIN_REJECTED_ALREADY_LOGGED_IN'
     LOGIN_REJECTED_BAD_DIGEST = 'LOGIN_REJECTED_BAD_DIGEST'
     LOGIN_REJECTED_DB_GENERAL_FAILURE = 'LOGIN_REJECTED_DB_GENERAL_FAILURE'
@@ -43,6 +45,8 @@ class LOGIN_STATUS():
     LOGIN_REJECTED_SERVER_NOT_READY = 'LOGIN_REJECTED_SERVER_NOT_READY'
     LOGIN_REJECTED_RATE_LIMITED = 'LOGIN_REJECTED_RATE_LIMITED'
 
+
+_INVALID_PASSWORD_TOKEN2_EXPIRED = 'Invalid token2'
 
 class ConnectionData(object):
 
@@ -95,7 +99,7 @@ class ConnectionManager(object):
     def __connect(self):
         self.__retryConnectionCallbackID = None
         LOG_DEBUG('Calling BigWorld.connect with params: {0}, serverName: {1}, inactivityTimeout: {2}, publicKeyPath: {3}'.format(self.__connectionData.username, self.__connectionUrl, constants.CLIENT_INACTIVITY_TIMEOUT, self.__connectionData.publicKeyPath))
-        BigWorld.connect(self.__connectionUrl, self.__connectionData, self.__serverResponseHandler)
+        nextTick(lambda : BigWorld.connect(self.__connectionUrl, self.__connectionData, self.__serverResponseHandler))()
         if g_preDefinedHosts.predefined(self.__connectionUrl) or g_preDefinedHosts.roaming(self.__connectionUrl):
             self.__hostItem = g_preDefinedHosts.byUrl(self.__connectionUrl)
         else:
@@ -112,7 +116,7 @@ class ConnectionManager(object):
         try:
             responseData = json.loads(responseDataJSON)
         except ValueError:
-            responseData = {}
+            responseData = {'errorMessage': responseDataJSON}
 
         if status == LOGIN_STATUS.LOGGED_ON:
             if stage == 1:
@@ -122,7 +126,10 @@ class ConnectionManager(object):
                 self.onConnected()
         else:
             if self.__retryConnectionCallbackID is None:
-                self.onRejected(self.__connectionStatus, responseData)
+                status_ = self.__connectionStatus
+                if responseData.get('errorMessage', '') == _INVALID_PASSWORD_TOKEN2_EXPIRED:
+                    status_ = LOGIN_STATUS.SESSION_END
+                self.onRejected(status_, responseData)
             if status == LOGIN_STATUS.LOGIN_REJECTED_RATE_LIMITED:
                 self.__reconnect()
             if stage == 6:
@@ -195,6 +202,10 @@ class ConnectionManager(object):
             return self.__hostItem.areaID
         else:
             return None
+
+    @property
+    def url(self):
+        return self.__hostItem.url
 
     @property
     def loginName(self):

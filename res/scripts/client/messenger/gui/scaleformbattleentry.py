@@ -138,7 +138,7 @@ class BattleEntry(IGUIEntry):
         self.__updateHistoryControls()
         self.__flashCall(BTMS_COMMANDS.ReceiveMessage(), [0, message, fillColor])
 
-    def isEditing(self, event):
+    def handleKey(self, event):
         return self.__focused and event.key != Keys.KEY_SYSRQ
 
     def isFocused(self):

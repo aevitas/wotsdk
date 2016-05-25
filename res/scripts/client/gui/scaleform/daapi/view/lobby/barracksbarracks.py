@@ -11,7 +11,8 @@ from helpers import i18n
 from debug_utils import LOG_ERROR
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui import SystemMessages
-from gui.shared import events, g_itemsCache, REQ_CRITERIA, event_dispatcher as shared_events
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import events, g_itemsCache, event_dispatcher as shared_events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.view.meta.BarracksMeta import BarracksMeta
@@ -110,8 +111,13 @@ class Barracks(BarracksMeta, LobbySubView, GlobalListener):
              'state': (None, ACTION_TOOLTIPS_STATE.DISCOUNT),
              'newPrice': (0, berthPrice[0]),
              'oldPrice': (0, defaultBerthPrice[0])}
+        gold = g_itemsCache.items.stats.money[1]
+        enoughGold = True
+        if berthPrice[0] > gold:
+            enoughGold = False
         tankmenList.append({'buy': True,
          'price': BigWorld.wg_getGoldFormat(berthPrice[0]),
+         'enoughGold': enoughGold,
          'actionPriceData': action,
          'count': berthPrice[1]})
         for tankman in sorted(tankmen, TankmenComparator(g_itemsCache.items.getVehicle)):

@@ -1,9 +1,9 @@
 # Embedded file name: scripts/client/gui/shared/gui_items/dossier/achievements/StormLordAchievement.py
 from abstract import ClassProgressAchievement
-from debug_utils import LOG_DEBUG
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK as _AB
+from abstract.mixins import Deprecated, NoProgressBar
 
-class StormLordAchievement(ClassProgressAchievement):
+class StormLordAchievement(Deprecated, NoProgressBar, ClassProgressAchievement):
 
     def __init__(self, dossier, value = None):
         super(StormLordAchievement, self).__init__('stormLord', _AB.FALLOUT, dossier, value)

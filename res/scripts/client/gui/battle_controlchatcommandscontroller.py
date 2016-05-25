@@ -1,12 +1,52 @@
 # Embedded file name: scripts/client/gui/battle_control/ChatCommandsController.py
 import weakref
 import math
+import CommandMapping
 from debug_utils import LOG_ERROR
 from gui.battle_control import avatar_getter
 from messenger import MessengerEntry
 from messenger.m_constants import MESSENGER_COMMAND_TYPE, PROTO_TYPE
 from messenger.proto import proto_getter
 from messenger.proto.events import g_messengerEvents
+
+class CHAT_COMMANDS(object):
+    ATTACK = 'ATTACK'
+    BACKTOBASE = 'BACKTOBASE'
+    POSITIVE = 'POSITIVE'
+    NEGATIVE = 'NEGATIVE'
+    HELPME = 'HELPME'
+    RELOADINGGUN = 'RELOADINGGUN'
+    FOLLOWME = 'FOLLOWME'
+    TURNBACK = 'TURNBACK'
+    HELPMEEX = 'HELPMEEX'
+    SUPPORTMEWITHFIRE = 'SUPPORTMEWITHFIRE'
+    ATTACKENEMY = 'ATTACKENEMY'
+    STOP = 'STOP'
+
+
+KB_MAPPING = {CHAT_COMMANDS.ATTACK: CommandMapping.CMD_CHAT_SHORTCUT_ATTACK,
+ CHAT_COMMANDS.BACKTOBASE: CommandMapping.CMD_CHAT_SHORTCUT_BACKTOBASE,
+ CHAT_COMMANDS.POSITIVE: CommandMapping.CMD_CHAT_SHORTCUT_POSITIVE,
+ CHAT_COMMANDS.NEGATIVE: CommandMapping.CMD_CHAT_SHORTCUT_NEGATIVE,
+ CHAT_COMMANDS.HELPME: CommandMapping.CMD_CHAT_SHORTCUT_HELPME,
+ CHAT_COMMANDS.RELOADINGGUN: CommandMapping.CMD_CHAT_SHORTCUT_RELOAD}
+TARGET_ACTIONS = [CHAT_COMMANDS.FOLLOWME,
+ CHAT_COMMANDS.TURNBACK,
+ CHAT_COMMANDS.HELPMEEX,
+ CHAT_COMMANDS.SUPPORTMEWITHFIRE,
+ CHAT_COMMANDS.ATTACKENEMY,
+ CHAT_COMMANDS.STOP]
+DENIED_ACTIONS = [CHAT_COMMANDS.ATTACK]
+DEFAULT_CUT = 'default'
+ALLY_CUT = 'ally'
+ENEMY_CUT = 'enemy'
+ENEMY_SPG_CUT = 'enemy_spg'
+TARGET_TRANSLATION_MAPPING = {CHAT_COMMANDS.ATTACK: {ALLY_CUT: CHAT_COMMANDS.FOLLOWME,
+                        ENEMY_CUT: CHAT_COMMANDS.SUPPORTMEWITHFIRE,
+                        ENEMY_SPG_CUT: CHAT_COMMANDS.ATTACKENEMY},
+ CHAT_COMMANDS.BACKTOBASE: {ALLY_CUT: CHAT_COMMANDS.TURNBACK},
+ CHAT_COMMANDS.HELPME: {ALLY_CUT: CHAT_COMMANDS.HELPMEEX},
+ CHAT_COMMANDS.RELOADINGGUN: {ALLY_CUT: CHAT_COMMANDS.STOP}}
 
 class ChatCommandsController(object):
     __slots__ = ('__arenaDP', '__feedback')
@@ -35,6 +75,27 @@ class ChatCommandsController(object):
         import BattleReplay
         BattleReplay.g_replayCtrl.onCommandReceived -= self.__me_onCommandReceived
         return
+
+    def handleShortcutChatCommand(self, key):
+        cmdMap = CommandMapping.g_instance
+        import BigWorld
+        player = BigWorld.player()
+        target = BigWorld.target()
+        for chatCmd, keyboardCmd in KB_MAPPING.iteritems():
+            if cmdMap.isFired(keyboardCmd, key):
+                crosshairType = self.__getCrosshairType(player, target)
+                if crosshairType != DEFAULT_CUT and chatCmd in TARGET_TRANSLATION_MAPPING and crosshairType in TARGET_TRANSLATION_MAPPING[chatCmd]:
+                    self.handleChatCommand(TARGET_TRANSLATION_MAPPING[chatCmd][crosshairType], target.id)
+                else:
+                    self.handleChatCommand(chatCmd)
+
+    def handleChatCommand(self, action, targetID = None):
+        if action in TARGET_ACTIONS:
+            self.sendTargetedCommand(action, targetID)
+        elif action == CHAT_COMMANDS.RELOADINGGUN:
+            self.sendReloadingCommand()
+        else:
+            self.sendCommand(action)
 
     def sendAttentionToCell(self, cellIdx):
         if avatar_getter.isForcedGuiControlMode():
@@ -157,3 +218,31 @@ class ChatCommandsController(object):
                 self.__handlePublicCommand(cmd)
             else:
                 self.__handleSimpleCommand(cmd)
+
+    def __getCrosshairType(self, player, target):
+        outcome = DEFAULT_CUT
+        if self.__isTargetCorrect(player, target):
+            if target.publicInfo.team == player.team:
+                outcome = ALLY_CUT
+            elif 'SPG' in self.__getCurrentVehicleDesc(player)['vehicleType'].type.tags:
+                outcome = ENEMY_SPG_CUT
+            else:
+                outcome = ENEMY_CUT
+        return outcome
+
+    def __isTargetCorrect(self, player, target):
+        import Vehicle
+        from gui.battle_control import g_sessionProvider
+        from helpers import isPlayerAvatar
+        if target is not None and isinstance(target, Vehicle.Vehicle):
+            if target.isAlive():
+                if player is not None and isPlayerAvatar():
+                    vInfo = g_sessionProvider.getArenaDP().getVehicleInfo(target.id)
+                    return not vInfo.isActionsDisabled()
+        return False
+
+    def __getCurrentVehicleDesc(self, player):
+        vehicles = player.arena.vehicles
+        for vID, desc in vehicles.items():
+            if vID == player.playerVehicleID:
+                return desc

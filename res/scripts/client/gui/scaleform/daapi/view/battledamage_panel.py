@@ -163,8 +163,8 @@ class DamagePanel(DamagePanelMeta, IArenaVehiclesController):
         
         :param value: ID of vehicle.
         """
-        parts = g_sessionProvider.getCtx().getFullPlayerNameWithParts(vID=value, showVehShortName=False)
-        self.as_setPlayerInfoS(*parts)
+        result = g_sessionProvider.getCtx().getPlayerFullNameParts(vID=value, showVehShortName=False)
+        self.as_setPlayerInfoS(result.playerFullName, result.playerName, result.clanAbbrev, result.regionCode, result.vehicleName)
 
     def _updateDeviceState(self, value):
         """

@@ -1,9 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/user_cm_handlers.py
+import math
 from adisp import process
 from debug_utils import LOG_DEBUG
 from gui.clans.clan_helpers import showClanInviteSystemMsg
 from gui.clans.contexts import CreateInviteCtx
-from gui.clans import formatters as clans_fmts
 from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from helpers import i18n
 from gui import SystemMessages
@@ -41,6 +41,8 @@ class USER(object):
     CREATE_SQUAD = 'createSquad'
     INVITE = 'invite'
     REQUEST_FRIENDSHIP = 'requestFriendship'
+    VEHICLE_INFO = 'vehicleInfoEx'
+    VEHICLE_PREVIEW = 'vehiclePreview'
 
 
 class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
@@ -187,6 +189,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
                 LOG_DEBUG('ctx has no property "clanAbbrev"')
 
         options = [self._makeItem(USER.INFO, MENU.contextmenu(USER.INFO))]
+        options = self._addVehicleInfo(options)
         options = self._addClanProfileInfo(options, userCMInfo)
         options = self._addFriendshipInfo(options, userCMInfo)
         options = self._addChannelInfo(options, userCMInfo)
@@ -236,6 +239,9 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
     def _addRemoveFriendInfo(self, options, userCMInfo):
         if userCMInfo.isFriend:
             options.append(self._makeItem(USER.REMOVE_FROM_FRIENDS, MENU.contextmenu(USER.REMOVE_FROM_FRIENDS), optInitData={'enabled': userCMInfo.isSameRealm}))
+        return options
+
+    def _addVehicleInfo(self, options):
         return options
 
     def _addContactsNoteInfo(self, options, userCMInfo):
@@ -315,6 +321,26 @@ class AppealCMHandler(BaseUserCMHandler):
     def appealBot(self):
         self._denunciator.makeAppeal(self.databaseID, self.userName, DENUNCIATIONS.BOT)
 
+    def showVehicleInfo(self):
+        shared_events.showVehicleInfo(self._vehicleCD)
+
+    def showVehiclePreview(self):
+        shared_events.showVehiclePreview(self._vehicleCD)
+        shared_events.hideBattleResults()
+
+    def _initFlashValues(self, ctx):
+        self._vehicleCD = None
+        vehicleCD = getattr(ctx, 'vehicleCD', None)
+        if vehicleCD is not None and not math.isnan(vehicleCD):
+            self._vehicleCD = int(vehicleCD)
+        super(AppealCMHandler, self)._initFlashValues(ctx)
+        return
+
+    def _clearFlashValues(self):
+        super(AppealCMHandler, self)._clearFlashValues()
+        self._vehicleCD = None
+        return
+
     def _getHandlers(self):
         handlers = super(AppealCMHandler, self)._getHandlers()
         handlers.update({DENUNCIATIONS.OFFEND: 'appealOffend',
@@ -323,12 +349,27 @@ class AppealCMHandler(BaseUserCMHandler):
          DENUNCIATIONS.SWINDLE: 'appealSwindle',
          DENUNCIATIONS.NOT_FAIR_PLAY: 'appealNotFairPlay',
          DENUNCIATIONS.FORBIDDEN_NICK: 'appealForbiddenNick',
-         DENUNCIATIONS.BOT: 'appealBot'})
+         DENUNCIATIONS.BOT: 'appealBot',
+         USER.VEHICLE_INFO: 'showVehicleInfo',
+         USER.VEHICLE_PREVIEW: 'showVehiclePreview'})
         return handlers
 
     def _addAppealInfo(self, options):
         if self.wasInBattle:
             options.append(self._createSubMenuItem())
+        return options
+
+    def _addVehicleInfo(self, options):
+        if self._vehicleCD > 0:
+            vehicle = g_itemsCache.items.getItemByCD(self._vehicleCD)
+            if not vehicle.isSecret:
+                if vehicle.isPreviewAllowed():
+                    action = USER.VEHICLE_PREVIEW
+                    label = MENU.contextmenu(USER.VEHICLE_PREVIEW)
+                else:
+                    action = USER.VEHICLE_INFO
+                    label = MENU.contextmenu(USER.VEHICLE_INFO)
+                options.append(self._makeItem(action, label))
         return options
 
     def _getSubmenuData(self):

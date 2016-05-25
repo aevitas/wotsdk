@@ -4,7 +4,8 @@ from AccountCommands import LOCK_REASON
 from CurrentVehicle import g_currentVehicle
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR, LOG_DEBUG
 from gui.prb_control.prb_helpers import prbDispatcherProperty
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from items import vehicles, getTypeOfCompactDescr, ITEM_TYPE_NAMES
 from gui.Scaleform.daapi.view.lobby.techtree.settings import NODE_STATE, MAX_PATH_LIMIT
@@ -13,6 +14,7 @@ from gui.Scaleform.daapi.view.lobby.techtree.settings import makeDefUnlockProps
 from gui.Scaleform.daapi.view.lobby.techtree.settings import UnlockProps, UnlockStats
 from gui.Scaleform.daapi.view.lobby.techtree.dumpers import _BaseDumper
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
+from gui.Scaleform.locale.MENU import MENU
 __all__ = ['ResearchItemsData', 'NationTreeData']
 
 class _ItemsData(object):
@@ -37,15 +39,6 @@ class _ItemsData(object):
             if permission is not None:
                 vehicleCanBeChanged = permission.canChangeVehicle()
         return vehicleCanBeChanged
-
-    def _getAllPossibleXP(self, nodeCD, unlockStats):
-        criteria = REQ_CRITERIA.VEHICLE.FULLY_ELITE | ~REQ_CRITERIA.IN_CD_LIST([nodeCD])
-        eliteVehicles = g_itemsCache.items.getVehicles(criteria)
-        dirtyResult = sum(map(operator.attrgetter('xp'), eliteVehicles.values()))
-        exchangeRate = self._items.shop.freeXPConversion[0]
-        result = min(int(dirtyResult / exchangeRate) * exchangeRate, self._stats.gold * exchangeRate)
-        result += unlockStats.getVehTotalXP(nodeCD)
-        return result
 
     def _checkMoneyForRentOrBuy(self, state, nodeCD):
         state = NODE_STATE.removeIfHas(state, NODE_STATE.ENOUGH_MONEY)
@@ -232,10 +225,7 @@ class _ItemsData(object):
     def _canRentOrBuy(self, nodeCD):
         item = self.getItem(nodeCD)
         money = self._stats.money
-        canBuy, buyReason = item.mayPurchase(money)
-        canRentOrBuy, rentReason = item.mayRentOrBuy(money)
-        canBuyWithExchange = item.mayPurchaseWithExchange(money, g_itemsCache.items.shop.exchangeRate)
-        return canRentOrBuy or canBuy or canBuyWithExchange and buyReason == 'credit_error'
+        return item.isPurchaseEnabled(money, self._items.shop.exchangeRate)
 
     def _canSell(self, nodeCD):
         raise NotImplementedError
@@ -261,7 +251,7 @@ class _ItemsData(object):
         for node in nodes:
             state = node['state']
             props = node['unlockProps']
-            if self._getAllPossibleXP(props.parentID, stats) >= props.xpCost:
+            if g_techTreeDP.getAllVehiclePossibleXP(props.parentID, stats) >= props.xpCost:
                 state = NODE_STATE.add(state, NODE_STATE.ENOUGH_XP)
             else:
                 state = NODE_STATE.remove(state, NODE_STATE.ENOUGH_XP)
@@ -402,12 +392,12 @@ class ResearchItemsData(_ItemsData):
             itemTypeID, _, _ = vehicles.parseIntCompactDescr(nodeCD)
             if itemTypeID == GUI_ITEM_TYPE.VEHICLE and (nodeCD in topLevelCDs or nodeCD == self.getRootCD()):
                 available, unlockProps = g_techTreeDP.isNext2Unlock(nodeCD, **unlockKwargs)
-                xp = self._getAllPossibleXP(unlockProps.parentID, unlockStats)
+                xp = g_techTreeDP.getAllVehiclePossibleXP(unlockProps.parentID, unlockStats)
             else:
                 unlockProps = node['unlockProps']
                 required = unlockProps.required
                 available = len(required) and unlockStats.isSeqUnlocked(required) and not unlockStats.isUnlocked(nodeCD)
-                xp = self._getAllPossibleXP(self.getRootCD(), unlockStats)
+                xp = g_techTreeDP.getAllVehiclePossibleXP(self.getRootCD(), unlockStats)
             if available and state & NODE_STATE.LOCKED > 0:
                 state ^= NODE_STATE.LOCKED
                 state = NODE_STATE.addIfNot(state, NODE_STATE.NEXT_2_UNLOCK)
@@ -444,7 +434,7 @@ class ResearchItemsData(_ItemsData):
         state = NODE_STATE.LOCKED
         if topLevel and itemTypeID == GUI_ITEM_TYPE.VEHICLE:
             available, unlockProps = g_techTreeDP.isNext2Unlock(nodeCD, **unlockStats._asdict())
-            xp = self._getAllPossibleXP(unlockProps.parentID, unlockStats)
+            xp = g_techTreeDP.getAllVehiclePossibleXP(unlockProps.parentID, unlockStats)
         if guiItem.isUnlocked:
             state = NODE_STATE.UNLOCKED
             if itemTypeID != GUI_ITEM_TYPE.VEHICLE and rootItem.isInInventory and guiItem.isInstalled(rootItem):
@@ -463,7 +453,7 @@ class ResearchItemsData(_ItemsData):
         else:
             if not topLevel:
                 available = unlockStats.isSeqUnlocked(unlockProps.required) and unlockStats.isUnlocked(self._rootCD)
-                xp = self._getAllPossibleXP(self._rootCD, unlockStats)
+                xp = g_techTreeDP.getAllVehiclePossibleXP(self._rootCD, unlockStats)
             if available:
                 state = NODE_STATE.NEXT_2_UNLOCK
                 if xp >= unlockProps.xpCost:
@@ -633,7 +623,7 @@ class NationTreeData(_ItemsData):
 
     def _changeNext2Unlock(self, nodeCD, unlockProps, unlockStats):
         state = NODE_STATE.NEXT_2_UNLOCK
-        totalXP = self._getAllPossibleXP(unlockProps.parentID, unlockStats)
+        totalXP = g_techTreeDP.getAllVehiclePossibleXP(unlockProps.parentID, unlockStats)
         if totalXP >= unlockProps.xpCost:
             state = NODE_STATE.addIfNot(state, NODE_STATE.ENOUGH_XP)
         else:
@@ -676,7 +666,7 @@ class NationTreeData(_ItemsData):
                 state |= NODE_STATE.SHOP_ACTION
         elif available:
             state = NODE_STATE.NEXT_2_UNLOCK
-            if self._getAllPossibleXP(unlockProps.parentID, unlockStats) >= unlockProps.xpCost:
+            if g_techTreeDP.getAllVehiclePossibleXP(unlockProps.parentID, unlockStats) >= unlockProps.xpCost:
                 state |= NODE_STATE.ENOUGH_XP
         if guiItem.isElite:
             state |= NODE_STATE.ELITE

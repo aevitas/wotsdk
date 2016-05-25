@@ -4,7 +4,7 @@ import weakref
 import BigWorld
 import Event
 from constants import VEHICLE_HIT_FLAGS as _VHF, BATTLE_EVENT_TYPE as _SET, ATTACK_REASONS as _AR, IS_DEVELOPMENT
-from debug_utils import LOG_CODEPOINT_WARNING, LOG_DEBUG
+from debug_utils import LOG_CODEPOINT_WARNING, LOG_DEBUG, LOG_CURRENT_EXCEPTION
 from shared_utils import findFirst
 from gui import GUI_SETTINGS
 from gui.battle_control import avatar_getter, arena_info
@@ -103,6 +103,23 @@ class BattleFeedbackAdaptor(object):
 
     def getAimProps(self):
         return self.__aimProps
+
+    def getVisibleVehicles(self):
+        getInfo = self.__arenaDP.getVehicleInfo
+        getProps = self.__arenaDP.getPlayerGuiProps
+        for vehicleID in self.__visible:
+            vehicle = BigWorld.entity(vehicleID)
+            if vehicle is None:
+                continue
+            info = getInfo(vehicleID)
+            props = getProps(vehicleID, info.team)
+            try:
+                if not vehicle.isPlayerVehicle:
+                    yield (vehicle.proxy, info, props)
+            except AttributeError:
+                LOG_CURRENT_EXCEPTION()
+
+        return
 
     def setPlayerShotResults(self, vehHitFlags, _):
         if not self.__isPEEnabled:

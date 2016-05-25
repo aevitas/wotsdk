@@ -23,9 +23,16 @@ class WWISESoundSystem(SoundSystemAbstract):
     def enableDynamicPreset(self):
         LOG_DEBUG('ue_set_preset_high_dynamic_range has been set')
         WWISE.WW_setVolumeThreshold(-50)
-        WWISE.WW_eventGlobalSync('ue_set_preset_high_dynamic_range')
+        self.sendGlobalEvent('ue_set_preset_high_dynamic_range')
 
     def disableDynamicPreset(self):
         LOG_DEBUG('ue_set_preset_low_dynamic_range has been set')
         WWISE.WW_setVolumeThreshold(-40)
-        WWISE.WW_eventGlobalSync('ue_set_preset_low_dynamic_range')
+        self.sendGlobalEvent('ue_set_preset_low_dynamic_range')
+
+    def setSoundSystem(self, value):
+        LOG_DEBUG('WWISE sound system has been applied: %d' % value)
+        WWISE.WW_setSoundSystem(value)
+
+    def sendGlobalEvent(self, eventName, **params):
+        WWISE.WW_eventGlobalSync(eventName)

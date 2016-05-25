@@ -24,7 +24,8 @@ from gui.shared.gui_items.Tankman import TankmanSkill
 from gui.shared.gui_items.dossier import dumpDossier
 from gui.shared.gui_items.serializers import packTankman, packVehicle
 from gui.shared.gui_items.processors.tankman import TankmanDismiss, TankmanUnload, TankmanRetraining, TankmanAddSkill, TankmanChangePassport
-from gui.shared import EVENT_BUS_SCOPE, events, g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import EVENT_BUS_SCOPE, events, g_itemsCache
 from account_helpers.settings_core.settings_constants import TUTORIAL
 
 class PersonalCase(PersonalCaseMeta, GlobalListener):
@@ -324,28 +325,7 @@ class PersonalCaseDataProvider(object):
     @async
     def getSkillsData(self, callback):
         tankman = g_itemsCache.items.getTankman(self.tmanInvID)
-        tankmanDescr = tankman.descriptor
-        result = []
-        commonSkills = []
-        for skill in tankmen.COMMON_SKILLS:
-            if skill not in tankmanDescr.skills:
-                commonSkills.append(self.__packSkill(tankman, TankmanSkill(skill)))
-
-        result.append({'id': 'common',
-         'skills': commonSkills})
-        for role in TANKMEN_ROLES_ORDER_DICT['plain']:
-            roleSkills = tankmen.SKILLS_BY_ROLES.get(role, tuple())
-            if role not in tankman.combinedRoles:
-                continue
-            skills = []
-            for skill in roleSkills:
-                if skill not in tankmen.COMMON_SKILLS and skill not in tankmanDescr.skills:
-                    skills.append(self.__packSkill(tankman, TankmanSkill(skill)))
-
-            result.append({'id': role,
-             'skills': skills})
-
-        callback(result)
+        callback(tankman.getSkillsToLearn())
 
     @async
     def getDocumentsData(self, callback):
@@ -389,15 +369,6 @@ class PersonalCaseDataProvider(object):
         if sortNeeded:
             result = sorted(result, key=lambda sortField: sortField['value'], cmp=lambda a, b: strcmp(unicode(a), unicode(b)))
         return result
-
-    @staticmethod
-    def __packSkill(tankman, skillItem):
-        return {'id': skillItem.name,
-         'name': skillItem.userName,
-         'desc': skillItem.shortDescription,
-         'enabled': True,
-         'tankmanID': tankman.invID,
-         'tooltip': None}
 
     @staticmethod
     def __getTankmanLockMessage(vehicle):

@@ -8,6 +8,7 @@ from gui.shared.formatters import icons
 from gui.shared.utils.functions import makeTooltip
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 
 class ShowMiniclientInfo(aop.Aspect):
 
@@ -118,3 +119,11 @@ class EnableCrew(aop.Aspect):
         else:
             return None
             return None
+
+
+class ChangeLobbyMenuTooltip(aop.Aspect):
+
+    def atReturn(self, cd):
+        original = cd.returned
+        original['tooltip'] = makeTooltip(TOOLTIPS.LOBBYMENU_VERSIONINFOBUTTON_MINICLIENT_HEADER, TOOLTIPS.LOBBYMENU_VERSIONINFOBUTTON_MINICLIENT_BODY)
+        return original

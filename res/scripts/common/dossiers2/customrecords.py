@@ -439,6 +439,7 @@ RECORDS = (('total', 'creationTime', 'p', 'I', 4000000001L),
  ('singleAchievements', 'falloutPackOfWolfs', 'p', 'B', 1),
  ('singleAchievements', 'falloutSteelHunter', 'p', 'B', 1),
  ('singleAchievements', 'falloutAlwaysInLine', 'p', 'B', 1),
+ ('singleAchievements', 'moonSphere', 'p', 'B', 1),
  ('achievements', 'beasthunter', 'p', 'H', 60001),
  ('achievements', 'sinai', 'p', 'H', 60001),
  ('achievements', 'mousebane', 'p', 'H', 60001),
@@ -1377,6 +1378,7 @@ RECORD_DB_IDS = {('total', 'creationTime'): 68,
  ('singleAchievements', 'falloutPackOfWolfs'): 753,
  ('singleAchievements', 'falloutSteelHunter'): 754,
  ('singleAchievements', 'falloutAlwaysInLine'): 755,
+ ('singleAchievements', 'moonSphere'): 862,
  ('achievements', 'testartilleryman'): 599,
  ('achievements', 'readyForBattleLT'): 538,
  ('achievements', 'readyForBattleMT'): 539,
@@ -1609,6 +1611,16 @@ RECORD_DB_IDS = {('total', 'creationTime'): 68,
 DB_ID_TO_RECORD = dict([ (value, key) for key, value in RECORD_DB_IDS.iteritems() ])
 raise len(RECORD_DB_IDS) == len(DB_ID_TO_RECORD) or AssertionError
 raise len(RECORD_DB_IDS) == len(RECORDS) or AssertionError
+RECORD_DB_IDS.update({('vehTypeFrags', ''): 863,
+ ('a15x15Cut', ''): 864,
+ ('a7x7Cut', ''): 865,
+ ('rated7x7Cut', ''): 866,
+ ('historicalCut', ''): 867,
+ ('fortBattlesCut', ''): 868,
+ ('fortSortiesCut', ''): 869,
+ ('globalMapCommonCut', ''): 870,
+ ('falloutCut', ''): 871,
+ ('rareAchievements', ''): 872})
 BIT_STORAGES = {}
 map(lambda rec: BIT_STORAGES.setdefault((rec[0], rec[3]), []).append(rec[1]), (rec for rec in RECORDS if rec[2] == 'b'))
 RECORD_MAX_VALUES = dict([ (rec[:2], rec[4]) for rec in RECORDS if rec[2] == 'p' ])

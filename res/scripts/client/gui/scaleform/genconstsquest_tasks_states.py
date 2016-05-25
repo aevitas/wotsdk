@@ -2,6 +2,12 @@
 
 
 class QUEST_TASKS_STATES(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     UNAVAILABLE = 1
     AVAILABLE = 2
     IN_PROGRESS = 3

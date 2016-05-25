@@ -34,7 +34,7 @@ class CandidatesDataProvider(DAAPIDataProvider):
         self.clear()
 
     def init(self, app, flashObject, candidates):
-        self.seEnvironment(app)
+        self.setEnvironment(app)
         self.setFlashObject(flashObject)
         self.rebuild(candidates)
 

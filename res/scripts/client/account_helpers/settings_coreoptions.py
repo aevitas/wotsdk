@@ -38,7 +38,7 @@ from messenger import g_settings as messenger_settings
 from account_helpers.AccountSettings import AccountSettings
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core.settings_constants import GRAPHICS
-from shared_utils import CONST_CONTAINER
+from shared_utils import CONST_CONTAINER, forEach
 from gui import GUI_SETTINGS
 from gui.clans.clan_controller import g_clanCtrl
 from gui.sounds import g_soundsCtrl
@@ -46,11 +46,12 @@ from gui.shared.utils import graphics, functions
 from gui.shared.utils.graphics import g_monitorSettings
 from gui.shared.utils.key_mapping import getScaleformKey, getBigworldKey, getBigworldNameFromKey
 from gui.Scaleform import VoiceChatInterface
-from gui.Scaleform.LogitechMonitor import LogitechMonitor
 from gui.battle_control import g_sessionProvider
 from ConnectionManager import connectionManager
 from gui.Scaleform.locale.SETTINGS import SETTINGS
+from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.formatters import icons
+from gui.shared.utils.functions import makeTooltip
 
 class APPLY_METHOD:
     NORMAL = 'normal'
@@ -1407,8 +1408,9 @@ class AimSetting(StorageAccountSetting):
         CASSETTE = 'cassette'
         GUN_TAG = 'gunTag'
         GUN_TAG_TYPE = 'gunTagType'
+        ZOOM_INDICATOR = 'zoomIndicator'
 
-    VIRTUAL_OPTIONS = {OPTIONS.MIXING_TYPE: (OPTIONS.MIXING, 3),
+    VIRTUAL_OPTIONS = {OPTIONS.MIXING_TYPE: (OPTIONS.MIXING, 4),
      OPTIONS.GUN_TAG_TYPE: (OPTIONS.GUN_TAG, 15),
      OPTIONS.CENTRAL_TAG_TYPE: (OPTIONS.CENTRAL_TAG, 14),
      OPTIONS.NET_TYPE: (OPTIONS.NET, 4)}
@@ -1431,7 +1433,7 @@ class AimSetting(StorageAccountSetting):
     def pack(self):
         result = self._get()
         for vname, (name, optsLen) in self.VIRTUAL_OPTIONS.iteritems():
-            result[vname] = self.PackStruct(result[vname], [ '#settings:%s/%s/type%d' % (self.settingName, name, i) for i in xrange(int(optsLen)) ])._asdict()
+            result[vname] = self.PackStruct(result[vname], [ '#settings:aim/%s/type%d' % (name, i) for i in xrange(int(optsLen)) ])._asdict()
 
         return result
 
@@ -1489,7 +1491,7 @@ class MinimapVehModelsSetting(StorageDumpSetting):
         return [ settingsKey % (self.settingName, type) for type in self.VEHICLE_MODELS_TYPES ]
 
     def getDefaultValue(self):
-        return 0
+        return self.VEHICLE_MODELS_TYPES.index(self.OPTIONS.ALWAYS)
 
 
 class BattleLoadingTipSetting(AccountDumpSetting):
@@ -1555,10 +1557,7 @@ class MouseSetting(ControlSetting):
         self.default = default
         self.__aihSection = ResMgr.openSection(_INPUT_HANDLER_CFG)
 
-    def __isControlModeAccessible(self):
-        return BigWorld.player() is not None and hasattr(BigWorld.player(), 'inputHandler') and hasattr(BigWorld.player().inputHandler, 'ctrls')
-
-    def __getCamera(self):
+    def getCamera(self):
         if self.__isControlModeAccessible():
             mode = BigWorld.player().inputHandler.ctrls[self.mode]
             if mode is not None:
@@ -1570,18 +1569,21 @@ class MouseSetting(ControlSetting):
         else:
             return
 
+    def __isControlModeAccessible(self):
+        return BigWorld.player() is not None and hasattr(BigWorld.player(), 'inputHandler') and hasattr(BigWorld.player().inputHandler, 'ctrls')
+
     def _getDefault(self):
         return self.default
 
     def _get(self):
-        camera = self.__getCamera()
+        camera = self.getCamera()
         if camera is not None:
             return camera.getUserConfigValue(self.setting)
         else:
             return self.default
 
     def _set(self, value):
-        camera = self.__getCamera()
+        camera = self.getCamera()
         if camera is None:
             LOG_WARNING('Error while applying mouse settings: empty camera', self.mode, self.setting)
             return
@@ -1811,8 +1813,13 @@ class KeyboardSettings(SettingsContainer):
      ('logitech_keyboard', (('switch_view', 'CMD_LOGITECH_SWITCH_VIEW'),)),
      ('minimap', (('sizeUp', 'CMD_MINIMAP_SIZE_UP'), ('sizeDown', 'CMD_MINIMAP_SIZE_DOWN'), ('visible', 'CMD_MINIMAP_VISIBLE'))))
     IMPORTANT_BINDS = ('forward', 'backward', 'left', 'right', 'fire', 'item01', 'item02', 'item03', 'item04', 'item05', 'item06', 'item07', 'item08')
+    __hiddenGroups = {'logitech_keyboard'}
 
     def __init__(self, storage):
+        if not GUI_SETTINGS.minimapSize:
+            self.hideGroup('minimap', hide=True)
+        if not GUI_SETTINGS.voiceChat:
+            self.hideGroup('voicechat', hide=True)
         settings = [('keysLayout', ReadOnlySetting(lambda : self._getLayout()))]
         for group in self._getLayout(True):
             for setting in group['values']:
@@ -1828,11 +1835,7 @@ class KeyboardSettings(SettingsContainer):
         layout = []
         for groupName, groupValues in cls.KEYS_LAYOUT:
             if not isFull:
-                if groupName == 'minimap' and not GUI_SETTINGS.minimapSize:
-                    continue
-                if groupName == 'voicechat' and not GUI_SETTINGS.voiceChat:
-                    continue
-                if groupName == 'logitech_keyboard' and not LogitechMonitor.isPresentColor():
+                if groupName in cls.__hiddenGroups:
                     continue
             layout.append({'key': groupName,
              'values': [ cls.__mapValues(*x) for x in groupValues ]})
@@ -1842,6 +1845,19 @@ class KeyboardSettings(SettingsContainer):
     @classmethod
     def getKeyboardImportantBinds(cls):
         return cls.IMPORTANT_BINDS
+
+    @classmethod
+    def hideGroup(cls, group, hide):
+        if hide:
+            LOG_DEBUG('Hide settings group', group)
+            cls.__hiddenGroups.add(group)
+        else:
+            LOG_DEBUG('Reveal settings group', group)
+            cls.__hiddenGroups.remove(group)
+
+    @classmethod
+    def isGroupHidden(cls, group):
+        return group in cls.__hiddenGroups
 
     def apply(self, values, names = None):
         super(KeyboardSettings, self).apply(values, names)
@@ -1898,35 +1914,64 @@ class FPSPerfomancerSetting(StorageDumpSetting):
             LOG_CURRENT_EXCEPTION()
 
 
-class DynamicSoundPresetSetting(AccountDumpSetting):
+class _BaseSoundPresetSetting(AccountDumpSetting):
 
-    def __init__(self, settingName, key, subKey = None):
-        super(DynamicSoundPresetSetting, self).__init__(settingName, key, subKey)
-        self.__maxSupportedValue = 1
-
-    def apply(self, value, applyUnchanged = False):
-        return super(DynamicSoundPresetSetting, self).apply(value, applyUnchanged)
+    def __init__(self, actionsMap, settingName, key, subKey = None):
+        """
+        :param actionsMap: [tuple]. Each element have to be tuple of two elements: method and arguments for this method
+        :param settingName: [str] setting name
+        :param key: [str] account setting section name
+        :param subKey: [str] account setting subsection name
+        """
+        super(_BaseSoundPresetSetting, self).__init__(settingName, key, subKey)
+        self.__actionsMap = actionsMap
 
     def setSystemValue(self, value):
-        if value == 0:
-            g_soundsCtrl.system.enableDynamicPreset()
-        elif value == 1:
-            g_soundsCtrl.system.disableDynamicPreset()
-        else:
-            LOG_ERROR('Unsupported DynamicRange value: %s' % value)
+        try:
+            func, args = self.__actionsMap[value]
+            if args is not None:
+                func(args)
+            else:
+                func()
+        except IndexError:
+            LOG_ERROR(self, 'Unsupported value: %s' % value)
+
+        return
+
+    def fini(self):
+        self.__actionsMap = None
+        super(_BaseSoundPresetSetting, self).fini()
+        return
 
     def _set(self, value):
-        if value <= self.__maxSupportedValue:
-            super(DynamicSoundPresetSetting, self)._set(value)
+        if value < len(self.__actionsMap):
+            super(_BaseSoundPresetSetting, self)._set(value)
             self.setSystemValue(value)
 
     def _save(self, value):
-        if value <= self.__maxSupportedValue:
-            super(DynamicSoundPresetSetting, self)._save(value)
+        if value < len(self.__actionsMap):
+            super(_BaseSoundPresetSetting, self)._save(value)
+
+
+class DynamicSoundPresetSetting(_BaseSoundPresetSetting):
+
+    def __init__(self, settingName, key, subKey = None):
+        super(DynamicSoundPresetSetting, self).__init__(((g_soundsCtrl.system.enableDynamicPreset, None), (g_soundsCtrl.system.disableDynamicPreset, None)), settingName, key, subKey)
+        return
 
     def _getOptions(self):
         settingsKey = '#settings:sound/dynamicRange/%s'
         return [ settingsKey % sName for sName in ('broad', 'narrow') ]
+
+
+class SoundDevicePresetSetting(_BaseSoundPresetSetting):
+
+    def __init__(self, settingName, key, subKey = None):
+        super(SoundDevicePresetSetting, self).__init__(((g_soundsCtrl.system.setSoundSystem, 0), (g_soundsCtrl.system.setSoundSystem, 1)), settingName, key, subKey)
+
+    def _getOptions(self):
+        settingsKey = '#settings:sound/soundDevice/%s'
+        return [ settingsKey % sName for sName in ('acoustics', 'headphones') ]
 
 
 class AltVoicesSetting(StorageDumpSetting):
@@ -2180,3 +2225,45 @@ class GraphicsQualityNote(SettingAbstract):
 
     def _set(self, value):
         pass
+
+
+class IncreasedZoomSetting(StorageAccountSetting):
+    IncreasedZoomPackStruct = namedtuple('IncreasedZoomPackStruct', 'current options extraData')
+
+    def __init__(self, settingName, storage, isPreview = False):
+        super(IncreasedZoomSetting, self).__init__(settingName, storage, isPreview)
+        self.__mouseSetting = MouseSetting('sniper', self.settingName, self.getDefaultValue())
+
+    def getExtraData(self):
+        zooms = self.__mouseSetting.getCamera().getConfigValue('zooms')[-2:]
+        zoomStrs = [ i18n.makeString(SETTINGS.GAME_INCREASEDZOOM_ZOOMSTR, zoom=zoom) for zoom in zooms ]
+        zoomStr = i18n.makeString(SETTINGS.GAME_INCREASEDZOOM_DELIMETER).join(zoomStrs)
+        return {'checkBoxLabel': i18n.makeString(SETTINGS.GAME_INCREASEDZOOM_BASE, zooms=zoomStr),
+         'tooltip': makeTooltip(TOOLTIPS.INCREASEDZOOM_HEADER, i18n.makeString(TOOLTIPS.INCREASEDZOOM_BODY, zooms=zoomStr))}
+
+    def pack(self):
+        return self.IncreasedZoomPackStruct(self._get(), self._getOptions(), self.getExtraData())._asdict()
+
+    def setSystemValue(self, value):
+        if BattleReplay.isPlaying():
+            value = True
+        self.__mouseSetting.apply(value)
+
+
+class MouseAffectedSetting(RegularSetting):
+
+    def __init__(self, settingName, isPreview = False):
+        super(MouseAffectedSetting, self).__init__(settingName, isPreview)
+        self._mouseSettings = map(lambda camera: MouseSetting(camera, self.settingName, self.getDefaultValue()), self._getCameras())
+
+    def _getCameras(self):
+        return ()
+
+    def setSystemValue(self, value):
+        forEach(lambda mouseSetting: mouseSetting.apply(value), self._mouseSettings)
+
+
+class SnipereModeByShiftSetting(StorageAccountSetting, MouseAffectedSetting):
+
+    def _getCameras(self):
+        return ('arcade', 'sniper')

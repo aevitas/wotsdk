@@ -2,6 +2,12 @@
 
 
 class TEXT_ALIGN(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     LEFT = 'left'
     RIGHT = 'right'
     CENTER = 'center'

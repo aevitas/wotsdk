@@ -2,13 +2,14 @@
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import MessengerEvent
 from messenger.formatters.users_messages import getBroadcastIsInCoolDownMessage
-from messenger.gui.Scaleform.channels._layout import _LobbyLayout
+from messenger.gui.Scaleform.channels.layout import LobbyLayout
 from messenger.m_constants import PROTO_TYPE
 from messenger.proto import proto_getter
 from messenger.proto.events import g_messengerEvents
+from messenger.proto.xmpp.jid import makeContactJID
 from messenger.proto.xmpp.xmpp_constants import MESSAGE_LIMIT
 
-class _ChannelController(_LobbyLayout):
+class _ChannelController(LobbyLayout):
 
     def __init__(self, channel, mBuilder = None):
         super(_ChannelController, self).__init__(channel, mBuilder)
@@ -27,10 +28,7 @@ class _ChannelController(_LobbyLayout):
 
     def addMessage(self, message, doFormatting = True):
         activated = super(_ChannelController, self).addMessage(message, doFormatting)
-        if not activated:
-            self._hasUnreadMessages = True
-        else:
-            self._hasUnreadMessages = False
+        self._hasUnreadMessages = not activated
         return activated
 
     def hasUnreadMessages(self):
@@ -104,12 +102,15 @@ class ChatChannelController(_ChannelController):
         self.proto.messages.sendChatMessage(self._channel.getID(), message)
 
     def __onUserStatusUpdated(self, user):
-        member = None
         if not user.isCurrentPlayer():
-            member = self._channel.getMember(user.getJID())
-        if member is not None:
-            presence = user.getItem().getPresence()
-            member.update(status=presence)
+            if user.getProtoType() == PROTO_TYPE.XMPP:
+                uid = user.getJID()
+            else:
+                uid = makeContactJID(user.getID())
+            member = self._channel.getMember(uid)
+            if member is not None:
+                presence = user.getItem().getPresence()
+                member.update(status=presence)
         return
 
 

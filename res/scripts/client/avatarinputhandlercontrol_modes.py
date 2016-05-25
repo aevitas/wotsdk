@@ -354,7 +354,7 @@ class DebugControlMode(IControlMode):
         self.__cam.enable(camMatrix)
         BigWorld.setWatcher('Client Settings/Strafe Rate', 50)
         BigWorld.setWatcher('Client Settings/Camera Mass', 1)
-        raise constants.IS_DEVELOPMENT or AssertionError
+        raise constants.HAS_DEV_RESOURCES or AssertionError
         import Cat
         Cat.Tasks.VideoEngineer.SetEnable(True)
         self.__videoControl = Cat.Tasks.VideoEngineer.VideoControl(self.__cam)
@@ -377,7 +377,7 @@ class DebugControlMode(IControlMode):
             raise AssertionError
             if key == Keys.KEY_SYSRQ:
                 return False
-            if BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.IS_DEVELOPMENT and isDown and key == Keys.KEY_F1:
+            if BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.HAS_DEV_RESOURCES and isDown and key == Keys.KEY_F1:
                 self.__aih.onControlModeChanged(self.__prevModeName)
                 return True
             return self.__videoControl.handleKeyEvent(isDown, key, mods, event) and True
@@ -461,7 +461,7 @@ class CatControlMode(IControlMode):
     def handleKeyEvent(self, isDown, key, mods, event = None):
         if not self.__isEnabled:
             raise AssertionError
-            BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.IS_DEVELOPMENT and isDown and key == Keys.KEY_F2 and self.__aih.onControlModeChanged('arcade')
+            BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.HAS_DEV_RESOURCES and isDown and key == Keys.KEY_F2 and self.__aih.onControlModeChanged('arcade')
         self.__shellingControl.handleKeyEvent(isDown, key, mods, event)
         return self.__cam.handleKey(event)
 
@@ -504,8 +504,8 @@ class ArcadeControlMode(_GunControlMode):
         self.__mouseVehicleRotator = _MouseVehicleRotator()
         self.__isArenaStarted = False
         self.__sightOffset = list(self._aim.offset())
-        self.__videoControlModeAvailable = dataSection.readBool('videoModeAvailable', constants.IS_DEVELOPMENT)
-        self.__videoControlModeAvailable &= BattleReplay.g_replayCtrl.isPlaying or constants.IS_DEVELOPMENT
+        self.__videoControlModeAvailable = dataSection.readBool('videoModeAvailable', constants.HAS_DEV_RESOURCES)
+        self.__videoControlModeAvailable &= BattleReplay.g_replayCtrl.isPlaying or constants.HAS_DEV_RESOURCES
 
     @property
     def curVehicleID(self):
@@ -547,10 +547,10 @@ class ArcadeControlMode(_GunControlMode):
             raise AssertionError
             cmdMap = CommandMapping.g_instance
             return self._cam.handleKeyEvent(isDown, key, mods, event) and True
-        elif BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.IS_DEVELOPMENT and isDown and key == Keys.KEY_F1:
+        elif BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.HAS_DEV_RESOURCES and isDown and key == Keys.KEY_F1:
             self._aih.onControlModeChanged('debug', prevModeName='arcade', camMatrix=self._cam.camera.matrix)
             return True
-        elif BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.IS_DEVELOPMENT and isDown and key == Keys.KEY_F2:
+        elif BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.HAS_DEV_RESOURCES and isDown and key == Keys.KEY_F2:
             self._aih.onControlModeChanged('cat', camMatrix=self._cam.camera.matrix)
             return True
         elif BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and isDown and key == Keys.KEY_F3 and self.__videoControlModeAvailable:
@@ -614,8 +614,11 @@ class ArcadeControlMode(_GunControlMode):
             self.__activateAlternateMode(worldPos)
 
     def onChangeControlModeByScroll(self):
-        self.__activateAlternateMode(pos=None, bByScroll=True)
-        return
+        if self._cam.getUserConfigValue('sniperModeByShift'):
+            return
+        else:
+            self.__activateAlternateMode(pos=None, bByScroll=True)
+            return
 
     def __onArenaStarted(self, period, *args):
         self.__isArenaStarted = True if period == constants.ARENA_PERIOD.BATTLE else False
@@ -943,7 +946,9 @@ class SniperControlMode(_GunControlMode):
         return self.getPreferredAutorotationMode() is not False
 
     def onChangeControlModeByScroll(self, switchToClosestDist = True):
-        raise self._isEnabled or AssertionError
+        if not self._isEnabled:
+            raise AssertionError
+            return self._cam.getUserConfigValue('sniperModeByShift') and None
         self._aih.onControlModeChanged('arcade', preferredPos=self.camera.aimingSystem.getDesiredShotPoint(), turretYaw=self._cam.aimingSystem.turretYaw, gunPitch=self._cam.aimingSystem.gunPitch, aimingMode=self._aimingMode, closesDist=switchToClosestDist)
 
     def recreateCamera(self):
@@ -990,7 +995,7 @@ class PostMortemControlMode(IControlMode):
         self.__isEnabled = False
         self.__postmortemDelay = None
         self.__isObserverMode = False
-        self.__videoControlModeAvailable = dataSection.readBool('videoModeAvailable', constants.IS_DEVELOPMENT)
+        self.__videoControlModeAvailable = dataSection.readBool('videoModeAvailable', constants.HAS_DEV_RESOURCES)
         return
 
     def prerequisites(self):
@@ -1056,7 +1061,7 @@ class PostMortemControlMode(IControlMode):
         if not self.__isEnabled:
             raise AssertionError
             cmdMap = CommandMapping.g_instance
-            if BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.IS_DEVELOPMENT and isDown and key == Keys.KEY_F1:
+            if BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and constants.HAS_DEV_RESOURCES and isDown and key == Keys.KEY_F1:
                 self.__aih.onControlModeChanged('debug', prevModeName='postmortem', camMatrix=self.__cam.camera.matrix)
                 return True
             if BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and isDown and key == Keys.KEY_F3 and (self.__videoControlModeAvailable or g_sessionProvider.getCtx().isPlayerObserver()):
@@ -1149,18 +1154,15 @@ class PostMortemControlMode(IControlMode):
         else:
             raise not toId or isinstance(toId, int) and toId >= 0 or AssertionError
             self.__doPreBind()
-            self.__aih.onPostmortemVehicleChanged(toId)
+            self.__changeVehicle(toId)
             BigWorld.player().positionControl.bindToVehicle(vehicleID=toId)
             return
 
     def __doPreBind(self):
         if self.__curVehicleID is not None:
-            prevVehicleAppearance = getattr(BigWorld.entity(self.__curVehicleID), 'appearance', None)
-            if prevVehicleAppearance is not None:
-                self.__cam.removeVehicleToCollideWith(prevVehicleAppearance)
-            else:
-                LOG_DEBUG('Cannot find current vehicle with id %s, erasing all collision models instead!' % self.__curVehicleID)
-                self.__cam.clearVehicleToCollideWith()
+            vehicle = BigWorld.entity(self.__curVehicleID)
+            if vehicle is not None:
+                self.__cam.removeVehicleToCollideWith(vehicle)
         return
 
     def onSwitchViewpoint(self, vehicleID, cameraPos):
@@ -1168,12 +1170,23 @@ class PostMortemControlMode(IControlMode):
         replayCtrl = BattleReplay.g_replayCtrl
         self.__curVehicleID = vehicleID if vehicleID != -1 else self.__selfVehicleID
         self.__aim.changeVehicle(self.__curVehicleID)
-        self.__aih.onPostmortemVehicleChanged(self.__curVehicleID)
-        if self.__curVehicleID in BigWorld.entities.keys():
-            self.__aih.onCameraChanged('postmortem', self.__curVehicleID)
+        self.__changeVehicle(vehicleID)
         if self.__curVehicleID != player.playerVehicleID and self.__curVehicleID is not None and BigWorld.entity(self.__curVehicleID) is None and not replayCtrl.isPlaying and not self.__isObserverMode and player.arena.positions.get(self.__curVehicleID) is None:
             self.__switchViewpoint(False)
         return
+
+    def __changeVehicle(self, vehicleID):
+        """
+        Do all the job to switch to another vehicle in postmortem:
+        - calls postmortem event
+        - sets vehicle in state controller
+        - calls camera update event
+        :param vehicleID: controlling vehicle ID
+        """
+        self.__aih.onPostmortemVehicleChanged(vehicleID)
+        g_sessionProvider.getVehicleStateCtrl().switchToOther(vehicleID)
+        if vehicleID in BigWorld.entities.keys():
+            self.__aih.onCameraChanged('postmortem', vehicleID)
 
     def __onPeriodChange(self, period, *args):
         if period != constants.ARENA_PERIOD.AFTERBATTLE:
@@ -1208,9 +1221,9 @@ class PostMortemControlMode(IControlMode):
             return
         else:
             vehicle = BigWorld.player().vehicle
-            if vehicle is None or self.__curVehicleID != vehicle.id:
+            if vehicle is None or self.__curVehicleID != vehicle.id or not vehicle.inWorld:
                 return
-            self.__cam.addVehicleToCollideWith(vehicle.appearance)
+            self.__cam.addVehicleToCollideWith(vehicle)
             replayCtrl = BattleReplay.g_replayCtrl
             if replayCtrl.isRecording:
                 replayCtrl.setPlayerVehicleID(self.__curVehicleID)
@@ -1410,7 +1423,7 @@ class _SuperGunMarker():
 
     def __init__(self, mode = 'arcade', isStrategic = False):
         self.__show2 = useServerAim()
-        self.__show1 = constants.IS_DEVELOPMENT or not self.__show2
+        self.__show1 = constants.HAS_DEV_RESOURCES or not self.__show2
         self.__isGuiVisible = True
         self.__isStrategic = isStrategic
         replayCtrl = BattleReplay.g_replayCtrl
@@ -1484,14 +1497,14 @@ class _SuperGunMarker():
         self.__gm2.show(self.__show2)
         replayCtrl = BattleReplay.g_replayCtrl
         replayCtrl.setUseServerAim(self.__show2)
-        if not constants.IS_DEVELOPMENT:
+        if not constants.HAS_DEV_RESOURCES:
             self.show(not flag)
 
     def setGUIVisible(self, isVisible, valueUpdate = False):
         self.__isGuiVisible = isVisible
         if not valueUpdate:
             serverAim = useServerAim()
-            self.show(constants.IS_DEVELOPMENT or not serverAim)
+            self.show(constants.HAS_DEV_RESOURCES or not serverAim)
             self.show2(serverAim)
 
     def update(self, pos, dir, size, relaxTime, collData):
@@ -1571,7 +1584,7 @@ class _SPGFlashGunMarker(Flash):
          'duration': 0.0,
          'isReloading': False}
         self.onRecreateDevice()
-        if self.__applyFilter and constants.IS_DEVELOPMENT and useServerAim():
+        if self.__applyFilter and constants.HAS_DEV_RESOURCES and useServerAim():
             self.call('Crosshair.setFilter')
 
     def destroy(self):
@@ -1772,19 +1785,27 @@ class _FlashGunMarker(Flash):
             for mode in ('arcade', 'sniper'):
                 if mode in diff:
                     settings = self._aim[mode]
-                    current = settings['gunTag']
-                    currentType = settings['gunTagType']
+                    current = settings.get('gunTag', None)
+                    currentType = settings.get('gunTagType', None)
                     self.__scaleNeedToUpdate = True
-                    self.call('Crosshair.setGunTag', [current, currentType, self.settingsCore.interfaceScale.get()])
-                    current = settings['mixing']
-                    currentType = settings['mixingType']
-                    self.call('Crosshair.setMixing', [current, currentType])
-                    if self.__applyFilter and constants.IS_DEVELOPMENT and useServerAim():
+                    if current is not None and currentType is not None:
+                        self.call('Crosshair.setGunTag', [current, currentType, self.settingsCore.interfaceScale.get()])
+                    current = settings.get('mixing', None)
+                    currentType = settings.get('mixingType', None)
+                    if current is not None and currentType is not None:
+                        self.call('Crosshair.setMixing', [current, currentType])
+                    isReloading = self.__reload.get('isReloading', False)
+                    if isReloading:
+                        startTime = self.__reload.get('startTime', 0.0)
+                        duration = self.__reload.get('duration', 0.0)
+                        self.setReloading(duration, startTime, isReloading, switched=True)
+                    if self.__applyFilter and constants.HAS_DEV_RESOURCES and useServerAim():
                         self.call('Crosshair.setFilter')
 
         if 'isColorBlind' in diff:
             mode = 'color_blind' if diff['isColorBlind'] else 'default'
             self._curColors = self._colorsByPiercing[mode]
+        return
 
     def destroy(self):
         self.settingsCore.onSettingsChanged -= self.applySettings

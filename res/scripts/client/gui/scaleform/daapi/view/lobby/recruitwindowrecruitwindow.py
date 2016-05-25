@@ -11,7 +11,8 @@ from gui import GUI_NATIONS, SystemMessages
 from gui.Scaleform.Waiting import Waiting
 from gui.Scaleform.daapi.view.meta.RecruitWindowMeta import RecruitWindowMeta
 from gui.Scaleform.framework.entities.View import View
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.utils import decorators
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.processors.tankman import TankmanRecruit, TankmanEquip, TankmanRecruitAndEquip

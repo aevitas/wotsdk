@@ -2,6 +2,12 @@
 
 
 class INGAME_HELP(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     BATTLECONTROLS_TITLE = '#ingame_help:battleControls/title'
     BATTLECONTROLS_MOVEMENTFORWARD = '#ingame_help:battleControls/movementForward'
     BATTLECONTROLS_MOVEMENTBACKWARD = '#ingame_help:battleControls/movementBackward'
@@ -68,6 +74,7 @@ class INGAME_HELP(object):
     CROSSHAIRCONTROLS_EXAMPLE_HP = '#ingame_help:crosshairControls/example/hp'
     CROSSHAIRCONTROLS_EXAMPLE_DAMAGE = '#ingame_help:crosshairControls/example/damage'
     CROSSHAIRCONTROLS_EXAMPLE_NAME = '#ingame_help:crosshairControls/example/name'
+    CROSSHAIRCONTROLS_TIMELEFT = '#ingame_help:crosshairControls/timeLeft'
     MARKERMARKS_TITLE = '#ingame_help:markerMarks/title'
     MARKERMARKS_FOLLOW = '#ingame_help:markerMarks/follow'
     MARKERMARKS_HELP = '#ingame_help:markerMarks/help'

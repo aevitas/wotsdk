@@ -16,7 +16,8 @@ from gui.prb_control.functional.decorators import vehicleAmmoCheck
 from gui.prb_control.items import SelectResult
 from gui.prb_control.settings import SANDBOX_MAX_VEHICLE_LEVEL, QUEUE_RESTRICTION, FUNCTIONAL_FLAG, PREBATTLE_ACTION_NAME, CTRL_ENTITY_TYPE
 from gui.prb_control.storage import prequeue_storage_getter
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.gui_items.Vehicle import Vehicle
 
 class _VehiclesWatcher(object):

@@ -10,7 +10,7 @@ from shared_utils import findFirst
 from gui import SystemMessages
 from gui.SystemMessages import SM_TYPE
 from gui.shared import g_itemsCache
-from gui.shared.formatters import formatPrice
+from gui.shared.formatters import formatPrice, formatGoldPrice
 from gui.shared.gui_items.processors import ItemProcessor, Processor, makeI18nSuccess, makeI18nError, plugins, makeSuccess
 
 def getCrewAndShellsSumPrice(result, vehicle, crewType, buyShells):
@@ -123,7 +123,12 @@ class VehicleSlotBuyer(Processor):
         return makeI18nError('vehicle_slot_buy/server_error')
 
     def _successHandler(self, code, ctx = None):
-        return makeI18nSuccess('vehicle_slot_buy/success', money=formatPrice(self.__getSlotPrice()), type=SM_TYPE.FinancialTransactionWithGold)
+        price = self.__getSlotPrice()
+        if price.gold == price.credits == 0:
+            money = formatGoldPrice(price.gold)
+        else:
+            money = formatPrice(price)
+        return makeI18nSuccess('vehicle_slot_buy/success', money=money, type=SM_TYPE.FinancialTransactionWithGold)
 
     def _request(self, callback):
         LOG_DEBUG('Attempt to request server for buying vehicle slot')

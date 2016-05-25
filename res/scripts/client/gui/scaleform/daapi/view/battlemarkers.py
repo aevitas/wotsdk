@@ -9,7 +9,6 @@ import constants
 import GUI
 import BigWorld
 from gui.battle_control.arena_info import getGasAttackSettings
-from gui.battle_control.dyn_squad_functional import IDynSquadEntityClient
 from gui.battle_control.gas_attack_controller import GAS_ATTACK_STATE
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import GameEvent
@@ -68,7 +67,7 @@ _CAPTURE_STATE_BY_TEAMS = {True: _RESOURCE_STATE.OWN_MINING,
 _CAPTURE_FROZEN_STATE_BY_TEAMS = {True: _RESOURCE_STATE.OWN_MINING_FROZEN,
  False: _RESOURCE_STATE.ENEMY_MINING_FROZEN}
 
-class MarkersManager(Flash, IDynSquadEntityClient):
+class MarkersManager(Flash):
 
     def __init__(self, parentUI):
         Flash.__init__(self, _MARKERS_MANAGER_SWF)
@@ -93,12 +92,6 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         self.__parentUI = parentUI
         self.__markers = {}
         return
-
-    def updateSquadmanVeh(self, vID):
-        if vID not in self.__markers:
-            return
-        marker = self.__markers[vID]
-        self.invokeMarker(marker.id, 'setEntityName', [PLAYER_GUI_PROPS.squadman.name()])
 
     def setScaleProps(self, minScale = 40, maxScale = 100, defScale = 100, speed = 3.0):
         if constants.IS_DEVELOPMENT:
@@ -127,13 +120,17 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         self.__markersCanvasUI = self.getMember('vehicleMarkersCanvas')
         self.__plugins.init()
         ctrl = g_sessionProvider.getFeedback()
-        if ctrl:
+        if ctrl is not None:
             ctrl.onVehicleMarkerAdded += self.__onVehicleMarkerAdded
             ctrl.onVehicleMarkerRemoved += self.__onVehicleMarkerRemoved
             ctrl.onVehicleFeedbackReceived += self.__onVehicleFeedbackReceived
+        functional = g_sessionProvider.getDynSquadFunctional()
+        if functional is not None:
+            functional.onPlayerBecomeSquadman += self.__onPlayerBecomeSquadman
         self.__plugins.start()
         g_eventBus.addListener(GameEvent.SHOW_EXTENDED_INFO, self.__handleShowExtendedInfo, scope=_SCOPE)
         g_eventBus.addListener(GameEvent.GUI_VISIBILITY, self.__handleGUIVisibility, scope=_SCOPE)
+        return
 
     def destroy(self):
         g_eventBus.removeListener(GameEvent.SHOW_EXTENDED_INFO, self.__handleShowExtendedInfo, scope=_SCOPE)
@@ -141,10 +138,13 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         self.__plugins.stop()
         g_settingsCore.interfaceScale.onScaleChanged -= self.updateMarkersScale
         ctrl = g_sessionProvider.getFeedback()
-        if ctrl:
+        if ctrl is not None:
             ctrl.onVehicleMarkerAdded -= self.__onVehicleMarkerAdded
             ctrl.onVehicleMarkerRemoved -= self.__onVehicleMarkerRemoved
             ctrl.onVehicleFeedbackReceived -= self.__onVehicleFeedbackReceived
+        functional = g_sessionProvider.getDynSquadFunctional()
+        if functional is not None:
+            functional.onPlayerBecomeSquadman -= self.__onPlayerBecomeSquadman
         if self.__parentUI is not None:
             setattr(self.__parentUI.component, 'vehicleMarkersManager', None)
         self.__plugins.fini()
@@ -175,19 +175,19 @@ class MarkersManager(Flash, IDynSquadEntityClient):
         markerID = self._createVehicleMarker(isAlly, mProv)
         self.__markers[vInfo.vehicleID] = _VehicleMarker(markerID, vProxy, self.__ownUIProxy)
         battleCtx = g_sessionProvider.getCtx()
-        fullName, pName, clanAbbrev, regionCode, vehShortName = battleCtx.getFullPlayerNameWithParts(vProxy.id)
+        result = battleCtx.getPlayerFullNameParts(vProxy.id)
         vType = vInfo.vehicleType
         teamIdx = -1
         if arena_info.isFalloutMultiTeam() and vInfo.isSquadMan():
             teamIdx = g_sessionProvider.getArenaDP().getMultiTeamsIndexes()[vInfo.team]
         self.invokeMarker(markerID, 'init', [vType.classTag,
          vType.iconPath,
-         vehShortName,
+         result.vehicleName,
          vType.level,
-         fullName,
-         pName,
-         clanAbbrev,
-         regionCode,
+         result.playerFullName,
+         result.playerName,
+         result.clanAbbrev,
+         result.regionCode,
          vProxy.health,
          maxHealth,
          guiProps.name(),
@@ -318,6 +318,12 @@ class MarkersManager(Flash, IDynSquadEntityClient):
             self.showActionMarker(marker.id, value)
         elif eventID == _EVENT_ID.VEHICLE_HEALTH:
             self.updateVehicleHealth(marker.id, *value)
+
+    def __onPlayerBecomeSquadman(self, vehicleID, guiProps):
+        if vehicleID not in self.__markers:
+            return
+        marker = self.__markers[vehicleID]
+        self.invokeMarker(marker.id, 'setEntityName', [guiProps.name()])
 
     def __handleShowExtendedInfo(self, event):
         isDown = event.ctx['isDown']
@@ -582,7 +588,7 @@ class _RepairsMarkerPlugin(IPlugin):
         playerTeam = player.team
         arena = player.arena
         arenaType = arena.arenaType
-        for pointID, point in enumerate(arenaType.repairPoints):
+        for pointID, point in arenaType.repairPoints.iteritems():
             repairPos = point['position']
             team = point['team']
             isActive = True
@@ -763,9 +769,6 @@ class _GasAttackSafeZonePlugin(IPlugin):
         self.__safeZoneMarkerHandle = None
         self.__isMarkerVisible = False
         self.__settings = getGasAttackSettings()
-        if self.__settings is None:
-            from GasAttackSettings import GasAttackSettings
-            self.__settings = GasAttackSettings(180, 10.0, (27.0147, 116.592636, -176.879059), 600.0, 500.0, 120.0)
         return
 
     def init(self):

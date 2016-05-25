@@ -3,7 +3,8 @@ import types
 from CurrentVehicle import g_currentVehicle
 from gui.Scaleform.daapi.view.lobby.techtree.settings import RESEARCH_ITEMS
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.utils.requesters.ItemsRequester import RESEARCH_CRITERIA
 from tutorial.logger import LOG_ERROR

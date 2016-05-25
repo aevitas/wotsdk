@@ -129,14 +129,11 @@ class _AlignerToLand:
         upPoint.y += 1000
         downPoint = Math.Vector3(position)
         downPoint.y = -1000
-        collideRes = BigWorld.wg_collideSegment(spaceID, upPoint, downPoint, 16, self.__isTerrain)
+        collideRes = BigWorld.wg_collideSegment(spaceID, upPoint, downPoint, 16, 8)
         if collideRes is None:
             return
         else:
             return collideRes[0]
-
-    def __isTerrain(self, matKind, collFlags, itemId, chunkId):
-        return collFlags & 8
 
     def getAlignedPosition(self, position):
         if self.__desiredHeightShift is None:

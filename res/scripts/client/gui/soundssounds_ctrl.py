@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/sounds/sounds_ctrl.py
-import MusicController as _MC
+import weakref
+import MusicControllerWWISE as _MC
 import SoundGroups
 from gui.game_control import g_instance as g_gameCtrl
 from gui.shared import g_itemsCache
@@ -13,7 +14,7 @@ class SoundsController(object):
     def __init__(self):
         super(SoundsController, self).__init__()
         self.__soundSystem = getCurrentSoundSystem()
-        self.__guiAmbients = GuiAmbientsCtrl()
+        self.__guiAmbients = GuiAmbientsCtrl(weakref.proxy(self))
         SOUND_DEBUG('Sound system has been created', self.__soundSystem)
 
     def init(self):

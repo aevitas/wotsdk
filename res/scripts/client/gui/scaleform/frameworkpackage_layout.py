@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/framework/package_layout.py
+from debug_utils import LOG_CURRENT_EXCEPTION
 from gui.Scaleform.framework import g_entitiesFactories, ViewTypes
 from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
@@ -142,7 +143,9 @@ class PackageImporter(object):
         imported = __import__(_SF_SETTING_PATH.format(path), fromlist=[_SF_SETTING_NAME])
         try:
             settings = imported.getViewSettings()
-        except AttributeError:
+        except AttributeError as e:
+            print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', e.message
+            LOG_CURRENT_EXCEPTION()
             raise Exception('Package {0} does not have method getViewSettings'.format(path))
 
         aliases = g_entitiesFactories.initSettings(settings)

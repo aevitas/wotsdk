@@ -1,14 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/common/settings/SettingsWindow.py
 import functools
-import BigWorld
 import VOIP
-import SoundGroups
 from debug_utils import *
 from gui.GraphicsPresets import GraphicsPresets
 from gui.Scaleform.locale.SETTINGS import SETTINGS
 from Vibroeffects import VibroManager
 from gui import DialogsInterface, g_guiResetters
-from gui.battle_control import g_sessionProvider
 from gui.shared.utils import flashObject2Dict, decorators
 from gui.Scaleform.daapi.view.meta.SettingsWindowMeta import SettingsWindowMeta
 from gui.Scaleform.daapi.view.common.settings.SettingsParams import SettingsParams
@@ -75,6 +72,7 @@ class SettingsWindow(SettingsWindowMeta):
 
     def __restartGame(self):
         BigWorld.savePreferences()
+        BigWorld.worldDrawEnabled(False)
         BigWorld.restartGame()
 
     def _populate(self):
@@ -203,6 +201,17 @@ class SettingsWindow(SettingsWindowMeta):
                 self.onWindowClose()
 
         DialogsInterface.showI18nConfirmDialog(dialogID, callback)
+
+    def onRecreateDevice(self):
+        actualSettings = self.params.getMonitorSettings()
+        curDrr = self.__currentSettings[settings_constants.GRAPHICS.DYNAMIC_RENDERER]
+        actualDrr = actualSettings[settings_constants.GRAPHICS.DYNAMIC_RENDERER]
+        self.__currentSettings = actualSettings
+        result = self.__currentSettings.copy()
+        if curDrr == actualDrr:
+            result[settings_constants.GRAPHICS.DYNAMIC_RENDERER] = None
+        self.as_updateVideoSettingsS(result)
+        return
 
     def __updateInterfaceScale(self):
         self.as_setDataS(self.__getSettings())

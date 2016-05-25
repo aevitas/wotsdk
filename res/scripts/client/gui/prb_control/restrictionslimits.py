@@ -9,6 +9,7 @@ from gui.prb_control.restrictions.interfaces import IVehicleLimit, ITeamLimit
 from gui.prb_control.settings import PREBATTLE_ROSTER, PREBATTLE_RESTRICTION, UNIT_RESTRICTION
 from gui.prb_control.items import unit_items
 from gui.shared.ItemsCache import g_itemsCache
+from gui.server_events import g_eventsCache
 from items import vehicles
 from items.vehicles import VehicleDescr, VEHICLE_CLASS_TAGS
 from prebattle_shared import isTeamValid, isVehicleValid
@@ -421,6 +422,9 @@ class SortieActionValidator(_UnitActionValidator):
 
     def canPlayerDoAction(self, pInfo, flags, vInfo):
         from gui.shared.ClanCache import g_clanCache
+        from gui.LobbyContext import g_lobbyContext
+        if not g_lobbyContext.getServerSettings().isFortsEnabled():
+            return (False, UNIT_RESTRICTION.FORT_DISABLED)
         provider = g_clanCache.fortProvider
         if provider:
             controller = provider.getController()
@@ -488,12 +492,7 @@ class SquadActionValidator(_UnitActionValidator):
         return (isValid, restriction)
 
     def validateVehicles(self, vInfo, flags):
-        if g_currentVehicle.isPresent():
-            vehicle = g_currentVehicle.item
-            vInfo = (unit_items.VehicleInfo(vehicle.invID, vehicle.intCD, vehicle.level),)
-        elif vInfo is None:
-            vInfo = unit_items.VehicleInfo()
-        return super(SquadActionValidator, self).validateVehicles(vInfo, flags)
+        return super(SquadActionValidator, self).validateVehicles(self._validateVehiclesInfo(vInfo), flags)
 
     def validateStateToStartBattle(self, flags):
         return (True, UNIT_RESTRICTION.UNDEFINED)
@@ -503,6 +502,28 @@ class SquadActionValidator(_UnitActionValidator):
 
     def _validateSlots(self, stats, flags, slots):
         return (True, UNIT_RESTRICTION.UNDEFINED)
+
+    @staticmethod
+    def _validateVehiclesInfo(vInfos):
+        if g_currentVehicle.isPresent():
+            vehicle = g_currentVehicle.item
+            vInfos = (unit_items.VehicleInfo(vehicle.invID, vehicle.intCD, vehicle.level),)
+        elif vInfos is None:
+            vInfos = (unit_items.VehicleInfo(),)
+        return vInfos
+
+
+class BalancedSquadActionValidator(SquadActionValidator):
+
+    def validateVehicles(self, vInfos, flags):
+        valid, restriction = super(BalancedSquadActionValidator, self).validateVehicles(vInfos, flags)
+        if valid and g_eventsCache.isBalancedSquadEnabled():
+            levelsRange = self._rosterSettings.getLevelsRange()
+            for vInfo in self._validateVehiclesInfo(vInfos):
+                if vInfo.vehLevel not in levelsRange:
+                    return (False, UNIT_RESTRICTION.VEHICLE_INVALID_LEVEL)
+
+        return (valid, restriction)
 
 
 class FalloutSquadActionValidator(SquadActionValidator):

@@ -1,8 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/prb_windows/squad_view.py
+import account_helpers
 from gui.Scaleform.daapi.view.lobby.prb_windows.SquadActionButtonStateVO import SquadActionButtonStateVO
 from gui.Scaleform.daapi.view.lobby.rally.vo_converters import makeVehicleVO
 from gui.Scaleform.genConsts.PREBATTLE_ALIASES import PREBATTLE_ALIASES
+from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
+from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.game_control import getFalloutCtrl
 from gui.shared.formatters import text_styles
@@ -10,11 +13,11 @@ from gui.Scaleform.locale.MESSENGER import MESSENGER
 from gui.prb_control.context import unit_ctx
 from gui.Scaleform.daapi.view.meta.SquadViewMeta import SquadViewMeta
 from gui.Scaleform.daapi.view.lobby.rally import vo_converters
-from gui.Scaleform.locale.MENU import MENU
 from gui.prb_control.settings import CTRL_ENTITY_TYPE, REQUEST_TYPE, FUNCTIONAL_FLAG
 from gui.shared import events, EVENT_BUS_SCOPE
 from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.formatters.ranges import toRomanRangeString
+from gui.server_events import g_eventsCache
 from helpers import i18n, int2roman
 from gui.prb_control import settings
 
@@ -31,6 +34,7 @@ class SquadView(SquadViewMeta):
     def onUnitVehiclesChanged(self, dbID, vInfos):
         functional = self.unitFunctional
         pInfo = functional.getPlayerInfo(dbID=dbID)
+        needToUpdateSlots = g_eventsCache.isSquadXpFactorsEnabled()
         if pInfo.isInSlot:
             slotIdx = pInfo.slotIdx
             if vInfos and not vInfos[0].isEmpty():
@@ -45,6 +49,15 @@ class SquadView(SquadViewMeta):
                 else:
                     slotCost = 0
             self.as_setMemberVehicleS(slotIdx, slotCost, vehicleVO)
+            if pInfo.isCurrentPlayer():
+                if len(vInfos) < slotIdx + 1:
+                    needToUpdateSlots = True
+            elif vehicleVO is None:
+                needToUpdateSlots = True
+        if g_eventsCache.isSquadXpFactorsEnabled():
+            self.as_setActionButtonStateS(self.__getActionButtonStateVO())
+        if needToUpdateSlots:
+            self._updateMembersData()
         return
 
     def chooseVehicleRequest(self):
@@ -90,6 +103,7 @@ class SquadView(SquadViewMeta):
     def _populate(self):
         super(SquadView, self)._populate()
         self.addListener(events.CoolDownEvent.PREBATTLE, self.__handleSetPrebattleCoolDown, scope=EVENT_BUS_SCOPE.LOBBY)
+        self._updateHeader()
 
     def _dispose(self):
         self.removeListener(events.CoolDownEvent.PREBATTLE, self.__handleSetPrebattleCoolDown, scope=EVENT_BUS_SCOPE.LOBBY)
@@ -108,6 +122,50 @@ class SquadView(SquadViewMeta):
         self.as_updateInviteBtnStateS(enabled)
         self.as_setActionButtonStateS(self.__getActionButtonStateVO())
 
+    def _updateHeader(self):
+        functional = self.unitFunctional
+        isBalancedSquadEnabled = g_eventsCache.isBalancedSquadEnabled()
+        isSquadXpFactorsEnabled = g_eventsCache.isSquadXpFactorsEnabled()
+        isArtVisible = isSquadXpFactorsEnabled
+        if isArtVisible:
+            if isBalancedSquadEnabled:
+                if functional.isDynamic():
+                    headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS_ATTENTION
+                    headerMessageText = text_styles.middleTitle(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_DYNSQUAD))
+                    iconXPadding = 0
+                    iconYPadding = 0
+                else:
+                    headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS
+                    headerMessageText = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATION))
+                    iconXPadding = 9
+                    iconYPadding = 9
+                tooltipType = TOOLTIPS_CONSTANTS.COMPLEX
+                tooltip = TOOLTIPS.SQUADWINDOW_INFOICON_TECH
+            else:
+                tooltipType = TOOLTIPS_CONSTANTS.SPECIAL
+                tooltip = TOOLTIPS_CONSTANTS.SQUAD_RESTRICTIONS_INFO
+                headerIconSource = RES_ICONS.MAPS_ICONS_SQUAD_SQUAD_SILVER_STARS
+                headerMessageText = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATIONRESTRICTION))
+                iconXPadding = 9
+                iconYPadding = 9
+        else:
+            tooltip = ''
+            tooltipType = ''
+            headerIconSource = ''
+            headerMessageText = ''
+            iconXPadding = 0
+            iconYPadding = 0
+        data = {'infoIconTooltip': tooltip,
+         'infoIconTooltipType': tooltipType,
+         'isVisibleInfoIcon': isArtVisible,
+         'isVisibleHeaderIcon': isArtVisible,
+         'headerIconSource': headerIconSource,
+         'icoXPadding': iconXPadding,
+         'icoYPadding': iconYPadding,
+         'headerMessageText': headerMessageText,
+         'isVisibleHeaderMessage': isArtVisible}
+        self.as_setSimpleTeamSectionDataS(data)
+
     def _updateMembersData(self):
         functional = self.unitFunctional
         self.as_setMembersS(*vo_converters.makeSlotsVOs(functional, functional.getUnitIdx(), app=self.app))
@@ -117,9 +175,6 @@ class SquadView(SquadViewMeta):
         functional = self.unitFunctional
         data = vo_converters.makeUnitVO(functional, unitIdx=functional.getUnitIdx(), app=self.app)
         self.as_updateRallyS(data)
-        battleTypeName = text_styles.main(MESSENGER.DIALOGS_SQUADCHANNEL_BATTLETYPE) + '\n' + i18n.makeString(MENU.HEADERBUTTONS_BATTLE_MENU_STANDART)
-        self.as_updateBattleTypeInfoS('', False)
-        self.as_updateBattleTypeS(battleTypeName, False, False)
 
     def __getActionButtonStateVO(self):
         unitFunctional = self.unitFunctional
@@ -144,7 +199,8 @@ class FalloutSquadView(SquadView):
         self.unitFunctional.togglePlayerReadyAction()
 
     def onUnitVehiclesChanged(self, dbID, vInfos):
-        self._updateRallyData()
+        if dbID != account_helpers.getAccountDatabaseID():
+            self._updateRallyData()
 
     def onUnitRejoin(self):
         super(FalloutSquadView, self).onUnitRejoin()
@@ -194,4 +250,6 @@ class FalloutSquadView(SquadView):
         self.__updateHeader()
 
     def __onVehiclesChanged(self, *args):
+        self._updateRallyData()
         self._setActionButtonState()
+        self.__updateHeader()

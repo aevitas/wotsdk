@@ -61,6 +61,19 @@ def showHangar():
     g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.LOBBY_HANGAR), scope=EVENT_BUS_SCOPE.LOBBY)
 
 
+def showVehiclePreview(vehTypeCompDescr, previewAlias = VIEW_ALIAS.LOBBY_HANGAR):
+    from CurrentVehicle import g_currentPreviewVehicle
+    if g_currentPreviewVehicle.isPresent():
+        g_currentPreviewVehicle.selectVehicle(vehTypeCompDescr)
+    else:
+        g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.VEHICLE_PREVIEW, ctx={'itemCD': vehTypeCompDescr,
+         'previewAlias': previewAlias}), scope=EVENT_BUS_SCOPE.LOBBY)
+
+
+def hideBattleResults():
+    g_eventBus.handleEvent(events.HideWindowEvent(events.HideWindowEvent.HIDE_BATTLE_RESULT_WINDOW), scope=EVENT_BUS_SCOPE.LOBBY)
+
+
 def showAwardWindow(award, isUniqueName = True):
     if isUniqueName:
         name = getUniqueViewName(VIEW_ALIAS.AWARD_WINDOW)

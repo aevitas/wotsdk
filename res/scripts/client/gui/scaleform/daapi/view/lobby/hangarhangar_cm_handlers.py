@@ -30,6 +30,7 @@ class MODULE(object):
 
 class VEHICLE(object):
     INFO = 'vehicleInfoEx'
+    PREVIEW = 'preview'
     STATS = 'showVehicleStatistics'
     UNLOCK = 'unlock'
     SELECT = 'selectVehicle'

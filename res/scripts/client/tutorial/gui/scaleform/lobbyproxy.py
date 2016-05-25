@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/tutorial/gui/Scaleform/lobby/proxy.py
+import weakref
 from debug_utils import LOG_CURRENT_EXCEPTION
 from gui import SystemMessages
 from gui.Scaleform.Waiting import Waiting
@@ -45,6 +46,10 @@ class SfLobbyProxy(GUIProxy):
         addListener(_TEvent.ON_COMPONENT_LOST, self.__onComponentLost, scope=EVENT_BUS_SCOPE.GLOBAL)
         addListener(_TEvent.ON_TRIGGER_ACTIVATED, self.__onTriggerActivated, scope=EVENT_BUS_SCOPE.GLOBAL)
         if self.app is not None:
+            proxy = weakref.proxy(self.app)
+            for _, effect in self.effects.iterEffects():
+                effect.setApplication(proxy)
+
             loader = self.app.loaderManager
             loader.onViewLoadInit += self.__onViewLoadInit
             loader.onViewLoadError += self.__onViewLoadError
@@ -60,9 +65,10 @@ class SfLobbyProxy(GUIProxy):
         self.onGUILoaded()
         return result
 
-    def fini(self, isItemsRevert = True):
+    def fini(self):
         self.eManager.clear()
         self.effects.stopAll()
+        self.effects.clear()
         if self.app is not None:
             loader = self.app.loaderManager
             loader.onViewLoadInit -= self.__onViewLoadInit

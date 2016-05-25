@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/indicators.py
 from debug_utils import LOG_DEBUG
 from gui import DEPTH_OF_Aim
+from gui.battle_control.battle_constants import HIT_INDICATOR_MAX_ON_SCREEN
 from gui.battle_control.hit_direction_ctrl import IHitIndicator
 from gui.Scaleform.Flash import Flash
 _DAMAGE_INDICATOR_SWF = 'DamageIndicator.swf'
@@ -53,12 +54,6 @@ class _DamageIndicator(Flash, IHitIndicator):
 
     def hideHitDirection(self, idx):
         self.component.invoke(_DAMAGE_INDICATOR_MC_NAME.format(idx), ('hide',))
-
-
-class IndicatorsCollection(object):
-
-    def createDamageIndicator(self, hitsCount):
-        return _DamageIndicator(hitsCount)
 
 
 class IDirectionIndicator(object):
@@ -136,6 +131,10 @@ class _DirectionIndicatorMessage(_DirectionIndicator):
     def setMessage(self, message):
         if self._dObject:
             self._dObject.setMessage(message)
+
+
+def createDamageIndicator():
+    return _DamageIndicator(HIT_INDICATOR_MAX_ON_SCREEN)
 
 
 def createDirectIndicator():

@@ -5,7 +5,6 @@ class CONTROLLER(CONST_CONTAINER):
     RELOGIN = 'relogin'
     AOGAS = 'aogas'
     GAME_SESSION = 'gameSession'
-    CAPTCHA = 'captcha'
     RENTALS = 'rentals'
     IGR = 'igr'
     WALLET = 'wallet'

@@ -1,9 +1,11 @@
 # Embedded file name: scripts/client/tutorial/gui/Scaleform/battle/layout.py
 import weakref
 from account_helpers.AccountSettings import AccountSettings
+from constants import ARENA_GUI_TYPE
 from gui.Scaleform.daapi.view.battle.indicators import createDirectIndicator
 from gui.app_loader import g_appLoader
 from gui.battle_control import g_sessionProvider
+from gui.battle_control.arena_info import player_format
 from helpers import i18n
 from helpers.aop import Aspect
 from tutorial.control import g_tutorialWeaver
@@ -51,10 +53,57 @@ class MinimapDefaultSizeAspect(Aspect):
         return result
 
 
-def normalizePlayerName(pName):
-    if pName.startswith('#battle_tutorial:'):
-        pName = i18n.makeString(pName)
-    return pName
+class TutorialFullNameFormatter(player_format.PlayerFullNameFormatter):
+
+    @staticmethod
+    def _normalizePlayerName(name):
+        if name.startswith('#battle_tutorial:'):
+            name = i18n.makeString(name)
+        return name
+
+
+class MinimapDelerator(object):
+    __slots__ = ('__gui', '__entriesIDs', '__weakref__')
+
+    def __init__(self, gui):
+        super(MinimapDelerator, self).__init__()
+        self.__gui = gui
+        self.__entriesIDs = {}
+
+    def clear(self):
+        self.__gui = None
+        self.__entriesIDs.clear()
+        return
+
+    def addTarget(self, markerID, position):
+        minimap = self._getComponent()
+        if minimap is None:
+            return False
+        elif markerID in self.__entriesIDs:
+            return False
+        else:
+            entryID = minimap.addBackEntry(markerID, 'tutorialTarget', position[:], 'blue')
+            self.__entriesIDs[markerID] = entryID
+            return True
+
+    def delTarget(self, markerID):
+        if markerID not in self.__entriesIDs:
+            return False
+        else:
+            minimap = self._getComponent()
+            if minimap is None:
+                return False
+            minimap.removeBackEntry(self.__entriesIDs[markerID])
+            return True
+
+    def _getComponent(self):
+        try:
+            return self.__gui().minimap
+        except AttributeError:
+            LOG_ERROR('GUI component is not found')
+            return None
+
+        return None
 
 
 class BattleLayout(ScaleformLayout):
@@ -62,6 +111,7 @@ class BattleLayout(ScaleformLayout):
     def __init__(self, swf):
         super(BattleLayout, self).__init__(swf)
         self.__dispatcher = None
+        self.__minimap = None
         return
 
     def _resolveGuiRoot(self):
@@ -72,6 +122,7 @@ class BattleLayout(ScaleformLayout):
                 return
             proxy = weakref.proxy(app)
             self._guiRef = weakref.ref(app)
+            self.__minimap = MinimapDelerator(self._guiRef)
             dispatcher = self.getDispatcher()
             if dispatcher is not None and proxy is not None:
                 dispatcher.populateUI(proxy)
@@ -87,7 +138,7 @@ class BattleLayout(ScaleformLayout):
         super(BattleLayout, self)._setMovieView(movie)
         return
 
-    def _getDirectionIndicator(self):
+    def getDirectionIndicator(self):
         indicator = None
         try:
             indicator = createDirectIndicator()
@@ -99,27 +150,29 @@ class BattleLayout(ScaleformLayout):
     def init(self):
         result = super(BattleLayout, self).init()
         if result:
-            g_sessionProvider.getCtx().setNormalizePlayerName(normalizePlayerName)
+            g_sessionProvider.getCtx().setPlayerFullNameFormatter(TutorialFullNameFormatter())
             g_tutorialWeaver.weave('gui.app_loader', '_AppLoader', '^showBattle$', aspects=(ShowBattleAspect,))
             g_tutorialWeaver.weave('gui.Scaleform.Minimap', 'Minimap', '^getStoredMinimapSize|storeMinimapSize$', aspects=(MinimapDefaultSizeAspect(self.uiHolder),))
         return result
 
     def show(self):
-        g_appLoader.showBattle()
+        g_appLoader.showBattle(ARENA_GUI_TYPE.TUTORIAL)
 
     def clear(self):
-        if self._guiRef is not None and self._guiRef() is not None:
-            if self._movieView is not None:
-                self._movieView.clearStage()
+        if self._guiRef is not None and self._guiRef() is not None and self._movieView is not None:
+            self._movieView.clearStage()
         return
 
-    def fini(self, isItemsRevert = True):
-        g_sessionProvider.getCtx().resetNormalizePlayerName()
+    def fini(self):
+        if self.__minimap is not None:
+            self.__minimap.clear()
+            self.__minimap = None
+        g_sessionProvider.getCtx().resetPlayerFullNameFormatter()
         dispatcher = self.getDispatcher()
         if dispatcher is not None:
             dispatcher.dispossessUI()
             dispatcher.clearGUI()
-        super(BattleLayout, self).fini(isItemsRevert=isItemsRevert)
+        super(BattleLayout, self).fini()
         return
 
     def getSceneID(self):
@@ -128,14 +181,11 @@ class BattleLayout(ScaleformLayout):
     def showMessage(self, text, lookupType = None):
         self.uiHolder.call('battle.VehicleMessagesPanel.ShowMessage', [lookupType, text, 'green'])
 
-    def getGuiRoot(self):
-        try:
-            root = g_appLoader.getDefBattleApp()
-        except AttributeError:
-            LOG_CURRENT_EXCEPTION()
-            root = None
+    def getMarkersManager(self):
+        return getattr(self._guiRef(), 'markersManager', None)
 
-        return root
+    def getMinimapPlugin(self):
+        return self.__minimap
 
     def setDispatcher(self, dispatcher):
         self.__dispatcher = dispatcher

@@ -2,4 +2,11 @@
 from gui.Scaleform.daapi.view.lobby.rally.BaseRallyView import BaseRallyView
 
 class BaseRallyIntroViewMeta(BaseRallyView):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    @extends BaseRallyView
+    null
+    """
     pass

@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/Minimap.py
-import string
 import math
 from functools import partial
 from weakref import proxy
@@ -10,7 +9,6 @@ import Keys
 from CTFManager import g_ctfManager
 from constants import REPAIR_POINT_ACTION, RESOURCE_POINT_STATE, FLAG_STATE, AOI, VISIBILITY
 from gui.battle_control.avatar_getter import getSoundNotifications, isVehicleAlive
-from gui.battle_control.dyn_squad_functional import IDynSquadEntityClient
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import GameEvent
 from ids_generators import SequenceIDGenerator
@@ -18,6 +16,7 @@ from messenger import MessengerEntry
 from AvatarInputHandler import mathUtils
 from shared_utils import findFirst
 from gui.battle_control import g_sessionProvider
+from gui.battle_control import avatar_getter, minimap_utils, matrix_factory
 from gui.battle_control.battle_constants import PLAYER_GUI_PROPS, FEEDBACK_EVENT_ID, NEUTRAL_TEAM
 from gui.battle_control.arena_info import isLowLevelBattle, hasFlags, hasRepairPoints, hasResourcePoints, isFalloutMultiTeam, hasGasAttack
 import SoundGroups
@@ -80,11 +79,8 @@ _CAPTURE_STATE_BY_TEAMS = {True: RESOURCE_POINT_TYPE.OWN_MINING,
 _CAPTURE_FROZEN_STATE_BY_TEAMS = {True: RESOURCE_POINT_TYPE.OWN_MINING,
  False: RESOURCE_POINT_TYPE.ENEMY_MINING}
 
-class Minimap(IDynSquadEntityClient):
+class Minimap(object):
     __MINIMAP_SIZE = (210, 210)
-    __MINIMAP_CELLS = (10, 10)
-    __AOI_ESTIMATE = AOI.VEHICLE_CIRCULAR_AOI_RADIUS - 50.0 if AOI.ENABLE_MANUAL_RULES else 450.0
-    __AOI_TO_FAR_TIME = 5.0
 
     def __init__(self, parentUI):
         self.proxy = proxy(self)
@@ -148,9 +144,6 @@ class Minimap(IDynSquadEntityClient):
     def __del__(self):
         LOG_DEBUG('Minimap deleted')
 
-    def updateSquadmanVeh(self, vID):
-        self.__callEntryFlash(vID, 'setEntryName', [PLAYER_GUI_PROPS.squadman.name()])
-
     def start(self):
         self.__ownUI = GUI.WGMinimapFlash(self.__parentUI.movie)
         self.__ownUI.wg_inputKeyMode = 2
@@ -178,17 +171,20 @@ class Minimap(IDynSquadEntityClient):
         arena.onVehicleAdded += self.__onVehicleAdded
         arena.onTeamKiller += self.__onTeamKiller
         ctrl = g_sessionProvider.getEquipmentsCtrl()
-        if ctrl:
+        if ctrl is not None:
             ctrl.onEquipmentMarkerShown += self.__onEquipmentMarkerShown
         ctrl = g_sessionProvider.getFeedback()
-        if ctrl:
+        if ctrl is not None:
             ctrl.onMinimapVehicleAdded += self.__onMinimapVehicleAdded
             ctrl.onMinimapVehicleRemoved += self.__onMinimapVehicleRemoved
             ctrl.onMinimapFeedbackReceived += self.__onMinimapFeedbackReceived
             ctrl.onVehicleFeedbackReceived += self.__onVehicleFeedbackReceived
         ctrl = g_sessionProvider.getVehicleStateCtrl()
-        if ctrl:
+        if ctrl is not None:
             ctrl.onPostMortemSwitched += self.__onPostMortemSwitched
+        functional = g_sessionProvider.getDynSquadFunctional()
+        if functional is not None:
+            functional.onPlayerBecomeSquadman += self.__onPlayerBecomeSquadman
         addListener = g_eventBus.addListener
         addListener(GameEvent.SHOW_EXTENDED_INFO, self.__handleShowExtendedInfo, scope=EVENT_BUS_SCOPE.BATTLE)
         addListener(GameEvent.MINIMAP_CMD, self.__handleMinimapCmd, scope=EVENT_BUS_SCOPE.BATTLE)
@@ -442,7 +438,7 @@ class Minimap(IDynSquadEntityClient):
             if self.__cfg['repairPoints']:
                 repairData = {}
                 self.__points['repair'] = repairData
-                for index, repairPoint in enumerate(self.__cfg['repairPoints']):
+                for pointID, repairPoint in self.__cfg['repairPoints'].iteritems():
                     pos = repairPoint['position']
                     team = repairPoint['team']
                     isAlly = team in (NEUTRAL_TEAM, self.__playerTeam)
@@ -459,7 +455,7 @@ class Minimap(IDynSquadEntityClient):
                       '',
                       0]))
                     self.__entrySetActive(newPointCooldown.handle, False)
-                    repairData[index] = (newPoint, newPointCooldown)
+                    repairData[pointID] = (newPoint, newPointCooldown)
 
             self.__parentUI.call('minimap.entryInited', [])
 
@@ -507,8 +503,11 @@ class Minimap(IDynSquadEntityClient):
                 ctrl.onMinimapFeedbackReceived -= self.__onMinimapFeedbackReceived
                 ctrl.onVehicleFeedbackReceived -= self.__onVehicleFeedbackReceived
             ctrl = g_sessionProvider.getVehicleStateCtrl()
-            if ctrl:
+            if ctrl is not None:
                 ctrl.onPostMortemSwitched -= self.__onPostMortemSwitched
+            functional = g_sessionProvider.getDynSquadFunctional()
+            if functional is not None:
+                functional.onPlayerBecomeSquadman -= self.__onPlayerBecomeSquadman
             removeListener = g_eventBus.removeListener
             removeListener(GameEvent.SHOW_EXTENDED_INFO, self.__handleShowExtendedInfo, scope=EVENT_BUS_SCOPE.BATTLE)
             removeListener(GameEvent.MINIMAP_CMD, self.__handleMinimapCmd, scope=EVENT_BUS_SCOPE.BATTLE)
@@ -564,13 +563,8 @@ class Minimap(IDynSquadEntityClient):
             if vehicleID in entries:
                 location = entries[vehicleID]['location']
                 if location == VehicleLocation.AOI:
-                    ownPos = Math.Matrix(BigWorld.camera().invViewMatrix).translation
                     entryMatitx = entries[vehicleID]['matrix']
-                    entryPos = Math.Matrix(entryMatitx).translation
-                    if AOI.ENABLE_MANUAL_RULES:
-                        inAoI = (ownPos.x - entryPos.x) ** 2 + (ownPos.z - entryPos.z) ** 2 < self.__AOI_ESTIMATE ** 2
-                    else:
-                        inAoI = bool(abs(ownPos.x - entryPos.x) < self.__AOI_ESTIMATE and abs(ownPos.z - entryPos.z) < self.__AOI_ESTIMATE)
+                    inAoI = minimap_utils.isVehicleInAOI(entryMatitx)
                     guiProps = g_sessionProvider.getCtx().getPlayerGuiProps(vehicleID, vInfo.team)
                     self.__delEntry(vehicleID)
                     self.__delEntryLit(vehicleID)
@@ -620,45 +614,23 @@ class Minimap(IDynSquadEntityClient):
         elif cellIndexes < 0:
             return
         else:
-            columnCount, rowCount = Minimap.__MINIMAP_CELLS
-            column = cellIndexes / columnCount % columnCount
-            row = cellIndexes % columnCount
+            arenaDesc = BigWorld.player().arena.arenaType
+            bottomLeft, upperRight = arenaDesc.boundingBox
+            matrix = minimap_utils.makePointMatrixByCellIndex(cellIndexes, bottomLeft, upperRight)
             if cellIndexes in self.__marks:
                 BigWorld.cancelCallback(self.__marks[cellIndexes][1])
                 self._removeCellMark(cellIndexes)
-            arenaDesc = BigWorld.player().arena.arenaType
-            bottomLeft, upperRight = arenaDesc.boundingBox
-            viewpoint = (upperRight + bottomLeft) * 0.5
-            viewpointTranslate = Math.Matrix()
-            viewpointTranslate.setTranslate((viewpoint.x, 0.0, viewpoint.y))
-            spaceSize = upperRight - bottomLeft
-            pos = (column * spaceSize[0] / columnCount - spaceSize[0] * 0.5, 0, -row * spaceSize[1] / rowCount + spaceSize[0] * 0.5)
-            m = Math.Matrix()
-            m.setTranslate(Math.Matrix(viewpointTranslate).applyPoint(pos))
             player = BigWorld.player()
             if player.isTeleport:
-                tmpPointUp = (pos[0], 1000.0, pos[2])
-                tmpPointDown = (pos[0], -1000.0, pos[2])
-                colRes = BigWorld.collide(player.spaceID, tmpPointUp, tmpPointDown)
-                height = colRes[0][1]
-                player.base.vehicle_teleport((pos[0], height, pos[2]), 0)
-            mark = self.__ownUI.addEntry(m, self.zIndexManager.getIndexByName('cell'))
+                position = minimap_utils.getPositionByCellIndex(cellIndexes, bottomLeft, upperRight)
+                result = BigWorld.collide(player.spaceID, (position[0], 1000.0, position[2]), (position[0], -1000.0, position[2]))
+                player.base.vehicle_teleport((position[0], result[0][1], position[2]), 0)
+            mark = self.__ownUI.addEntry(matrix, self.zIndexManager.getIndexByName('cell'))
             self.__ownUI.entryInvoke(mark, ('gotoAndStop', ['cellFlash']))
             self._playAttention(None)
             callbackID = BigWorld.callback(duration, partial(self._removeCellMark, cellIndexes))
             self.__marks[cellIndexes] = (mark, callbackID)
             return
-
-    def getCellName(self, cellIndexes):
-        columnCount, rowCount = Minimap.__MINIMAP_CELLS
-        column = cellIndexes / columnCount % columnCount
-        row = cellIndexes % columnCount
-        if row < 8:
-            name = string.ascii_uppercase[row]
-        else:
-            name = string.ascii_uppercase[row + 1]
-        name += str((column + 1) % 10)
-        return name
 
     def _removeCellMark(self, cellIndexes):
         if self.__isStarted:
@@ -667,24 +639,16 @@ class Minimap(IDynSquadEntityClient):
             self.__ownUI.delEntry(mark)
 
     def _onMapClicked(self, _, x, y, bHighlightCellNVehicleSpecific = True):
-        localPos = (x - 0.5, y - 0.5)
-        mapSize = Minimap.__MINIMAP_SIZE
-        player = BigWorld.player()
         if bHighlightCellNVehicleSpecific:
-            cellCount = Minimap.__MINIMAP_CELLS
-            row = int(cellCount[0] * localPos[0] / mapSize[0])
-            column = int(cellCount[1] * localPos[1] / mapSize[1])
-            g_sessionProvider.getChatCommands().sendAttentionToCell(row * int(cellCount[1]) + column)
+            g_sessionProvider.getChatCommands().sendAttentionToCell(minimap_utils.makeCellIndex(x, y))
         else:
             arenaDesc = BigWorld.player().arena.arenaType
             bottomLeft, upperRight = arenaDesc.boundingBox
-            spaceSize = upperRight - bottomLeft
-            viewpoint = (upperRight + bottomLeft) * 0.5
-            viewpointTranslate = Math.Matrix()
-            viewpointTranslate.setTranslate((viewpoint.x, 0.0, viewpoint.y))
-            pos = ((localPos[0] - mapSize[0] * 0.5) / mapSize[0], (localPos[1] - mapSize[1] * 0.5) / mapSize[1])
-            worldPos = Math.Matrix(viewpointTranslate).applyPoint((pos[0] * spaceSize[0], 0.0, -pos[1] * spaceSize[1]))
-            player.inputHandler.onMinimapClicked(worldPos)
+            handler = avatar_getter.getInputHandler()
+            if handler is not None:
+                matrix = minimap_utils.makePointMatrixByLocal(x, y, bottomLeft, upperRight)
+                handler.onMinimapClicked(matrix.translation)
+        return
 
     def __onVehicleAdded(self, vehicleID):
         vInfo = g_sessionProvider.getArenaDP().getVehicleInfo(vehicleID)
@@ -870,7 +834,7 @@ class Minimap(IDynSquadEntityClient):
         self.__parentUI.call('minimap.setShowVehicleName', [value])
 
     def __addEntryLit(self, vInfo, guiProps, matrix, visible = True):
-        if vInfo.isObserver():
+        if vInfo.isObserver() or not vInfo.isAlive():
             return
         elif matrix is None:
             return
@@ -955,7 +919,7 @@ class Minimap(IDynSquadEntityClient):
             if self.__markerScale is not None:
                 scaledMatrix = self.__getMatrixProductForNormlizeMarkerScale(self.__markerScale, m)
             if location == VehicleLocation.AOI_TO_FAR:
-                self.__aoiToFarCallbacks[vehicleID] = BigWorld.callback(self.__AOI_TO_FAR_TIME, partial(self.__delEntry, vehicleID))
+                self.__aoiToFarCallbacks[vehicleID] = BigWorld.callback(minimap_utils.AOI_TO_FAR_TIME, partial(self.__delEntry, vehicleID))
             entry['location'] = location
             entry['matrix'] = m
             if scaledMatrix is None:
@@ -1016,6 +980,10 @@ class Minimap(IDynSquadEntityClient):
             handle = entry['handle']
             self.__ownUI.entryInvoke(handle, ('update', None))
 
+        for entry in self.__entrieLits.itervalues():
+            handle = entry['handle']
+            self.__ownUI.entryInvoke(handle, ('update', None))
+
         return None
 
     def __callEntryFlash(self, entryID, methodName, args = None):
@@ -1027,7 +995,7 @@ class Minimap(IDynSquadEntityClient):
             signature = methodName
         if entryID in self.__entries:
             self.__ownUI.entryInvoke(self.__entries[entryID]['handle'], signature)
-        elif entryID == BigWorld.player().playerVehicleID:
+        elif entryID == self.__playerVehicleID:
             if 'handle' in self.__ownEntry:
                 self.__ownUI.entryInvoke(self.__ownEntry['handle'], signature)
 
@@ -1047,23 +1015,15 @@ class Minimap(IDynSquadEntityClient):
         if self.__cameraHandle is not None:
             self.__ownUI.delEntry(self.__cameraHandle)
         if _isStrategic(mode):
-            m = Math.WGStrategicAreaViewMP()
-            m.source = BigWorld.camera().invViewMatrix
-            m.baseScale = (1.0, 1.0)
+            m = matrix_factory.makeStrategicCameraMatrix()
         elif mode == MODE_ARCADE or mode == MODE_SNIPER:
-            m = Math.WGCombinedMP()
-            m.translationSrc = BigWorld.player().getOwnVehicleMatrix()
-            m.rotationSrc = BigWorld.camera().invViewMatrix
+            m = matrix_factory.makeArcadeCameraMatrix()
         elif mode == MODE_POSTMORTEM:
-            m = Math.WGCombinedMP()
-            translationSrc = Math.WGTranslationOnlyMP()
-            translationSrc.source = BigWorld.player().consistentMatrices.attachedVehicleMatrix
-            m.translationSrc = translationSrc
-            m.rotationSrc = BigWorld.camera().invViewMatrix
+            m = matrix_factory.makePostmortemCameraMatrix()
         elif mode == MODE_VIDEO:
-            m = BigWorld.camera().invViewMatrix
+            m = matrix_factory.makeDefaultCameraMatrix()
         else:
-            m = BigWorld.camera().invViewMatrix
+            m = matrix_factory.makeDefaultCameraMatrix()
         if mode == MODE_VIDEO:
             self.__cameraHandle = self.__ownUI.addEntry(m, self.zIndexManager.getIndexByName(CAMERA_VIDEO))
             self.__cameraMatrix = m
@@ -1084,24 +1044,19 @@ class Minimap(IDynSquadEntityClient):
         if mode in (MODE_POSTMORTEM, MODE_VIDEO):
             self.__resetVehicleIfObserved(self.__observedVehicleId)
             playerMarker = mode
-            if vehicleId is not None and vehicleId != BigWorld.player().playerVehicleID:
+            mp = BigWorld.player().getOwnVehicleMatrix()
+            if mode == MODE_POSTMORTEM and vehicleId is not None and vehicleId != self.__playerVehicleID:
                 self.__observedVehicleId = vehicleId
                 self.__callEntryFlash(vehicleId, 'setPostmortem', [True])
-                mp = BigWorld.player().getOwnVehicleMatrix()
                 if vehicleId in self.__entries:
                     entry = self.__entries[vehicleId]
                     if 'handle' in entry:
                         mp1 = BigWorld.entities[vehicleId].matrix
                         self.__ownUI.entrySetMatrix(entry['handle'], mp1)
                         entry['matrix'] = mp1
-            else:
-                playerMarker += 'Camera'
-                mp = Math.WGCombinedMP()
-                mp.translationSrc = BigWorld.player().getOwnVehicleMatrix()
-                mp.rotationSrc = BigWorld.camera().invViewMatrix
             if 'handle' in self.__ownEntry:
                 self.__ownUI.entrySetMatrix(self.__ownEntry['handle'], mp)
-            self.__callEntryFlash(BigWorld.player().playerVehicleID, 'init', ['player', playerMarker])
+            self.__callEntryFlash(self.__playerVehicleID, 'init', ['player', playerMarker])
         if not _isStrategic(mode) and self.__markerScale is not None:
             self.scaleMarker(self.__cameraHandle, self.__cameraMatrix, self.__markerScale)
             vehicle = BigWorld.entity(self.__playerVehicleID)
@@ -1113,7 +1068,7 @@ class Minimap(IDynSquadEntityClient):
             self.onScaleMarkers(None, self.__markerScale, self.__normalMarkerScale)
         return
 
-    def __clearCamera(self, vehicleId):
+    def __clearCamera(self, _):
         if self.__cameraHandle is not None:
             self.__ownUI.delEntry(self.__cameraHandle)
             self.__cameraHandle = None
@@ -1128,7 +1083,7 @@ class Minimap(IDynSquadEntityClient):
         return 'SPG' in vTypeDesc.type.tags and vehicle_getter.hasYawLimits(vTypeDesc)
 
     def handleRepeatKeyEvent(self, event):
-        if not MessengerEntry.g_instance.gui.isEditing(event):
+        if not MessengerEntry.g_instance.gui.isFocused():
             if GUI_SETTINGS.minimapSize:
                 from game import convertKeyEvent
                 cmdMap = CommandMapping.g_instance
@@ -1383,13 +1338,16 @@ class Minimap(IDynSquadEntityClient):
         elif eventID == FEEDBACK_EVENT_ID.MINIMAP_SHOW_MARKER:
             self.showActionMarker(entityID, value)
 
-    def __onVehicleFeedbackReceived(self, eventID, entityID, value):
+    def __onVehicleFeedbackReceived(self, eventID, _, value):
         if not g_sessionProvider.getCtx().isPlayerObserver() and eventID == FEEDBACK_EVENT_ID.VEHICLE_ATTRS_CHANGED and self.__showViewRange:
             self.__ownUI.entryInvoke(self.__ownEntry['viewRange'], ('updateDynRange', [min(value.get('circularVisionRadius', VISIBILITY.MIN_RADIUS), VISIBILITY.MAX_RADIUS)]))
 
     def __onPostMortemSwitched(self):
         if not g_sessionProvider.getCtx().isPlayerObserver():
             self.__entrySetActive(self.__ownEntry['viewRange'], False)
+
+    def __onPlayerBecomeSquadman(self, vehicleID, guiProps):
+        self.__callEntryFlash(vehicleID, 'setEntryName', [guiProps.name()])
 
     def __makeResourcePointUniqueID(self, pointID):
         markerType = MARKER_TYPE.RESOURCE_POINT

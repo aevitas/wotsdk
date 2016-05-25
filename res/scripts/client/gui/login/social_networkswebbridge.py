@@ -4,7 +4,7 @@ import socket
 from ConnectionManager import connectionManager
 from urllib import urlencode
 import BigWorld
-import constants
+from constants import HAS_DEV_RESOURCES
 from Event import Event
 from DataServer import ThreadedDataServer, EncryptingThreadedDataServer
 from gui import GUI_SETTINGS
@@ -34,7 +34,7 @@ class WebBridge(object):
         connectionManager.onConnected -= self.__finiDataServer
         connectionManager.onRejected -= self.__finiDataServer
         connectionManager.onDisconnected -= self.__finiDataServer
-        if constants.IS_DEVELOPMENT:
+        if HAS_DEV_RESOURCES:
             from gui.development.mock.social_network_login import fini as finalizeWGNIServerMock
             finalizeWGNIServerMock()
 
@@ -80,7 +80,7 @@ class WebBridge(object):
             baseUrl = GUI_SETTINGS.registrationURL.replace('$LANGUAGE_CODE', getLanguageCode())
         else:
             baseUrl = GUI_SETTINGS.socialNetworkLogin['initialLoginURL']
-        if constants.IS_DEVELOPMENT:
+        if HAS_DEV_RESOURCES:
             from gui.development.mock.social_network_login import getServer as getWGNIServerMock
             if getWGNIServerMock() is not None:
                 baseUrl = 'http://127.0.0.1:{0}/{1}'.format(getWGNIServerMock().server_port, '?dummy=1' if isRegistration else '')

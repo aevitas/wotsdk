@@ -2,10 +2,14 @@
 from gui.shared.gui_items.Vehicle import VEHICLE_BATTLE_TYPES_ORDER_INDICES
 from helpers import i18n
 from shared_utils import BitmaskHelper
+__all__ = ('CONTOUR_ICON_PATH', 'UNKNOWN_CONTOUR_ICON_PATH', 'UNKNOWN_VEHICLE_NAME', 'UNKNOWN_VEHICLE_CLASS_NAME', 'UNKNOWN_PLAYER_NAME', 'UNKNOWN_VEHICLE_LEVEL', 'UNKNOWN_VEHICLE_CLASS_ORDER', 'SQUAD_RANGE_TO_SHOW', 'VEHICLE_STATUS', 'PLAYER_STATUS', 'INVALIDATE_OP', 'makeContourIconPath', 'getOrderByVehicleClass')
 CONTOUR_ICON_SF_PATH = '../maps/icons/vehicle/contour/{0}.png'
 CONTOUR_ICON_RES_PATH = 'gui/maps/icons/vehicle/contour/{0}.png'
-UNKNOWN_CONTOUR_ICON_SF_PATH = CONTOUR_ICON_SF_PATH.format('unknown')
-UNKNOWN_CONTOUR_ICON_RES_PATH = CONTOUR_ICON_RES_PATH.format('unknown')
+SMALL_MAP_IMAGE_SF_PATH = '../maps/icons/map/battleLoading/%s.png'
+SCREEN_MAP_IMAGE_RES_PATH = 'gui/maps/icons/map/screen/%s.dds'
+UNKNOWN_CONTOUR_ICON_NAME = 'unknown'
+UNKNOWN_CONTOUR_ICON_SF_PATH = CONTOUR_ICON_SF_PATH.format(UNKNOWN_CONTOUR_ICON_NAME)
+UNKNOWN_CONTOUR_ICON_RES_PATH = CONTOUR_ICON_RES_PATH.format(UNKNOWN_CONTOUR_ICON_NAME)
 UNKNOWN_VEHICLE_NAME = i18n.makeString('#ingame_gui:players_panel/unknown_vehicle')
 UNKNOWN_VEHICLE_CLASS_NAME = 'unknown'
 UNKNOWN_PLAYER_NAME = i18n.makeString('#ingame_gui:players_panel/unknown_name')
@@ -19,9 +23,12 @@ class ARENA_LISTENER_SCOPE(object):
     TEAMS_BASES = 4
     PERIOD = 8
     RESPAWN = 16
+    INVITATIONS = 32
+    POSITIONS = 64
 
 
 class VEHICLE_STATUS(BitmaskHelper):
+    DEFAULT = 0
     IS_ALIVE = 1
     IS_READY = 2
     NOT_AVAILABLE = 4
@@ -31,7 +38,28 @@ class PLAYER_STATUS(BitmaskHelper):
     DEFAULT = 0
     IS_TEAM_KILLER = 1
     IS_SQUAD_MAN = 2
-    IS_MUTED = 4
+    IS_SQUAD_PERSONAL = 4
+    IS_PLAYER_SELECTED = 8
+    IS_VOIP_DISABLED = 16
+    IS_ACTION_DISABLED = 32
+
+
+class INVITATION_DELIVERY_STATUS(BitmaskHelper):
+    NONE = 0
+    FORBIDDEN = 1
+    RECEIVED_FROM = 2
+    SENT_TO = 4
+    INACTIVE = 8
+
+
+class PERSONAL_STATUS(BitmaskHelper):
+    DEFAULT = 0
+    CAN_SEND_INVITE_TO_ALLY = 1
+    CAN_SEND_INVITE_TO_ENEMY = 2
+    SQUAD_RESTRICTIONS = 4
+    IS_VEHICLE_LEVEL_SHOWN = 8
+    IS_VEHICLE_COUNTER_SHOWN = 16
+    IS_COLOR_BLIND = 32
 
 
 class INVALIDATE_OP(BitmaskHelper):
@@ -42,14 +70,19 @@ class INVALIDATE_OP(BitmaskHelper):
     VEHICLE_STATS = 8
     PLAYER_STATUS = 16
     PREBATTLE_CHANGED = 32
+    INVITATION_DELIVERY_STATUS = 64
+
+
+def makeVehicleIconName(vName):
+    return vName.replace(':', '-')
 
 
 def makeContourIconSFPath(vName):
-    return CONTOUR_ICON_SF_PATH.format(vName.replace(':', '-'))
+    return CONTOUR_ICON_SF_PATH.format(makeVehicleIconName(vName))
 
 
 def makeContourIconResPath(vName):
-    return CONTOUR_ICON_RES_PATH.format(vName.replace(':', '-'))
+    return CONTOUR_ICON_RES_PATH.format(makeVehicleIconName(vName))
 
 
 def getOrderByVehicleClass(className = None):
@@ -58,6 +91,3 @@ def getOrderByVehicleClass(className = None):
     else:
         result = UNKNOWN_VEHICLE_CLASS_ORDER
     return result
-
-
-__all__ = ('CONTOUR_ICON_PATH', 'UNKNOWN_CONTOUR_ICON_PATH', 'UNKNOWN_VEHICLE_NAME', 'UNKNOWN_VEHICLE_CLASS_NAME', 'UNKNOWN_PLAYER_NAME', 'UNKNOWN_VEHICLE_LEVEL', 'UNKNOWN_VEHICLE_CLASS_ORDER', 'SQUAD_RANGE_TO_SHOW', 'VEHICLE_STATUS', 'PLAYER_STATUS', 'INVALIDATE_OP', 'makeContourIconPath', 'getOrderByVehicleClass')

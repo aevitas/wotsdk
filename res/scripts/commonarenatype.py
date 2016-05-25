@@ -8,6 +8,7 @@ from debug_utils import LOG_CURRENT_EXCEPTION
 from GasAttackSettings import GasAttackSettings
 if IS_CLIENT:
     from helpers import i18n
+    import WWISE
 elif IS_WEB:
     from web_stubs import *
 g_cache = {}
@@ -117,7 +118,6 @@ def __readGeometryCfg(geometryID, geometryName, section, defaultXml):
             cfg['waterFreqZ'] = section.readFloat('water/freqZ', 1.0)
             cfg['defaultGroundEffect'] = __readDefaultGroundEffect(section, defaultXml)
         cfg.update(__readCommonCfg(section, defaultXml, True, {}))
-        cfg.update(__readGameplayPoints(defaultXml))
     except Exception as e:
         LOG_CURRENT_EXCEPTION()
         raise Exception("Wrong arena type XML '%s' : %s" % (geometryName, str(e)))
@@ -154,6 +154,11 @@ def __readGameplayCfg(gameplayName, section, defaultXml, geometryCfg):
         cfg = {}
         cfg['gameplayID'] = getGameplayIDForName(gameplayName)
         cfg['gameplayName'] = gameplayName
+        for setting in ('battleEndWarningAppearTime', 'battleEndWarningDuration', 'battleEndingSoonTime'):
+            cfg[setting] = 0
+            if not gameplayName.startswith('fallout') and __hasKey(setting, section, defaultXml):
+                cfg[setting] = __readInt(setting, section, defaultXml)
+
         if gameplayName == 'nations':
             raise Exception('national battles are disabled')
         cfg.update(__readCommonCfg(section, defaultXml, False, geometryCfg))
@@ -192,7 +197,7 @@ def __readCommonCfg(section, defaultXml, raiseIfMissing, geometryCfg):
     if not maxTeamsInArena is not None:
         raise AssertionError
         cfg.update(__readWinPoints(section))
-        cfg.update(__readGameplayPoints(section))
+        cfg.update(__readGameplayPoints(section, geometryCfg))
         cfg['teamBasePositions'] = __readTeamBasePositions(section, maxTeamsInArena)
         cfg['teamSpawnPoints'] = __readTeamSpawnPoints(section, maxTeamsInArena)
         cfg['squadTeamNumbers'], cfg['soloTeamNumbers'] = __readTeamNumbers(section, maxTeamsInArena)
@@ -502,11 +507,12 @@ def __readTeamSpawnPoints(section, maxTeamsInArena, nodeNameTemplate = 'team%d',
         return allTeamSpawnPoints
 
 
-def __readGameplayPoints(section):
+def __readGameplayPoints(section, geometryCfg):
     sps = []
     aps = []
-    rps = []
+    rps = {}
     rsps = []
+    repairPointIDByGUID = geometryCfg.setdefault('repairPointIDByGUID', {})
     for name, value in section.items():
         if name == 'flagSpawnPoint':
             sps.append({'position': value.readVector3('position'),
@@ -517,13 +523,17 @@ def __readGameplayPoints(section):
              'team': value.readInt('team'),
              'guid': value.readString('guid')})
         elif name == 'repairPoint':
-            rps.append({'position': value.readVector3('position'),
+            guid = value.readString('guid')
+            point = {'position': value.readVector3('position'),
              'team': value.readInt('team'),
              'radius': value.readFloat('radius'),
              'cooldown': value.readFloat('cooldown'),
              'repairTime': value.readFloat('repairTime'),
              'repairFlags': value.readInt('repairFlags'),
-             'guid': value.readString('guid')})
+             'guid': guid}
+            baseID = repairPointIDByGUID.get(guid, len(repairPointIDByGUID))
+            rps[baseID] = point
+            repairPointIDByGUID[guid] = baseID
         elif name == 'resourcePoint':
             rsps.append({'position': value.readVector3('position'),
              'radius': value.readFloat('radius'),

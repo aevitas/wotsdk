@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/battle_control/consumables/__init__.py
-from gui.battle_control.consumables.OptionalDevicesController import OptionalDevicesController
+from gui.battle_control.consumables import opt_devices_ctrl
 from gui.battle_control.consumables import ammo_ctrl
 from gui.battle_control.consumables import equipment_ctrl
 
@@ -21,7 +21,7 @@ def createEquipmentCtrl(isReplayPlaying):
 
 
 def createOptDevicesCtrl():
-    return OptionalDevicesController()
+    return opt_devices_ctrl.OptionalDevicesController()
 
 
 __all__ = ('createAmmoCtrl', 'createEquipmentCtrl', 'createOptDevicesCtrl')

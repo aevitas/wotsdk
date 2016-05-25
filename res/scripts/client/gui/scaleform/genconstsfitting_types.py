@@ -2,6 +2,12 @@
 
 
 class FITTING_TYPES(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     OPTIONAL_DEVICE = 'optionalDevice'
     EQUIPMENT = 'equipment'
     SHELL = 'shell'
@@ -24,3 +30,7 @@ class FITTING_TYPES(object):
      VEHICLE_CHASSIS,
      VEHICLE_ENGINE,
      VEHICLE_RADIO]
+    TARGET_CURRENT = 1
+    TARGET_IN_INVENTORY = 2
+    TARGET_OTHER = 3
+    ITEM_TARGETS = [TARGET_CURRENT, TARGET_IN_INVENTORY, TARGET_OTHER]

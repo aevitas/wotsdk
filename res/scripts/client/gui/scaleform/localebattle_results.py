@@ -2,6 +2,12 @@
 
 
 class BATTLE_RESULTS(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     TEAM_SQUADHEADER = '#battle_results:team/squadHeader'
     TEAM_PLAYERHEADER = '#battle_results:team/playerHeader'
     TEAM_TANKHEADER = '#battle_results:team/tankHeader'
@@ -97,6 +103,7 @@ class BATTLE_RESULTS(object):
     COMMON_TOOLTIP_CAPTURE_TOTALPOINTS = '#battle_results:common/tooltip/capture/totalPoints'
     COMMON_TOOLTIP_KILL_HEADER = '#battle_results:common/tooltip/kill/header'
     COMMON_TOOLTIP_KILL_1_DESCRIPTION = '#battle_results:common/tooltip/kill-1/description'
+    COMMON_TOOLTIP_KILL_1_DESCRIPTION_GASATTACK = '#battle_results:common/tooltip/kill-1/description/gasAttack'
     COMMON_TOOLTIP_KILL0_DESCRIPTION = '#battle_results:common/tooltip/kill0/description'
     COMMON_TOOLTIP_KILL1_DESCRIPTION = '#battle_results:common/tooltip/kill1/description'
     COMMON_TOOLTIP_KILL2_DESCRIPTION = '#battle_results:common/tooltip/kill2/description'
@@ -135,6 +142,7 @@ class BATTLE_RESULTS(object):
     COMMON_DETAILS_PREMTITLE = '#battle_results:common/details/premTitle'
     COMMON_DETAILS_CREDITSTITLE = '#battle_results:common/details/creditsTitle'
     COMMON_DETAILS_XPTITLE = '#battle_results:common/details/xpTitle'
+    COMMON_DETAILS_XPTITLESQUAD = '#battle_results:common/details/xpTitleSquad'
     COMMON_DETAILS_XPTITLEFIRSTVICTORY = '#battle_results:common/details/xpTitleFirstVictory'
     COMMON_DETAILS_RESOURCE = '#battle_results:common/details/resource'
     COMMON_DETAILS_DETAILEDREPORTBTN = '#battle_results:common/details/detailedReportBtn'
@@ -244,6 +252,8 @@ class BATTLE_RESULTS(object):
     DETAILS_CALCULATIONS_AUTOEQUIP = '#battle_results:details/calculations/autoEquip'
     DETAILS_CALCULATIONS_AOGASFACTOR = '#battle_results:details/calculations/aogasFactor'
     DETAILS_CALCULATIONS_PREMIUMVEHICLEXP = '#battle_results:details/calculations/premiumVehicleXP'
+    DETAILS_CALCULATIONS_SQUADXP = '#battle_results:details/calculations/squadXP'
+    DETAILS_CALCULATIONS_SQUADXPPENALTY = '#battle_results:details/calculations/squadXPPenalty'
     DETAILS_CALCULATIONS_TOTAL = '#battle_results:details/calculations/total'
     DETAILS_CALCULATIONS_FIRSTWIN = '#battle_results:details/calculations/firstWin'
     DETAILS_CALCULATIONS_IGRBONUS = '#battle_results:details/calculations/igrBonus'
@@ -252,6 +262,7 @@ class BATTLE_RESULTS(object):
     DETAILS_CALCULATIONS_MULTIPLIERINFO_HEADER = '#battle_results:details/calculations/multiplierInfo/header'
     DETAILS_CALCULATIONS_MULTIPLIERINFO_BODY = '#battle_results:details/calculations/multiplierInfo/body'
     DETAILS_CALCULATIONS_MULTIPLIERINFO_VEHICLESEPARATOR = '#battle_results:details/calculations/multiplierInfo/vehicleSeparator'
+    DETAILS_CALCULATIONS_SQUAD_RESTRICTIONS_TITLE = '#battle_results:details/calculations/squad/restrictions/title'
     TANKSELECTOR_NEXT = '#battle_results:tankSelector/next'
     VICTORYSCORE = '#battle_results:victoryScore'
     EXTERMINATIONVICTORY_ALLIES = '#battle_results:exterminationVictory/allies'
@@ -303,6 +314,7 @@ class BATTLE_RESULTS(object):
      COMMON_TOOLTIP_CAPTURE_TOTALPOINTS,
      COMMON_TOOLTIP_KILL_HEADER,
      COMMON_TOOLTIP_KILL_1_DESCRIPTION,
+     COMMON_TOOLTIP_KILL_1_DESCRIPTION_GASATTACK,
      COMMON_TOOLTIP_KILL0_DESCRIPTION,
      COMMON_TOOLTIP_KILL1_DESCRIPTION,
      COMMON_TOOLTIP_KILL2_DESCRIPTION,
@@ -330,7 +342,11 @@ class BATTLE_RESULTS(object):
 
     @staticmethod
     def common_tooltip(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#battle_results:common/tooltip/%s' % key
         if outcome not in BATTLE_RESULTS.COMMON_TOOLTIP_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome

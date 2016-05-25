@@ -30,3 +30,38 @@ class UseItemsTrigger(TriggerWithValidateVar):
         self.isSubscribed = False
         self.isRunning = False
         return
+
+
+class InstallItemsTrigger(TriggerWithValidateVar):
+
+    def run(self):
+        self.isRunning = True
+        if not self.isSubscribed:
+            self.isSubscribed = True
+            eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+            if eqCtrl is not None:
+                eqCtrl.onEquipmentUpdated += self.__onEquipmentAdded
+        self.toggle(isOn=self.isOn())
+        return
+
+    def isOn(self):
+        eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+        if eqCtrl is not None:
+            conditionVar = self.getVar()
+            itemsList = conditionVar.get('items', [])
+            for eqCD in itemsList:
+                if eqCtrl.hasEquipment(eqCD):
+                    return True
+
+        return False
+
+    def __onEquipmentAdded(self, *args):
+        self.toggle(isOn=self.isOn())
+
+    def clear(self):
+        eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+        if eqCtrl is not None:
+            eqCtrl.onEquipmentUpdated -= self.__onEquipmentAdded
+        self.isSubscribed = False
+        self.isRunning = False
+        return

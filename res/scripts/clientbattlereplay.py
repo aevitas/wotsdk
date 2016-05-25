@@ -705,13 +705,13 @@ class BattleReplay():
         if not self.scriptModalWindowsEnabled:
             self.__onClientVersionConfirmDlgClosed(True)
             return
-        g_appLoader.onGUISpaceChanged += self.__onGUISpaceChanged
+        g_appLoader.onGUISpaceEntered += self.__onGUISpaceEntered
         g_appLoader.showLogin()
 
-    def __onGUISpaceChanged(self, spaceID):
+    def __onGUISpaceEntered(self, spaceID):
         if spaceID != GUI_GLOBAL_SPACE_ID.LOGIN:
             return
-        g_appLoader.onGUISpaceChanged -= self.__onGUISpaceChanged
+        g_appLoader.onGUISpaceEntered -= self.__onGUISpaceEntered
         from gui import DialogsInterface
         DialogsInterface.showI18nConfirmDialog('replayNotification', self.__onClientVersionConfirmDlgClosed)
 
@@ -921,7 +921,7 @@ class BattleReplay():
             arcadeMode.showGunMarker(True)
         return
 
-    def __setStopDelay(self):
+    def __setStopDelay(self, *args):
         BigWorld.callback(0.0, self.stop)
 
     def __onVehicleEnterWorld(self, vehicle):
@@ -963,7 +963,7 @@ def _JSON_Encode(obj):
                 newDict[key] = _JSON_Encode(value)
 
         return newDict
-    if isinstance(obj, list) or isinstance(obj, tuple):
+    if isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set):
         newList = []
         for value in obj:
             newList.append(_JSON_Encode(value))

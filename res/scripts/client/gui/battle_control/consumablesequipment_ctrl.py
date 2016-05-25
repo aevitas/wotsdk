@@ -11,7 +11,24 @@ from gui.shared.utils.decorators import ReprInjector
 from helpers import i18n
 from items import vehicles
 from shared_utils import findFirst, forEach
+import SoundGroups
 _ActivationError = namedtuple('_ActivationError', 'key ctx')
+
+class EquipmentSound:
+    _soundMap = {251: 'battle_equipment_251',
+     507: 'battle_equipment_507',
+     1019: 'battle_equipment_1019',
+     763: 'battle_equipment_763',
+     1531: 'battle_equipment_1531',
+     1275: 'battle_equipment_1275'}
+
+    @staticmethod
+    def playSound(ID):
+        soundName = EquipmentSound._soundMap.get(ID, None)
+        if soundName is not None:
+            SoundGroups.g_instance.playSound2D(soundName)
+        return
+
 
 @ReprInjector.simple(('_tag', 'tag'), ('_quantity', 'quantity'), ('_stage', 'stage'), ('_prevStage', 'prevStage'), ('_timeRemaining', 'timeRemaining'))
 
@@ -69,6 +86,8 @@ class _EquipmentItem(object):
         return
 
     def update(self, quantity, stage, timeRemaining):
+        if quantity == 0 and self._quantity != quantity:
+            EquipmentSound.playSound(self._descriptor.compactDescr)
         self._quantity = quantity
         self._prevStage = self._stage
         self._stage = stage
@@ -295,7 +314,7 @@ def _getSupportedTag(descriptor):
 
 
 class EquipmentsController(object):
-    __slots__ = ('__eManager', '_equipments', '__readySndName', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown', 'onEquipmentCooldownInPercent')
+    __slots__ = ('__eManager', '_order', '_equipments', '__readySndName', 'onEquipmentAdded', 'onEquipmentUpdated', 'onEquipmentMarkerShown', 'onEquipmentCooldownInPercent')
 
     def __init__(self):
         super(EquipmentsController, self).__init__()
@@ -304,6 +323,7 @@ class EquipmentsController(object):
         self.onEquipmentUpdated = Event.Event(self.__eManager)
         self.onEquipmentMarkerShown = Event.Event(self.__eManager)
         self.onEquipmentCooldownInPercent = Event.Event(self.__eManager)
+        self._order = []
         self._equipments = {}
         self.__readySndName = 'combat_reserve'
 
@@ -324,6 +344,7 @@ class EquipmentsController(object):
     def clear(self, leave = True):
         if leave:
             self.__eManager.clear()
+        self._order = []
         while len(self._equipments):
             _, item = self._equipments.popitem()
             item.clear()
@@ -336,6 +357,13 @@ class EquipmentsController(object):
         else:
             return False
 
+    def hasEquipment(self, intCD):
+        """Does player go to a arena with desired equipment.
+        :param intCD: integer containing compact descriptor of equipment.
+        :return: bool.
+        """
+        return intCD in self._equipments
+
     def getEquipment(self, intCD):
         try:
             item = self._equipments[intCD]
@@ -344,6 +372,9 @@ class EquipmentsController(object):
             item = None
 
         return item
+
+    def getOrderedEquipmentsLayout(self):
+        return map(lambda intCD: (intCD, self._equipments[intCD]), self._order)
 
     def setEquipment(self, intCD, quantity, stage, timeRemaining):
         if not intCD:
@@ -360,6 +391,7 @@ class EquipmentsController(object):
                 descriptor = vehicles.getDictDescr(intCD)
                 item = self.createItem(descriptor, quantity, stage, timeRemaining)
                 self._equipments[intCD] = item
+                self._order.append(intCD)
                 self.onEquipmentAdded(intCD, item)
             return
 

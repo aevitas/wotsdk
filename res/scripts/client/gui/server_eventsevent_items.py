@@ -819,7 +819,10 @@ class FalloutConfig(namedtuple('FalloutConfig', ['allowedVehicles',
         return sorted(result)
 
     def hasRequiredVehicles(self):
-        for v in self.getAllowedVehicles():
+        allowedVehicles = self.getAllowedVehicles()
+        if len(allowedVehicles) < self.minVehiclesPerPlayer:
+            return False
+        for v in allowedVehicles:
             if v.level == self.vehicleLevelRequired:
                 return True
 

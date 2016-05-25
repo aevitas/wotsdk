@@ -160,3 +160,14 @@ def isDefaultDict(sourceDict, defaultDict):
             return False
 
     return True
+
+
+def nextTick(func):
+    """
+    Moves function calling to the next frame
+    """
+
+    def wrapper(*args, **kwargs):
+        BigWorld.callback(0.01, lambda : func(*args, **kwargs))
+
+    return wrapper

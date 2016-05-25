@@ -12,7 +12,8 @@ from items import vehicles, ITEM_TYPE_NAMES
 from helpers import i18n
 from shared_utils import BoundMethodWeakref as bwr, CONST_CONTAINER
 from gui import nationCompareByName, makeHtmlString
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.server_events import formatters
 from gui.Scaleform.locale.QUESTS import QUESTS

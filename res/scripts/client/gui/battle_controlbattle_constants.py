@@ -1,6 +1,18 @@
 # Embedded file name: scripts/client/gui/battle_control/battle_constants.py
 from enumerations import Enumeration, AttributeEnumItem
 
+class BATTLE_CTRL(object):
+    PERIOD, TEAM_BASES, DEBUG, HIT_DIRECTION = range(1, 5)
+
+
+class VIEW_COMPONENT_RULE(object):
+    NONE = 0
+    PROXY = 1
+
+
+PLAYERS_PANEL_LENGTH = 24
+HIT_INDICATOR_MAX_ON_SCREEN = 5
+
 class SHELL_SET_RESULT(object):
     UNDEFINED = 0
     ADDED = 1
@@ -128,3 +140,10 @@ class WinStatus(object):
     @classmethod
     def empty(cls):
         return cls(status=None)
+
+
+class VEHICLE_LOCATION(object):
+    UNDEFINED = 0
+    AOI = 1
+    FAR = 2
+    AOI_TO_FAR = 3

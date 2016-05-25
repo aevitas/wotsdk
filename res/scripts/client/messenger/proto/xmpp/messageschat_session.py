@@ -175,6 +175,8 @@ class ChatSessionsProvider(ChatProvider):
             raise AssertionError("JID should be include account's database ID")
             created, exists = self._searchChannel(jid, name)
             exists is None and self.__addSession(created, dbID, byAction=True)
+        else:
+            g_messengerEvents.channels.onPlayerEnterChannelByAction(exists)
         return
 
     def stopSession(self, jid):

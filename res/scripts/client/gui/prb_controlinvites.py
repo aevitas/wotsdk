@@ -8,6 +8,8 @@ from constants import PREBATTLE_INVITE_STATUS, PREBATTLE_INVITE_STATUS_NAMES, PR
 from debug_utils import LOG_ERROR, LOG_DEBUG, LOG_WARNING
 from gui import SystemMessages
 from gui.LobbyContext import g_lobbyContext
+from gui.app_loader import g_appLoader
+from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID
 from gui.prb_control.settings import PRB_INVITE_STATE
 from gui.battle_control import g_sessionProvider as g_battleCtrl
 from gui.shared import g_itemsCache
@@ -167,7 +169,7 @@ class PrbInviteWrapper(_PrbInviteData):
         if other.extraData:
             data['extraData'] = other.extraData
         data['state'] = other.state
-        if other.count > 0:
+        if other.count:
             data['count'] = other.count
         if len(other.comment) or other.isActive():
             data['comment'] = other.comment
@@ -503,7 +505,7 @@ class InvitesManager(UsersInfoHelper):
                 if invite:
                     self._addInvite(invite, userGetter)
 
-        if not g_battleCtrl.isBattleUILoaded():
+        if g_appLoader.getSpaceID() != GUI_GLOBAL_SPACE_ID.BATTLE:
             self.syncUsersInfo()
 
     def _rebuildInvitesLists(self):
@@ -531,8 +533,8 @@ class InvitesManager(UsersInfoHelper):
         def _getUserName(userDBID):
             name, abbrev = ('', None)
             if userDBID:
-                if g_battleCtrl.isBattleUILoaded():
-                    name, abbrev = g_battleCtrl.getCtx().getFullPlayerNameWithParts(accID=userDBID, showVehShortName=False)[1:3]
+                if g_appLoader.getSpaceID() == GUI_GLOBAL_SPACE_ID.BATTLE:
+                    name, abbrev = g_battleCtrl.getCtx().getPlayerFullNameParts(accID=userDBID, showVehShortName=False)[1:3]
                 if not name:
                     userName = self.getUserName(userDBID)
                     userClanAbbrev = self.getUserClanAbbrev(userDBID)

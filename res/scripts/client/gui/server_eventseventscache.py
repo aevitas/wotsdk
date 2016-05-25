@@ -16,7 +16,7 @@ from gui.shared.utils.requesters.QuestsProgressRequester import QuestsProgressRe
 from helpers import isPlayerAccount
 from items import getTypeOfCompactDescr
 from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
-from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION, LOG_DEBUG
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG
 from gui.LobbyContext import g_lobbyContext
 from gui.shared import events
 from gui.server_events import caches as quests_caches
@@ -340,6 +340,24 @@ class _EventsCache(object):
     def getEmblemsAction(self, group):
         return tuple(self.__actionsCache[ACTION_SECTION_TYPE.CUSTOMIZATION][ACTION_MODIFIER_TYPE.DISCOUNT].get(group, tuple()))
 
+    def isBalancedSquadEnabled(self):
+        return bool(self.__getUnitRestrictions().get('enabled', False))
+
+    def getBalancedSquadBounds(self):
+        return (self.__getUnitRestrictions().get('lowerBound', 0), self.__getUnitRestrictions().get('upperBound', 0))
+
+    def isSquadXpFactorsEnabled(self):
+        return bool(self.__getUnitXpFactors().get('enabled', False))
+
+    def getSquadBonusLevelDistance(self):
+        return set(self.__getUnitXpFactors().get('levelDistanceWithBonuses', ()))
+
+    def getSquadPenaltyLevelDistance(self):
+        return set(self.__getUnitXpFactors().get('levelDistanceWithPenalties', ()))
+
+    def getSquadZeroBonuses(self):
+        return set(self.__getUnitXpFactors().get('zeroBonusesFor', ()))
+
     def getQuestsDossierBonuses(self):
         return self.__questsDossierBonuses
 
@@ -585,17 +603,29 @@ class _EventsCache(object):
     def __getActionsData(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.ACTION)
 
+    def __getIngameEventsData(self):
+        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS)
+
     def __getEventBattles(self):
-        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('eventBattles', {})
+        return self.__getIngameEventsData().get('eventBattles', {})
 
     def __getCompanyBattlesData(self):
-        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('eventCompanies', {})
+        return self.__getIngameEventsData().get('eventCompanies', {})
+
+    def __getUnitRestrictions(self):
+        return self.__getUnitData().get('restrictions', {})
+
+    def __getUnitXpFactors(self):
+        return self.__getUnitData().get('xpFactors', {})
 
     def __getFallout(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.FALLOUT)
 
     def __getGasAttack(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('gasAttack', {})
+
+    def __getUnitData(self):
+        return self.__getEventsData(EVENT_CLIENT_DATA.SQUAD_BONUSES)
 
     def __getCommonQuestsIterator(self):
         questsData = self.__getQuestsData()

@@ -78,7 +78,6 @@ class PremiumWindow(PremiumWindowMeta):
             SystemMessages.g_instance.pushI18nMessage(result.userMsg, type=result.sysMsgType)
         if result.success:
             if arenaUniqueID and self._premiumBonusesDiff:
-                LOG_DEBUG('self._premiumBonusesDiff!!!', self._premiumBonusesDiff)
                 SystemMessages.g_instance.pushI18nMessage('#system_messages:premium/post_battle_premium', type=SystemMessages.SM_TYPE.Information, priority=NotificationPriorityLevel.MEDIUM, **self._premiumBonusesDiff)
             becomePremium = g_itemsCache.items.stats.isPremium and not wasPremium
             self.fireEvent(LobbySimpleEvent(LobbySimpleEvent.PREMIUM_BOUGHT, ctx={'arenaUniqueID': arenaUniqueID,

@@ -2,11 +2,12 @@
 from AvatarInputHandler import mathUtils
 import BigWorld
 import Math
-from debug_utils import LOG_ERROR, LOG_DEBUG
+from debug_utils import LOG_ERROR
 import material_kinds
 from Math import Matrix
 from ModelHitTester import SegmentCollisionResult
-from VehicleEffects import DamageFromShotDecoder, TankComponentNames
+from VehicleEffects import DamageFromShotDecoder
+from vehicle_systems.tankStructure import TankPartNames, TankNodeNames
 from helpers.EffectMaterialCalculation import calcSurfaceMaterialNearPoint
 from helpers.EffectsList import EffectsListPlayer, SoundStartParam, SpecialKeyPointNames
 from helpers.bound_effects import ModelBoundEffects
@@ -23,8 +24,8 @@ class DetachedTurret(BigWorld.Entity):
         self.__detachConfirmationTimer = SynchronousDetachment(self)
         self.__detachConfirmationTimer.onInit()
         self.__detachmentEffects = None
-        self.__hitEffects = {TankComponentNames.TURRET: None,
-         TankComponentNames.GUN: None}
+        self.__hitEffects = {TankPartNames.TURRET: None,
+         TankPartNames.GUN: None}
         self.__reactors = []
         self.targetFullBounds = True
         self.targetCaps = [1]
@@ -41,8 +42,9 @@ class DetachedTurret(BigWorld.Entity):
 
     def onEnterWorld(self, prereqs):
         self.model = prereqs[self.__vehDescr.turret['models']['exploded']]
+        self.model.addMotor(BigWorld.Servo(self.matrix))
         self.__gunModel = prereqs[self.__vehDescr.gun['models']['exploded']]
-        node = self.model.node('HP_gunJoint', Math.Matrix())
+        node = self.model.node(TankNodeNames.GUN_JOINT, Math.Matrix())
         node.attach(self.__gunModel)
         self.__detachConfirmationTimer.onEnterWorld()
         self.__vehDescr.keepPrereqs(prereqs)
@@ -52,8 +54,8 @@ class DetachedTurret(BigWorld.Entity):
             self.__reactors.append(self.__detachmentEffects)
         else:
             self.__detachmentEffects = None
-        self.__hitEffects[TankComponentNames.TURRET] = turretHitEffects = _HitEffects(self.model)
-        self.__hitEffects[TankComponentNames.GUN] = gunHitEffects = _HitEffects(self.__gunModel)
+        self.__hitEffects[TankPartNames.TURRET] = turretHitEffects = _HitEffects(self.model)
+        self.__hitEffects[TankPartNames.GUN] = gunHitEffects = _HitEffects(self.__gunModel)
         self.__reactors.append(turretHitEffects)
         self.__reactors.append(gunHitEffects)
         self.__componentsDesc = (self.__vehDescr.turret, self.__vehDescr.gun)

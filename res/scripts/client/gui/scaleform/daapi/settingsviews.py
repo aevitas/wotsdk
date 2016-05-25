@@ -58,6 +58,7 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     TANKMAN_SKILLS_DROP_WINDOW = 'tankmanSkillsDropWindow'
     BROWSER_WINDOW = 'browserWindow'
     DEMONSTRATOR_WINDOW = 'demonstratorWindow'
+    VEHICLE_PREVIEW = 'vehiclePreview'
     SIMPLE_DIALOG = 'simpleDialog'
     CONFIRM_MODULE_DIALOG = 'confirmModuleDialog'
     ICON_DIALOG = 'iconDialog'
@@ -71,7 +72,6 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     CREW_OPERATIONS_POPOVER = 'crewOperationsPopOver'
     BATTLE_TYPE_SELECT_POPOVER = 'battleTypeSelectPopover'
     ACCOUNT_POPOVER = 'accountPopover'
-    CAPTCHA_DIALOG = 'captchaDialog'
     DISMISS_TANKMAN_DIALOG = 'dismissTankmanDialog'
     AWARD_WINDOW = 'awardWindow'
     REFERRAL_MANAGEMENT_WINDOW = 'referralManagementWindow'
@@ -106,3 +106,16 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     SANDBOX_QUEUE_DIALOG = 'sandboxQueueDialog'
     CUSTOMIZATION_PURCHASE_WINDOW = 'CustomizationBuyWindow'
     CUSTOMIZATION_FILTER_POPOVER = 'CustomizationFilterPopover'
+    TANK_CAROUSEL_FILTER_POPOVER = 'TankCarouselFilterPopover'
+    DEFAULT_BATTLE_PAGE = 'defaultBattlePage'
+    TUTORIAL_BATTLE_PAGE = 'tutorialBattlePage'
+    FALLOUT_CLASSIC_PAGE = 'falloutClassicPage'
+    FALLOUT_MULTITEAM_PAGE = 'falloutMultiteamPage'
+    INGAME_MENU = 'ingameMenu'
+    INGAME_HELP = 'ingameHelp'
+    INGAME_DESERTER = 'ingameDeserter'
+    LOADINGS = (BATTLE_LOADING, FALLOUT_MULTI_TEAM_BATTLE_LOADING, TUTORIAL_LOADING)
+    BATTLE_PAGES = (DEFAULT_BATTLE_PAGE,
+     TUTORIAL_BATTLE_PAGE,
+     FALLOUT_CLASSIC_PAGE,
+     FALLOUT_MULTITEAM_PAGE)

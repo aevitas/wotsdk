@@ -82,3 +82,9 @@ class Preferences(dict):
                 return 0
             else:
                 return ''
+
+    def __repr__(self):
+        noNeedToKnow = ('login', 'password_length')
+        magic = lambda k, v: (k, v if k not in noNeedToKnow else '*' * len(str(v)))
+        filtered = dict((magic(k, v) for k, v in self.iteritems()))
+        return '<{} {}>'.format(type(self).__name__, dict.__repr__(filtered))

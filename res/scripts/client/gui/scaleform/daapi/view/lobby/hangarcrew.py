@@ -118,7 +118,7 @@ class Crew(CrewMeta):
         return
 
     def onShowRecruitWindowClick(self, rendererData, menuEnabled):
-        self.fireEvent(LoadViewEvent(VIEW_ALIAS.RECRUIT_WINDOW, ctx={'data': rendererData,
+        self.fireEvent(LoadViewEvent(VIEW_ALIAS.RECRUIT_WINDOW, ctx={'data': rendererData.clone(),
          'menuEnabled': menuEnabled,
          'currentVehicleId': g_currentVehicle.invID}))
 

@@ -4,7 +4,7 @@ from collections import namedtuple
 from account_helpers.settings_core import settings_constants
 from account_helpers.settings_core.SettingsCache import g_settingsCache
 from account_helpers.settings_core.migrations import migrateToVersion
-from account_helpers.settings_core.settings_constants import TUTORIAL
+from account_helpers.settings_core.settings_constants import TUTORIAL, VERSION
 from adisp import process, async
 from debug_utils import LOG_ERROR, LOG_DEBUG
 from shared_utils import CONST_CONTAINER
@@ -19,9 +19,14 @@ class SETTINGS_SECTIONS(CONST_CONTAINER):
     AIM_1 = 'AIM_1'
     AIM_2 = 'AIM_2'
     AIM_3 = 'AIM_3'
+    AIM_4 = 'AIM_4'
     MARKERS = 'MARKERS'
     CAROUSEL_FILTER = 'CAROUSEL_FILTER'
     FALLOUT_CAROUSEL_FILTER = 'FALLOUT_CAROUSEL_FILTER'
+    CAROUSEL_FILTER_1 = 'CAROUSEL_FILTER_1'
+    CAROUSEL_FILTER_2 = 'CAROUSEL_FILTER_2'
+    FALLOUT_CAROUSEL_FILTER_1 = 'FALLOUT_CAROUSEL_FILTER_1'
+    FALLOUT_CAROUSEL_FILTER_2 = 'FALLOUT_CAROUSEL_FILTER_2'
     GUI_START_BEHAVIOR = 'GUI_START_BEHAVIOR'
     EULA_VERSION = 'EULA_VERSION'
     MARKS_ON_GUN = 'MARKS_ON_GUN'
@@ -32,7 +37,6 @@ class SETTINGS_SECTIONS(CONST_CONTAINER):
 
 
 class ServerSettingsManager(object):
-    __version = 19
     GAME = settings_constants.GAME
     GRAPHICS = settings_constants.GRAPHICS
     SOUND = settings_constants.SOUND
@@ -64,7 +68,10 @@ class ServerSettingsManager(object):
                                        GAME.RECEIVE_CLAN_INVITES_NOTIFICATIONS: 3,
                                        GAME.MINIMAP_VIEW_RANGE: 6,
                                        GAME.MINIMAP_MAX_VIEW_RANGE: 7,
-                                       GAME.MINIMAP_DRAW_RANGE: 8}, offsets={GAME.BATTLE_LOADING_INFO: Offset(4, 48)}),
+                                       GAME.MINIMAP_DRAW_RANGE: 8,
+                                       GAME.INCREASED_ZOOM: 9,
+                                       GAME.SNIPER_MODE_BY_SHIFT: 10,
+                                       GAME.SIMPLIFIED_TTC: 11}, offsets={GAME.BATTLE_LOADING_INFO: Offset(4, 48)}),
      SETTINGS_SECTIONS.GAMEPLAY: Section(masks={}, offsets={GAME.GAMEPLAY_MASK: Offset(0, 65535)}),
      SETTINGS_SECTIONS.GRAPHICS: Section(masks={GRAPHICS.FPS_PERFOMANCER: 0,
                                   GAME.LENS_EFFECT: 1}, offsets={}),
@@ -84,6 +91,7 @@ class ServerSettingsManager(object):
                                'gunTag': Offset(8, 65280),
                                'gunTagType': Offset(16, 16711680),
                                'reloaderTimer': Offset(24, 4278190080L)}),
+     SETTINGS_SECTIONS.AIM_4: Section(masks={}, offsets={'zoomIndicator': Offset(0, 255)}),
      SETTINGS_SECTIONS.MARKERS: Section(masks={'markerBaseIcon': 0,
                                  'markerBaseLevel': 1,
                                  'markerBaseHpIndicator': 2,
@@ -97,16 +105,76 @@ class ServerSettingsManager(object):
                                  'markerAltVehicleName': 20,
                                  'markerAltPlayerName': 21}, offsets={'markerBaseHp': Offset(8, 65280),
                                  'markerAltHp': Offset(24, 4278190080L)}),
-     SETTINGS_SECTIONS.CAROUSEL_FILTER: Section(masks={'ready': 1,
+     SETTINGS_SECTIONS.CAROUSEL_FILTER: Section(masks={'favoriteSelected': 1,
                                          'nationIsNegative': 2,
-                                         'tankTypeIsNegative': 3,
-                                         'gameModeFilter': 4}, offsets={'nation': Offset(8, 65280),
-                                         'tankType': Offset(16, 16711680)}),
-     SETTINGS_SECTIONS.FALLOUT_CAROUSEL_FILTER: Section(masks={'ready': 1,
+                                         'vehicleTypeIsNegative': 3,
+                                         'gameModeSelected': 4}, offsets={'nation': Offset(8, 65280),
+                                         'vehicleType': Offset(16, 16711680)}),
+     SETTINGS_SECTIONS.FALLOUT_CAROUSEL_FILTER: Section(masks={'favoriteSelected': 1,
                                                  'nationIsNegative': 2,
-                                                 'tankTypeIsNegative': 3,
-                                                 'gameModeFilter': 4}, offsets={'nation': Offset(8, 65280),
-                                                 'tankType': Offset(16, 16711680)}),
+                                                 'vehicleTypeIsNegative': 3,
+                                                 'gameModeSelected': 4}, offsets={'nation': Offset(8, 65280),
+                                                 'vehicleType': Offset(16, 16711680)}),
+     SETTINGS_SECTIONS.CAROUSEL_FILTER_1: Section(masks={'ussr': 0,
+                                           'germany': 1,
+                                           'usa': 2,
+                                           'china': 3,
+                                           'france': 4,
+                                           'uk': 5,
+                                           'japan': 6,
+                                           'czech': 7,
+                                           'lightTank': 15,
+                                           'mediumTank': 16,
+                                           'heavyTank': 17,
+                                           'SPG': 18,
+                                           'AT-SPG': 19,
+                                           'level_1': 20,
+                                           'level_2': 21,
+                                           'level_3': 22,
+                                           'level_4': 23,
+                                           'level_5': 24,
+                                           'level_6': 25,
+                                           'level_7': 26,
+                                           'level_8': 27,
+                                           'level_9': 28,
+                                           'level_10': 29}, offsets={}),
+     SETTINGS_SECTIONS.CAROUSEL_FILTER_2: Section(masks={'premium': 0,
+                                           'elite': 1,
+                                           'hideRented': 2,
+                                           'igr': 3,
+                                           'gameMode': 4,
+                                           'favorite': 5,
+                                           'bonus': 6}, offsets={}),
+     SETTINGS_SECTIONS.FALLOUT_CAROUSEL_FILTER_1: Section(masks={'ussr': 0,
+                                                   'germany': 1,
+                                                   'usa': 2,
+                                                   'china': 3,
+                                                   'france': 4,
+                                                   'uk': 5,
+                                                   'japan': 6,
+                                                   'czech': 7,
+                                                   'lightTank': 15,
+                                                   'mediumTank': 16,
+                                                   'heavyTank': 17,
+                                                   'SPG': 18,
+                                                   'AT-SPG': 19,
+                                                   'level_1': 20,
+                                                   'level_2': 21,
+                                                   'level_3': 22,
+                                                   'level_4': 23,
+                                                   'level_5': 24,
+                                                   'level_6': 25,
+                                                   'level_7': 26,
+                                                   'level_8': 27,
+                                                   'level_9': 28,
+                                                   'level_10': 29}, offsets={}),
+     SETTINGS_SECTIONS.FALLOUT_CAROUSEL_FILTER_2: Section(masks={'premium': 0,
+                                                   'elite': 1,
+                                                   'hideRented': 2,
+                                                   'igr': 3,
+                                                   'gameMode': 4,
+                                                   'favorite': 5,
+                                                   'bonus': 6}, offsets={}),
      SETTINGS_SECTIONS.GUI_START_BEHAVIOR: Section(masks={'isFreeXPInfoDialogShowed': 0}, offsets={}),
      SETTINGS_SECTIONS.EULA_VERSION: Section(masks={}, offsets={'version': Offset(0, 4294967295L)}),
      SETTINGS_SECTIONS.MARKS_ON_GUN: Section(masks={}, offsets={GAME.SHOW_MARKS_ON_GUN: Offset(0, 4294967295L)}),
@@ -138,7 +206,8 @@ class ServerSettingsManager(object):
      'cassette': 3,
      'gunTag': 3,
      'gunTagType': 3,
-     'reloaderTimer': 3}
+     'reloaderTimer': 3,
+     'zoomIndicator': 4}
 
     def __init__(self, core):
         self._core = weakref.proxy(core)
@@ -255,7 +324,6 @@ class ServerSettingsManager(object):
         if not storingValue:
             return
         g_settingsCache.setSettings(storingValue)
-        self.setVersion()
         self._core.onSettingsChanged(settings)
 
     def getMarkersSetting(self, section, key, default = None):
@@ -287,19 +355,13 @@ class ServerSettingsManager(object):
         if not storingValue:
             return
         g_settingsCache.setSettings(storingValue)
-        self.setVersion()
         self._core.onSettingsChanged(settings)
-
-    def setVersion(self):
-        if g_settingsCache.getVersion() != self.__version:
-            g_settingsCache.setVersion(self.__version)
 
     def getVersion(self):
         return g_settingsCache.getVersion()
 
     def setSettings(self, settings):
         g_settingsCache.setSettings(settings)
-        self.setVersion()
         self._core.onSettingsChanged(settings)
 
     def getSetting(self, key, default = None):
@@ -320,9 +382,25 @@ class ServerSettingsManager(object):
 
         return result
 
+    def getSections(self, sections, defaults):
+        result = {}
+        for section in sections:
+            result.update(self.getSection(section, defaults))
+
+        return result
+
     def setSection(self, section, settings):
         if section in self.SECTIONS:
             self._setSectionSettings(section, settings)
+
+    def setSections(self, sections, settings):
+        settingToServer = {}
+        for section in sections:
+            keys = self.SECTIONS[section].masks.keys() + self.SECTIONS[section].offsets.keys()
+            currentSettings = {key:value for key, value in settings.items() if key in keys}
+            settingToServer[section] = self._buildSectionSettings(section, currentSettings)
+
+        self.setSettings(settingToServer)
 
     def getMarksOnGunSetting(self, key, default = None):
         return self._getSectionSettings(SETTINGS_SECTIONS.MARKS_ON_GUN, key, default)
@@ -354,7 +432,6 @@ class ServerSettingsManager(object):
             return
         else:
             g_settingsCache.setSectionSettings(section, storingValue)
-            self.setVersion()
             settingsDiff = {}
             for k, v in settings.iteritems():
                 sV = storedSettings.get(k)
@@ -446,5 +523,9 @@ class ServerSettingsManager(object):
         fallout = data.get('fallout', {})
         if fallout:
             settings[SETTINGS_SECTIONS.FALLOUT] = self._buildSectionSettings(SETTINGS_SECTIONS.FALLOUT, fallout)
+        version = data.get(VERSION)
+        if version is not None:
+            settings[VERSION] = version
         if settings:
             self.setSettings(settings)
+        return

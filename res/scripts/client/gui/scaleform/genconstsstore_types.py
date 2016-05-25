@@ -2,5 +2,11 @@
 
 
 class STORE_TYPES(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     SHOP = 'shop'
     INVENTORY = 'inventory'

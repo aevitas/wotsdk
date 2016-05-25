@@ -2,6 +2,12 @@
 
 
 class ARTEFACTS(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     TOOLBOX_NAME = '#artefacts:toolbox/name'
     TOOLBOX_DESCR = '#artefacts:toolbox/descr'
     ANTIFRAGMENTATIONLINING_LIGHT_NAME = '#artefacts:antifragmentationLining_light/name'

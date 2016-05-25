@@ -382,7 +382,7 @@ class TankmanChangeRole(ItemProcessor):
 class TankmanDropSkills(ItemProcessor):
 
     def __init__(self, tankman, dropSkillCostIdx):
-        super(TankmanDropSkills, self).__init__(tankman, (plugins.MessageConfirmator('dropSkill'),))
+        super(TankmanDropSkills, self).__init__(tankman, (plugins.MessageConfirmator('dropSkill'), plugins.TankmanDropSkillValidator(tankman, True)))
         self.dropSkillCostIdx = dropSkillCostIdx
 
     def _errorHandler(self, code, errStr = '', ctx = None):

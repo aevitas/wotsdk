@@ -5,6 +5,8 @@ from gui.Scaleform.framework import ViewTypes
 from gui.Scaleform.framework.managers import LoaderManager, ContainerManager
 from gui.Scaleform.framework.managers.CacheManager import CacheManager
 from gui.Scaleform.framework.managers.TutorialManager import TutorialManager
+from gui.Scaleform.framework.managers.containers import DefaultContainer
+from gui.Scaleform.framework.managers.containers import PopUpContainer
 from gui.Scaleform.framework.managers.event_logging import EventLogManager
 from gui.Scaleform.managers.context_menu import ContextMenuManager
 from gui.Scaleform.managers.PopoverManager import PopoverManager
@@ -48,7 +50,7 @@ class LobbyEntry(SFApplication):
         return LoaderManager(self.proxy)
 
     def _createContainerManager(self):
-        return ContainerManager(self._loaderMgr)
+        return ContainerManager(self._loaderMgr, DefaultContainer(ViewTypes.DEFAULT), DefaultContainer(ViewTypes.CURSOR), DefaultContainer(ViewTypes.WAITING), PopUpContainer(ViewTypes.WINDOW), PopUpContainer(ViewTypes.BROWSER), PopUpContainer(ViewTypes.TOP_WINDOW), DefaultContainer(ViewTypes.SERVICE_LAYOUT))
 
     def _createToolTipManager(self):
         return ToolTip()
@@ -93,9 +95,6 @@ class LobbyEntry(SFApplication):
         self.movie.backgroundAlpha = 0.0
         self.movie.setFocussed(SCALEFORM_SWF_PATH_V3)
         BigWorld.wg_setRedefineKeysMode(True)
-
-    def _loadCursor(self):
-        self._containerMgr.load(VIEW_ALIAS.CURSOR)
 
     def _loadWaiting(self):
         self._containerMgr.load(VIEW_ALIAS.WAITING)

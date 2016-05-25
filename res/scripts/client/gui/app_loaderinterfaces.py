@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/gui/app_loader/interfaces.py
-
+from gui import GUI_CTRL_MODE_FLAG as _CTRL_FLAG
 
 class IAppFactory(object):
 
@@ -36,6 +36,9 @@ class IAppFactory(object):
     def destroyBattle(self):
         pass
 
+    def createLogitech(self):
+        pass
+
     def destroy(self):
         pass
 
@@ -45,10 +48,13 @@ class IAppFactory(object):
     def hasBattle(self):
         return False
 
-    def attachCursor(self, appNS):
+    def attachCursor(self, appNS, flags = _CTRL_FLAG.GUI_ENABLED):
         pass
 
     def detachCursor(self, appNS):
+        pass
+
+    def syncCursor(self, appNS, flags = _CTRL_FLAG.GUI_ENABLED):
         pass
 
     def goToIntroVideo(self, appNS):
@@ -60,16 +66,10 @@ class IAppFactory(object):
     def goToLobby(self, appNS):
         pass
 
-    def goToBattleLoading(self, appNS):
+    def goToBattleLoading(self, appNS, arenaGuiType):
         pass
 
-    def goToTutorialLoading(self, appNS):
-        pass
-
-    def goToFalloutMultiTeamLoading(self, appNS):
-        pass
-
-    def goToBattle(self, appNS):
+    def goToBattle(self, appNS, arenaGuiType):
         pass
 
     def showDisconnectDialog(self, appNS, description):

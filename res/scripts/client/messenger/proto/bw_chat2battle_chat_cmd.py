@@ -3,7 +3,6 @@ from debug_utils import LOG_ERROR
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI as I18N_INGAME_GUI
 from helpers import i18n
 from messenger import g_settings
-from messenger.ext import getMinimapCellName
 from messenger.ext.channel_num_gen import getClientID4BattleChannel
 from messenger.m_constants import PROTO_TYPE, BATTLE_CHANNEL
 from messenger.proto.entities import OutChatCommand, ReceivedBattleChatCommand
@@ -127,13 +126,14 @@ class _ReceivedCmdDecorator(ReceivedBattleChatCommand):
 
     def _getTarget(self):
         from gui.battle_control import g_sessionProvider
-        target = g_sessionProvider.getCtx().getFullPlayerName(vID=self.getFirstTargetID())
+        target = g_sessionProvider.getCtx().getPlayerFullName(vID=self.getFirstTargetID())
         if self.isReceiver():
             target = g_settings.battle.targetFormat % {'target': target}
         return target
 
     def _getCellName(self):
-        return getMinimapCellName(self.getFirstTargetID())
+        from gui.battle_control import minimap_utils
+        return minimap_utils.getCellName(self.getFirstTargetID())
 
     def _getCommandVehMarker(self):
         command = _ACTIONS.battleChatCommandFromActionID(self._commandID)

@@ -3,7 +3,7 @@ import weakref
 from CurrentVehicle import g_currentVehicle
 from PlayerEvents import g_playerEvents
 from UnitBase import ROSTER_TYPE
-from constants import PREBATTLE_TYPE
+from constants import PREBATTLE_TYPE, MAX_VEHICLE_LEVEL, MIN_VEHICLE_LEVEL
 from debug_utils import LOG_DEBUG
 from gui import DialogsInterface, SystemMessages
 from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, rally_dialog_meta
@@ -213,6 +213,57 @@ class SquadActionsHandler(AbstractActionsHandler):
 
     def __onKickedFromQueue(self, *args):
         SystemMessages.pushMessage(messages.getKickReasonMessage('timeout'), type=SystemMessages.SM_TYPE.Warning)
+
+
+class BalancedSquadActionsHandler(SquadActionsHandler):
+
+    def execute(self, customData):
+        if self._functional.isCreator():
+            func = self._functional
+            fullData = func.getUnitFullData(unitIdx=self._functional.getUnitIdx())
+            if fullData is None:
+                return {}
+            _, _, unitStats, pInfo, slotsIter = fullData
+            notReadyCount = 0
+            for slot in slotsIter:
+                slotPlayer = slot.player
+                if slotPlayer:
+                    if slotPlayer.isInArena() or slotPlayer.isInPreArena() or pInfo.isInSearch() or pInfo.isInQueue():
+                        DialogsInterface.showI18nInfoDialog('squadHavePlayersInBattle', lambda result: None)
+                        return True
+                    if not slotPlayer.isReady:
+                        notReadyCount += 1
+
+            if not pInfo.isReady:
+                notReadyCount -= 1
+            if unitStats.occupiedSlotsCount == 1:
+                DialogsInterface.showDialog(I18nConfirmDialogMeta('squadHaveNoPlayers'), self._setCreatorReady)
+                return True
+            if notReadyCount > 0:
+                if notReadyCount == 1:
+                    DialogsInterface.showDialog(I18nConfirmDialogMeta('squadHaveNotReadyPlayer'), self._setCreatorReady)
+                    return True
+                DialogsInterface.showDialog(I18nConfirmDialogMeta('squadHaveNotReadyPlayers'), self._setCreatorReady)
+                return True
+            if not g_currentVehicle.isLocked():
+                _, unit = self._functional.getUnit()
+                playerVehicles = unit.getVehicles()
+                if playerVehicles:
+                    commanderLevel = g_currentVehicle.item.level
+                    lowerBound, upperBound = self._functional.getSquadLevelBounds()
+                    minLevel = max(MIN_VEHICLE_LEVEL, commanderLevel + lowerBound)
+                    maxLevel = min(MAX_VEHICLE_LEVEL, commanderLevel + upperBound)
+                    levelRange = range(minLevel, maxLevel + 1)
+                    for _, unitVehicles in playerVehicles.iteritems():
+                        for vehicle in unitVehicles:
+                            if vehicle.vehLevel not in levelRange:
+                                DialogsInterface.showDialog(I18nConfirmDialogMeta('squadHaveNoPlayers'), self._setCreatorReady)
+                                return True
+
+            self._setCreatorReady(True)
+        else:
+            self._functional.togglePlayerReadyAction(True)
+        return True
 
 
 class FalloutSquadActionsHandler(SquadActionsHandler):

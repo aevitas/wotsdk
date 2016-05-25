@@ -28,6 +28,14 @@ def neutral(text):
     return _formatText('neutralText', text)
 
 
+def goodPing(text):
+    return _formatText('goodPingText', text)
+
+
+def standartPing(text):
+    return _formatText('standartPingText', text)
+
+
 def stats(text):
     return _formatText('statsText', text)
 

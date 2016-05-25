@@ -2,6 +2,12 @@
 from debug_utils import LOG_WARNING
 
 class SYSTEM_MESSAGES(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     REPAIR_SUCCESS = '#system_messages:repair/success'
     REPAIR_CREDIT_ERROR = '#system_messages:repair/credit_error'
     REPAIR_SERVER_ERROR = '#system_messages:repair/server_error'
@@ -37,7 +43,6 @@ class SYSTEM_MESSAGES(object):
     ARENA_START_ERRORS_JOIN_WRONG_VEHICLE = '#system_messages:arena_start_errors/join/WRONG_VEHICLE'
     ARENA_START_ERRORS_JOIN_TEAM_IS_FULL = '#system_messages:arena_start_errors/join/TEAM_IS_FULL'
     ARENA_START_ERRORS_JOIN_WRONG_ARGS = '#system_messages:arena_start_errors/join/WRONG_ARGS'
-    ARENA_START_ERRORS_JOIN_CAPTCHA = '#system_messages:arena_start_errors/join/CAPTCHA'
     ARENA_START_ERRORS_JOIN_WRONG_ARENA_STATE = '#system_messages:arena_start_errors/join/WRONG_ARENA_STATE'
     ARENA_START_ERRORS_JOIN_CANNOT_CREATE = '#system_messages:arena_start_errors/join/CANNOT_CREATE'
     ARENA_START_ERRORS_JOIN_PRIVACY = '#system_messages:arena_start_errors/join/PRIVACY'
@@ -161,6 +166,7 @@ class SYSTEM_MESSAGES(object):
     SQUAD_CREATEERROR = '#system_messages:squad/createError'
     SQUAD_NOTSETREADYSTATUS = '#system_messages:squad/notSetReadyStatus'
     SQUAD_KICKEDFROMQUEUE = '#system_messages:squad/kickedFromQueue'
+    SQUAD_NOTVALIDDELETED = '#system_messages:squad/notValidDeleted'
     COMPANY_MEMBERJOINED = '#system_messages:company/memberJoined'
     COMPANY_MEMBERLEAVE = '#system_messages:company/memberLeave'
     COMPANY_MEMBERREADY = '#system_messages:company/memberReady'
@@ -738,6 +744,8 @@ class SYSTEM_MESSAGES(object):
     CLANS_REQUEST_ERRORS_CLAN_IS_FULL_ = '#system_messages:clans/request/errors/Clan is full'
     CLANS_REQUEST_ERRORS_ACCOUNT_IS_IN_CLAN_ALREADY = '#system_messages:clans/request/errors/Account is in clan already'
     CLANS_REQUEST_ERRORS_ACCOUNT_IS_NOT_IN_CLAN = '#system_messages:clans/request/errors/Account is not in clan'
+    CLANS_REQUEST_ERRORS_ACCOUNT_ALREADY_INVITED = '#system_messages:clans/request/errors/Account already invited'
+    CLANS_REQUEST_ERRORS_ACCOUNT_IN_COOLDOWN = '#system_messages:clans/request/errors/Account in cooldown'
     CLANS_REQUEST_ERRORS_RECRUITING_POLICY_MISMATCH = '#system_messages:clans/request/errors/Recruiting policy mismatch'
     CLANS_REQUEST_ERRORS_ACCOUNT_DOES_NOT_MEET_REQUIREMENTS = '#system_messages:clans/request/errors/Account does not meet requirements'
     CLANS_REQUEST_ERRORS_TOO_MANY_INVITES = '#system_messages:clans/request/errors/Too many invites'
@@ -767,8 +775,6 @@ class SYSTEM_MESSAGES(object):
     CLANS_NOTIFICATIONS_INVITESENT = '#system_messages:clans/notifications/inviteSent'
     CLANS_NOTIFICATIONS_INVITESSENT = '#system_messages:clans/notifications/invitesSent'
     CLANS_NOTIFICATIONS_INVITESENDERROR = '#system_messages:clans/notifications/inviteSendError'
-    CLANS_NOTIFICATIONS_INVITESENDERROR_ALREADYINCLAN = '#system_messages:clans/notifications/inviteSendError/alreadyInClan'
-    CLANS_NOTIFICATIONS_INVITESENDERROR_ALREADYINVITED = '#system_messages:clans/notifications/inviteSendError/alreadyInvited'
     CLANS_NOTIFICATIONS_INVITESSENDERROR = '#system_messages:clans/notifications/invitesSendError'
     CLANS_NOTIFICATIONS_PERSONAL_APPACCEPTED = '#system_messages:clans/notifications/personal/appAccepted'
     CLANS_NOTIFICATIONS_PERSONAL_APPDECLINED = '#system_messages:clans/notifications/personal/appDeclined'
@@ -803,6 +809,8 @@ class SYSTEM_MESSAGES(object):
     POTAPOVQUESTS_SELECT_SERVER_ERROR_LOCKED_BY_VEHICLE_QUEST = '#system_messages:potapovQuests/select/server_error/LOCKED_BY_VEHICLE_QUEST'
     POTAPOVQUESTS_SELECT_SERVER_ERROR_SEASON_LIMIT_THE_SAME_CLASS = '#system_messages:potapovQuests/select/server_error/SEASON_LIMIT_THE_SAME_CLASS'
     POTAPOVQUESTS_REFUSE_SUCCESS = '#system_messages:potapovQuests/refuse/success'
+    POTAPOVQUESTS_REFUSE_QUESTS = '#system_messages:potapovQuests/refuse/quests'
+    POTAPOVQUESTS_REFUSE_NO_QUESTS = '#system_messages:potapovQuests/refuse/no_quests'
     POTAPOVQUESTS_REFUSE_SERVER_ERROR = '#system_messages:potapovQuests/refuse/server_error'
     POTAPOVQUESTS_REFUSE_SERVER_ERROR_LOCKED_BY_VEHICLE_QUEST = '#system_messages:potapovQuests/refuse/server_error/LOCKED_BY_VEHICLE_QUEST'
     POTAPOVQUESTS_SELECT_SERVER_ERROR_FALLOUT_LOCKED_BY_VEHICLE_QUEST = '#system_messages:potapovQuests/select/server_error/fallout/LOCKED_BY_VEHICLE_QUEST'
@@ -915,8 +923,9 @@ class SYSTEM_MESSAGES(object):
     FORTIFICATION_VACATIONSET = '#system_messages:fortification/vacationSet'
     FORTIFICATION_DEFENCEHOURDEACTIVATED = '#system_messages:fortification/defenceHourDeactivated'
     FORTIFICATION_FORTBATTLEFINISHED = '#system_messages:fortification/fortBattleFinished'
+    FORTIFICATION_NOTIFICATION_TURNEDOFF = '#system_messages:fortification/notification/turnedOff'
+    FORTIFICATION_NOTIFICATION_TURNEDON = '#system_messages:fortification/notification/turnedOn'
     FORTIFICATION_ERRORS_UNKNOWN = '#system_messages:fortification/errors/UNKNOWN'
-    FORTIFICATION_ERRORS_NOT_SUPPORTED = '#system_messages:fortification/errors/NOT_SUPPORTED'
     FORTIFICATION_ERRORS_BAD_METHOD = '#system_messages:fortification/errors/BAD_METHOD'
     FORTIFICATION_ERRORS_BAD_SORTIE_TIME = '#system_messages:fortification/errors/BAD_SORTIE_TIME'
     FORTIFICATION_ERRORS_NOT_CREATED = '#system_messages:fortification/errors/NOT_CREATED'
@@ -1013,7 +1022,7 @@ class SYSTEM_MESSAGES(object):
     FORTIFICATION_ERRORS_CANT_CREATE_CLAN = '#system_messages:fortification/errors/CANT_CREATE_CLAN'
     FORTIFICATION_ERRORS_CANT_LOOKUP_CLAN = '#system_messages:fortification/errors/CANT_LOOKUP_CLAN'
     FORTIFICATION_ERRORS_WRONG_PERIPHERY = '#system_messages:fortification/errors/WRONG_PERIPHERY'
-    FORTIFICATION_ERRORS_FORT_BATTLES_DISABLED = '#system_messages:fortification/errors/FORT_BATTLES_DISABLED'
+    FORTIFICATION_ERRORS_FORT_DISABLED = '#system_messages:fortification/errors/FORT_DISABLED'
     FORTIFICATION_ERRORS_TOO_MANY_DEFENCES = '#system_messages:fortification/errors/TOO_MANY_DEFENCES'
     FORTIFICATION_ERRORS_CURFEW_HOUR = '#system_messages:fortification/errors/CURFEW_HOUR'
     FORTIFICATION_ERRORS_JOIN_CTX_LOCKED = '#system_messages:fortification/errors/JOIN_CTX_LOCKED'
@@ -1131,7 +1140,6 @@ class SYSTEM_MESSAGES(object):
      UNIT_ERRORS_CLUB_CHECKOUT_FAIL,
      UNIT_ERRORS_PREV_RATED_BATTLE_IN_PROGRESS)
     FORTIFICATION_ERRORS_ENUM = (FORTIFICATION_ERRORS_UNKNOWN,
-     FORTIFICATION_ERRORS_NOT_SUPPORTED,
      FORTIFICATION_ERRORS_BAD_METHOD,
      FORTIFICATION_ERRORS_BAD_SORTIE_TIME,
      FORTIFICATION_ERRORS_NOT_CREATED,
@@ -1228,7 +1236,7 @@ class SYSTEM_MESSAGES(object):
      FORTIFICATION_ERRORS_CANT_CREATE_CLAN,
      FORTIFICATION_ERRORS_CANT_LOOKUP_CLAN,
      FORTIFICATION_ERRORS_WRONG_PERIPHERY,
-     FORTIFICATION_ERRORS_FORT_BATTLES_DISABLED,
+     FORTIFICATION_ERRORS_FORT_DISABLED,
      FORTIFICATION_ERRORS_TOO_MANY_DEFENCES,
      FORTIFICATION_ERRORS_CURFEW_HOUR,
      FORTIFICATION_ERRORS_JOIN_CTX_LOCKED,
@@ -1236,7 +1244,7 @@ class SYSTEM_MESSAGES(object):
      FORTIFICATION_ERRORS_FORBIDDEN_FORT_BATTLE_HOUR,
      FORTIFICATION_ERRORS_BAD_SORTIE_PERIPHERY_ID)
     UNIT_NOTIFICATION_DIVISIONTYPE_ENUM = (UNIT_NOTIFICATION_DIVISIONTYPE_MIDDLE, UNIT_NOTIFICATION_DIVISIONTYPE_CHAMPION, UNIT_NOTIFICATION_DIVISIONTYPE_ABSOLUTE)
-    UNITBROWSER_ERRORS_ENUM = UNITBROWSER_ERRORS_BAD_ACCEPT_CONTEXT
+    UNITBROWSER_ERRORS_ENUM = (UNITBROWSER_ERRORS_BAD_ACCEPT_CONTEXT,)
     UNIT_NOTIFICATION_ENUM = (UNIT_NOTIFICATION_PLAYEROFFLINE,
      UNIT_NOTIFICATION_PLAYERONLINE,
      UNIT_NOTIFICATION_PLAYERADDED,
@@ -1293,7 +1301,6 @@ class SYSTEM_MESSAGES(object):
      ARENA_START_ERRORS_JOIN_WRONG_VEHICLE,
      ARENA_START_ERRORS_JOIN_TEAM_IS_FULL,
      ARENA_START_ERRORS_JOIN_WRONG_ARGS,
-     ARENA_START_ERRORS_JOIN_CAPTCHA,
      ARENA_START_ERRORS_JOIN_WRONG_ARENA_STATE,
      ARENA_START_ERRORS_JOIN_CANNOT_CREATE,
      ARENA_START_ERRORS_JOIN_PRIVACY,
@@ -1417,6 +1424,7 @@ class SYSTEM_MESSAGES(object):
      SQUAD_CREATEERROR,
      SQUAD_NOTSETREADYSTATUS,
      SQUAD_KICKEDFROMQUEUE,
+     SQUAD_NOTVALIDDELETED,
      COMPANY_MEMBERJOINED,
      COMPANY_MEMBERLEAVE,
      COMPANY_MEMBERREADY,
@@ -1990,6 +1998,8 @@ class SYSTEM_MESSAGES(object):
      CLANS_REQUEST_ERRORS_CLAN_IS_FULL_,
      CLANS_REQUEST_ERRORS_ACCOUNT_IS_IN_CLAN_ALREADY,
      CLANS_REQUEST_ERRORS_ACCOUNT_IS_NOT_IN_CLAN,
+     CLANS_REQUEST_ERRORS_ACCOUNT_ALREADY_INVITED,
+     CLANS_REQUEST_ERRORS_ACCOUNT_IN_COOLDOWN,
      CLANS_REQUEST_ERRORS_RECRUITING_POLICY_MISMATCH,
      CLANS_REQUEST_ERRORS_ACCOUNT_DOES_NOT_MEET_REQUIREMENTS,
      CLANS_REQUEST_ERRORS_TOO_MANY_INVITES,
@@ -2019,8 +2029,6 @@ class SYSTEM_MESSAGES(object):
      CLANS_NOTIFICATIONS_INVITESENT,
      CLANS_NOTIFICATIONS_INVITESSENT,
      CLANS_NOTIFICATIONS_INVITESENDERROR,
-     CLANS_NOTIFICATIONS_INVITESENDERROR_ALREADYINCLAN,
-     CLANS_NOTIFICATIONS_INVITESENDERROR_ALREADYINVITED,
      CLANS_NOTIFICATIONS_INVITESSENDERROR,
      CLANS_NOTIFICATIONS_PERSONAL_APPACCEPTED,
      CLANS_NOTIFICATIONS_PERSONAL_APPDECLINED,
@@ -2055,6 +2063,8 @@ class SYSTEM_MESSAGES(object):
      POTAPOVQUESTS_SELECT_SERVER_ERROR_LOCKED_BY_VEHICLE_QUEST,
      POTAPOVQUESTS_SELECT_SERVER_ERROR_SEASON_LIMIT_THE_SAME_CLASS,
      POTAPOVQUESTS_REFUSE_SUCCESS,
+     POTAPOVQUESTS_REFUSE_QUESTS,
+     POTAPOVQUESTS_REFUSE_NO_QUESTS,
      POTAPOVQUESTS_REFUSE_SERVER_ERROR,
      POTAPOVQUESTS_REFUSE_SERVER_ERROR_LOCKED_BY_VEHICLE_QUEST,
      POTAPOVQUESTS_SELECT_SERVER_ERROR_FALLOUT_LOCKED_BY_VEHICLE_QUEST,
@@ -2167,8 +2177,9 @@ class SYSTEM_MESSAGES(object):
      FORTIFICATION_VACATIONSET,
      FORTIFICATION_DEFENCEHOURDEACTIVATED,
      FORTIFICATION_FORTBATTLEFINISHED,
+     FORTIFICATION_NOTIFICATION_TURNEDOFF,
+     FORTIFICATION_NOTIFICATION_TURNEDON,
      FORTIFICATION_ERRORS_UNKNOWN,
-     FORTIFICATION_ERRORS_NOT_SUPPORTED,
      FORTIFICATION_ERRORS_BAD_METHOD,
      FORTIFICATION_ERRORS_BAD_SORTIE_TIME,
      FORTIFICATION_ERRORS_NOT_CREATED,
@@ -2265,7 +2276,7 @@ class SYSTEM_MESSAGES(object):
      FORTIFICATION_ERRORS_CANT_CREATE_CLAN,
      FORTIFICATION_ERRORS_CANT_LOOKUP_CLAN,
      FORTIFICATION_ERRORS_WRONG_PERIPHERY,
-     FORTIFICATION_ERRORS_FORT_BATTLES_DISABLED,
+     FORTIFICATION_ERRORS_FORT_DISABLED,
      FORTIFICATION_ERRORS_TOO_MANY_DEFENCES,
      FORTIFICATION_ERRORS_CURFEW_HOUR,
      FORTIFICATION_ERRORS_JOIN_CTX_LOCKED,
@@ -2294,6 +2305,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def prebattle_request_name(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:prebattle/request/name/%s' % key
         if outcome not in SYSTEM_MESSAGES.PREBATTLE_REQUEST_NAME_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2303,6 +2318,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def fortification_request_name(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:fortification/request/name/%s' % key
         if outcome not in SYSTEM_MESSAGES.FORTIFICATION_REQUEST_NAME_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2312,6 +2331,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def unit_errors(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:unit/errors/%s' % key
         if outcome not in SYSTEM_MESSAGES.UNIT_ERRORS_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2321,6 +2344,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def fortification_errors(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:fortification/errors/%s' % key
         if outcome not in SYSTEM_MESSAGES.FORTIFICATION_ERRORS_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2330,6 +2357,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def unit_notification_divisiontype(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:unit/notification/divisionType/%s' % key
         if outcome not in SYSTEM_MESSAGES.UNIT_NOTIFICATION_DIVISIONTYPE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2339,6 +2370,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def unitbrowser_errors(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:unitBrowser/errors/%s' % key
         if outcome not in SYSTEM_MESSAGES.UNITBROWSER_ERRORS_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2348,6 +2383,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def unit_notification(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:unit/notification/%s' % key
         if outcome not in SYSTEM_MESSAGES.UNIT_NOTIFICATION_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2357,6 +2396,10 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def unit_warnings(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:unit/warnings/%s' % key
         if outcome not in SYSTEM_MESSAGES.UNIT_WARNINGS_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -2366,14 +2409,22 @@ class SYSTEM_MESSAGES(object):
 
     @staticmethod
     def customization_vehicle(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:customization/vehicle_%s' % key
         if outcome not in SYSTEM_MESSAGES.CUSTOMIZATION_VEHICLE_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome
 
     @staticmethod
     def all(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#system_messages:%s' % key
         if outcome not in SYSTEM_MESSAGES.all_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome

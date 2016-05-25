@@ -159,7 +159,7 @@ class TankmanDossier(_Dossier, stats.TankmanDossierStats):
         return self.getTotalStats().getBattlesCount()
 
     def getStats(self, tankman):
-        imageType, image = self.__getCurrentSkillIcon()
+        imageType, image = self.__getCurrentSkillIcon(tankman)
         return ({'label': 'common',
           'stats': (self.__packStat('battlesCount', self.getBattlesCount()), self.__packStat('avgExperience', self.getAvgXP()))}, {'label': 'studying',
           'secondLabel': i18n.makeString(MENU.CONTEXTMENU_PERSONALCASE_STATSBLOCKTITLE),
@@ -169,11 +169,11 @@ class TankmanDossier(_Dossier, stats.TankmanDossierStats):
     def _getDossierItem(self):
         return self
 
-    def __isNewSkillReady(self):
-        return self.tmanDescr.roleLevel == tankmen.MAX_SKILL_LEVEL and (not len(self.tmanDescr.skills) or self.tmanDescr.lastSkillLevel == tankmen.MAX_SKILL_LEVEL)
+    def __isNewSkillReady(self, tankman):
+        return self.tmanDescr.roleLevel == tankmen.MAX_SKILL_LEVEL and (not len(self.tmanDescr.skills) or self.tmanDescr.lastSkillLevel == tankmen.MAX_SKILL_LEVEL) and tankman.hasNewSkill(useCombinedRoles=True)
 
-    def __getCurrentSkillIcon(self):
-        if self.__isNewSkillReady():
+    def __getCurrentSkillIcon(self, tankman):
+        if self.__isNewSkillReady(tankman):
             return ('new_skill', 'new_skill.png')
         if self.tmanDescr.roleLevel != tankmen.MAX_SKILL_LEVEL or not len(self.tmanDescr.skills):
             return ('role', '%s.png' % self.tmanDescr.role)

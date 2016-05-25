@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/tutorial/data/descriptor.py
 from tutorial.data.chapter import ChapterProgress
-from tutorial.settings import TUTORIAL_STOP_REASON_NAMES
 
 class DescriptorData(object):
 
@@ -10,7 +9,6 @@ class DescriptorData(object):
         self.__contents = []
         self.__idMapping = {}
         self.__initialChapterID = ''
-        self.__itemsRevertSR = set(TUTORIAL_STOP_REASON_NAMES.values())
 
     def __iter__(self):
         return iter(self.__contents)
@@ -123,12 +121,6 @@ class DescriptorData(object):
             offset += 2
 
         return result
-
-    def setItemsRevertIfStop(self, reasons):
-        self.__itemsRevertSR = reasons
-
-    def isItemsRevertIfStop(self, reason):
-        return reason in self.__itemsRevertSR
 
     def getChapterByIdx(self, idx):
         if idx < len(self.__contents):

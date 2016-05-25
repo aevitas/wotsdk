@@ -90,7 +90,7 @@ class _FalloutStatsForm(_StatsForm):
         formatWithPadding = format + padding
         maxLabelLength = ctx.playerLabelMaxLength
         playerVO = vInfoVO.player
-        isIGR = playerVO.isIGR()
+        isIGR = vInfoVO.vehicleType.isPremiumIGR
         if isIGR:
             maxLabelLength = maxLabelLength - 2
         fullPlayerName = self._trimLongName(fullPlayerName, maxLabelLength)

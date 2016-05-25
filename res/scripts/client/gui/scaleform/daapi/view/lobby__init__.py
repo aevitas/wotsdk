@@ -13,7 +13,6 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.BattleResultsWindow import BattleResultsWindow
     from gui.Scaleform.daapi.view.battle_loading import BattleLoading
     from gui.Scaleform.daapi.view.battle_loading import FalloutMultiTeamBattleLoading
-    from gui.Scaleform.daapi.view.dialogs.CaptchaDialog import CaptchaDialog
     from gui.Scaleform.daapi.view.dialogs.CheckBoxDialog import CheckBoxDialog
     from gui.Scaleform.daapi.view.dialogs.ConfirmModuleDialog import ConfirmModuleDialog
     from gui.Scaleform.daapi.view.dialogs.DemountDeviceDialog import DemountDeviceDialog
@@ -22,15 +21,13 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.dialogs.IconDialog import IconDialog
     from gui.Scaleform.daapi.view.dialogs.IconPriceDialog import IconPriceDialog
     from gui.Scaleform.daapi.view.dialogs.PunishmentDialog import PunishmentDialog
-    from gui.Scaleform.daapi.view.dialogs.SimpleDialog import SimpleDialog
     from gui.Scaleform.daapi.view.dialogs.SystemMessageDialog import SystemMessageDialog
     from gui.Scaleform.daapi.view.lobby.eliteWindow.EliteWindow import EliteWindow
     from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardWindow
     from gui.Scaleform.daapi.view.lobby.battle_queue import BattleQueue
     from gui.Scaleform.daapi.view.lobby.BrowserWindow import BrowserWindow
     from gui.Scaleform.daapi.view.lobby.components.CalendarComponent import CalendarComponent
-    from gui.Scaleform.daapi.view.lobby.customization.VehicleCustomization import VehicleCustomization
-    from gui.Scaleform.daapi.view.lobby.customization_2_0.main_view import MainView as CustomizationMainView
+    from gui.Scaleform.daapi.view.lobby.customization.main_view import MainView as CustomizationMainView
     from gui.Scaleform.daapi.view.lobby.DemonstratorWindow import DemonstratorWindow
     from gui.Scaleform.daapi.view.lobby.FalloutBattleSelectorWindow import FalloutBattleSelectorWindow
     from gui.Scaleform.daapi.view.lobby.GetPremiumPopover import GetPremiumPopover
@@ -48,13 +45,13 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.ReferralManagementWindow import ReferralManagementWindow
     from gui.Scaleform.daapi.view.lobby.ReferralReferralsIntroWindow import ReferralReferralsIntroWindow
     from gui.Scaleform.daapi.view.lobby.ReferralReferrerIntroWindow import ReferralReferrerIntroWindow
-    from gui.Scaleform.daapi.view.lobby.ReportBug import ReportBugPanel
     from gui.Scaleform.daapi.view.lobby.RoleChangeWindow import RoleChangeWindow
     from gui.Scaleform.daapi.view.lobby.ServerStats import ServerStats
     from gui.Scaleform.daapi.view.lobby.SkillDropWindow import SkillDropWindow
     from gui.Scaleform.daapi.view.lobby.VehicleBuyWindow import VehicleBuyWindow
     from gui.Scaleform.daapi.view.lobby.VehicleInfoWindow import VehicleInfoWindow
     from gui.Scaleform.daapi.view.lobby.VehicleSellDialog import VehicleSellDialog
+    from gui.Scaleform.daapi.view.lobby.vehiclePreview.VehiclePreview import VehiclePreview
     from gui.Scaleform.daapi.view.meta.MiniClientComponentMeta import MiniClientComponentMeta
     return (ViewSettings(VIEW_ALIAS.LOBBY, LobbyView, 'lobbyPage.swf', ViewTypes.DEFAULT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.BATTLE_LOADING, BattleLoading, 'battleLoading.swf', ViewTypes.DEFAULT, VIEW_ALIAS.BATTLE_LOADING, ScopeTemplates.DEFAULT_SCOPE),
@@ -62,7 +59,7 @@ def getViewSettings():
      ViewSettings(VIEW_ALIAS.TUTORIAL_LOADING, BattleLoading, 'tutorialLoading.swf', ViewTypes.DEFAULT, VIEW_ALIAS.TUTORIAL_LOADING, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.BATTLE_QUEUE, BattleQueue, 'battleQueue.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.BATTLE_QUEUE, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.LOBBY_CUSTOMIZATION, CustomizationMainView, 'customizationMainView.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.LOBBY_CUSTOMIZATION, ScopeTemplates.LOBBY_SUB_SCOPE),
-     GroupedViewSettings(VIEW_ALIAS.CAPTCHA_DIALOG, CaptchaDialog, 'CAPTCHA.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DEFAULT_SCOPE),
+     ViewSettings(VIEW_ALIAS.VEHICLE_PREVIEW, VehiclePreview, 'vehiclePreview.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.VEHICLE_PREVIEW, ScopeTemplates.LOBBY_SUB_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.CHECK_BOX_DIALOG, CheckBoxDialog, 'confirmDialog.swf', ViewTypes.TOP_WINDOW, 'confirmDialog', None, ScopeTemplates.DYNAMIC_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.CONFIRM_MODULE_DIALOG, ConfirmModuleDialog, 'confirmModuleWindow.swf', ViewTypes.TOP_WINDOW, 'confirmModuleDialog', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.DEMOUNT_DEVICE_DIALOG, DemountDeviceDialog, 'demountDeviceDialog.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
@@ -71,7 +68,6 @@ def getViewSettings():
      GroupedViewSettings(VIEW_ALIAS.ICON_DIALOG, IconDialog, 'iconDialog.swf', ViewTypes.WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.ICON_PRICE_DIALOG, IconPriceDialog, 'iconPriceDialog.swf', ViewTypes.WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.PUNISHMENT_DIALOG, PunishmentDialog, 'punishmentDialog.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
-     GroupedViewSettings(VIEW_ALIAS.SIMPLE_DIALOG, SimpleDialog, 'simpleDialog.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.SYSTEM_MESSAGE_DIALOG, SystemMessageDialog, 'systemMessageDialog.swf', ViewTypes.WINDOW, 'systemMessageDialog', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.FREE_X_P_INFO_WINDOW, FreeXPInfoWindow, 'freeXPInfoWindow.swf', ViewTypes.TOP_WINDOW, 'freeXPInfoWindow', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.RECRUIT_WINDOW, RecruitWindow, 'recruitWindow.swf', ViewTypes.WINDOW, 'recruitWindow', None, ScopeTemplates.DEFAULT_SCOPE),
@@ -92,7 +88,7 @@ def getViewSettings():
      GroupedViewSettings(VIEW_ALIAS.REFERRAL_MANAGEMENT_WINDOW, ReferralManagementWindow, 'referralManagementWindow.swf', ViewTypes.WINDOW, 'ReferralManagementWindow', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.REFERRAL_REFERRALS_INTRO_WINDOW, ReferralReferralsIntroWindow, 'referralReferralsIntroWindow.swf', ViewTypes.WINDOW, 'referralReferralsIntroWindow', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.REFERRAL_REFERRER_INTRO_WINDOW, ReferralReferrerIntroWindow, 'referralReferrerIntroWindow.swf', ViewTypes.WINDOW, 'referralReferrerIntroWindow', None, ScopeTemplates.DEFAULT_SCOPE),
-     GroupedViewSettings(VIEW_ALIAS.ROLE_CHANGE, RoleChangeWindow, 'roleChangeWindow.swf', ViewTypes.WINDOW, 'roleChangeWindow', None, ScopeTemplates.DEFAULT_SCOPE),
+     GroupedViewSettings(VIEW_ALIAS.ROLE_CHANGE, RoleChangeWindow, 'roleChangeWindow.swf', ViewTypes.WINDOW, 'roleChangeWindow', None, ScopeTemplates.WINDOW_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.TANKMAN_SKILLS_DROP_WINDOW, SkillDropWindow, 'skillDropWindow.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.VEHICLE_BUY_WINDOW, VehicleBuyWindow, 'vehicleBuyWindow.swf', ViewTypes.TOP_WINDOW, 'vehicleBuyWindow', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.VEHICLE_INFO_WINDOW, VehicleInfoWindow, 'vehicleInfo.swf', ViewTypes.WINDOW, 'vehicleInfoWindow', None, ScopeTemplates.DEFAULT_SCOPE),
@@ -102,7 +98,6 @@ def getViewSettings():
      ViewSettings(VIEW_ALIAS.MINIMAP_LOBBY, MinimapLobby, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.MINI_CLIENT_LINKED, MiniClientComponentMeta, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.RECRUIT_PARAMS, RecruitParamsComponent, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
-     ViewSettings(VIEW_ALIAS.REPORT_BUG, ReportBugPanel, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE),
      ViewSettings(VIEW_ALIAS.SERVERS_STATS, ServerStats, None, ViewTypes.COMPONENT, None, ScopeTemplates.DEFAULT_SCOPE))
 
 
@@ -126,6 +121,7 @@ class LobbyPackageBusinessHandler(PackageBusinessHandler):
          (VIEW_ALIAS.GET_PREMIUM_POPOVER, self.loadViewByCtxEvent),
          (VIEW_ALIAS.LOBBY, self.loadViewByCtxEvent),
          (VIEW_ALIAS.LOBBY_CUSTOMIZATION, self.loadViewByCtxEvent),
+         (VIEW_ALIAS.VEHICLE_PREVIEW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.LOBBY_MENU, self.loadViewByCtxEvent),
          (VIEW_ALIAS.MODULE_INFO_WINDOW, self.loadViewByCtxEvent),
          (VIEW_ALIAS.PERSONAL_CASE, self.loadViewByCtxEvent),
@@ -148,8 +144,7 @@ class LobbyPackageBusinessHandler(PackageBusinessHandler):
 class LobbyDialogsHandler(PackageBusinessHandler):
 
     def __init__(self):
-        listeners = ((ShowDialogEvent.SHOW_CAPTCHA_DIALOG, self.__handleShowCaptcha),
-         (ShowDialogEvent.SHOW_CHECK_BOX_DIALOG, self.__checkBoxDialogHandler),
+        listeners = ((ShowDialogEvent.SHOW_CHECK_BOX_DIALOG, self.__checkBoxDialogHandler),
          (ShowDialogEvent.SHOW_CONFIRM_MODULE, self.__confirmModuleHandler),
          (ShowDialogEvent.SHOW_DEMOUNT_DEVICE_DIALOG, self.__demountDeviceDialogHandler),
          (ShowDialogEvent.SHOW_DESTROY_DEVICE_DIALOG, self.__destroyDeviceDialogHandler),
@@ -157,7 +152,6 @@ class LobbyDialogsHandler(PackageBusinessHandler):
          (ShowDialogEvent.SHOW_ICON_DIALOG, self.__iconDialogHandler),
          (ShowDialogEvent.SHOW_ICON_PRICE_DIALOG, self.__iconPriceDialogHandler),
          (ShowDialogEvent.SHOW_PUNISHMENT_DIALOG, self.__punishmentWindowHandler),
-         (ShowDialogEvent.SHOW_SIMPLE_DLG, self.__simpleDialogHandler),
          (ShowDialogEvent.SHOW_SYSTEM_MESSAGE_DIALOG, self.__systemMsgDialogHandler),
          (VIEW_ALIAS.FREE_X_P_INFO_WINDOW, self.__showFreeXPInfoWindow),
          (VIEW_ALIAS.RECRUIT_WINDOW, self.__showRecruitWindow))
@@ -177,9 +171,6 @@ class LobbyDialogsHandler(PackageBusinessHandler):
 
     def __dismissTankmanHandler(self, event):
         self.loadViewWithGenName(VIEW_ALIAS.DISMISS_TANKMAN_DIALOG, event.meta, event.handler)
-
-    def __handleShowCaptcha(self, event):
-        self.loadViewWithGenName(VIEW_ALIAS.CAPTCHA_DIALOG, event.meta, event.handler)
 
     def __iconDialogHandler(self, event):
         self.loadViewWithGenName(VIEW_ALIAS.ICON_DIALOG, event.meta, event.handler)
@@ -204,7 +195,3 @@ class LobbyDialogsHandler(PackageBusinessHandler):
 
     def __systemMsgDialogHandler(self, event):
         self.loadViewWithGenName(VIEW_ALIAS.SYSTEM_MESSAGE_DIALOG, event.meta, event.handler)
-
-    def __simpleDialogHandler(self, event):
-        meta = event.meta
-        self.loadViewWithGenName(VIEW_ALIAS.SIMPLE_DIALOG, meta.getMessage(), meta.getTitle(), meta.getButtonLabels(), meta.getCallbackWrapper(event.handler), meta.getViewScopeType(), meta.getTimer())

@@ -23,7 +23,7 @@ _PLAYER_KILL_ENEMY_SOUND = 'enemy_killed_by_player'
 _PLAYER_KILL_ALLY_SOUND = 'ally_killed_by_player'
 
 class BattleMessagesController(object):
-    __slots__ = ('__battleCtx', '__eManager', '_buffer', '_isUIPopulated', 'onShowVehicleMessageByCode', 'onShowVehicleMessageByKey', 'onShowVehicleErrorByKey', 'onShowPlayerMessageByCode', 'onShowPlayerMessageByKey')
+    __slots__ = ('__battleCtx', '__eManager', '_buffer', '_isUIPopulated', 'onShowVehicleMessageByCode', 'onShowVehicleMessageByKey', 'onShowVehicleErrorByKey', 'onShowPlayerMessageByCode', 'onShowPlayerMessageByKey', '__weakref__')
 
     def __init__(self):
         self.__battleCtx = None
@@ -85,7 +85,7 @@ class BattleMessagesController(object):
         return
 
     def showAllyHitMessage(self, vehicleID = None):
-        self.onShowPlayerMessageByKey('ALLY_HIT', {'entity': self.__battleCtx.getFullPlayerName(vID=vehicleID)}, (('entity', vehicleID),))
+        self.onShowPlayerMessageByKey('ALLY_HIT', {'entity': self.__battleCtx.getPlayerFullName(vID=vehicleID)}, (('entity', vehicleID),))
 
     def __getEntityString(self, avatar, entityID):
         if entityID == avatar.playerVehicleID:

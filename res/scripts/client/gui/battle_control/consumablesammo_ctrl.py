@@ -10,6 +10,7 @@ from gui.battle_control import avatar_getter
 from gui.battle_control.battle_constants import SHELL_SET_RESULT, CANT_SHOOT_ERROR
 from gui.shared.utils.MethodsRules import MethodsRules
 from items import vehicles
+__all__ = ('AmmoController', 'AmmoReplayRecord', 'AmmoReplayPlayer')
 _ClipBurstSettings = namedtuple('_ClipBurstSettings', 'size interval')
 
 class _GunSettings(namedtuple('_GunSettings', 'clip burst shots reloadEffect')):
@@ -74,11 +75,9 @@ class _AutoShootsCtrl(object):
         result = self.__isStarted
         if self.__isStarted:
             self.__clearCallback()
-            if timeLeft == 0:
+            if not timeLeft:
                 self.__setCallback(_IGNORED_RELOADING_TIME + 0.01)
-            if timeLeft < _IGNORED_RELOADING_TIME:
-                result = True
-            else:
+            if timeLeft >= _IGNORED_RELOADING_TIME:
                 self.__isStarted = result = False
         elif 0 < timeLeft < _IGNORED_RELOADING_TIME:
             if prevTimeLeft == -1:
@@ -229,6 +228,19 @@ class AmmoController(MethodsRules):
 
         return (quantity, quantityInClip)
 
+    def getOrderedShellsLayout(self):
+        result = []
+        for intCD in self._order:
+            descriptor = vehicles.getDictDescr(intCD)
+            quantity, quantityInClip = self.__ammo[intCD]
+            result.append((intCD,
+             descriptor,
+             quantity,
+             quantityInClip,
+             self.__gunSettings))
+
+        return result
+
     def getShellsLayout(self):
         return self.__ammo.iteritems()
 
@@ -246,8 +258,6 @@ class AmmoController(MethodsRules):
                 result |= SHELL_SET_RESULT.CURRENT
                 if quantityInClip > 0 and prevAmmo[1] == 0 and quantity == prevAmmo[0]:
                     result |= SHELL_SET_RESULT.CASSETTE_RELOAD
-                else:
-                    avatar_getter.refreshShotDispersionAngle()
             self.onShellsUpdated(intCD, quantity, quantityInClip, result)
         else:
             self.__ammo[intCD] = (quantity, quantityInClip)
@@ -339,12 +349,17 @@ class AmmoReplayRecorder(AmmoController):
         return
 
     def setGunReloadTime(self, timeLeft, baseTime):
-        self.__timeRecord(0, timeLeft)
+        if self.__timeRecord is not None:
+            self.__timeRecord(0, timeLeft)
         super(AmmoReplayRecorder, self).setGunReloadTime(timeLeft, baseTime)
+        return
 
     def changeSetting(self, intCD, avatar = None):
-        if super(AmmoReplayRecorder, self).changeSetting(intCD, avatar) and intCD in self._order:
-            self.__changeRecord(self._order.index(intCD))
+        changed = super(AmmoReplayRecorder, self).changeSetting(intCD, avatar)
+        if changed and intCD in self._order:
+            if self.__changeRecord is not None:
+                self.__changeRecord(self._order.index(intCD))
+        return changed
 
 
 class AmmoReplayPlayer(AmmoController):
@@ -366,8 +381,9 @@ class AmmoReplayPlayer(AmmoController):
                 BigWorld.cancelCallback(self.__callbackID)
                 self.__callbackID = None
             self.__timeGetter = lambda : 0
-            self.__replayCtrl.onAmmoSettingChanged -= self.__onAmmoSettingChanged
-            self.__replayCtrl = None
+            if self.__replayCtrl is not None:
+                self.__replayCtrl.onAmmoSettingChanged -= self.__onAmmoSettingChanged
+                self.__replayCtrl = None
         super(AmmoReplayPlayer, self).clear(leave)
         return
 
@@ -414,6 +430,3 @@ class AmmoReplayPlayer(AmmoController):
             if code is not None:
                 avatar_getter.updateVehicleSetting(code, intCD)
             return
-
-
-__all__ = ('AmmoController', 'AmmoReplayRecord', 'AmmoReplayPlayer')

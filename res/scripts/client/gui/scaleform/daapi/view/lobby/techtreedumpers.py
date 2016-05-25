@@ -121,10 +121,15 @@ class ResearchItemsObjDumper(_BaseDumper):
         extraInfo = None
         status = statusLevel = ''
         minRentPricePackage = None
+        vehicleBtnLabel = ''
         if item.itemTypeID == GUI_ITEM_TYPE.VEHICLE:
             vClass = self._vClassInfo.getInfoByTags(item.tags)
             status, statusLevel = self._getRentStatus(item)
             minRentPricePackage = item.getRentPackage()
+            if item.isInInventory:
+                vehicleBtnLabel = '#menu:research/labels/button/showInHangar'
+            else:
+                vehicleBtnLabel = '#menu:research/showInPreviewBtn/label'
         else:
             if item.itemTypeID == GUI_ITEM_TYPE.GUN and item.isClipGun(rootItem.descriptor):
                 extraInfo = CLIP_ICON_PATH
@@ -151,7 +156,9 @@ class ResearchItemsObjDumper(_BaseDumper):
          'extraInfo': extraInfo,
          'status': status,
          'statusLevel': statusLevel,
-         'isPremiumIGR': item.isPremiumIGR}
+         'isPremiumIGR': item.isPremiumIGR,
+         'showVehicleBtnLabel': i18n.makeString(vehicleBtnLabel),
+         'showVehicleBtnEnabled': item.isInInventory or item.isPreviewAllowed()}
 
 
 class ResearchItemsXMLDumper(ResearchItemsObjDumper):

@@ -1,7 +1,9 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/__init__.py
 import BigWorld
 import constants
+from gui import GUI_SETTINGS
 from constants import ARENA_BONUS_TYPE_CAPS as caps
+from debug_utils import LOG_WARNING
 
 def getClientArena(avatar = None):
     if avatar is None:
@@ -47,6 +49,10 @@ def getArenaBonusType():
     return getattr(getClientArena(), 'bonusType', constants.ARENA_BONUS_TYPE.UNKNOWN)
 
 
+def battleEndWarningEnabled():
+    return GUI_SETTINGS.battleEndWarningEnabled and getArenaBonusType() != constants.ARENA_BONUS_TYPE.TUTORIAL
+
+
 def getArenaGuiTypeLabel():
     arenaGuiType = getArenaGuiType()
     if arenaGuiType in constants.ARENA_GUI_TYPE_LABEL.LABELS:
@@ -56,11 +62,14 @@ def getArenaGuiTypeLabel():
     return label
 
 
-def isLowLevelBattle():
-    arena, battleLevel = getClientArena(), None
+def isLowLevelBattle(arena = None):
+    if arena is None:
+        arena = getClientArena()
     if arena is not None:
-        battleLevel = arena.extraData.get('battleLevel')
-    return 0 < battleLevel < 4
+        return 0 < arena.extraData.get('battleLevel') < 4
+    else:
+        return False
+        return
 
 
 def isRandomBattle(arena = None):
@@ -96,6 +105,18 @@ def makeClientTeamBaseID(team, baseID):
 def parseClientTeamBaseID(clientID):
     team = clientID & 63
     return (team, clientID >> 6)
+
+
+def isArenaNotStarted():
+    arena = getClientArena()
+    result = False
+    if arena is not None:
+        try:
+            result = arena.period in (constants.ARENA_PERIOD.WAITING, constants.ARENA_PERIOD.PREBATTLE)
+        except AttributeError:
+            pass
+
+    return result
 
 
 def isArenaInWaiting():
@@ -198,3 +219,79 @@ def getArenaVehicleExtras(vehicleID, avatar = None):
             pass
 
     return extras
+
+
+def getMaxTeamsOnArena(avatar = None, arenaType = None):
+    if arenaType is None:
+        arenaType = getArenaType(avatar=avatar)
+    try:
+        return arenaType.maxTeamsInArena
+    except AttributeError:
+        LOG_WARNING('Attribute "arenaType" or "maxTeamsInArena" is not found')
+
+    return constants.TEAMS_IN_ARENA.MIN_TEAMS
+
+
+def getTeamSpawnPoints(team, arena = None):
+    if arena is None:
+        arenaType = getArenaType()
+    else:
+        arenaType = arena.arenaType
+    other = team - 1
+    if isLowLevelBattle(arena) and other in arenaType.teamLowLevelSpawnPoints and len(arenaType.teamLowLevelSpawnPoints[other]):
+        spawnPoints = arenaType.teamLowLevelSpawnPoints
+    else:
+        spawnPoints = arenaType.teamSpawnPoints or []
+    for team, points in enumerate(spawnPoints, 1):
+        for spawn, point in enumerate(points, 1):
+            if len(points) > 1:
+                number = spawn + 1
+            else:
+                number = 1
+            yield (team, (point[0], 0, point[1]), number)
+
+    return
+
+
+def getTeamBasePositions(arena = None):
+    if arena is None:
+        arenaType = getArenaType()
+    else:
+        arenaType = arena.arenaType
+    positions = arenaType.teamBasePositions or [] if arenaType else []
+    for team, teamBasePoints in enumerate(positions, 1):
+        for index, (base, point) in enumerate(teamBasePoints.items(), 1):
+            if len(teamBasePoints) > 1:
+                number = index
+            else:
+                number = 1
+            yield (team, (point[0], 0, point[1]), number)
+
+    return
+
+
+def getControlPoints(arena = None):
+    if arena is None:
+        arenaType = getArenaType()
+    else:
+        arenaType = arena.arenaType
+    controlPoints = arenaType.controlPoints or []
+    for index, point in enumerate(controlPoints, 2):
+        if len(controlPoints) > 1:
+            number = index
+        else:
+            number = 1
+        yield ((point[0], 0, point[1]), number)
+
+    return
+
+
+def getArenaPositions(arena = None):
+    if arena is None:
+        arena = getClientArena()
+    try:
+        positions = arena.positions
+    except AttributeError:
+        positions = {}
+
+    return positions

@@ -3,9 +3,10 @@ import weakref
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core import settings_constants
 from debug_utils import LOG_DEBUG, LOG_ERROR
-from gui import g_guiResetters, g_repeatKeyHandlers
+from gui import g_guiResetters, g_repeatKeyHandlers, GUI_CTRL_MODE_FLAG
 from gui.Scaleform import SCALEFORM_SWF_PATH_V3
 from gui.Scaleform.Flash import Flash
+from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.framework.entities.abstract.ApplicationMeta import ApplicationMeta
 from gui.shared.events import AppLifeCycleEvent, GameEvent
 from gui.shared import EVENT_BUS_SCOPE
@@ -68,7 +69,7 @@ class SFApplication(Flash, ApplicationMeta):
         self.__ns = appNS
         self.__geShowed = False
         self.__firingsAfterInit = {}
-        self.__isCursorAttached = False
+        self.__guiCtrlModeFlags = GUI_CTRL_MODE_FLAG.CURSOR_DETACHED
         self.__aliasToLoad = []
         self.__daapiBridge = daapiBridge or DAAPIRootBridge()
         self.__daapiBridge.setPyScript(self.proxy)
@@ -141,6 +142,10 @@ class SFApplication(Flash, ApplicationMeta):
     @property
     def appNS(self):
         return self.__ns
+
+    @property
+    def ctrlModeFlags(self):
+        return self.__guiCtrlModeFlags
 
     def toggleEditor(self):
         from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
@@ -249,25 +254,29 @@ class SFApplication(Flash, ApplicationMeta):
              args,
              kwargs))
 
-    def attachCursor(self):
-        if self.cursorMgr is not None:
-            self.cursorMgr.attachCursor(True)
+    def attachCursor(self, flags = GUI_CTRL_MODE_FLAG.GUI_ENABLED):
+        if self.__guiCtrlModeFlags == flags:
+            return
         else:
-            self.__isCursorAttached = True
-        return
+            self.__guiCtrlModeFlags = flags
+            if self.cursorMgr is not None:
+                self.cursorMgr.attachCursor(flags)
+            return
 
     def detachCursor(self):
+        self.__guiCtrlModeFlags = GUI_CTRL_MODE_FLAG.CURSOR_DETACHED
         if self.cursorMgr is not None:
-            self.cursorMgr.detachCursor(True)
-        else:
-            self.__isCursorAttached = False
+            self.cursorMgr.detachCursor()
         return
 
-    def syncCursor(self):
-        if self.__isCursorAttached:
-            self.attachCursor()
+    def syncCursor(self, flags = GUI_CTRL_MODE_FLAG.GUI_ENABLED):
+        if self.__guiCtrlModeFlags == flags:
+            return
         else:
-            self.detachCursor()
+            self.__guiCtrlModeFlags = flags
+            if self.cursorMgr is not None:
+                self.cursorMgr.syncCursor(flags=flags)
+            return
 
     def setLoaderMgr(self, flashObject):
         self._loaderMgr.setFlashObject(flashObject)
@@ -429,7 +438,7 @@ class SFApplication(Flash, ApplicationMeta):
         raise NotImplementedError('App._setup must be overridden')
 
     def _loadCursor(self):
-        raise NotImplementedError('App._loadCursor must be overridden')
+        self._containerMgr.load(VIEW_ALIAS.CURSOR)
 
     def _loadWaiting(self):
         raise NotImplementedError('App._loadWaiting must be overridden')

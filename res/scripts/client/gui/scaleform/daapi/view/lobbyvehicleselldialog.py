@@ -1,13 +1,13 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/VehicleSellDialog.py
 import BigWorld
-from collections import defaultdict
 from debug_utils import LOG_ERROR, LOG_CURRENT_EXCEPTION
 from gui.shared.ItemsCache import CACHE_SYNC_REASON
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from account_helpers.AccountSettings import AccountSettings
 from gui import SystemMessages, makeHtmlString
 from gui.Scaleform.daapi.view.meta.VehicleSellDialogMeta import VehicleSellDialogMeta
-from gui.shared import g_itemsCache, REQ_CRITERIA
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache
 from gui.shared.tooltips import ACTION_TOOLTIPS_STATE, ACTION_TOOLTIPS_TYPE, getItemActionTooltipData
 from gui.shared.gui_items.processors.vehicle import VehicleSeller
 from gui.shared.gui_items.vehicle_modules import Shell

@@ -6,6 +6,7 @@ import BattleReplay
 from functools import partial
 from debug_utils import *
 import SoundGroups
+import WWISE
 
 class IngameSoundNotifications(object):
     __CFG_SECTION_PATH = 'gui/sound_notifications.xml'
@@ -133,7 +134,13 @@ class IngameSoundNotifications(object):
         if self.__activeEvents is None:
             return
         else:
-            if sound.isPlaying:
+            if WWISE.enabled:
+                if sound.isPlaying:
+                    BigWorld.callback(0.01, lambda : self.__onSoundEnd(category, sound))
+                else:
+                    self.__activeEvents[category] = None
+                    BigWorld.callback(0.01, partial(self.__playFirstFromQueue, category))
+            elif sound.state.find('playing') != -1:
                 BigWorld.callback(0.01, lambda : self.__onSoundEnd(category, sound))
             else:
                 self.__activeEvents[category] = None
@@ -148,6 +155,7 @@ class IngameSoundNotifications(object):
             succes = False
             time = BigWorld.time()
             soundPath = ''
+            sound = None
             while not succes and len(queue) > 0:
                 soundPath, timeout, minTimeBetweenEvents, vehicleIdToBind, checkFn = queue[0]
                 del queue[0]
@@ -165,7 +173,7 @@ class IngameSoundNotifications(object):
                 if not succes:
                     LOG_ERROR('Failed to load sound %s' % soundPath)
 
-            if succes:
+            if sound is not None and succes:
                 sound.setCallback(partial(self.__onSoundEnd, category))
                 sound.play()
                 self.__activeEvents[category] = {'sound': sound,

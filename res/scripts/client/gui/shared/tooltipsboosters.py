@@ -1,7 +1,6 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/boosters.py
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
 from gui.goodies import g_goodiesCache
-from gui.server_events.EventsCache import g_eventsCache
 from gui.shared.tooltips.common import BlocksTooltipData
 from gui.shared.tooltips import TOOLTIP_TYPE
 from gui.shared.tooltips import formatters
@@ -50,7 +49,7 @@ class BoosterTooltipData(BlocksTooltipData):
 
     def __getBoosterQuestNames(self, boosterID):
         questsResult = set()
-        quests = g_eventsCache.getAllQuests(lambda q: q.isAvailable()[0] and not q.isCompleted(), includePotapovQuests=True)
+        quests = events_helpers.getBoosterQuests()
         for q in quests.itervalues():
             bonuses = q.getBonuses('goodies')
             for b in bonuses:

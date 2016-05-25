@@ -10,7 +10,7 @@ from helpers import time_utils
 from helpers.i18n import makeString as _ms
 from shared_utils import findFirst
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
-from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardAbstract
+from gui.Scaleform.daapi.view.lobby.AwardWindow import AwardAbstract, ExplosionBackAward
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.game_control.controllers import Controller
 from gui.shared.formatters import icons, text_styles
@@ -40,7 +40,7 @@ def _getMaxNumberOfReferrals():
     return _getRefSysCfg()['maxNumberOfReferrals']
 
 
-class CreditsAward(AwardAbstract):
+class CreditsAward(ExplosionBackAward):
 
     def __init__(self, creditsValue):
         super(CreditsAward, self).__init__()
@@ -48,9 +48,6 @@ class CreditsAward(AwardAbstract):
 
     def getWindowTitle(self):
         return _ms(MENU.AWARDWINDOW_TITLE_CREDITS)
-
-    def getBackgroundImage(self):
-        return RES_ICONS.MAPS_ICONS_REFERRAL_AWARDBACK
 
     def getAwardImage(self):
         return RES_ICONS.MAPS_ICONS_REFERRAL_AWARD_CREDITS_GLOW
@@ -63,7 +60,7 @@ class CreditsAward(AwardAbstract):
         return text_styles.main(_ms(MENU.AWARDWINDOW_REFERRAL_CREDITS_DESCRIPTION, credits=creditsCount))
 
 
-class VehicleAward(AwardAbstract):
+class VehicleAward(ExplosionBackAward):
 
     def __init__(self, vehicle, boughtVehicle, achievedXp):
         super(VehicleAward, self).__init__()
@@ -73,9 +70,6 @@ class VehicleAward(AwardAbstract):
 
     def getWindowTitle(self):
         return _ms(MENU.AWARDWINDOW_TITLE_NEWVEHICLE)
-
-    def getBackgroundImage(self):
-        return RES_ICONS.MAPS_ICONS_REFERRAL_AWARDBACK
 
     def getAwardImage(self):
         return self.__vehicle.iconUniqueLight
@@ -100,7 +94,7 @@ class VehicleAward(AwardAbstract):
         return text_styles.main(_ms(MENU.AWARDWINDOW_REFERRAL_COMPLETE, modifiers=', '.join(result)))
 
 
-class TankmanAward(AwardAbstract):
+class TankmanAward(ExplosionBackAward):
 
     def __init__(self, tankman, achievedXp, nextXp):
         super(TankmanAward, self).__init__()
@@ -110,9 +104,6 @@ class TankmanAward(AwardAbstract):
 
     def getWindowTitle(self):
         return _ms(MENU.AWARDWINDOW_TITLE_NEWTANKMAN)
-
-    def getBackgroundImage(self):
-        return RES_ICONS.MAPS_ICONS_REFERRAL_AWARDBACK
 
     def getAwardImage(self):
         if self.__tankman.isFemale:

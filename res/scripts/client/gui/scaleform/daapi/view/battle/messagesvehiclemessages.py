@@ -54,7 +54,7 @@ class VehicleMessages(FadingMessages):
         if extra is not None:
             names['device'] = extra.deviceUserString
         if entityID:
-            names['entity'] = g_sessionProvider.getCtx().getFullPlayerName(entityID)
+            names['entity'] = g_sessionProvider.getCtx().getPlayerFullName(entityID)
         if equipmentID:
             equipment = vehicles.g_cache.equipments().get(equipmentID)
             if equipment is not None:

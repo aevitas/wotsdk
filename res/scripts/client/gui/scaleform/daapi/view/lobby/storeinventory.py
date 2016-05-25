@@ -14,7 +14,8 @@ from gui.Scaleform.genConsts.STORE_TYPES import STORE_TYPES
 from gui.Scaleform.locale.MENU import MENU
 from gui.shared.gui_items import GUI_ITEM_TYPE, GUI_ITEM_TYPE_INDICES
 from gui.shared.utils import CLIP_ICON_PATH, EXTRA_MODULE_INFO
-from gui.shared import g_itemsCache, REQ_CRITERIA, event_dispatcher as shared_event_dispatcher
+from gui.shared.utils.requesters import REQ_CRITERIA
+from gui.shared import g_itemsCache, event_dispatcher as shared_event_dispatcher
 from adisp import process
 from helpers.i18n import makeString
 from items import ITEM_TYPE_INDICES
@@ -104,8 +105,11 @@ class Inventory(InventoryMeta):
             disable = False
             statusMessage = ''
             if type == self._VEHICLE:
-                if module.getState()[0] in (Vehicle.VEHICLE_STATE.RENTAL_IS_ORVER, Vehicle.VEHICLE_STATE.IGR_RENTAL_IS_ORVER) or not module.canSell:
-                    statusMessage = makeString('#menu:store/vehicleStates/%s' % module.getState()[0])
+                state = module.getState()[0]
+                isStateSuitable = state in (Vehicle.VEHICLE_STATE.RENTAL_IS_ORVER, Vehicle.VEHICLE_STATE.IGR_RENTAL_IS_ORVER)
+                isExcludedState = state in (Vehicle.VEHICLE_STATE.UNSUITABLE_TO_UNIT,)
+                if isStateSuitable or not isExcludedState and not module.canSell:
+                    statusMessage = makeString('#menu:store/vehicleStates/%s' % state)
                     disable = not module.canSell
             elif type in (self._MODULE, self._OPTIONAL_DEVICE, self._EQUIPMENT) and not module.isInInventory:
                 if type == self._OPTIONAL_DEVICE:

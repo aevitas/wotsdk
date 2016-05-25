@@ -18,7 +18,6 @@ class TUTORIAL_STOP_REASON(object):
     DEFAULT = PLAYER_ACTION
 
 
-TUTORIAL_STOP_REASON_NAMES = dict([ (k, v) for k, v in TUTORIAL_STOP_REASON.__dict__.iteritems() if not k.startswith('_') ])
 _SettingsDesc = namedtuple('_SettingsDesc', ('id', 'enabled', 'findChapterInCache', 'space', 'descriptorPath', 'descriptorParser', 'reqs', 'ctrl', 'gui', 'dispatcher', 'exParsers', 'chapterParser'))
 _ClassPath = namedtuple('_ClassPath', ('module', 'clazz', 'args'))
 TUTORIAL_LOBBY_DISPATCHER = _ClassPath('gui.Scaleform.lobby', 'SfLobbyDispatcher', ())

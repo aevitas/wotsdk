@@ -2,6 +2,12 @@
 from debug_utils import LOG_WARNING
 
 class INVITES(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     ERRORS_UNKNOWNUSER = '#invites:errors/unknownuser'
     ERRORS_USEROFFLINE = '#invites:errors/useroffline'
     ERRORS_SELFINVITE = '#invites:errors/selfinvite'
@@ -171,6 +177,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_state(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/state/%s' % key
         if outcome not in INVITES.INVITES_STATE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -180,6 +190,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_prebattle_alreadyjoined(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/prebattle/alreadyJoined/%s' % key
         if outcome not in INVITES.INVITES_PREBATTLE_ALREADYJOINED_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -189,6 +203,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_prebattle_acceptnotallowed(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/prebattle/acceptNotAllowed/%s' % key
         if outcome not in INVITES.INVITES_PREBATTLE_ACCEPTNOTALLOWED_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -198,6 +216,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_text(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/text/%s' % key
         if outcome not in INVITES.INVITES_TEXT_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -207,6 +229,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_note_change_and_leave(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/note/change_and_leave/%s' % key
         if outcome not in INVITES.INVITES_NOTE_CHANGE_AND_LEAVE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')
@@ -216,6 +242,10 @@ class INVITES(object):
 
     @staticmethod
     def invites_note_leave(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#invites:invites/note/leave/%s' % key
         if outcome not in INVITES.INVITES_NOTE_LEAVE_ENUM:
             LOG_WARNING('locale key "' + outcome + '" was not found')

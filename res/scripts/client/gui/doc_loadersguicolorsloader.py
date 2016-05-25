@@ -3,6 +3,8 @@ import Math
 import ResMgr
 from debug_utils import *
 from items import _xml
+DEFAULT_SUB_SCHEME = 'default'
+COLOR_BLIND_SUB_SCHEME = 'color_blind'
 
 class _GuiColorsLoader(object):
     XML_PATH = 'gui/gui_colors.xml'
@@ -173,6 +175,15 @@ class _GuiColorsLoader(object):
             return scheme[group]
         else:
             return scheme['default']
+
+    def getSubSchemeToFlash(self, schemeName, group):
+        result = self.getSubScheme(schemeName, group)
+        transform = result['transform']
+        return {'adjust': {'offset': result['adjust']['offset'].tuple()},
+         'transform': {'mult': transform['mult'].tuple(),
+                       'offset': transform['offset'].tuple()},
+         'rgba': result['rgba'].tuple(),
+         'alias_color': result['alias_color']}
 
 
 _g_instance = None

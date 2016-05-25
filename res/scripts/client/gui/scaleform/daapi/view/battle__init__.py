@@ -1,8 +1,8 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/battle/__init__.py
 from account_helpers.settings_core import g_settingsCore
 from debug_utils import LOG_ERROR
-AMMO_ICON_PATH = '../maps/icons/ammopanel/ammo/%s'
-NO_AMMO_ICON_PATH = '../maps/icons/ammopanel/ammo/NO_%s'
+AMMO_ICON_PATH = '../maps/icons/ammopanel/battle_ammo/%s'
+NO_AMMO_ICON_PATH = '../maps/icons/ammopanel/battle_ammo/NO_%s'
 COMMAND_AMMO_CHOICE_MASK = 'CMD_AMMO_CHOICE_{0:d}'
 FALLOUT_SCORE_PANEL = '_level0.fragCorrelationBar'
 DAMAGE_PANEL_PATH = '_level0.damagePanel'

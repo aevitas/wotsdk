@@ -74,7 +74,9 @@ def getEmptyFilter():
 
 
 def get(filterID):
-    return _filters.get(filterID, getEmptyFilter())
+    if filterID in _filters:
+        return _filters[filterID]
+    return EmptySoundFilter()
 
 
 def _selectFilter(wwise):

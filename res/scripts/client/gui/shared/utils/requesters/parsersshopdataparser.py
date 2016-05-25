@@ -1,7 +1,7 @@
 # Embedded file name: scripts/client/gui/shared/utils/requesters/parsers/ShopDataParser.py
 import weakref
 from gui.shared.gui_items import GUI_ITEM_TYPE
-from gui.shared.utils import ParametersCache
+from gui.shared.items_parameters import params
 from items import vehicles
 import nations
 
@@ -35,11 +35,11 @@ class ShopDataParser(object):
 
     def getEquipments(self, nationID):
         allEquipments = vehicles.g_cache.equipments()
-        return self.__filterByNation(allEquipments, ParametersCache.g_instance.getEquipmentParameters, nationID)
+        return self.__filterByNation(allEquipments, params.EquipmentParams, nationID)
 
     def getOptionalDevices(self, nationID):
         allOptDevices = vehicles.g_cache.optionalDevices()
-        return self.__filterByNation(allOptDevices, ParametersCache.g_instance.getOptionalDeviceParameters, nationID)
+        return self.__filterByNation(allOptDevices, params.OptionalDeviceParams, nationID)
 
     def getItemsIterator(self, nationID = None, itemTypeID = None):
         hiddenInShop = self.data.get('notInShopItems', [])
@@ -99,7 +99,7 @@ class ShopDataParser(object):
             result = {}
             for key, value in items.iteritems():
                 params = getParameters(value)
-                if nationID in params['nations']:
+                if nationID in params.nations:
                     result[key] = value
 
             return result

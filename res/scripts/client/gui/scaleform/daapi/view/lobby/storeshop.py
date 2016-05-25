@@ -2,10 +2,11 @@
 import BigWorld
 from PlayerEvents import g_playerEvents
 from gui.shared.formatters.time_formatters import RentLeftFormatter
-from gui.shared.tooltips import getItemActionTooltipData, getItemRentActionTooltipData
+from gui.shared.tooltips import getItemActionTooltipData, getItemRentActionTooltipData, getActionPriceData
 from gui.Scaleform.genConsts.STORE_TYPES import STORE_TYPES
 from gui.Scaleform.locale.MENU import MENU
-from gui.shared import REQ_CRITERIA, g_itemsCache
+from gui.shared import g_itemsCache
+from gui.shared.utils.requesters import REQ_CRITERIA
 from gui.shared.gui_items import GUI_ITEM_TYPE, GUI_ITEM_TYPE_INDICES
 from gui.shared.utils import EXTRA_MODULE_INFO, CLIP_ICON_PATH
 from debug_utils import LOG_ERROR
@@ -17,7 +18,6 @@ from gui.Scaleform.daapi.view.meta.ShopMeta import ShopMeta
 from items import ITEM_TYPE_INDICES
 from gui.shared.gui_items.items_actions import factory as ItemsActionsFactory
 from gui.shared.gui_items.Vehicle import Vehicle
-import WWISE
 
 class Shop(ShopMeta):
 
@@ -238,17 +238,9 @@ class Shop(ShopMeta):
         module, inventoryCount, vehicleCount, disabled, statusMessage, isEnabledBuyingGoldShellsForCredits, isEnabledBuyingGoldEqsForCredits, extraModuleInfo = packedItem
         credits, gold = g_itemsCache.items.stats.money
         name = module.userName if module.itemTypeID in GUI_ITEM_TYPE.ARTEFACTS else module.longUserName
-        price = module.altPrice or module.buyPrice
-        defaultPrice = module.defaultAltPrice or module.defaultPrice
         rentLeftTimeStr = RentLeftFormatter(module.rentInfo).getRentLeftStr()
-        minRentPricePackage = module.getRentPackage()
-        action = None
-        if price != defaultPrice and not minRentPricePackage:
-            action = getItemActionTooltipData(module)
-        elif minRentPricePackage:
-            price = minRentPricePackage['rentPrice']
-            if minRentPricePackage['rentPrice'] != minRentPricePackage['defaultRentPrice']:
-                action = getItemRentActionTooltipData(module, minRentPricePackage)
+        price = module.rentOrBuyPrice
+        action = getActionPriceData(module)
         return {'id': str(module.intCD),
          'name': name,
          'desc': module.getShortInfo(),

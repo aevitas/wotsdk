@@ -11,13 +11,14 @@ from gui import makeHtmlString
 from gui.shared.economics import calcRentPackages, getActionPrc
 from helpers import i18n, time_utils
 from items import vehicles, tankmen, getTypeInfoByName
-from account_shared import LayoutIterator
+from account_shared import LayoutIterator, getCustomizedVehCompDescr
 from gui.prb_control.settings import PREBATTLE_SETTING_NAME
 from gui.shared.gui_items import CLAN_LOCK, HasStrCD, FittingItem, GUI_ITEM_TYPE, getItemIconName, RentalInfoProvider
 from gui.shared.gui_items.vehicle_modules import Shell, VehicleChassis, VehicleEngine, VehicleRadio, VehicleFuelTank, VehicleTurret, VehicleGun
 from gui.shared.gui_items.artefacts import Equipment, OptionalDevice
 from gui.shared.gui_items.Tankman import Tankman
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
+from gui.shared.formatters import text_styles
 
 class VEHICLE_CLASS_NAME(CONST_CONTAINER):
     LIGHT_TANK = 'lightTank'
@@ -38,12 +39,17 @@ def compareByVehTypeName(vehTypeA, vehTypeB):
     return VEHICLE_TYPES_ORDER_INDICES[vehTypeA] - VEHICLE_TYPES_ORDER_INDICES[vehTypeB]
 
 
+def compareByVehTableTypeName(vehTypeA, vehTypeB):
+    return VEHICLE_TABLE_TYPES_ORDER_INDICES[vehTypeA] - VEHICLE_TABLE_TYPES_ORDER_INDICES[vehTypeB]
+
+
 VEHICLE_TABLE_TYPES_ORDER = (VEHICLE_CLASS_NAME.HEAVY_TANK,
  VEHICLE_CLASS_NAME.MEDIUM_TANK,
  VEHICLE_CLASS_NAME.LIGHT_TANK,
  VEHICLE_CLASS_NAME.AT_SPG,
  VEHICLE_CLASS_NAME.SPG)
 VEHICLE_TABLE_TYPES_ORDER_INDICES = dict(((n, i) for i, n in enumerate(VEHICLE_TABLE_TYPES_ORDER)))
+VEHICLE_TABLE_TYPES_ORDER_INDICES_REVERSED = dict(((n, i) for i, n in enumerate(reversed(VEHICLE_TABLE_TYPES_ORDER))))
 VEHICLE_BATTLE_TYPES_ORDER = (VEHICLE_CLASS_NAME.HEAVY_TANK,
  VEHICLE_CLASS_NAME.MEDIUM_TANK,
  VEHICLE_CLASS_NAME.AT_SPG,
@@ -94,7 +100,8 @@ class Vehicle(FittingItem, HasStrCD):
         FALLOUT_REQUIRED = 'fallout_required'
         FALLOUT_BROKEN = 'fallout_broken'
         UNSUITABLE_TO_QUEUE = 'unsuitableToQueue'
-        CUSTOM = (NOT_SUITABLE, UNSUITABLE_TO_QUEUE)
+        UNSUITABLE_TO_UNIT = 'unsuitableToUnit'
+        CUSTOM = (NOT_SUITABLE, UNSUITABLE_TO_QUEUE, UNSUITABLE_TO_UNIT)
         DEAL_IS_OVER = 'dealIsOver'
 
     CAN_SELL_STATES = [VEHICLE_STATE.UNDAMAGED,
@@ -106,7 +113,8 @@ class Vehicle(FittingItem, HasStrCD):
      VEHICLE_STATE.FALLOUT_REQUIRED,
      VEHICLE_STATE.FALLOUT_BROKEN,
      VEHICLE_STATE.FALLOUT_ONLY,
-     VEHICLE_STATE.UNSUITABLE_TO_QUEUE]
+     VEHICLE_STATE.UNSUITABLE_TO_QUEUE,
+     VEHICLE_STATE.UNSUITABLE_TO_UNIT]
     GROUP_STATES = [VEHICLE_STATE.GROUP_IS_NOT_READY,
      VEHICLE_STATE.FALLOUT_MIN,
      VEHICLE_STATE.FALLOUT_MAX,
@@ -140,6 +148,7 @@ class Vehicle(FittingItem, HasStrCD):
         self.hasRentPackages = False
         self.isDisabledForBuy = False
         self.isSelected = False
+        self.igrCustomizationsLayout = {}
         invData = dict()
         if proxy is not None and proxy.inventory.isSynced() and proxy.stats.isSynced() and proxy.shop.isSynced():
             invDataTmp = proxy.inventory.getItems(GUI_ITEM_TYPE.VEHICLE, inventoryID)
@@ -156,6 +165,7 @@ class Vehicle(FittingItem, HasStrCD):
             self.isDisabledForBuy = self.intCD in proxy.shop.getNotToBuyVehicles()
             self.hasRentPackages = bool(proxy.shop.getVehicleRentPrices().get(self.intCD, {}))
             self.isSelected = bool(self.invID in proxy.stats.oldVehInvIDs)
+            self.igrCustomizationsLayout = proxy.inventory.getIgrCustomizationsLayout().get(self.inventoryID, {})
         self.inventoryCount = 1 if len(invData.keys()) else 0
         data = invData.get('rent')
         if data is not None:
@@ -275,8 +285,7 @@ class Vehicle(FittingItem, HasStrCD):
                 tankman = Tankman(strCompactDescr=tmanInvData['compDescr'], inventoryID=tankmanID, vehicle=self, proxy=proxy)
             crewItems.append((idx, tankman))
 
-        RO = Tankman.TANKMEN_ROLES_ORDER
-        return sorted(crewItems, cmp=lambda a, b: RO[crewRoles[a[0]][0]] - RO[crewRoles[b[0]][0]])
+        return _sortCrew(crewItems, crewRoles)
 
     @staticmethod
     def __crewSort(t1, t2):
@@ -351,6 +360,9 @@ class Vehicle(FittingItem, HasStrCD):
     def isPurchased(self):
         return self.isInInventory and not self.rentInfo.isRented
 
+    def isPreviewAllowed(self):
+        return not self.isInInventory and not self.isSecret
+
     @property
     def rentExpiryTime(self):
         return self.rentInfo.rentExpiryTime
@@ -393,23 +405,19 @@ class Vehicle(FittingItem, HasStrCD):
 
     @property
     def rentalIsOver(self):
-        return self.isRented and self.rentLimitIsReached and not self.isSelected
+        return self.isRented and self.rentExpiryState and not self.isSelected
 
     @property
     def rentalIsActive(self):
-        return self.isRented and not self.rentLimitIsReached
+        return self.isRented and not self.rentExpiryState
 
     @property
     def rentLeftBattles(self):
-        return self.rentInfo.getBattlesLeft()
+        return self.rentInfo.battlesLeft
 
     @property
     def rentExpiryState(self):
         return self.rentInfo.getExpiryState()
-
-    @property
-    def rentLimitIsReached(self):
-        return self.rentLeftTime <= 0 and self.rentLeftBattles <= 0 and self.rentExpiryState
 
     @property
     def descriptor(self):
@@ -489,6 +497,9 @@ class Vehicle(FittingItem, HasStrCD):
 
     def clearCustomState(self):
         self.__customState = ''
+
+    def isCustomStateSet(self):
+        return self.__customState != ''
 
     def __checkUndamagedState(self, state, isCurrnentPlayer = True):
         if state == Vehicle.VEHICLE_STATE.UNDAMAGED and isCurrnentPlayer:
@@ -850,6 +861,33 @@ class Vehicle(FittingItem, HasStrCD):
 
         return (data[0], data[1], set(data[2:]))
 
+    def getPerfectCrew(self):
+        crewItems = list()
+        crewRoles = self.descriptor.type.crewRoles
+        nationID, vehicleTypeID = self.descriptor.type.id
+        passport = tankmen.generatePassport(nationID)
+        for idx, tankmanID in enumerate(crewRoles):
+            role = self.descriptor.type.crewRoles[idx][0]
+            tankman = Tankman(tankmen.generateCompactDescr(passport, vehicleTypeID, role, 100), vehicle=self)
+            crewItems.append((idx, tankman))
+
+        return _sortCrew(crewItems, crewRoles)
+
+    def getCustomizedDescriptor(self):
+        if self.invID > 0:
+            from gui import game_control
+            from gui.LobbyContext import g_lobbyContext
+            igrRoomType = game_control.g_instance.igr.getRoomType()
+            igrLayout = {self.invID: self.igrCustomizationsLayout}
+            updatedVehCompactDescr = getCustomizedVehCompDescr(igrLayout, self.invID, igrRoomType, self.descriptor.makeCompactDescr())
+            serverSettings = g_lobbyContext.getServerSettings()
+            if serverSettings is not None and serverSettings.roaming.isInRoaming():
+                updatedVehCompactDescr = vehicles.stripCustomizationFromVehicleCompactDescr(updatedVehCompactDescr, True, True, False)[0]
+            return vehicles.VehicleDescr(compactDescr=updatedVehCompactDescr)
+        else:
+            return self.descriptor
+            return
+
     def __eq__(self, other):
         if other is None:
             return False
@@ -871,7 +909,7 @@ class Vehicle(FittingItem, HasStrCD):
          'caliber': BigWorld.wg_getIntegralFormat(caliber)}
 
     def _sortByType(self, other):
-        return VEHICLE_TYPES_ORDER_INDICES[self.type] - VEHICLE_TYPES_ORDER_INDICES[other.type]
+        return compareByVehTypeName(self.type, other.type)
 
 
 def getTypeUserName(vehType, isElite):
@@ -970,3 +1008,12 @@ def findVehicleArmorMinMax(vd):
             minMax = findComponentArmorMinMax(turret['primaryArmor'], minMax)
 
     return minMax
+
+
+def _sortCrew(crewItems, crewRoles):
+    RO = Tankman.TANKMEN_ROLES_ORDER
+    return sorted(crewItems, cmp=lambda a, b: RO[crewRoles[a[0]][0]] - RO[crewRoles[b[0]][0]])
+
+
+def getLobbyDescription(vehicle):
+    return text_styles.stats(i18n.makeString('#menu:header/level/%s' % vehicle.level)) + ' ' + text_styles.main(i18n.makeString('#menu:header/level', vTypeName=getTypeUserName(vehicle.type, vehicle.isElite)))

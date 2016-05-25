@@ -200,12 +200,10 @@ class AccountQueueFunctional(PreQueueFunctional):
         self._requestCtx = PrbCtrlRequestCtx()
 
     def init(self, ctx = None):
-        g_gameCtrl.captcha.onCaptchaInputCanceled += self.__onCaptchaInputCanceled
         return super(AccountQueueFunctional, self).init(ctx)
 
     def fini(self, woEvents = False):
         self._requestCtx.clear()
-        g_gameCtrl.captcha.onCaptchaInputCanceled -= self.__onCaptchaInputCanceled
         super(AccountQueueFunctional, self).fini(woEvents)
 
     def doAction(self, action = None):
@@ -299,6 +297,3 @@ class AccountQueueFunctional(PreQueueFunctional):
         if result:
             g_eventDispatcher.showParentControlNotification()
         return result
-
-    def __onCaptchaInputCanceled(self):
-        self._requestCtx.stopProcessing(False)

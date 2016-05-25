@@ -41,9 +41,9 @@ class VibroManager:
 
     def start(self):
         from gui.app_loader import g_appLoader
-        g_appLoader.onGUISpaceChanged += self.__onGUISpaceChanged
+        g_appLoader.onGUISpaceEntered += self.__onGUISpaceEntered
 
-    def __onGUISpaceChanged(self, spaceID):
+    def __onGUISpaceEntered(self, spaceID):
         from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID
         if spaceID == GUI_GLOBAL_SPACE_ID.LOGIN:
             self.stopAllEffects()
@@ -66,7 +66,7 @@ class VibroManager:
 
     def destroy(self):
         from gui.app_loader import g_appLoader
-        g_appLoader.onGUISpaceChanged -= self.__onGUISpaceChanged
+        g_appLoader.onGUISpaceEntered -= self.__onGUISpaceEntered
         self.clearEffects()
         self.__effects = None
         self.__quickEffects = None

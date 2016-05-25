@@ -4,7 +4,6 @@ from gui.game_control import getRoamingCtrl, getWalletCtrl
 from helpers import getClientOverride
 from gui import GUI_SETTINGS
 from gui.shared import g_itemsCache
-from gui.shared.fortifications import isFortificationEnabled, isFortificationBattlesEnabled
 from gui.Scaleform.framework.entities.abstract.GlobalVarsMgrMeta import GlobalVarsMgrMeta
 from gui.LobbyContext import g_lobbyContext
 
@@ -37,8 +36,12 @@ class GlobalVarsManager(GlobalVarsMgrMeta):
     def setTutorialDisabled(self, isDisabled):
         self.__isTutorialDisabled = isDisabled
 
-    def isTutorialRunning(self):
-        return self.__isTutorialRunning
+    def isTutorialRunning(self, tutorialID):
+        try:
+            from tutorial.loader import g_loader
+            return g_loader.isRunning and g_loader.tutorialID == tutorialID
+        except ImportError:
+            return False
 
     def setTutorialRunning(self, isRunning):
         self.__isTutorialRunning = isRunning
@@ -60,10 +63,7 @@ class GlobalVarsManager(GlobalVarsMgrMeta):
         return g_lobbyContext.getServerSettings().roaming.isInRoaming()
 
     def isFortificationAvailable(self):
-        return isFortificationEnabled()
-
-    def isFortificationBattleAvailable(self):
-        return isFortificationBattlesEnabled()
+        return g_lobbyContext.getServerSettings().isFortsEnabled()
 
     def isWalletAvailable(self):
         ctrl = getWalletCtrl()

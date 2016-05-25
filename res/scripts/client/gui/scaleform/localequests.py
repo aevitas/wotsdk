@@ -2,6 +2,12 @@
 
 
 class QUESTS(object):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    null
+    """
     IGR_TOOLTIP_BATTLESLABEL = '#quests:igr/tooltip/battlesLabel'
     IGR_TOOLTIP_WINSLABEL = '#quests:igr/tooltip/winsLabel'
     POSTBATTLE_PROGRESSRESET = '#quests:postBattle/progressReset'
@@ -764,21 +770,33 @@ class QUESTS(object):
 
     @staticmethod
     def questscontrol_additionaltitle(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#quests:questsControl/additionalTitle/%s' % key
         if outcome not in QUESTS.QUESTSCONTROL_ADDITIONALTITLE_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome
 
     @staticmethod
     def questspersonalwelcomeview_textblock_body(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#quests:QuestsPersonalWelcomeView/textBlock/body/%s' % key
         if outcome not in QUESTS.QUESTSPERSONALWELCOMEVIEW_TEXTBLOCK_BODY_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome
 
     @staticmethod
     def questspersonalwelcomeview_textblock_header(key):
+        """
+        :param key:
+        :return String:
+        """
         outcome = '#quests:QuestsPersonalWelcomeView/textBlock/header/%s' % key
         if outcome not in QUESTS.QUESTSPERSONALWELCOMEVIEW_TEXTBLOCK_HEADER_ENUM:
-            raise Exception, 'locale key "' + outcome + '" was not found'
+            raise Exception('locale key "' + outcome + '" was not found')
         return outcome

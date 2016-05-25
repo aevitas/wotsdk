@@ -20,6 +20,16 @@ class ProfileTechniquePage(ProfileTechniquePageMeta):
                 self._battlesType = PROFILE_DROPDOWN_KEYS.ALL
             elif intVehCD in accountDossier.getTeam7x7Stats().getVehicles():
                 self._battlesType = PROFILE_DROPDOWN_KEYS.TEAM
+            elif intVehCD in accountDossier.getHistoricalStats().getVehicles():
+                self._battlesType = PROFILE_DROPDOWN_KEYS.HISTORICAL
+            elif intVehCD in accountDossier.getFortBattlesStats().getVehicles():
+                self._battlesType = PROFILE_DROPDOWN_KEYS.FORTIFICATIONS_BATTLES
+            elif intVehCD in accountDossier.getFortSortiesStats().getVehicles():
+                self._battlesType = PROFILE_DROPDOWN_KEYS.FORTIFICATIONS_SORTIES
+            elif intVehCD in accountDossier.getRated7x7Stats().getVehicles():
+                self._battlesType = PROFILE_DROPDOWN_KEYS.STATICTEAM
+            elif intVehCD in accountDossier.getFalloutStats().getVehicles():
+                self._battlesType = PROFILE_DROPDOWN_KEYS.FALLOUT
         self.as_setSelectedVehicleIntCDS(int(self._selectedData.get('itemCD')) if self._selectedData else -1)
         return
 

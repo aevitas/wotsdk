@@ -2,13 +2,36 @@
 from gui.Scaleform.framework.entities.BaseDAAPIModule import BaseDAAPIModule
 
 class ToolTipMgrMeta(BaseDAAPIModule):
+    """
+    DO NOT MODIFY!
+    Generated with yaml.
+    __author__ = 'yaml_processor'
+    @extends BaseDAAPIModule
+    null
+    """
 
     def onCreateComplexTooltip(self, tooltipId, stateType):
+        """
+        :param tooltipId:
+        :param stateType:
+        :return :
+        """
         self._printOverrideError('onCreateComplexTooltip')
 
     def onCreateTypedTooltip(self, type, args, stateType):
+        """
+        :param type:
+        :param args:
+        :param stateType:
+        :return :
+        """
         self._printOverrideError('onCreateTypedTooltip')
 
     def as_showS(self, tooltipData, linkage):
+        """
+        :param tooltipData:
+        :param linkage:
+        :return :
+        """
         if self._isDAAPIInited():
             return self.flashObject.as_show(tooltipData, linkage)

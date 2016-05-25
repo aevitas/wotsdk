@@ -2,6 +2,7 @@
 import GUI
 import BigWorld
 from debug_utils import LOG_DEBUG, LOG_ERROR
+from gui import GUI_CTRL_MODE_FLAG as _CTRL_FLAG
 from gui.Scaleform.daapi.view.meta.CursorMeta import CursorMeta
 from gui.Scaleform.framework.entities.View import View
 from gui.shared import EVENT_BUS_SCOPE
@@ -26,24 +27,32 @@ class Cursor(CursorMeta, View):
         self.__savedMCursorPos = None
         return
 
-    def attachCursor(self, automaticallyShow):
-        if automaticallyShow:
-            self.show()
-        if not self.__isActivated:
-            mcursor = GUI.mcursor()
+    def attachCursor(self, flags = _CTRL_FLAG.GUI_ENABLED):
+        if not flags & _CTRL_FLAG.CURSOR_ATTACHED:
+            raise AssertionError('Flag CURSOR_ATTACHED is not defined')
+            if flags & _CTRL_FLAG.CURSOR_VISIBLE > 0:
+                self.show()
+            else:
+                self.hide()
+            mcursor = self.__isActivated or GUI.mcursor()
             mcursor.visible = False
-            LOG_DEBUG('Cursor attach')
+            LOG_DEBUG('Cursor is attached')
             BigWorld.setCursor(mcursor)
             self.__isActivated = True
 
-    def detachCursor(self, automaticallyHide):
+    def detachCursor(self):
         if self.__isActivated:
-            LOG_DEBUG('Cursor detach')
+            LOG_DEBUG('Cursor is detached')
             BigWorld.setCursor(None)
             self.__isActivated = False
-        if automaticallyHide:
-            self.hide()
+        self.hide()
         return
+
+    def syncCursor(self, flags = _CTRL_FLAG.GUI_ENABLED):
+        if flags & _CTRL_FLAG.CURSOR_ATTACHED > 0:
+            self.attachCursor(flags=flags)
+        elif flags & _CTRL_FLAG.CURSOR_DETACHED > 0:
+            self.detachCursor()
 
     def show(self):
         if self.flashObject is not None:
@@ -68,7 +77,11 @@ class Cursor(CursorMeta, View):
 
     def _populate(self):
         super(Cursor, self)._populate()
-        self.app.syncCursor()
+        flags = self.app.ctrlModeFlags
+        if flags & _CTRL_FLAG.CURSOR_ATTACHED > 0:
+            self.attachCursor(flags=flags)
+        else:
+            self.detachCursor()
 
     def __setSFMousePosition(self):
         screenWidth, screenHeight = GUI.screenResolution()

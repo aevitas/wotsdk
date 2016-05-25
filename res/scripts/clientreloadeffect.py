@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/ReloadEffect.py
 from helpers.CallbackDelayer import CallbackDelayer
+from helpers import gEffectsDisabled
 import SoundGroups
 
 def _createReloadEffectDesc(type, dataSection):
@@ -52,14 +53,17 @@ class SimpleReload(CallbackDelayer):
         return
 
     def start(self, reloadTime):
-        if self.__sound is None:
-            self.__sound = SoundGroups.g_instance.getSound2D(self.__desc.soundEvent)
+        if gEffectsDisabled():
+            return
         else:
-            self.__sound.stop()
-        time = reloadTime - self.__desc.duration
-        if time > 0.0:
-            self.delayCallback(time, self.__startEvent)
-        return
+            if self.__sound is None:
+                self.__sound = SoundGroups.g_instance.getSound2D(self.__desc.soundEvent)
+            else:
+                self.__sound.stop()
+            time = reloadTime - self.__desc.duration
+            if time > 0.0:
+                self.delayCallback(time, self.__startEvent)
+            return
 
     def stop(self):
         if self.__sound is not None:
@@ -71,5 +75,5 @@ class SimpleReload(CallbackDelayer):
     def __startEvent(self):
         if self.__sound is not None:
             self.__sound.stop()
-        self.__sound.play()
+            self.__sound.play()
         return

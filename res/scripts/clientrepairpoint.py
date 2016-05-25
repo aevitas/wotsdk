@@ -33,7 +33,7 @@ class RepairPoint(BigWorld.UserDataObject, _CTFCheckPoint, _CTFPointFlag, _UDOAt
         arenaType = BigWorld.player().arena.arenaType
         if hasattr(arenaType, 'repairPoints'):
             repairPoints = arenaType.repairPoints
-            for pt in repairPoints:
+            for pt in repairPoints.itervalues():
                 if 'guid' not in pt:
                     continue
                 if pt['guid'] == self.guid:
