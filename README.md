@@ -1,3 +1,4 @@
-# World of Tanks Py SDK
+# World of Tanks Python
 
-This is a software development kit for World of Tanks, in python. It is intended for educational purposes only.
+This repository contains the Python client side code for World of Tanks. Its main goal is to assist in the development of game modifications, and to provide detailed insight in the game's mechanics.
+
