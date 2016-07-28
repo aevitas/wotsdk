@@ -7,8 +7,7 @@ import Math
 import CommandMapping
 import Keys
 from CTFManager import g_ctfManager
-from constants import REPAIR_POINT_ACTION, RESOURCE_POINT_STATE, FLAG_STATE, AOI, VISIBILITY
-from gui.battle_control.avatar_getter import getSoundNotifications, isVehicleAlive
+from constants import RESOURCE_POINT_STATE, FLAG_STATE, AOI, VISIBILITY
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import GameEvent
 from ids_generators import SequenceIDGenerator
@@ -16,15 +15,15 @@ from messenger import MessengerEntry
 from AvatarInputHandler import mathUtils
 from shared_utils import findFirst
 from gui.battle_control import g_sessionProvider
-from gui.battle_control import avatar_getter, minimap_utils, matrix_factory
-from gui.battle_control.battle_constants import PLAYER_GUI_PROPS, FEEDBACK_EVENT_ID, NEUTRAL_TEAM
-from gui.battle_control.arena_info import isLowLevelBattle, hasFlags, hasRepairPoints, hasResourcePoints, isFalloutMultiTeam, hasGasAttack
+from gui.battle_control import avatar_getter
+from gui.battle_control import battle_constants
+from gui.battle_control import minimap_utils, matrix_factory
+from gui.battle_control import vehicle_getter
 import SoundGroups
 from gui import GUI_SETTINGS, g_repeatKeyHandlers
 from helpers.gui_utils import *
 from debug_utils import *
 from account_helpers.AccountSettings import AccountSettings
-from gui.battle_control import vehicle_getter
 from battleground.gas_attack import _getDefaultScenario
 CURSOR_NORMAL = 'cursorNormal'
 CURSOR_NORMAL_WITH_DIRECTION = 'cursorNormalWithDirection'
@@ -80,30 +79,12 @@ _CAPTURE_FROZEN_STATE_BY_TEAMS = {True: RESOURCE_POINT_TYPE.OWN_MINING,
  False: RESOURCE_POINT_TYPE.ENEMY_MINING}
 
 class Minimap(object):
-    __MINIMAP_SIZE = (210, 210)
 
     def __init__(self, parentUI):
         self.proxy = proxy(self)
-        self.__cfg = dict()
-        player = BigWorld.player()
-        arena = player.arena
-        arenaType = arena.arenaType
-        self.__playerTeam = player.team
-        self.__playerVehicleID = player.playerVehicleID
-        self.__isTeamPlayer = self.__playerTeam in arenaType.squadTeamNumbers if isFalloutMultiTeam() else True
-        self.__cfg['texture'] = arenaType.minimap
-        self.__cfg['teamBasePositions'] = arenaType.teamBasePositions
-        if isLowLevelBattle() and self.__playerTeam - 1 in arenaType.teamLowLevelSpawnPoints and len(arenaType.teamLowLevelSpawnPoints[self.__playerTeam - 1]):
-            self.__cfg['teamSpawnPoints'] = arenaType.teamLowLevelSpawnPoints
-        else:
-            self.__cfg['teamSpawnPoints'] = arenaType.teamSpawnPoints
-        self.__cfg['controlPoints'] = arenaType.controlPoints
-        self.__cfg['repairPoints'] = []
-        if hasFlags():
-            self.__cfg['flagAbsorptionPoints'] = arenaType.flagAbsorptionPoints
-            self.__cfg['flagSpawnPoints'] = arenaType.flagSpawnPoints
-        if hasRepairPoints():
-            self.__cfg['repairPoints'] = arenaType.repairPoints
+        self.__playerTeam = 0
+        self.__playerVehicleID = 0
+        self.__isTeamPlayer = False
         self.__points = {'base': {},
          'spawn': {}}
         self.__backMarkers = {}
@@ -139,6 +120,8 @@ class Minimap(object):
         self.__showDirectionLine = False
         self.__showSectorLine = False
         self.__showViewRange = False
+        self.__isFlagsListener = False
+        self.__isResPointsListener = False
         return
 
     def __del__(self):
@@ -148,95 +131,109 @@ class Minimap(object):
         self.__ownUI = GUI.WGMinimapFlash(self.__parentUI.movie)
         self.__ownUI.wg_inputKeyMode = 2
         self.__parentUI.component.addChild(self.__ownUI, 'minimap')
-        self.__ownUI.mapSize = Math.Vector2(self.__MINIMAP_SIZE)
-        bl, tr = BigWorld.player().arena.arenaType.boundingBox
-        self.__ownUI.setArenaBB(bl, tr)
-        player = BigWorld.player()
-        tex = BigWorld.PyTextureProvider(self.__cfg['texture'])
-        if not self.__ownUI.setBackground(tex):
-            LOG_ERROR("Failed to set minimap texture: '%s'" % self.__cfg['texture'])
-        self.__cameraHandle = None
-        self.__cameraMatrix = None
-        player.inputHandler.onCameraChanged += self.__resetCamera
-        player.inputHandler.onPostmortemVehicleChanged += self.__clearCamera
-        self.__parentUI.addExternalCallbacks({'minimap.onClick': self._onMapClicked,
-         'minimap.playAttantion': self._playAttention,
-         'minimap.setSize': self.onSetSize,
-         'minimap.lightPlayer': self.onLightPlayer,
-         'minimap.scaleMarkers': self.onScaleMarkers})
-        arena = player.arena
-        arena.onPositionsUpdated += self.__onFarPosUpdated
-        arena.onNewVehicleListReceived += self.__validateEntries
-        arena.onVehicleKilled += self.__onVehicleKilled
-        arena.onVehicleAdded += self.__onVehicleAdded
-        arena.onTeamKiller += self.__onTeamKiller
-        ctrl = g_sessionProvider.getEquipmentsCtrl()
-        if ctrl is not None:
-            ctrl.onEquipmentMarkerShown += self.__onEquipmentMarkerShown
-        ctrl = g_sessionProvider.getFeedback()
-        if ctrl is not None:
-            ctrl.onMinimapVehicleAdded += self.__onMinimapVehicleAdded
-            ctrl.onMinimapVehicleRemoved += self.__onMinimapVehicleRemoved
-            ctrl.onMinimapFeedbackReceived += self.__onMinimapFeedbackReceived
-            ctrl.onVehicleFeedbackReceived += self.__onVehicleFeedbackReceived
-        ctrl = g_sessionProvider.getVehicleStateCtrl()
-        if ctrl is not None:
-            ctrl.onPostMortemSwitched += self.__onPostMortemSwitched
-        functional = g_sessionProvider.getDynSquadFunctional()
-        if functional is not None:
-            functional.onPlayerBecomeSquadman += self.__onPlayerBecomeSquadman
-        addListener = g_eventBus.addListener
-        addListener(GameEvent.SHOW_EXTENDED_INFO, self.__handleShowExtendedInfo, scope=EVENT_BUS_SCOPE.BATTLE)
-        addListener(GameEvent.MINIMAP_CMD, self.__handleMinimapCmd, scope=EVENT_BUS_SCOPE.BATTLE)
-        self.__markerIDGenerator = SequenceIDGenerator()
-        isFlagBearer = False
-        if hasFlags():
-            g_ctfManager.onFlagSpawning += self.__onFlagSpawning
-            g_ctfManager.onFlagSpawnedAtBase += self.__onFlagSpawnedAtBase
-            g_ctfManager.onFlagCapturedByVehicle += self.__onFlagCapturedByVehicle
-            g_ctfManager.onFlagDroppedToGround += self.__onFlagDroppedToGround
-            g_ctfManager.onFlagAbsorbed += self.__onFlagAbsorbed
-            g_ctfManager.onFlagRemoved += self.__onFlagRemoved
-            g_ctfManager.onCarriedFlagsPositionUpdated += self.__onCarriedFlagsPositionUpdated
-            for flagID, flagInfo in g_ctfManager.getFlags():
-                vehicleID = flagInfo['vehicle']
-                if vehicleID is None:
-                    if flagInfo['state'] == FLAG_STATE.WAITING_FIRST_SPAWN:
-                        self.__onFlagSpawning(flagID, flagInfo['respawnTime'])
-                    elif flagInfo['state'] in (FLAG_STATE.ON_GROUND, FLAG_STATE.ON_SPAWN):
-                        self.__onFlagSpawnedAtBase(flagID, flagInfo['team'], flagInfo['minimapPos'])
-                elif vehicleID == self.__playerVehicleID:
-                    isFlagBearer = True
+        self.__ownUI.mapSize = Math.Vector2(minimap_utils.MINIMAP_SIZE)
+        visitor = g_sessionProvider.arenaVisitor
+        if not visitor is not None:
+            raise AssertionError('Arena visitor can not be None')
+            player = BigWorld.player()
+            self.__playerTeam = avatar_getter.getPlayerTeam(avatar=player)
+            self.__playerVehicleID = avatar_getter.getPlayerVehicleID(avatar=player)
+            self.__isTeamPlayer = not visitor.isSoloTeam(self.__playerTeam)
+            bl, tr = visitor.type.getBoundingBox()
+            self.__ownUI.setArenaBB(bl, tr)
+            player = BigWorld.player()
+            path = visitor.type.getMinimapTexture()
+            tex = BigWorld.PyTextureProvider(path)
+            if not self.__ownUI.setBackground(tex):
+                LOG_ERROR("Failed to set minimap texture: '%s'" % path)
+            self.__cameraHandle = None
+            self.__cameraMatrix = None
+            player.inputHandler.onCameraChanged += self.__resetCamera
+            player.inputHandler.onPostmortemVehicleChanged += self.__clearCamera
+            self.__parentUI.addExternalCallbacks({'minimap.onClick': self._onMapClicked,
+             'minimap.playAttantion': self._playAttention,
+             'minimap.setSize': self.onSetSize,
+             'minimap.lightPlayer': self.onLightPlayer,
+             'minimap.scaleMarkers': self.onScaleMarkers})
+            arena = player.arena
+            arena.onPositionsUpdated += self.__onFarPosUpdated
+            arena.onNewVehicleListReceived += self.__validateEntries
+            arena.onVehicleKilled += self.__onVehicleKilled
+            arena.onVehicleAdded += self.__onVehicleAdded
+            arena.onTeamKiller += self.__onTeamKiller
+            ctrl = g_sessionProvider.shared.equipments
+            if ctrl is not None:
+                ctrl.onEquipmentMarkerShown += self.__onEquipmentMarkerShown
+            ctrl = g_sessionProvider.shared.feedback
+            if ctrl is not None:
+                ctrl.onMinimapVehicleAdded += self.__onMinimapVehicleAdded
+                ctrl.onMinimapVehicleRemoved += self.__onMinimapVehicleRemoved
+                ctrl.onMinimapFeedbackReceived += self.__onMinimapFeedbackReceived
+                ctrl.onVehicleFeedbackReceived += self.__onVehicleFeedbackReceived
+            ctrl = g_sessionProvider.shared.vehicleState
+            if ctrl is not None:
+                ctrl.onPostMortemSwitched += self.__onPostMortemSwitched
+            functional = g_sessionProvider.dynamic.dynSquads
+            if functional is not None:
+                functional.onPlayerBecomeSquadman += self.__onPlayerBecomeSquadman
+            addListener = g_eventBus.addListener
+            addListener(GameEvent.SHOW_EXTENDED_INFO, self.__handleShowExtendedInfo, scope=EVENT_BUS_SCOPE.BATTLE)
+            addListener(GameEvent.MINIMAP_CMD, self.__handleMinimapCmd, scope=EVENT_BUS_SCOPE.BATTLE)
+            self.__markerIDGenerator = SequenceIDGenerator()
+            isFlagBearer = False
+            if visitor.hasFlags():
+                g_ctfManager.onFlagSpawning += self.__onFlagSpawning
+                g_ctfManager.onFlagSpawnedAtBase += self.__onFlagSpawnedAtBase
+                g_ctfManager.onFlagCapturedByVehicle += self.__onFlagCapturedByVehicle
+                g_ctfManager.onFlagDroppedToGround += self.__onFlagDroppedToGround
+                g_ctfManager.onFlagAbsorbed += self.__onFlagAbsorbed
+                g_ctfManager.onFlagRemoved += self.__onFlagRemoved
+                g_ctfManager.onCarriedFlagsPositionUpdated += self.__onCarriedFlagsPositionUpdated
+                self.__isFlagsListener = True
+                for flagID, flagInfo in g_ctfManager.getFlags():
+                    vehicleID = flagInfo['vehicle']
+                    if vehicleID is None:
+                        if flagInfo['state'] == FLAG_STATE.WAITING_FIRST_SPAWN:
+                            self.__onFlagSpawning(flagID, flagInfo['respawnTime'])
+                        elif flagInfo['state'] in (FLAG_STATE.ON_GROUND, FLAG_STATE.ON_SPAWN):
+                            self.__onFlagSpawnedAtBase(flagID, flagInfo['team'], flagInfo['minimapPos'])
+                    elif vehicleID == self.__playerVehicleID:
+                        isFlagBearer = True
 
-            self.__addFlagCaptureMarkers(isFlagBearer)
-        if hasRepairPoints():
-            g_sessionProvider.getRepairCtrl().onRepairPointStateChanged += self.__onRepairPointStateChanged
-        arenaDP = g_sessionProvider.getArenaDP()
-        if hasResourcePoints():
-            g_ctfManager.onResPointIsFree += self.__onResPointIsFree
-            g_ctfManager.onResPointCooldown += self.__onResPointCooldown
-            g_ctfManager.onResPointCaptured += self.__onResPointCaptured
-            g_ctfManager.onResPointCapturedLocked += self.__onResPointCapturedLocked
-            g_ctfManager.onResPointBlocked += self.__onResPointBlocked
-            for pointID, point in g_ctfManager.getResourcePoints():
-                pointState = point['state']
-                if pointState == RESOURCE_POINT_STATE.FREE:
-                    state = RESOURCE_POINT_TYPE.READY
-                elif pointState == RESOURCE_POINT_STATE.COOLDOWN:
-                    state = RESOURCE_POINT_TYPE.COOLDOWN
-                elif pointState == RESOURCE_POINT_STATE.CAPTURED:
-                    state = RESOURCE_POINT_TYPE.OWN_MINING if arenaDP.isAllyTeam(point['team']) else RESOURCE_POINT_TYPE.ENEMY_MINING
-                else:
-                    state = RESOURCE_POINT_TYPE.CONFLICT
-                self.__addResourcePointMarker(pointID, point['minimapPos'], state)
+                self.__addFlagCaptureMarkers(visitor, isFlagBearer)
+            ctrl = g_sessionProvider.dynamic.repair
+            if ctrl is not None:
+                ctrl.onStateCreated += self.__onRepairPointStateCreated
+            arenaDP = g_sessionProvider.getArenaDP()
+            if visitor.hasResourcePoints():
+                g_ctfManager.onResPointIsFree += self.__onResPointIsFree
+                g_ctfManager.onResPointCooldown += self.__onResPointCooldown
+                g_ctfManager.onResPointCaptured += self.__onResPointCaptured
+                g_ctfManager.onResPointCapturedLocked += self.__onResPointCapturedLocked
+                g_ctfManager.onResPointBlocked += self.__onResPointBlocked
+                self.__isResPointsListener = True
+                for pointID, point in g_ctfManager.getResourcePoints():
+                    pointState = point['state']
+                    if pointState == RESOURCE_POINT_STATE.FREE:
+                        state = RESOURCE_POINT_TYPE.READY
+                    elif pointState == RESOURCE_POINT_STATE.COOLDOWN:
+                        state = RESOURCE_POINT_TYPE.COOLDOWN
+                    elif pointState == RESOURCE_POINT_STATE.CAPTURED:
+                        state = RESOURCE_POINT_TYPE.OWN_MINING if arenaDP.isAllyTeam(point['team']) else RESOURCE_POINT_TYPE.ENEMY_MINING
+                    else:
+                        state = RESOURCE_POINT_TYPE.CONFLICT
+                    self.__addResourcePointMarker(pointID, point['minimapPos'], state)
 
-        if hasGasAttack():
-            g_sessionProvider.getGasAttackCtrl().onPreparing += self.__onGasAttackPreparing
-            g_sessionProvider.getGasAttackCtrl().onStarted += self.__onGasAttackStarted
-            self.__initGasAttackArea()
-        self.__marks = {}
-        if not g_sessionProvider.getCtx().isPlayerObserver():
-            mp = player.getOwnVehicleMatrix()
+            ctrl = g_sessionProvider.dynamic.respawn
+            if ctrl is not None:
+                ctrl.onRespawnVisibilityChanged += self.__onRespawnVisibilityChanged
+            ctrl = g_sessionProvider.dynamic.gasAttack
+            if ctrl is not None:
+                ctrl.onPreparing += self.__onGasAttackPreparing
+                ctrl.onStarted += self.__onGasAttackStarted
+                self.__initGasAttackArea()
+            self.__marks = {}
+            mp = g_sessionProvider.getCtx().isPlayerObserver() or player.getOwnVehicleMatrix()
             self.__ownEntry['handle'] = self.__ownUI.addEntry(mp, self.zIndexManager.getIndexByName('self'))
             entryName = 'normal'
             self.__ownUI.entryInvoke(self.__ownEntry['handle'], ('init', ['player', entryName + 'Flag' if isFlagBearer else entryName]))
@@ -258,7 +255,7 @@ class Minimap(object):
         from account_helpers.settings_core.SettingsCore import g_settingsCore
         g_settingsCore.onSettingsChanged += self.setupMinimapSettings
         self.setupMinimapSettings()
-        self.setTeamPoints()
+        self.setTeamPoints(visitor)
         g_repeatKeyHandlers.add(self.handleRepeatKeyEvent)
         return
 
@@ -385,77 +382,80 @@ class Minimap(object):
             if diff is None or settings_constants.GAME.MINIMAP_VIEW_RANGE in diff:
                 self.__showViewRange = g_settingsCore.getSetting(settings_constants.GAME.MINIMAP_VIEW_RANGE)
                 if self.__showViewRange:
-                    vehicleAttrs = g_sessionProvider.getFeedback().getVehicleAttrs()
+                    vehicleAttrs = g_sessionProvider.shared.feedback.getVehicleAttrs()
                     self.__ownUI.entryInvoke(self.__ownEntry['viewRange'], ('addDynamicViewRange', [2621223, 50, min(vehicleAttrs.get('circularVisionRadius', VISIBILITY.MIN_RADIUS), VISIBILITY.MAX_RADIUS)]))
                 else:
                     self.__ownUI.entryInvoke(self.__ownEntry['viewRange'], 'delDynRange')
             isCirclesActive = g_settingsCore.getSetting(settings_constants.GAME.MINIMAP_DRAW_RANGE) or g_settingsCore.getSetting(settings_constants.GAME.MINIMAP_MAX_VIEW_RANGE) or g_settingsCore.getSetting(settings_constants.GAME.MINIMAP_VIEW_RANGE)
-            self.__entrySetActive(self.__ownEntry['viewRange'], isCirclesActive and isVehicleAlive())
+            self.__entrySetActive(self.__ownEntry['viewRange'], isCirclesActive and avatar_getter.isVehicleAlive())
         return
 
-    def setTeamPoints(self):
-        if self.__cfg['teamBasePositions'] or self.__cfg['teamSpawnPoints'] or self.__cfg['controlPoints'] or self.__cfg['repairPoints']:
-            for team, teamSpawnPoints in enumerate(self.__cfg['teamSpawnPoints'], 1):
-                teamSpawnData = {}
-                self.__points['spawn'][team] = teamSpawnData
-                for spawn, spawnPoint in enumerate(teamSpawnPoints, 1):
-                    pos = (spawnPoint[0], 0, spawnPoint[1])
-                    m = Math.Matrix()
-                    m.setTranslate(pos)
-                    teamSpawnData[spawn] = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
-                    self.__ownUI.entryInvoke(teamSpawnData[spawn].handle, ('init', ['points',
-                      'spawn',
-                      'blue' if team == self.__playerTeam else 'red',
-                      spawn + 1 if len(teamSpawnPoints) > 1 else 1]))
+    def setTeamPoints(self, visitor):
+        teamSpawnPoints = visitor.getTeamSpawnPoints(self.__playerTeam)
+        for team, teamSpawnPoints in enumerate(teamSpawnPoints, 1):
+            teamSpawnData = {}
+            self.__points['spawn'][team] = teamSpawnData
+            for spawn, spawnPoint in enumerate(teamSpawnPoints, 1):
+                pos = (spawnPoint[0], 0, spawnPoint[1])
+                m = Math.Matrix()
+                m.setTranslate(pos)
+                teamSpawnData[spawn] = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
+                self.__ownUI.entryInvoke(teamSpawnData[spawn].handle, ('init', ['points',
+                  'spawn',
+                  'blue' if team == self.__playerTeam else 'red',
+                  spawn + 1 if len(teamSpawnPoints) > 1 else 1]))
 
-            for team, teamBasePoints in enumerate(self.__cfg['teamBasePositions'], 1):
-                teamBaseData = {}
-                self.__points['base'][team] = teamBaseData
-                for base, basePoint in teamBasePoints.items():
-                    pos = (basePoint[0], 0, basePoint[1])
-                    m = Math.Matrix()
-                    m.setTranslate(pos)
-                    teamBaseData[base] = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
-                    self.__ownUI.entryInvoke(teamBaseData[base].handle, ('init', ['points',
-                      'base',
-                      'blue' if team == self.__playerTeam else 'red',
-                      len(teamBaseData) + 1 if len(teamBasePoints) > 1 else 1]))
+        teamBasePositions = visitor.type.getTeamBasePositions()
+        for team, teamBasePoints in enumerate(teamBasePositions, 1):
+            teamBaseData = {}
+            self.__points['base'][team] = teamBaseData
+            for base, basePoint in teamBasePoints.items():
+                pos = (basePoint[0], 0, basePoint[1])
+                m = Math.Matrix()
+                m.setTranslate(pos)
+                teamBaseData[base] = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
+                self.__ownUI.entryInvoke(teamBaseData[base].handle, ('init', ['points',
+                  'base',
+                  'blue' if team == self.__playerTeam else 'red',
+                  len(teamBaseData) + 1 if len(teamBasePoints) > 1 else 1]))
 
-            if self.__cfg['controlPoints']:
-                controlData = []
-                self.__points['control'] = controlData
-                for index, controlPoint in enumerate(self.__cfg['controlPoints'], 2):
-                    pos = (controlPoint[0], 0, controlPoint[1])
-                    m = Math.Matrix()
-                    m.setTranslate(pos)
-                    newPoint = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
-                    controlData.append(newPoint)
-                    self.__ownUI.entryInvoke(newPoint.handle, ('init', ['points',
-                      'control',
-                      'empty',
-                      index if len(self.__cfg['controlPoints']) > 1 else 1]))
+        controlPoints = visitor.type.getControlPoints()
+        if controlPoints:
+            controlData = []
+            self.__points['control'] = controlData
+            for pointID, controlPoint in enumerate(controlPoints, 2):
+                pos = (controlPoint[0], 0, controlPoint[1])
+                m = Math.Matrix()
+                m.setTranslate(pos)
+                newPoint = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
+                controlData.append(newPoint)
+                self.__ownUI.entryInvoke(newPoint.handle, ('init', ['points',
+                  'control',
+                  'empty',
+                  pointID if len(controlPoints) > 1 else 1]))
 
-            if self.__cfg['repairPoints']:
-                repairData = {}
-                self.__points['repair'] = repairData
-                for pointID, repairPoint in self.__cfg['repairPoints'].iteritems():
-                    pos = repairPoint['position']
-                    team = repairPoint['team']
-                    isAlly = team in (NEUTRAL_TEAM, self.__playerTeam)
-                    m = Math.Matrix()
-                    m.setTranslate(pos)
-                    newPoint = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
-                    self.__ownUI.entryInvoke(newPoint.handle, ('init', ['repairPoints',
-                      'active' if isAlly else 'enemyActive',
-                      '',
-                      0]))
-                    newPointCooldown = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
-                    self.__ownUI.entryInvoke(newPointCooldown.handle, ('init', ['repairPoints',
-                      'cooldown' if isAlly else 'enemyCooldown',
-                      '',
-                      0]))
-                    self.__entrySetActive(newPointCooldown.handle, False)
-                    repairData[pointID] = (newPoint, newPointCooldown)
+        if visitor.hasRepairPoints():
+            repairPoints = visitor.type.getRepairPoints()
+            repairData = {}
+            self.__points['repair'] = repairData
+            for pointID, repairPoint in repairPoints.iteritems():
+                pos = repairPoint['position']
+                team = repairPoint['team']
+                isAlly = team in (battle_constants.NEUTRAL_TEAM, self.__playerTeam)
+                m = Math.Matrix()
+                m.setTranslate(pos)
+                newPoint = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
+                self.__ownUI.entryInvoke(newPoint.handle, ('init', ['repairPoints',
+                  'active' if isAlly else 'enemyActive',
+                  '',
+                  0]))
+                newPointCooldown = EntryInfo(self.__ownUI.addEntry(m, self.zIndexManager.getTeamPointIndex()), m)
+                self.__ownUI.entryInvoke(newPointCooldown.handle, ('init', ['repairPoints',
+                  'cooldown' if isAlly else 'enemyCooldown',
+                  '',
+                  0]))
+                self.__entrySetActive(newPointCooldown.handle, False)
+                repairData[pointID] = (newPoint, newPointCooldown)
 
             self.__parentUI.call('minimap.entryInited', [])
 
@@ -493,26 +493,27 @@ class Minimap(object):
             self.__entrieMarkers = {}
             self.__cameraHandle = None
             self.__cameraMatrix = None
-            ctrl = g_sessionProvider.getEquipmentsCtrl()
-            if ctrl:
+            ctrl = g_sessionProvider.shared.equipments
+            if ctrl is not None:
                 ctrl.onEquipmentMarkerShown -= self.__onEquipmentMarkerShown
-            ctrl = g_sessionProvider.getFeedback()
-            if ctrl:
+            ctrl = g_sessionProvider.shared.feedback
+            if ctrl is not None:
                 ctrl.onMinimapVehicleAdded -= self.__onMinimapVehicleAdded
                 ctrl.onMinimapVehicleRemoved -= self.__onMinimapVehicleRemoved
                 ctrl.onMinimapFeedbackReceived -= self.__onMinimapFeedbackReceived
                 ctrl.onVehicleFeedbackReceived -= self.__onVehicleFeedbackReceived
-            ctrl = g_sessionProvider.getVehicleStateCtrl()
+            ctrl = g_sessionProvider.shared.vehicleState
             if ctrl is not None:
                 ctrl.onPostMortemSwitched -= self.__onPostMortemSwitched
-            functional = g_sessionProvider.getDynSquadFunctional()
+            functional = g_sessionProvider.dynamic.dynSquads
             if functional is not None:
                 functional.onPlayerBecomeSquadman -= self.__onPlayerBecomeSquadman
             removeListener = g_eventBus.removeListener
             removeListener(GameEvent.SHOW_EXTENDED_INFO, self.__handleShowExtendedInfo, scope=EVENT_BUS_SCOPE.BATTLE)
             removeListener(GameEvent.MINIMAP_CMD, self.__handleMinimapCmd, scope=EVENT_BUS_SCOPE.BATTLE)
             self.__markerIDGenerator = None
-            if hasFlags():
+            if self.__isFlagsListener:
+                self.__isFlagsListener = False
                 g_ctfManager.onFlagSpawning -= self.__onFlagSpawning
                 g_ctfManager.onFlagSpawnedAtBase -= self.__onFlagSpawnedAtBase
                 g_ctfManager.onFlagCapturedByVehicle -= self.__onFlagCapturedByVehicle
@@ -520,17 +521,23 @@ class Minimap(object):
                 g_ctfManager.onFlagAbsorbed -= self.__onFlagAbsorbed
                 g_ctfManager.onFlagRemoved -= self.__onFlagRemoved
                 g_ctfManager.onCarriedFlagsPositionUpdated -= self.__onCarriedFlagsPositionUpdated
-            if hasRepairPoints():
-                g_sessionProvider.getRepairCtrl().onRepairPointStateChanged -= self.__onRepairPointStateChanged
-            if hasResourcePoints():
+            ctrl = g_sessionProvider.dynamic.repair
+            if ctrl is not None:
+                ctrl.onStateCreated -= self.__onRepairPointStateCreated
+            if self.__isResPointsListener:
+                self.__isResPointsListener = False
                 g_ctfManager.onResPointIsFree -= self.__onResPointIsFree
                 g_ctfManager.onResPointCooldown -= self.__onResPointCooldown
                 g_ctfManager.onResPointCaptured -= self.__onResPointCaptured
                 g_ctfManager.onResPointCapturedLocked -= self.__onResPointCapturedLocked
                 g_ctfManager.onResPointBlocked -= self.__onResPointBlocked
-            if hasGasAttack():
-                g_sessionProvider.getGasAttackCtrl().onPreparing -= self.__onGasAttackPreparing
-                g_sessionProvider.getGasAttackCtrl().onStarted -= self.__onGasAttackStarted
+            ctrl = g_sessionProvider.dynamic.respawn
+            if ctrl is not None:
+                ctrl.onRespawnVisibilityChanged -= self.__onRespawnVisibilityChanged
+            ctrl = g_sessionProvider.dynamic.gasAttack
+            if ctrl is not None:
+                ctrl.onPreparing -= self.__onGasAttackPreparing
+                ctrl.onStarted -= self.__onGasAttackStarted
             self.__marks = None
             self.__backMarkers.clear()
             setattr(self.__parentUI.component, 'minimap', None)
@@ -640,7 +647,9 @@ class Minimap(object):
 
     def _onMapClicked(self, _, x, y, bHighlightCellNVehicleSpecific = True):
         if bHighlightCellNVehicleSpecific:
-            g_sessionProvider.getChatCommands().sendAttentionToCell(minimap_utils.makeCellIndex(x, y))
+            commands = g_sessionProvider.shared.chatCommands
+            if commands is not None:
+                commands.sendAttentionToCell(minimap_utils.makeCellIndex(x, y))
         else:
             arenaDesc = BigWorld.player().arena.arenaType
             bottomLeft, upperRight = arenaDesc.boundingBox
@@ -666,7 +675,7 @@ class Minimap(object):
         entryVehicle = arena.vehicles[id]
         if BigWorld.player().team == entryVehicle.get('team') and g_sessionProvider.getCtx().isSquadMan(vID=id):
             return
-        self.__callEntryFlash(id, 'setEntryName', [PLAYER_GUI_PROPS.teamKiller.name()])
+        self.__callEntryFlash(id, 'setEntryName', [battle_constants.PLAYER_GUI_PROPS.teamKiller.name()])
 
     def __onVehicleRemoved(self, vehicleID):
         if vehicleID in self.__entries:
@@ -946,7 +955,7 @@ class Minimap(object):
                             markMarker = 'firstEnemy'
                             self.__isFirstEnemyNonSPGMarked = True
                     if markMarker != '':
-                        getSoundNotifications().play('enemy_sighted_for_team')
+                        avatar_getter.getSoundNotifications().play('enemy_sighted_for_team', None, None, Math.Matrix(m).translation)
                 self.__enemyEntries[vehicleID] = entry
             if GUI_SETTINGS.showMinimapSuperHeavy and vInfo.vehicleType.level == 10 and classTag == 'heavyTank':
                 classTag = 'super' + classTag
@@ -1153,7 +1162,7 @@ class Minimap(object):
 
     def __onFlagSpawning(self, flagID, respawnTime):
         flagType = FLAG_TYPE.COOLDOWN
-        flagPos = self.__cfg['flagSpawnPoints'][flagID]['position']
+        flagPos = g_sessionProvider.arenaVisitor.type.getFlagSpawnPosition(flagID)
         self.__addFlagMarker(flagID, flagPos, flagType)
 
     def __onFlagSpawnedAtBase(self, flagID, flagTeam, flagPos):
@@ -1167,7 +1176,7 @@ class Minimap(object):
         self.__updateVehicleFlagState(vehicleID, True)
         self.__delFlagMarker(flagID, flagType)
         if vehicleID == self.__playerVehicleID:
-            self.__toggleFlagCaptureAnimation(True)
+            self.__toggleFlagCaptureAnimation(g_sessionProvider.arenaVisitor, True)
 
     def __onFlagDroppedToGround(self, flagID, flagTeam, loserVehicleID, flagPos, respawnTime):
         flagType = self.__getFlagMarkerType(flagID, flagTeam)
@@ -1175,7 +1184,7 @@ class Minimap(object):
         self.__addFlagMarker(flagID, flagPos, flagType)
         self.__delCarriedFlagMarker(loserVehicleID)
         if loserVehicleID == self.__playerVehicleID:
-            self.__toggleFlagCaptureAnimation(False)
+            self.__toggleFlagCaptureAnimation(g_sessionProvider.arenaVisitor, False)
 
     def __onFlagAbsorbed(self, flagID, flagTeam, vehicleID, respawnTime):
         flagType = self.__getFlagMarkerType(flagID, flagTeam)
@@ -1183,7 +1192,7 @@ class Minimap(object):
         self.__delFlagMarker(flagID, flagType)
         self.__delCarriedFlagMarker(vehicleID)
         if vehicleID == self.__playerVehicleID:
-            self.__toggleFlagCaptureAnimation(False)
+            self.__toggleFlagCaptureAnimation(g_sessionProvider.arenaVisitor, False)
 
     def __onFlagRemoved(self, flagID, flagTeam, vehicleID):
         flagType = self.__getFlagMarkerType(flagID, flagTeam)
@@ -1192,7 +1201,7 @@ class Minimap(object):
             self.__updateVehicleFlagState(vehicleID)
             self.__delCarriedFlagMarker(vehicleID)
             if vehicleID == self.__playerVehicleID:
-                self.__toggleFlagCaptureAnimation(False)
+                self.__toggleFlagCaptureAnimation(g_sessionProvider.arenaVisitor, False)
         return
 
     def __onCarriedFlagsPositionUpdated(self, flagIDs):
@@ -1270,18 +1279,18 @@ class Minimap(object):
             self.__delEntryMarker(uniqueID)
         return
 
-    def __addFlagCaptureMarkers(self, isCarried = False):
-        for pointIndex, point in enumerate(self.__cfg['flagAbsorptionPoints']):
+    def __addFlagCaptureMarkers(self, visitor, isCarried = False):
+        for pointIndex, point in enumerate(visitor.type.getFlagAbsorptionPoints()):
             position = point['position']
-            isMyTeam = self.__isTeamPlayer and point['team'] in (NEUTRAL_TEAM, self.__playerTeam)
+            isMyTeam = self.__isTeamPlayer and point['team'] in (battle_constants.NEUTRAL_TEAM, self.__playerTeam)
             marker = FLAG_TYPE.ALLY_CAPTURE if isMyTeam else FLAG_TYPE.ENEMY_CAPTURE
             self.__addFlagMarker(pointIndex, position, marker, not isMyTeam or not isCarried)
             if isMyTeam:
                 self.__addFlagMarker(pointIndex, position, FLAG_TYPE.ALLY_CAPTURE_ANIMATION, isCarried)
 
-    def __toggleFlagCaptureAnimation(self, isCarried = False):
-        for pointIndex, point in enumerate(self.__cfg['flagAbsorptionPoints']):
-            if self.__isTeamPlayer and point['team'] in (NEUTRAL_TEAM, self.__playerTeam):
+    def __toggleFlagCaptureAnimation(self, visitor, isCarried = False):
+        for pointIndex, point in enumerate(visitor.type.getFlagAbsorptionPoints()):
+            if self.__isTeamPlayer and point['team'] in (battle_constants.NEUTRAL_TEAM, self.__playerTeam):
                 captureUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ALLY_CAPTURE)
                 captureEntry = self.__entrieMarkers.get(captureUniqueID)
                 self.__entrySetActive(captureEntry['handle'], not isCarried)
@@ -1289,10 +1298,10 @@ class Minimap(object):
                 captureAnimationEntry = self.__entrieMarkers.get(captureAnumationUniqueID)
                 self.__entrySetActive(captureAnimationEntry['handle'], isCarried)
 
-    def __delFlagCaptureMarkers(self):
-        if hasFlags():
-            for pointIndex, point in enumerate(self.__cfg['flagAbsorptionPoints']):
-                if self.__isTeamPlayer and point['team'] in (NEUTRAL_TEAM, self.__playerTeam):
+    def __delFlagCaptureMarkers(self, visitor):
+        if visitor.hasFlags():
+            for pointIndex, point in enumerate(visitor.getFlagAbsorptionPoints()):
+                if self.__isTeamPlayer and point['team'] in (battle_constants.NEUTRAL_TEAM, self.__playerTeam):
                     captureUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ALLY_CAPTURE)
                     self.__delEntryMarker(captureUniqueID)
                     captureAnumationUniqueID = self.__makeFlagUniqueID(pointIndex, FLAG_TYPE.ALLY_CAPTURE_ANIMATION)
@@ -1308,19 +1317,15 @@ class Minimap(object):
             return FLAG_TYPE.ENEMY
         return FLAG_TYPE.NEUTRAL
 
-    def __onRepairPointStateChanged(self, repairPointID, action, timeLeft = 0):
-        if repairPointID not in self.__points['repair']:
-            LOG_ERROR('Got repair point state changed for not available repair point: ', repairPointID, action, timeLeft)
+    def __onRepairPointStateCreated(self, pointIndex, stateID):
+        if pointIndex not in self.__points['repair']:
+            LOG_ERROR('Got repair point state changed for not available repair point: ', pointIndex)
             return
-        if action in (REPAIR_POINT_ACTION.START_REPAIR, REPAIR_POINT_ACTION.COMPLETE_REPAIR, REPAIR_POINT_ACTION.BECOME_READY):
-            point, pointCooldown = self.__points['repair'][repairPointID]
-            pointVisible, pointCooldownVisible = (True, False) if action != REPAIR_POINT_ACTION.COMPLETE_REPAIR else (False, True)
-            self.__entrySetActive(point.handle, pointVisible)
-            self.__entrySetActive(pointCooldown.handle, pointCooldownVisible)
-        elif action == REPAIR_POINT_ACTION.BECOME_DISABLED:
-            point, pointCooldown = self.__points['repair'][repairPointID]
-            self.__entrySetActive(point.handle, False)
-            self.__entrySetActive(pointCooldown.handle, False)
+        point, pointCooldown = self.__points['repair'][pointIndex]
+        pointCooldownVisible = stateID in (battle_constants.REPAIR_STATE_ID.COOLDOWN, battle_constants.REPAIR_STATE_ID.DISABLED)
+        pointVisible = not pointCooldownVisible
+        self.__entrySetActive(point.handle, pointVisible)
+        self.__entrySetActive(pointCooldown.handle, pointCooldownVisible)
 
     def __entrySetActive(self, entryHandle, visible):
         self.__ownUI.entrySetActive(entryHandle, visible)
@@ -1333,13 +1338,13 @@ class Minimap(object):
         self.notifyVehicleStop(vehicleID)
 
     def __onMinimapFeedbackReceived(self, eventID, entityID, value):
-        if eventID == FEEDBACK_EVENT_ID.MINIMAP_MARK_CELL:
+        if eventID == battle_constants.FEEDBACK_EVENT_ID.MINIMAP_MARK_CELL:
             self.markCell(*value)
-        elif eventID == FEEDBACK_EVENT_ID.MINIMAP_SHOW_MARKER:
+        elif eventID == battle_constants.FEEDBACK_EVENT_ID.MINIMAP_SHOW_MARKER:
             self.showActionMarker(entityID, value)
 
     def __onVehicleFeedbackReceived(self, eventID, _, value):
-        if not g_sessionProvider.getCtx().isPlayerObserver() and eventID == FEEDBACK_EVENT_ID.VEHICLE_ATTRS_CHANGED and self.__showViewRange:
+        if not g_sessionProvider.getCtx().isPlayerObserver() and eventID == battle_constants.FEEDBACK_EVENT_ID.VEHICLE_ATTRS_CHANGED and self.__showViewRange:
             self.__ownUI.entryInvoke(self.__ownEntry['viewRange'], ('updateDynRange', [min(value.get('circularVisionRadius', VISIBILITY.MIN_RADIUS), VISIBILITY.MAX_RADIUS)]))
 
     def __onPostMortemSwitched(self):
@@ -1371,7 +1376,7 @@ class Minimap(object):
     def __onResPointIsFree(self, pointID):
         self.__setResourcePointState(pointID, RESOURCE_POINT_TYPE.READY)
 
-    def __onResPointCooldown(self, pointID, serverTime):
+    def __onResPointCooldown(self, pointID, _):
         self.__setResourcePointState(pointID, RESOURCE_POINT_TYPE.COOLDOWN)
 
     def __onResPointCaptured(self, pointID, team):
@@ -1385,11 +1390,17 @@ class Minimap(object):
     def __onResPointBlocked(self, pointID):
         self.__setResourcePointState(pointID, RESOURCE_POINT_TYPE.CONFLICT)
 
-    def __onGasAttackPreparing(self, state):
-        self.__delFlagCaptureMarkers()
+    def __onRespawnVisibilityChanged(self, flag):
+        if flag:
+            self.useRespawnSize()
+        else:
+            self.useNormalSize()
+
+    def __onGasAttackPreparing(self, _):
+        self.__delFlagCaptureMarkers(g_sessionProvider.arenaVisitor)
 
     def __onGasAttackStarted(self, state):
-        self.__delFlagCaptureMarkers()
+        self.__delFlagCaptureMarkers(g_sessionProvider.arenaVisitor)
 
     def __initGasAttackArea(self):
         _, settings = _getDefaultScenario()

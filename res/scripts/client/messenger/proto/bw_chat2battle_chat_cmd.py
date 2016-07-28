@@ -77,7 +77,7 @@ class _ReceivedCmdDecorator(ReceivedBattleChatCommand):
         command = _ACTIONS.battleChatCommandFromActionID(self._commandID)
         if not command:
             LOG_ERROR('Command is not found', self._commandID)
-            return ''
+            return u''
         else:
             i18nKey = I18N_INGAME_GUI.chat_shortcuts(command.msgText)
             if i18nKey is not None:
@@ -89,7 +89,7 @@ class _ReceivedCmdDecorator(ReceivedBattleChatCommand):
                     text = i18n.makeString(i18nKey, **self._protoData)
             else:
                 text = command.msgText
-            return text
+            return unicode(text, 'utf-8', errors='ignore')
 
     def getSenderID(self):
         return self._protoData['int64Arg1']

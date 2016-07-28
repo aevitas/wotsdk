@@ -5,13 +5,14 @@ import Math
 from Math import Vector3, Matrix
 import BigWorld
 from AvatarInputHandler import mathUtils, AimingSystems
+from avatar_helpers.aim_global_binding import CTRL_MODE_NAME
 from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
-from AvatarInputHandler.aims import createAim
 import GUI
 import Keys
 from ProjectileMover import collideDynamicAndStatic
 import BattleReplay
 from gui.battle_control import g_sessionProvider
+from gui.battle_control import event_dispatcher as gui_event_dispatcher
 from helpers import isPlayerAvatar
 from DetachedTurret import DetachedTurret
 
@@ -276,7 +277,7 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
         self.__predefinedVerticalVelocities = {}
         self.__keySwitches = {}
         self.__readCfg(configDataSec)
-        self.__aim = None
+        self.__isModeOverride = False
         self.__basisMProv = _VehicleBounder()
         self.__entityPicker = _VehiclePicker()
         return
@@ -293,9 +294,6 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
     def destroy(self):
         CallbackDelayer.destroy(self)
         self.__cam = None
-        if self.__aim is not None:
-            self.__aim.destroy()
-            self.__aim = None
         return
 
     def enable(self, **args):
@@ -328,7 +326,7 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
         self.__alignerToLand.disable()
         if isPlayerAvatar():
             BigWorld.player().positionControl.followCamera(False)
-        self.__showAim(False)
+        self.__isModeOverride = False
         return
 
     def handleKeyEvent(self, key, isDown):
@@ -547,18 +545,14 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
         pitch = camMat.pitch
         return Vector3(yaw, pitch, self.__ypr.z)
 
-    def __showAim(self, show):
+    def __toggleView(self):
         if not isPlayerAvatar():
             return
+        self.__isModeOverride = not self.__isModeOverride
+        if self.__isModeOverride:
+            gui_event_dispatcher.overrideCrosshairView(CTRL_MODE_NAME.POSTMORTEM)
         else:
-            if self.__aim is None:
-                self.__aim = createAim('postmortem')
-                self.__aim.create()
-            if show:
-                self.__aim.enable()
-            else:
-                self.__aim.disable()
-            return
+            gui_event_dispatcher.overrideCrosshairView(CTRL_MODE_NAME.VIDEO)
 
     def __clampYPR(self, ypr):
         return Vector3(math.fmod(self.__ypr[0], 2 * math.pi), max(-0.9 * math.pi / 2, min(0.9 * math.pi / 2, self.__ypr[1])), math.fmod(self.__ypr[2], 2 * math.pi))
@@ -593,7 +587,7 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
 
     def __processBindToVehicleKey(self):
         if BigWorld.isKeyDown(Keys.KEY_LSHIFT) or BigWorld.isKeyDown(Keys.KEY_RSHIFT):
-            self.__showAim(True if self.__aim is None else not self.__aim.isActive)
+            self.__toggleView()
         elif BigWorld.isKeyDown(Keys.KEY_LALT) or BigWorld.isKeyDown(Keys.KEY_RALT):
             worldMat = Math.Matrix(self.__cam.invViewProvider)
             self.__basisMProv.selectNextPlacement()
@@ -604,7 +598,6 @@ class VideoCamera(CallbackDelayer, TimeDeltaMeter):
             self.__ypr = Vector3(worldMat.yaw, worldMat.pitch, worldMat.roll)
         else:
             self.__switchBind()
-        return
 
     def __switchBind(self):
         if self.__basisMProv.isBound:

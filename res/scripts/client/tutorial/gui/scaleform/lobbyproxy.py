@@ -88,9 +88,13 @@ class SfLobbyProxy(GUIProxy):
         self.effects.stopAll()
 
     def lock(self):
+        from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
+        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.START_LOADING_TUTORIAL)
         self.showWaiting('update-scene', isSingle=True)
 
     def release(self):
+        from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
+        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.FINISH_LOADING_TUTORIAL, showSummaryNow=True)
         self.hideWaiting('update-scene')
 
     def loadConfig(self, filePath):
@@ -238,7 +242,9 @@ class SfLobbyProxy(GUIProxy):
             LOG_ERROR('Key targetID is not defined in the event ON_COMPONENT_LOST')
             return
         itemID = event.targetID
-        self.effects.cancel(GUI_EFFECT_NAME.SHOW_HINT, itemID)
+        for effect in self.effects.filterByName([GUI_EFFECT_NAME.SHOW_HINT]):
+            effect.cancel(itemID)
+
         self.onItemLost(itemID)
 
     def __onTriggerActivated(self, event):

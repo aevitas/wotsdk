@@ -27,7 +27,7 @@ if CURRENT_REALM == 'DEV':
     _logLevel = LOG_LEVEL.DEV
 elif CURRENT_REALM == 'ST':
     _logLevel = LOG_LEVEL.ST
-elif CURRENT_REALM == 'CT':
+elif CURRENT_REALM in ('CT', 'SB'):
     _logLevel = LOG_LEVEL.CT
 elif IS_CLIENT:
     _logLevel = LOG_LEVEL.RELEASE
@@ -100,10 +100,8 @@ def CRITICAL_ERROR(msg, *kargs):
     msg = '{0}:{1}:{2}'.format(_makeMsgHeader(sys._getframe(1)), msg, kargs)
     BigWorld.logCritical('CRITICAL', msg, None)
     if IS_CLIENT:
-        import BigWorld
         BigWorld.quit()
     elif IS_CELLAPP or IS_BASEAPP:
-        import BigWorld
         BigWorld.shutDownApp()
         raise CriticalError(msg)
     else:
@@ -201,7 +199,6 @@ def LOG_VOIP(msg, *kargs):
 
 
 def FLUSH_LOG():
-    import BigWorld
     BigWorld.flushPythonLog()
 
 

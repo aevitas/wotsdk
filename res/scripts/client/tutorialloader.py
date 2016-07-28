@@ -185,10 +185,10 @@ class TutorialLoader(object):
     def leaveLobby(self):
         self.stop(restore=False)
 
-    def goToBattle(self):
+    def goToBattle(self, battleSettings = _SETTINGS.BATTLE):
         self.__afterBattle = True
         self.__doClear()
-        self.__doAutoRun((_SETTINGS.BATTLE, _SETTINGS.BATTLE_QUESTS), {})
+        self.__doAutoRun((battleSettings, _SETTINGS.BATTLE_QUESTS), {})
 
     def leaveBattle(self):
         self.stop(restore=False)

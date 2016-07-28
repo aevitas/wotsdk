@@ -2,7 +2,7 @@
 import weakref
 from account_helpers.AccountSettings import AccountSettings
 from constants import ARENA_GUI_TYPE
-from gui.Scaleform.daapi.view.battle.indicators import createDirectIndicator
+from gui.Scaleform.daapi.view.battle.legacy.indicators import createDirectIndicator
 from gui.app_loader import g_appLoader
 from gui.battle_control import g_sessionProvider
 from gui.battle_control.arena_info import player_format
@@ -156,7 +156,7 @@ class BattleLayout(ScaleformLayout):
         return result
 
     def show(self):
-        g_appLoader.showBattle(ARENA_GUI_TYPE.TUTORIAL)
+        g_appLoader.showBattle()
 
     def clear(self):
         if self._guiRef is not None and self._guiRef() is not None and self._movieView is not None:

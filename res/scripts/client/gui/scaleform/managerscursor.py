@@ -28,6 +28,12 @@ class Cursor(CursorMeta, View):
         return
 
     def attachCursor(self, flags = _CTRL_FLAG.GUI_ENABLED):
+        """
+        Mouse cursor activate. Gets mouse cursor, it hide and activate. Client
+        uses Scaleform custom mouse cursor - movie clip witch receive notifications
+        about mouse movement, left mouse button press and mouse wheel events.
+        :param flags: determine whether Flash cursor should be shown
+        """
         if not flags & _CTRL_FLAG.CURSOR_ATTACHED:
             raise AssertionError('Flag CURSOR_ATTACHED is not defined')
             if flags & _CTRL_FLAG.CURSOR_VISIBLE > 0:
@@ -36,16 +42,22 @@ class Cursor(CursorMeta, View):
                 self.hide()
             mcursor = self.__isActivated or GUI.mcursor()
             mcursor.visible = False
+            mouseLeft, mouseTop = mcursor.position
+            self.__saveDeviceMousePosition(mouseLeft, mouseTop)
             LOG_DEBUG('Cursor is attached')
             BigWorld.setCursor(mcursor)
             self.__isActivated = True
 
     def detachCursor(self):
+        """
+        Mouse cursor detach and give control camera.
+        """
         if self.__isActivated:
             LOG_DEBUG('Cursor is detached')
             BigWorld.setCursor(None)
             self.__isActivated = False
         self.hide()
+        BigWorld.callback(0.0, self.__restoreDeviceMousePosition)
         return
 
     def syncCursor(self, flags = _CTRL_FLAG.GUI_ENABLED):
@@ -57,16 +69,15 @@ class Cursor(CursorMeta, View):
     def show(self):
         if self.flashObject is not None:
             self.__setSFMousePosition()
-            self.flashObject.visible = True
+            self.as_showCursorS()
             self.fireEvent(GameEvent(GameEvent.SHOW_CURSOR), scope=EVENT_BUS_SCOPE.GLOBAL)
         else:
             LOG_ERROR(self.__DAAPI_ERROR)
         return
 
     def hide(self):
-        self.__restoreDeviceMousePosition()
         if self.flashObject is not None:
-            self.flashObject.visible = False
+            self.as_hideCursorS()
             self.fireEvent(GameEvent(GameEvent.HIDE_CURSOR), scope=EVENT_BUS_SCOPE.GLOBAL)
         else:
             LOG_ERROR(self.__DAAPI_ERROR)
@@ -84,13 +95,30 @@ class Cursor(CursorMeta, View):
             self.detachCursor()
 
     def __setSFMousePosition(self):
+        """
+        Sync Scaleform cursor position with BigWorld cursor position. It required
+        when: show cursor in battle or load another flash with cursor.
+        """
         screenWidth, screenHeight = GUI.screenResolution()
         mouseLeft, mouseTop = GUI.mcursor().position
-        self.__savedMCursorPos = (mouseLeft, mouseTop)
+        self.__saveDeviceMousePosition(mouseLeft, mouseTop)
         self.flashObject.x = round((1.0 + mouseLeft) / 2.0 * screenWidth)
         self.flashObject.y = round(-(-1.0 + mouseTop) / 2.0 * screenHeight)
 
+    def __saveDeviceMousePosition(self, mouseLeft, mouseTop):
+        """
+        Just memorize cursor position to restore it when necessary.
+        :param mouseLeft: x position
+        :param mouseTop: y position
+        """
+        self.__savedMCursorPos = (mouseLeft, mouseTop)
+
     def __restoreDeviceMousePosition(self):
+        """
+        Restore GUI.mcursor position previously saved in syncMousePosition (WOTD-2262).
+        This is required because CursorCamera will not change mcursor.position until
+        any mouse movement after cursor is hidden and keeps wrong BigWorld.target etc.
+        """
         if self.__savedMCursorPos is not None:
             GUI.mcursor().position = self.__savedMCursorPos
             self.__savedMCursorPos = None

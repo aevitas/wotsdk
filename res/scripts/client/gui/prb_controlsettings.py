@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/prb_control/settings.py
 from UnitBase import UNIT_ERROR, UNIT_BROWSER_ERROR, LEADER_SLOT
-from constants import PREBATTLE_TYPE, PREBATTLE_INVITE_STATE, IS_DEVELOPMENT, QUEUE_TYPE
+from constants import PREBATTLE_TYPE, PREBATTLE_INVITE_STATE, QUEUE_TYPE
 from prebattle_shared import SETTING_DEFAULTS, PrebattleSettings
 from shared_utils import CONST_CONTAINER, BitmaskHelper
 VEHICLE_MIN_LEVEL = 1
@@ -18,7 +18,6 @@ AUTO_SEARCH_UNITS_ARG_TIME = 5
 UNIT_MIN_RECOMMENDED_LEVEL = 40
 SANDBOX_MAX_VEHICLE_LEVEL = 2
 BATTLES_TO_SELECT_RANDOM_MIN_LIMIT = 10
-TRAINING_MAX_DURATION_TIME = 240 if IS_DEVELOPMENT else 30
 
 class CTRL_ENTITY_TYPE(object):
     UNKNOWN = 0
@@ -136,6 +135,7 @@ class PREBATTLE_ACTION_NAME(object):
     COMPANY = 'companyList'
     SPEC_BATTLE = 'specBattleList'
     SQUAD = 'squad'
+    EVENT_SQUAD = 'eventSquad'
     TOURNAMENT = 'tournament'
     CLAN = 'clan'
     UNIT = 'unit'

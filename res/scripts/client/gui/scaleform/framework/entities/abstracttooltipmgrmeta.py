@@ -18,9 +18,9 @@ class ToolTipMgrMeta(BaseDAAPIModule):
         """
         self._printOverrideError('onCreateComplexTooltip')
 
-    def onCreateTypedTooltip(self, type, args, stateType):
+    def onCreateTypedTooltip(self, tooltipType, args, stateType):
         """
-        :param type:
+        :param tooltipType:
         :param args:
         :param stateType:
         :return :

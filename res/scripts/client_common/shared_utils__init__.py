@@ -28,7 +28,11 @@ class BoundMethodWeakref(object):
         self.wrefCls = weakref.ref(func.__self__)
 
     def __call__(self, *args, **kwargs):
-        return getattr(self.wrefCls(), self.methodName)(*args, **kwargs)
+        ref = self.wrefCls()
+        if ref is not None:
+            return getattr(ref, self.methodName)(*args, **kwargs)
+        else:
+            return
 
 
 def forEach(function, sequence):

@@ -10,6 +10,12 @@ def makeVehicleEntityMP(vehicle):
     return provider
 
 
+def makeVehicleEntityMPCopy(vehicle):
+    provider = Math.WGTranslationOnlyMP()
+    provider.source = Math.Matrix(vehicle.matrix)
+    return provider
+
+
 def makePositionMP(position):
     provider = Math.WGReplayAwaredSmoothTranslationOnlyMP()
     matrix = Math.Matrix()
@@ -46,7 +52,10 @@ def makeVehicleMPByLocation(vehicleID, location, positions):
     if location in (VEHICLE_LOCATION.AOI, VEHICLE_LOCATION.AOI_TO_FAR):
         vehicle = BigWorld.entities.get(vehicleID)
         if vehicle is not None and vehicle.isStarted:
-            provider = makeVehicleEntityMP(vehicle)
+            if location == VEHICLE_LOCATION.AOI_TO_FAR:
+                provider = makeVehicleEntityMPCopy(vehicle)
+            else:
+                provider = makeVehicleEntityMP(vehicle)
         else:
             LOG_WARNING('Entity of vehicle is not found to given location', vehicleID, location)
     elif location == VEHICLE_LOCATION.FAR:
@@ -57,11 +66,9 @@ def makeVehicleMPByLocation(vehicleID, location, positions):
     return provider
 
 
-def convertToLastSpottedMP(location, matrix):
-    if location in (VEHICLE_LOCATION.AOI, VEHICLE_LOCATION.AOI_TO_FAR):
-        converted = Math.Matrix(matrix.source)
-    else:
-        converted = matrix
+def convertToLastSpottedVehicleMP(matrix):
+    converted = Math.WGReplayAwaredSmoothTranslationOnlyMP()
+    converted.source = Math.Matrix(matrix.source)
     return converted
 
 

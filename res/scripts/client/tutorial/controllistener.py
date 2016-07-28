@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/tutorial/control/listener.py
+from gui import GUI_SETTINGS
 from gui.app_loader import g_appLoader, settings
+from tutorial.settings import TUTORIAL_SETTINGS
 _SPACE_ID = settings.GUI_GLOBAL_SPACE_ID
 
 class AppLoaderListener(object):
@@ -24,7 +26,11 @@ class AppLoaderListener(object):
         elif spaceID == _SPACE_ID.LOBBY:
             self.__loader.goToLobby()
         elif spaceID == _SPACE_ID.BATTLE:
-            self.__loader.goToBattle()
+            if GUI_SETTINGS.useAS3Battle:
+                battleSettings = TUTORIAL_SETTINGS.BATTLE_V2
+            else:
+                battleSettings = TUTORIAL_SETTINGS.BATTLE
+            self.__loader.goToBattle(battleSettings=battleSettings)
 
     def __onGUISpaceLeft(self, spaceID):
         if spaceID == _SPACE_ID.LOBBY:

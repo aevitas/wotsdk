@@ -51,6 +51,17 @@ class BWChannelEntity(ChannelEntity):
     def isSystem(self):
         return self._data.isSystem
 
+    def isLazy(self):
+        return self.getName() in LAZY_CHANNEL.ALL
+
+    def isAlwaysShow(self):
+        name = self.getName()
+        if name == LAZY_CHANNEL.COMMON:
+            return True
+        if name == LAZY_CHANNEL.COMPANIES:
+            return False
+        return False
+
     def isPrivate(self):
         return self._data.flags & chat_shared.CHAT_CHANNEL_PRIVATE != 0
 

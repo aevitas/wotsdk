@@ -12,8 +12,6 @@ class GlobalVarsManager(GlobalVarsMgrMeta):
 
     def __init__(self):
         super(GlobalVarsManager, self).__init__()
-        self.__isTutorialDisabled = False
-        self.__isTutorialRunning = False
 
     def isDevelopment(self):
         return constants.IS_DEVELOPMENT
@@ -30,21 +28,12 @@ class GlobalVarsManager(GlobalVarsMgrMeta):
     def isKorea(self):
         return constants.IS_KOREA
 
-    def isTutorialDisabled(self):
-        return self.__isTutorialDisabled
-
-    def setTutorialDisabled(self, isDisabled):
-        self.__isTutorialDisabled = isDisabled
-
     def isTutorialRunning(self, tutorialID):
         try:
             from tutorial.loader import g_loader
             return g_loader.isRunning and g_loader.tutorialID == tutorialID
         except ImportError:
             return False
-
-    def setTutorialRunning(self, isRunning):
-        self.__isTutorialRunning = isRunning
 
     def isFreeXpToTankman(self):
         return g_itemsCache.items.shop.freeXPToTManXPRate > 0

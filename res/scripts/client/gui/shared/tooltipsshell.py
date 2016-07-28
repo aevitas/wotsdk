@@ -1,16 +1,15 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/shell.py
 from debug_utils import LOG_ERROR
-from gui.Scaleform.genConsts.ICON_TEXT_FRAMES import ICON_TEXT_FRAMES
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared import g_itemsCache
 from gui.shared.items_parameters import params_helper, formatters as params_formatters, NO_DATA
 from gui.shared.tooltips import formatters
 from gui.shared.tooltips import getComplexStatus, TOOLTIP_TYPE
-from gui.shared.tooltips.common import BlocksTooltipData, getCurrencySetting
+from gui.shared.tooltips.common import BlocksTooltipData, makePriceBlock, CURRENCY_SETTINGS
 from gui.shared.formatters import text_styles
+from gui.shared.money import ZERO_MONEY
 from helpers.i18n import makeString as _ms
-from BigWorld import wg_getIntegralFormat as _int
 _TOOLTIP_MIN_WIDTH = 380
 _TOOLTIP_MAX_WIDTH = 420
 _AUTOCANNON_SHOT_DISTANCE = 400
@@ -93,56 +92,25 @@ class PriceBlockConstructor(ShellTooltipBlockConstructor):
             LOG_ERROR('You are not allowed to use buyPrice and sellPrice at the same time')
             return
         else:
-            creditsNeeded, goldNeeded = (0, 0)
+            need = ZERO_MONEY
             if buyPrice:
-                credits, gold = g_itemsCache.items.stats.money
+                money = g_itemsCache.items.stats.money
                 price = shell.altPrice
-                creditsNeeded = price[0] - credits if price[0] else 0
-                goldNeeded = price[1] - gold if price[1] else 0
-                need = (max(0, creditsNeeded), max(0, goldNeeded))
+                need = price - money
+                need = need.toNonNegative()
                 defPrice = shell.defaultAltPrice or shell.defaultPrice
-                block.append(self._makePriceBlock(price[0], 'buyCreditsPrice', need[0] if need[0] > 0 else None, defPrice[0] if defPrice[0] > 0 else None, percent=shell.actionPrc))
-                if price[1] > 0:
+                block.append(makePriceBlock(price.credits, CURRENCY_SETTINGS.BUY_CREDITS_PRICE, need.credits if need.credits > 0 else None, defPrice.credits if defPrice.credits > 0 else None, percent=shell.actionPrc, valueWidth=self._valueWidth))
+                if price.gold > 0:
                     block.append(formatters.packTextBlockData(text=text_styles.standard(TOOLTIPS.VEHICLE_TEXTDELIMITER_OR), padding=formatters.packPadding(left=81 + self.leftPadding)))
-                    block.append(self._makePriceBlock(price[1], 'buyGoldPrice', need[1] if need[1] > 0 else None, defPrice[1] if defPrice[1] > 0 else None, percent=shell.actionPrc))
+                    block.append(makePriceBlock(price.gold, CURRENCY_SETTINGS.BUY_GOLD_PRICE, need.gold if need.gold > 0 else None, defPrice.gold if defPrice.gold > 0 else None, percent=shell.actionPrc, valueWidth=self._valueWidth))
             if sellPrice:
-                block.append(self._makePriceBlock(shell.sellPrice[0], 'sellPrice', oldPrice=shell.defaultSellPrice[0], percent=shell.sellActionPrc))
+                block.append(makePriceBlock(shell.sellPrice.credits, CURRENCY_SETTINGS.SELL_PRICE, oldPrice=shell.defaultSellPrice.credits, percent=shell.sellActionPrc, valueWidth=self._valueWidth))
             inventoryCount = shell.inventoryCount
             if inventoryCount:
                 block.append(formatters.packTextParameterBlockData(name=text_styles.main(TOOLTIPS.VEHICLE_INVENTORYCOUNT), value=text_styles.stats(inventoryCount), valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5)))
-            notEnoughMoney = creditsNeeded > 0 or goldNeeded > 0
+            notEnoughMoney = need > ZERO_MONEY
             hasAction = shell.actionPrc > 0 or shell.sellActionPrc > 0
             return (block, notEnoughMoney or hasAction)
-
-    def _makePriceBlock(self, price, settingsKey, neededValue = None, oldPrice = None, percent = 0):
-        needFormatted = ''
-        oldPriceText = ''
-        hasAction = percent != 0
-        settings = getCurrencySetting(settingsKey)
-        if settings is None:
-            return
-        else:
-            valueFormatted = settings.textStyle(_int(price))
-            icon = settings.icon
-            if neededValue is not None:
-                needFormatted = settings.textStyle(_int(neededValue))
-            if hasAction:
-                oldPriceText = text_styles.concatStylesToSingleLine(icon, settings.textStyle(_int(oldPrice)))
-            neededText = ''
-            if neededValue is not None:
-                neededText = text_styles.concatStylesToSingleLine(text_styles.main('('), text_styles.error(TOOLTIPS.VEHICLE_GRAPH_BODY_NOTENOUGH), ' ', needFormatted, ' ', icon, text_styles.main(')'))
-            text = text_styles.concatStylesWithSpace(text_styles.main(settings.text), neededText)
-            if hasAction:
-                actionText = text_styles.main(_ms(TOOLTIPS.VEHICLE_ACTION_PRC, actionPrc=text_styles.stats(str(percent) + '%'), oldPrice=oldPriceText))
-                text = text_styles.concatStylesToMultiLine(text, actionText)
-                if settings.frame == ICON_TEXT_FRAMES.GOLD:
-                    newPrice = (0, price)
-                else:
-                    newPrice = (price, 0)
-                return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
-                 'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=61))
-            return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=settings.frame, valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5))
-            return
 
 
 class CommonStatsBlockConstructor(ShellTooltipBlockConstructor):

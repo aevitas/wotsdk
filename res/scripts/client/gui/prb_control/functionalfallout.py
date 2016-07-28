@@ -36,6 +36,7 @@ class _FalloutClassicEventsSubscriber(_FalloutEventsSubscriber):
         g_playerEvents.onEnqueueFalloutClassicFailure += functional.onEnqueueError
         g_playerEvents.onKickedFromFalloutClassic += functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena += functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure += functional.onArenaJoinFailure
 
     def unsubscribe(self, functional):
         g_playerEvents.onEnqueuedFalloutClassic -= functional.onEnqueued
@@ -43,6 +44,7 @@ class _FalloutClassicEventsSubscriber(_FalloutEventsSubscriber):
         g_playerEvents.onEnqueueFalloutClassicFailure -= functional.onEnqueueError
         g_playerEvents.onKickedFromFalloutClassic -= functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena -= functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure -= functional.onArenaJoinFailure
 
 
 class _FalloutMultiTeamEventsSubscriber(_FalloutEventsSubscriber):
@@ -53,6 +55,7 @@ class _FalloutMultiTeamEventsSubscriber(_FalloutEventsSubscriber):
         g_playerEvents.onEnqueueFalloutMultiteamFailure += functional.onEnqueueError
         g_playerEvents.onKickedFromFalloutMultiteam += functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena += functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure += functional.onArenaJoinFailure
 
     def unsubscribe(self, functional):
         g_playerEvents.onEnqueuedFalloutMultiteam -= functional.onEnqueued
@@ -60,6 +63,7 @@ class _FalloutMultiTeamEventsSubscriber(_FalloutEventsSubscriber):
         g_playerEvents.onEnqueueFalloutMultiteamFailure -= functional.onEnqueueError
         g_playerEvents.onKickedFromFalloutMultiteam -= functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena -= functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure -= functional.onArenaJoinFailure
 
 
 class NoFalloutEntry(IPrbEntry):

@@ -6,7 +6,7 @@ import Math
 import TriggersManager
 from constants import ARENA_PERIOD
 from PlayerEvents import g_playerEvents
-from gui.battle_control import g_sessionProvider, avatar_getter, arena_info
+from gui.battle_control import g_sessionProvider, avatar_getter
 from tutorial import g_tutorialWeaver
 from tutorial.control.battle import aspects
 from tutorial.control.battle.context import BattleClientCtx
@@ -222,7 +222,7 @@ class _VehicleMarker(_IMarker):
         self.__dIndicator = dIndicator
 
     def update(self, manager):
-        feedback = g_sessionProvider.getFeedback()
+        feedback = g_sessionProvider.shared.feedback
         vehicle = BigWorld.entities.get(self.__vehicleID)
         if vehicle is not None and vehicle.isStarted and not vehicle.isPlayerVehicle:
             if self.__nextTime <= BigWorld.time():
@@ -543,7 +543,7 @@ class FunctionalShowBattleDialogEffect(FunctionalShowDialogEffect):
 class FunctionalShowGreeting(FunctionalEffect):
 
     def triggerEffect(self):
-        if arena_info.isArenaNotStarted():
+        if g_sessionProvider.arenaVisitor.isArenaNotStarted():
             greeting = self.getTarget()
             if greeting is not None:
                 if self._gui.playEffect(GUI_EFFECT_NAME.SHOW_GREETING, greeting.getData()):
@@ -558,7 +558,7 @@ class FunctionalShowGreeting(FunctionalEffect):
         return False
 
     def isStillRunning(self):
-        result = arena_info.isArenaNotStarted()
+        result = g_sessionProvider.arenaVisitor.isArenaNotStarted()
         if not result:
             self._gui.stopEffect(GUI_EFFECT_NAME.SHOW_GREETING, self._effect.getTargetID())
         return result

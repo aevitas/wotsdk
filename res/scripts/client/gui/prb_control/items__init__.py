@@ -67,6 +67,8 @@ class FunctionalState(object):
             return True
         if self.isInUnit(PREBATTLE_TYPE.SQUAD) and queueType == QUEUE_TYPE.RANDOMS:
             return True
+        if self.isInUnit(PREBATTLE_TYPE.EVENT) and queueType == QUEUE_TYPE.EVENT_BATTLES:
+            return True
         if self.isInUnit(PREBATTLE_TYPE.FALLOUT) and (queueType == QUEUE_TYPE.FALLOUT_CLASSIC and self.rosterType == ROSTER_TYPE.FALLOUT_CLASSIC_ROSTER or queueType == QUEUE_TYPE.FALLOUT_MULTITEAM and self.rosterType == ROSTER_TYPE.FALLOUT_MULTITEAM_ROSTER):
             return True
         return False
@@ -84,7 +86,7 @@ class FunctionalState(object):
         return self.hasModalEntity and not self.isIntroMode and (self.isInPrebattle() or self.isInUnit())
 
     def isNavigationDisabled(self):
-        return self.hasLockedState and (self.isInPreQueue() or self.isInPrebattle(PREBATTLE_TYPE.COMPANY) or self.isInUnit(PREBATTLE_TYPE.SQUAD) or self.isInClubsPreArena())
+        return self.hasLockedState and (self.isInPreQueue() or self.isInPrebattle(PREBATTLE_TYPE.COMPANY) or self.isInUnit(PREBATTLE_TYPE.SQUAD) or self.isInUnit(PREBATTLE_TYPE.EVENT) or self.isInClubsPreArena())
 
 
 @ReprInjector.simple('isCreator', 'isReady')

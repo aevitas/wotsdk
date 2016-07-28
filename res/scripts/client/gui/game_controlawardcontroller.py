@@ -336,7 +336,7 @@ class QuestBoosterAwardHandler(ServiceChannelHandler):
         goodies = data.get('goodies', {})
         for boosterID in goodies:
             booster = g_goodiesCache.getBooster(boosterID)
-            if booster is not None:
+            if booster is not None and booster.enabled:
                 shared_events.showBoosterAward(booster)
 
         return
@@ -351,7 +351,7 @@ class BoosterAfterBattleAwardHandler(ServiceChannelHandler):
         goodies = ctx[1].data.get('goodies', {})
         for boosterID in goodies:
             booster = g_goodiesCache.getBooster(boosterID)
-            if booster is not None:
+            if booster is not None and booster.enabled:
                 shared_events.showBoosterAward(booster)
 
         return

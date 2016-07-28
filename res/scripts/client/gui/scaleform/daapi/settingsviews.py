@@ -61,6 +61,7 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     VEHICLE_PREVIEW = 'vehiclePreview'
     SIMPLE_DIALOG = 'simpleDialog'
     CONFIRM_MODULE_DIALOG = 'confirmModuleDialog'
+    CONFIRM_BOOSTER_DIALOG = 'confirmBoosterDialog'
     ICON_DIALOG = 'iconDialog'
     ICON_PRICE_DIALOG = 'iconPriceDialog'
     DEMOUNT_DEVICE_DIALOG = 'demountDeviceDialog'
@@ -71,6 +72,7 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     RETRAIN_CREW = 'retrainCrewWindow'
     CREW_OPERATIONS_POPOVER = 'crewOperationsPopOver'
     BATTLE_TYPE_SELECT_POPOVER = 'battleTypeSelectPopover'
+    SQUAD_TYPE_SELECT_POPOVER = 'squadTypeSelectPopover'
     ACCOUNT_POPOVER = 'accountPopover'
     DISMISS_TANKMAN_DIALOG = 'dismissTankmanDialog'
     AWARD_WINDOW = 'awardWindow'
@@ -78,6 +80,7 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     BOOSTERS_WINDOW = 'boostersWindow'
     CYBER_SPORT_SEND_INVITES_WINDOW = 'cyberSport/sendInvitesWindow'
     GET_PREMIUM_POPOVER = 'getPremiumPopover'
+    FITTING_SELECT_POPOVER = 'fittingSelectPopover'
     SHOP_TABLE = 'shopTable'
     MINIMAP_LOBBY = 'minimapLobby'
     QUESTS_CONTROL = 'questsControl'
@@ -107,15 +110,18 @@ class VIEW_ALIAS(COMMON_VIEW_ALIAS):
     CUSTOMIZATION_PURCHASE_WINDOW = 'CustomizationBuyWindow'
     CUSTOMIZATION_FILTER_POPOVER = 'CustomizationFilterPopover'
     TANK_CAROUSEL_FILTER_POPOVER = 'TankCarouselFilterPopover'
-    DEFAULT_BATTLE_PAGE = 'defaultBattlePage'
+    CLASSIC_BATTLE_PAGE = 'classicBattlePage'
     TUTORIAL_BATTLE_PAGE = 'tutorialBattlePage'
     FALLOUT_CLASSIC_PAGE = 'falloutClassicPage'
     FALLOUT_MULTITEAM_PAGE = 'falloutMultiteamPage'
+    DEV_BATTLE_PAGE = 'devBattlePage'
     INGAME_MENU = 'ingameMenu'
     INGAME_HELP = 'ingameHelp'
     INGAME_DESERTER = 'ingameDeserter'
+    BOTS_MENU = 'botsMenu'
     LOADINGS = (BATTLE_LOADING, FALLOUT_MULTI_TEAM_BATTLE_LOADING, TUTORIAL_LOADING)
-    BATTLE_PAGES = (DEFAULT_BATTLE_PAGE,
+    BATTLE_PAGES = (CLASSIC_BATTLE_PAGE,
      TUTORIAL_BATTLE_PAGE,
      FALLOUT_CLASSIC_PAGE,
-     FALLOUT_MULTITEAM_PAGE)
+     FALLOUT_MULTITEAM_PAGE,
+     DEV_BATTLE_PAGE)

@@ -3,9 +3,8 @@ from adisp import process
 from helpers import i18n, getClientVersion
 from gui import DialogsInterface, game_control
 from gui.app_loader import g_appLoader
-from gui.shared import events, g_eventBus, EVENT_BUS_SCOPE
+from gui.shared import event_dispatcher
 from gui.Scaleform.locale.MENU import MENU
-from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.dialogs import DIALOG_BUTTON_ID
 from gui.Scaleform.daapi.view.meta.LobbyMenuMeta import LobbyMenuMeta
 from gui.shared.formatters import text_styles
@@ -25,7 +24,7 @@ class LobbyMenu(LobbyMenuMeta):
         self.destroy()
 
     def settingsClick(self):
-        self.fireEvent(events.LoadViewEvent(VIEW_ALIAS.SETTINGS_WINDOW, ctx={'redefinedKeyMode': False}))
+        event_dispatcher.showSettingsWindow(redefinedKeyMode=False)
 
     def onWindowClose(self):
         self.destroy()
@@ -37,7 +36,7 @@ class LobbyMenu(LobbyMenuMeta):
     def refuseTraining(self):
         isOk = yield DialogsInterface.showI18nConfirmDialog('refuseTraining')
         if isOk:
-            g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.STOP_TRAINING), scope=EVENT_BUS_SCOPE.GLOBAL)
+            event_dispatcher.stopTutorial()
         self.destroy()
 
     @process

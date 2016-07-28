@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/shared/items_parameters/params_cache.py
+from collections import namedtuple
 import math
 import sys
 from gui.shared.items_parameters import calcGunParams, calcShellParams, getEquipmentParameters
@@ -25,44 +26,15 @@ MODULES = (ITEM_TYPES.vehicle,
  ITEM_TYPES.vehicleTurret,
  ITEM_TYPES.vehicleGun,
  ITEM_TYPES.shell)
+PrecachedShell = namedtuple('PrecachedShell', 'guns avgParams')
+PrecachedEquipment = namedtuple('PrecachedEquipment', 'nations avgParams')
+PrecachedOptionalDevice = namedtuple('PrecachedOptionalDevice', 'weight nations')
 
-class _PrecachedParams(object):
-
-    @property
-    def avgParams(self):
-        raise NotImplementedError()
-
-
-class PrecachedOptionalDevice(_PrecachedParams):
-
-    def __init__(self, weight, nations):
-        self.__weight = weight
-        self.__nations = nations
-
-    @property
-    def nations(self):
-        return self.__nations
-
-    @property
-    def weight(self):
-        return self.__weight
-
-
-class PrecachedGun(_PrecachedParams):
-
-    def __init__(self, turrets = None, clipVehiclesList = None, avgParams = None, turretsByVehicles = None):
-        self.__turrets = turrets or tuple()
-        self.__clipVehiclesList = clipVehiclesList or set()
-        self.__avgParams = avgParams
-        self.__turretsByVehicles = turretsByVehicles or {}
-
-    @property
-    def clipVehicles(self):
-        return self.__clipVehiclesList
+class PrecachedGun(namedtuple('PrecachedOptionalDevice', 'turrets clipVehicles avgParams turretsByVehicles')):
 
     @property
     def clipVehiclesNames(self):
-        return [ getVehicleType(cd).userString for cd in self.__clipVehiclesList ]
+        return [ getVehicleType(cd).userString for cd in self.clipVehicles ]
 
     def getReloadingType(self, vehicleCD = None):
         reloadingType = GUN_NORMAL
@@ -74,46 +46,8 @@ class PrecachedGun(_PrecachedParams):
                 reloadingType = GUN_NORMAL
         return reloadingType
 
-    @property
-    def turrets(self):
-        return self.__turrets
-
-    @property
-    def avgParams(self):
-        return self.__avgParams
-
     def getTurretsForVehicle(self, vehicleCD):
-        return self.__turretsByVehicles.get(vehicleCD, {})
-
-
-class PrecachedShell(_PrecachedParams):
-
-    def __init__(self, guns = tuple(), avgParams = None):
-        self.__guns = guns
-        self.__avgParams = avgParams
-
-    @property
-    def guns(self):
-        return self.__guns
-
-    @property
-    def avgParams(self):
-        return self.__avgParams
-
-
-class PrecachedEquipment(_PrecachedParams):
-
-    def __init__(self, nations, avgParams):
-        self.__nations = nations
-        self.__avgParams = avgParams
-
-    @property
-    def nations(self):
-        return self.__nations
-
-    @property
-    def avgParams(self):
-        return self.__avgParams
+        return self.turretsByVehicles.get(vehicleCD, {})
 
 
 class _ParamsCache(object):
@@ -265,7 +199,7 @@ class _ParamsCache(object):
                                     if gun['clip'][0] > 1:
                                         clipVehiclesList.add(vDescr.type.compactDescr)
 
-                self.__cache[nationIdx][ITEM_TYPES.vehicleGun][g['compactDescr']] = PrecachedGun(turrets=tuple(turretsList), clipVehiclesList=clipVehiclesList, avgParams=calcGunParams(g, descriptors), turretsByVehicles=turretsIntCDs)
+                self.__cache[nationIdx][ITEM_TYPES.vehicleGun][g['compactDescr']] = PrecachedGun(turrets=tuple(turretsList), clipVehicles=clipVehiclesList, avgParams=calcGunParams(g, descriptors), turretsByVehicles=turretsIntCDs)
 
     def __precachShells(self):
         for nationName, nationIdx in nations.INDICES.iteritems():

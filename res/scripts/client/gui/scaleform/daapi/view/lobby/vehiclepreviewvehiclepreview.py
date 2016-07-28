@@ -4,7 +4,6 @@ import BigWorld
 from CurrentVehicle import g_currentVehicle, g_currentPreviewVehicle
 from account_helpers import AccountSettings
 from account_helpers.AccountSettings import PREVIEW_INFO_PANEL_IDX
-from debug_utils import LOG_DEBUG
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
@@ -19,13 +18,12 @@ from gui.shared.ItemsCache import g_itemsCache
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared import event_dispatcher
 from gui.shared.gui_items.Vehicle import getLobbyDescription
-from gui.shared.tooltips import getActionPriceData
+from gui.shared.tooltips.formatters import getActionPriceData
 from helpers.i18n import makeString as _ms
 from gui.shared.formatters import text_styles, icons
 from gui.shared.gui_items.items_actions import factory as ItemsActionsFactory
-from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
+from gui.shared.money import Currency
 from gui.Scaleform.genConsts.TOOLTIPS_CONSTANTS import TOOLTIPS_CONSTANTS
-from gui.shared.utils.functions import makeTooltip
 from gui.Scaleform.daapi import LobbySubView
 CREW_INFO_TAB_ID = 'crewInfoTab'
 FACT_SHEET_TAB_ID = 'factSheetTab'
@@ -145,15 +143,16 @@ class VehiclePreview(LobbySubView, VehiclePreviewMeta):
             money = g_itemsCache.items.stats.money
             exchangeRate = g_itemsCache.items.shop.exchangeRate
             price = vehicle.rentOrBuyPrice
+            currency = price.getCurrency(byWeight=True)
             action = getActionPriceData(vehicle)
             isPurchaseEnabled = vehicle.isPurchaseEnabled(money, exchangeRate)
-            if price[1] == 0:
-                currencyIcon = RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICONBIG
-                formatter = text_styles.creditsTextBig if isPurchaseEnabled else text_styles.errCurrencyTextBig
-            else:
+            if currency == Currency.GOLD:
                 currencyIcon = RES_ICONS.MAPS_ICONS_LIBRARY_GOLDICONBIG
                 formatter = text_styles.goldTextBig if isPurchaseEnabled else text_styles.errCurrencyTextBig
-            return _ButtonState(isPurchaseEnabled, formatter(BigWorld.wg_getIntegralFormat(price[1] or price[0])), VEHICLE_PREVIEW.BUYINGPANEL_BUYBTN_LABEL_BUY, action is not None, currencyIcon, ItemsActionsFactory.BUY_VEHICLE, action)
+            else:
+                currencyIcon = RES_ICONS.MAPS_ICONS_LIBRARY_CREDITSICONBIG
+                formatter = text_styles.creditsTextBig if isPurchaseEnabled else text_styles.errCurrencyTextBig
+            return _ButtonState(isPurchaseEnabled, formatter(BigWorld.wg_getIntegralFormat(price.get(currency))), VEHICLE_PREVIEW.BUYINGPANEL_BUYBTN_LABEL_BUY, action is not None, currencyIcon, ItemsActionsFactory.BUY_VEHICLE, action)
         else:
             nodeCD = vehicle.intCD
             currencyIcon = RES_ICONS.MAPS_ICONS_LIBRARY_XPCOSTICONBIG

@@ -16,6 +16,7 @@ class INGAME_HELP(object):
     BATTLECONTROLS_CRUISECTRLFORWARD = '#ingame_help:battleControls/cruiseCtrlForward'
     BATTLECONTROLS_CRUISECTRLBACKWARD = '#ingame_help:battleControls/cruiseCtrlBackward'
     BATTLECONTROLS_SWITCHAUTOROTATION = '#ingame_help:battleControls/switchAutorotation'
+    BATTLECONTROLS_STOPFIRE = '#ingame_help:battleControls/stopFire'
     BATTLECONTROLS_VOICECHATMUTE = '#ingame_help:battleControls/voiceChatMute'
     BATTLECONTROLS_HIDEMINIMAP = '#ingame_help:battleControls/hideMinimap'
     BATTLECONTROLS_FIRE = '#ingame_help:battleControls/fire'

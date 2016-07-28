@@ -43,6 +43,7 @@ from ConnectionManager import connectionManager
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.daapi.settings.tooltips import TOOLTIPS_CONSTANTS
 from gui.shared.utils.functions import makeTooltip
+from gui.shared.tooltips import formatters
 _MAX_BOOSTERS_TO_DISPLAY = 99
 _MAX_HEADER_SERVER_NAME_LEN = 6
 _SERVER_NAME_PREFIX = '%s..'
@@ -195,9 +196,9 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         self.updateAccountAttrs()
 
     def updateMoneyStats(self):
-        actualCredits, actualGold = g_itemsCache.items.stats.actualMoney
-        self.__setCredits(actualCredits)
-        self.__setGold(actualGold)
+        money = g_itemsCache.items.stats.actualMoney
+        self.__setCredits(money.credits)
+        self.__setGold(money.gold)
 
     def updateXPInfo(self):
         self.__setFreeXP(g_itemsCache.items.stats.actualFreeXP)
@@ -304,11 +305,6 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         self.as_setFreeXPS(BigWorld.wg_getIntegralFormat(freeXP), MENU.HEADERBUTTONS_BTNLABEL_GATHERING_EXPERIENCE, isActionActive, TOOLTIPS.HEADER_XP_GATHERING, TOOLTIP_TYPES.COMPLEX)
 
     def __setAccountsAttrs(self, isPremiumAccount, premiumExpiryTime = 0):
-        disableTTHeader = ''
-        disableTTBody = ''
-        isNavigationEnabled = True
-        if self.prbDispatcher:
-            isNavigationEnabled = not self.prbDispatcher.getFunctionalState().isNavigationDisabled()
         if isPremiumAccount:
             if not premiumExpiryTime > 0:
                 raise AssertionError
@@ -319,24 +315,23 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 else:
                     timeLeft = math.ceil(deltaInSeconds / time_utils.ONE_HOUR)
                     timeMetric = i18n.makeString('#menu:header/account/premium/hours')
-                buyPremiumLabel = i18n.makeString('#menu:headerButtons/doLabel/premium')
                 premiumBtnLbl = makeHtmlString('html_templates:lobby/header', 'premium-account-label', {'timeMetric': timeMetric,
                  'timeLeft': timeLeft})
                 canUpdatePremium = deltaInSeconds < time_utils.ONE_YEAR
+                buyPremiumLabel = ''
+                if canUpdatePremium:
+                    buyPremiumLabel = i18n.makeString('#menu:headerButtons/doLabel/premium')
             else:
                 canUpdatePremium = True
                 premiumBtnLbl = makeHtmlString('html_templates:lobby/header', 'base-account-label')
                 buyPremiumLabel = i18n.makeString('#menu:common/premiumBuy')
-            if not canUpdatePremium:
-                disableTTHeader = i18n.makeString(TOOLTIPS.LOBBY_HEADER_BUYPREMIUMACCOUNT_DISABLED_HEADER)
-                disableTTBody = i18n.makeString(TOOLTIPS.LOBBY_HEADER_BUYPREMIUMACCOUNT_DISABLED_BODY, number=time_utils.ONE_YEAR / time_utils.ONE_DAY)
-            self.as_doDisableHeaderButtonS(self.BUTTONS.PREM, canUpdatePremium and isNavigationEnabled)
             hasPersonalDiscount = len(g_itemsCache.items.shop.personalPremiumPacketsDiscounts) > 0
-            tooltip = canUpdatePremium or {'header': disableTTHeader,
-             'body': disableTTBody}
+            tooltip = canUpdatePremium or formatters.getLimitExceededPremiumTooltip()
+        elif isPremiumAccount:
+            tooltip = TOOLTIPS.HEADER_PREMIUM_EXTEND
         else:
-            tooltip = TOOLTIPS.HEADER_PREMIUM_EXTEND if isPremiumAccount else TOOLTIPS.HEADER_PREMIUM_BUY
-        self.as_setPremiumParamsS(isPremiumAccount, premiumBtnLbl, buyPremiumLabel, canUpdatePremium, disableTTHeader, disableTTBody, hasPersonalDiscount, tooltip, TOOLTIP_TYPES.COMPLEX)
+            tooltip = TOOLTIPS.HEADER_PREMIUM_BUY
+        self.as_setPremiumParamsS(premiumBtnLbl, buyPremiumLabel, hasPersonalDiscount, tooltip, TOOLTIP_TYPES.COMPLEX)
 
     def __triggerViewLoad(self, alias):
         if alias == 'browser':
@@ -374,8 +369,20 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             view = container.getView({POP_UP_CRITERIA.VIEW_ALIAS: VIEW_ALIAS.BATTLE_TYPE_SELECT_POPOVER})
         return view
 
+    def __getSquadTypeSelectPopover(self):
+        container = self.app.containerManager.getContainer(ViewTypes.WINDOW)
+        view = None
+        if container:
+            view = container.getView({POP_UP_CRITERIA.VIEW_ALIAS: VIEW_ALIAS.SQUAD_TYPE_SELECT_POPOVER})
+        return view
+
     def __closeBattleTypeSelectPopover(self):
         view = self.__getBattleTypeSelectPopover()
+        if view:
+            view.destroy()
+
+    def __closeSquadTypeSelectPopover(self):
+        view = self.__getSquadTypeSelectPopover()
         if view:
             view.destroy()
 
@@ -383,6 +390,17 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
         view = self.__getBattleTypeSelectPopover()
         if view:
             view.update()
+
+    def __updateSquadTypeSelectPopover(self):
+        view = self.__getSquadTypeSelectPopover()
+        if view:
+            view.update()
+
+    def __getEventTooltipData(self):
+        header = i18n.makeString(TOOLTIPS.EVENT_SQUAD_DISABLE_HEADER)
+        vehicle = g_eventsCache.getEventVehicles()[0]
+        body = i18n.makeString(TOOLTIPS.EVENT_SQUAD_DISABLE_BODY, tankName=vehicle.shortUserName)
+        return makeTooltip(header, body)
 
     def __getFightBtnTooltipData(self, state):
         falloutCtrl = getFalloutCtrl()
@@ -412,7 +430,7 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 body = i18n.makeString('#menu:headerButtons/fightBtn/tooltip/falloutVehLevelRequired/body', level=int2roman(config.vehicleLevelRequired))
         else:
             return None
-        return {makeTooltip(header, body)}
+        return makeTooltip(header, body)
 
     def __getSandboxTooltipData(self):
         return {makeTooltip(i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_HEADER), i18n.makeString(MENU.HEADERBUTTONS_FIGHTBTN_TOOLTIP_SANDBOX_INVALID_LEVEL_BODY))}
@@ -422,8 +440,10 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
             return
         else:
             items = battle_selector_items.getItems()
+            suadItems = battle_selector_items.getSquadItems()
             state = self.prbDispatcher.getFunctionalState()
             selected = items.update(state)
+            squadSelected = suadItems.update(state)
             canDo, canDoMsg = self.prbDispatcher.canPlayerDoAction()
             playerInfo = self.prbDispatcher.getPlayerInfo()
             if selected.isInSquad(state):
@@ -433,17 +453,28 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 self.as_doDisableHeaderButtonS(self.BUTTONS.SQUAD, self.prbDispatcher.getFunctionalCollection().canCreateSquad())
             falloutCtrl = getFalloutCtrl()
             isFallout = falloutCtrl.isSelected()
+            isEvent = g_eventsCache.isEventEnabled()
             if isInSquad:
                 tooltip = TOOLTIPS.HEADER_SQUAD_MEMBER
+            elif isFallout:
+                tooltip = TOOLTIPS.HEADER_DOMINATIONSQUAD
+            elif isEvent:
+                tooltip = TOOLTIPS.HEADER_SQUAD_MEMBER
             else:
-                tooltip = TOOLTIPS.HEADER_DOMINATIONSQUAD if isFallout else TOOLTIPS.HEADER_SQUAD
-            self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX)
+                tooltip = TOOLTIPS.HEADER_SQUAD
+            if state.isInUnit(constants.PREBATTLE_TYPE.EVENT):
+                iconSquad = RES_ICONS.MAPS_ICONS_BATTLETYPES_40X40_EVENTSQUAD
+            else:
+                iconSquad = RES_ICONS.MAPS_ICONS_BATTLETYPES_40X40_SQUAD
+            self.as_updateSquadS(isInSquad, tooltip, TOOLTIP_TYPES.COMPLEX, isEvent, iconSquad)
             isFightBtnDisabled = not canDo or selected.isFightButtonForcedDisabled()
             if isFightBtnDisabled and not state.hasLockedState:
                 if state.isInPreQueue(queueType=constants.QUEUE_TYPE.SANDBOX) and canDoMsg == QUEUE_RESTRICTION.LIMIT_LEVEL:
                     self.as_setFightBtnTooltipS(self.__getSandboxTooltipData())
                 elif isFallout:
                     self.as_setFightBtnTooltipS(self.__getFightBtnTooltipData(canDoMsg))
+                elif isEvent and state.isInUnit(constants.PREBATTLE_TYPE.EVENT):
+                    self.as_setFightBtnTooltipS(self.__getEventTooltipData())
                 else:
                     self.as_setFightBtnTooltipS(None)
             else:
@@ -455,6 +486,10 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
                 self.__closeBattleTypeSelectPopover()
             else:
                 self.__updateBattleTypeSelectPopover()
+            if squadSelected.isDisabled():
+                self.__closeSquadTypeSelectPopover()
+            else:
+                self.__updateSquadTypeSelectPopover()
             isNavigationEnabled = not state.isNavigationDisabled()
             self.as_doDisableHeaderButtonS(self.BUTTONS.SILVER, isNavigationEnabled)
             self.as_doDisableHeaderButtonS(self.BUTTONS.GOLD, isNavigationEnabled)
@@ -517,9 +552,13 @@ class LobbyHeader(LobbyHeaderMeta, ClanEmblemsHelper, GlobalListener):
              'value': self.TABS.BROWSER,
              'tooltip': TOOLTIPS.HEADER_BUTTONS_BROWSER})
         fortEnabled = g_lobbyContext.getServerSettings().isFortsEnabled()
+        if fortEnabled:
+            tooltip = TOOLTIPS.HEADER_BUTTONS_FORTS
+        else:
+            tooltip = TOOLTIPS.HEADER_BUTTONS_FORTS_TURNEDOFF
         tabDataProvider.append({'label': MENU.HEADERBUTTONS_FORTS,
          'value': FORTIFICATION_ALIASES.FORTIFICATIONS_VIEW_ALIAS,
-         'tooltip': TOOLTIPS.HEADER_BUTTONS_FORTS if fortEnabled else TOOLTIPS.HEADER_BUTTONS_FORTS_TURNEDOFF,
+         'tooltip': tooltip,
          'enabled': fortEnabled})
         self.as_setHangarMenuDataS({'tabDataProvider': tabDataProvider})
 

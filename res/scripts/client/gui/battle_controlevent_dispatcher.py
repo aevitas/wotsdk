@@ -25,14 +25,12 @@ def setMinimapCmd(key):
     g_eventBus.handleEvent(GameEvent(GameEvent.MINIMAP_CMD, _makeKeyCtx(key=key)), scope=_SCOPE)
 
 
-def setRadialMenuCmd(key, isDown, offset):
-    ctx = _makeKeyCtx(key=key, isDown=isDown)
-    ctx['offset'] = offset
-    g_eventBus.handleEvent(GameEvent(GameEvent.RADIAL_MENU_CMD, ctx), scope=_SCOPE)
+def setRadialMenuCmd(key, isDown):
+    g_eventBus.handleEvent(GameEvent(GameEvent.RADIAL_MENU_CMD, _makeKeyCtx(key=key, isDown=isDown)), scope=_SCOPE)
 
 
-def setGUIVisibility(flag):
-    g_eventBus.handleEvent(GameEvent(GameEvent.GUI_VISIBILITY, {'visible': flag}), scope=_SCOPE)
+def toggleGUIVisibility():
+    g_eventBus.handleEvent(GameEvent(GameEvent.TOGGLE_GUI), scope=_SCOPE)
 
 
 def setPlayingTimeOnArena(playingTime):
@@ -49,3 +47,15 @@ def toggleFullStats(isDown):
 
 def setNextPlayerPanelMode():
     g_eventBus.handleEvent(GameEvent(GameEvent.NEXT_PLAYERS_PANEL_MODE), scope=_SCOPE)
+
+
+def toggleMarkers2DVisibility():
+    g_eventBus.handleEvent(GameEvent(GameEvent.MARKERS_2D_VISIBILITY), scope=_SCOPE)
+
+
+def toggleCrosshairVisibility():
+    g_eventBus.handleEvent(GameEvent(GameEvent.CROSSHAIR_VISIBILITY), scope=_SCOPE)
+
+
+def overrideCrosshairView(newMode):
+    g_eventBus.handleEvent(GameEvent(GameEvent.CROSSHAIR_VIEW, {'ctrlMode': newMode}), scope=_SCOPE)

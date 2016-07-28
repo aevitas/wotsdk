@@ -254,6 +254,9 @@ class ACHIEVEMENTS(object):
     MECHANICENGINEER7 = '#achievements:mechanicEngineer7'
     MECHANICENGINEER7_DESCR = '#achievements:mechanicEngineer7_descr'
     MECHANICENGINEER7_CONDITION = '#achievements:mechanicEngineer7_condition'
+    MECHANICENGINEER8 = '#achievements:mechanicEngineer8'
+    MECHANICENGINEER8_DESCR = '#achievements:mechanicEngineer8_descr'
+    MECHANICENGINEER8_CONDITION = '#achievements:mechanicEngineer8_condition'
     TANKEXPERT = '#achievements:tankExpert'
     TANKEXPERT_DESCR = '#achievements:tankExpert_descr'
     TANKEXPERT0 = '#achievements:tankExpert0'
@@ -272,6 +275,8 @@ class ACHIEVEMENTS(object):
     TANKEXPERT6_DESCR = '#achievements:tankExpert6_descr'
     TANKEXPERT7 = '#achievements:tankExpert7'
     TANKEXPERT7_DESCR = '#achievements:tankExpert7_descr'
+    TANKEXPERT8 = '#achievements:tankExpert8'
+    TANKEXPERT8_DESCR = '#achievements:tankExpert8_descr'
     TITLESNIPER = '#achievements:titleSniper'
     TITLESNIPER_DESCR = '#achievements:titleSniper_descr'
     TITLESNIPER_CONDITION = '#achievements:titleSniper_condition'
@@ -480,6 +485,12 @@ class ACHIEVEMENTS(object):
     WFC2014 = '#achievements:WFC2014'
     WFC2014_DESCR = '#achievements:WFC2014_descr'
     WFC2014_CONDITION = '#achievements:WFC2014_condition'
+    EFC2016 = '#achievements:EFC2016'
+    EFC2016_DESCR = '#achievements:EFC2016_descr'
+    EFC2016_CONDITION = '#achievements:EFC2016_condition'
+    EFC2016GOLEADOR = '#achievements:EFC2016Goleador'
+    EFC2016GOLEADOR_DESCR = '#achievements:EFC2016Goleador_descr'
+    EFC2016GOLEADOR_CONDITION = '#achievements:EFC2016Goleador_condition'
     DEATHTRACK = '#achievements:deathTrack'
     DEATHTRACK_DESCR = '#achievements:deathTrack_descr'
     DEATHTRACK_CONDITION = '#achievements:deathTrack_condition'
@@ -847,6 +858,9 @@ class ACHIEVEMENTS(object):
      MECHANICENGINEER7,
      MECHANICENGINEER7_DESCR,
      MECHANICENGINEER7_CONDITION,
+     MECHANICENGINEER8,
+     MECHANICENGINEER8_DESCR,
+     MECHANICENGINEER8_CONDITION,
      TANKEXPERT,
      TANKEXPERT_DESCR,
      TANKEXPERT0,
@@ -865,6 +879,8 @@ class ACHIEVEMENTS(object):
      TANKEXPERT6_DESCR,
      TANKEXPERT7,
      TANKEXPERT7_DESCR,
+     TANKEXPERT8,
+     TANKEXPERT8_DESCR,
      TITLESNIPER,
      TITLESNIPER_DESCR,
      TITLESNIPER_CONDITION,
@@ -1073,6 +1089,12 @@ class ACHIEVEMENTS(object):
      WFC2014,
      WFC2014_DESCR,
      WFC2014_CONDITION,
+     EFC2016,
+     EFC2016_DESCR,
+     EFC2016_CONDITION,
+     EFC2016GOLEADOR,
+     EFC2016GOLEADOR_DESCR,
+     EFC2016GOLEADOR_CONDITION,
      DEATHTRACK,
      DEATHTRACK_DESCR,
      DEATHTRACK_CONDITION,

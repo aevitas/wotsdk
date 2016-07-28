@@ -1,5 +1,7 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/customization/tooltips/element.py
 import BigWorld
+from CurrentVehicle import g_currentVehicle
+from gui.Scaleform.locale.MENU import MENU
 import nations
 from constants import IGR_TYPE
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -7,6 +9,7 @@ from gui.game_control import getIGRCtrl
 from gui.shared.ItemsCache import g_itemsCache
 from gui import makeHtmlString
 from gui.shared.formatters import text_styles, icons
+from gui.shared.items_parameters import params_helper, MAX_RELATIVE_VALUE, formatters as params_formatters
 from gui.shared.tooltips.common import BlocksTooltipData
 from gui.shared.tooltips import formatters, TOOLTIP_TYPE
 from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
@@ -32,6 +35,29 @@ class BUY_ITEM_TYPE(object):
     ALREADY_HAVE_FOREVER = 6
     ALREADY_HAVE_TEMP = 7
     ALREADY_HAVE_IGR = 8
+
+
+class SimplifiedStatsBlockConstructor(object):
+
+    def __init__(self, stockParams, comparator):
+        self.__stockParams = stockParams
+        self.__comparator = comparator
+
+    def construct(self):
+        blocks = []
+        for parameter in params_formatters.getRelativeDiffParams(self.__comparator):
+            delta = parameter.state[1]
+            value = parameter.value
+            if delta > 0:
+                value -= delta
+            blocks.append(formatters.packStatusDeltaBlockData(title=text_styles.middleTitle(MENU.tank_params(parameter.name)), valueStr=params_formatters.simlifiedDeltaParameter(parameter), statusBarData={'value': value,
+             'delta': delta,
+             'minValue': 0,
+             'markerValue': self.__stockParams[parameter.name],
+             'maxValue': MAX_RELATIVE_VALUE,
+             'useAnim': False}, padding=formatters.packPadding(left=72, top=8)))
+
+        return blocks
 
 
 class ElementTooltip(BlocksTooltipData):
@@ -107,11 +133,21 @@ class ElementTooltip(BlocksTooltipData):
         return formatters.packImageBlockData(img=data['icon'], align=BLOCKS_TOOLTIP_TYPES.ALIGN_CENTER, width=actualWidth, height=84)
 
     def _packBonusBlock(self, data):
+        vehicle = g_currentVehicle.item
+        blocks = []
         conditionBonus = data['condition'] is not None and data['type'] != CUSTOMIZATION_TYPE.CAMOUFLAGE
         bonusTitleLocal = makeHtmlString('html_templates:lobby/textStyle', 'bonusLocalText', {'message': '{0}{1}'.format(data['bonus_title_local'], '*' if conditionBonus else '')})
-        return formatters.packBuildUpBlockData([formatters.packImageTextBlockData(title=text_styles.concatStylesWithSpace(bonusTitleLocal), desc=text_styles.main(data['bonus_desc']), img=data['bonus_icon'], imgPadding={'left': 11,
-          'top': 3}, txtGap=-4, txtOffset=70, padding={'top': -1,
-          'left': 7})], linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE)
+        blocks.append(formatters.packImageTextBlockData(title=text_styles.concatStylesWithSpace(bonusTitleLocal), desc=text_styles.main(data['bonus_desc']), img=data['bonus_icon'], imgPadding={'left': 11,
+         'top': 3}, txtGap=-4, txtOffset=70, padding={'top': -1,
+         'left': 7}))
+        if vehicle is not None and self._cType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            stockVehicle = g_itemsCache.items.getStockVehicle(vehicle.intCD)
+            comparator = params_helper.camouflageComparator(vehicle, self._item)
+            stockParams = params_helper.getParameters(stockVehicle)
+            simplifiedBlocks = SimplifiedStatsBlockConstructor(stockParams, comparator).construct()
+            if len(simplifiedBlocks) > 0:
+                blocks.extend(simplifiedBlocks)
+        return formatters.packBuildUpBlockData(blocks, linkage=BLOCKS_TOOLTIP_TYPES.TOOLTIP_BUILDUP_BLOCK_WHITE_BG_LINKAGE)
 
     def _packAppliedToVehicles(self, data):
         subBlocks = [formatters.packTextBlockData(text=text_styles.middleTitle('#vehicle_customization:customization/tooltip/applied/title'))]

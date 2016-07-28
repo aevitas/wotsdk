@@ -13,3 +13,8 @@ class STORE_CONSTANTS(object):
     SHOP_LINKAGE = 'ShopUI'
     INVENTORY_LINKAGE = 'InventoryUI'
     STORE = 'store'
+    SHELL = 'shell'
+    MODULE = 'module'
+    VEHICLE = 'vehicle'
+    OPTIONAL_DEVICE = 'optionalDevice'
+    EQUIPMENT = 'equipment'

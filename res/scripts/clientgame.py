@@ -14,7 +14,6 @@ from ConnectionManager import connectionManager
 import GUI
 from gui import CLIENT_ENCODING, onRepeatKeyEvent, g_keyEventHandlers, g_mouseEventHandlers, InputHandler, GUI_SETTINGS
 from gui.Scaleform.GameLoading import GameLoading
-from gui.Scaleform import VoiceChatInterface
 from gui.shared import personality as gui_personality
 from messenger import MessengerEntry
 import MusicControllerWWISE
@@ -180,28 +179,6 @@ def start():
                     LOG_DEBUG('Game start FAILED with:')
                     LOG_CURRENT_EXCEPTION()
 
-            elif sys.argv[1] == 'validationTest':
-                try:
-                    gui_personality.start()
-                    LOG_DEBUG('starting validationTest')
-                    import Cat
-                    Cat.Tasks.Validation.ParamsObject.setResultFileName(sys.argv[2])
-                    BigWorld.callback(10, Cat.Tasks.Validation.startAllValidationTests)
-                except:
-                    LOG_DEBUG('Game start FAILED with:')
-                    LOG_CURRENT_EXCEPTION()
-
-            elif sys.argv[1] == 'resourcesValidationTest':
-                try:
-                    gui_personality.start()
-                    LOG_DEBUG('starting resourcesValidationTest')
-                    import Cat
-                    Cat.Tasks.Validation.ParamsObject.setResultFileName(sys.argv[2])
-                    BigWorld.callback(10, Cat.Tasks.Validation.startResourcesValidationTest)
-                except:
-                    LOG_DEBUG('Game start FAILED with:')
-                    LOG_CURRENT_EXCEPTION()
-
             elif sys.argv[1] == 'replayTimeout':
                 try:
                     g_replayCtrl.replayTimeout = float(sys.argv[2])
@@ -356,7 +333,6 @@ def onDisconnected():
     gui_personality.onDisconnected()
     VOIP.getVOIPManager().logout()
     VOIP.getVOIPManager().onDisconnected()
-    VoiceChatInterface.g_instance.reset()
 
 
 def onCameraChange(oldCamera):

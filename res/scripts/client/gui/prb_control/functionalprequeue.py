@@ -10,6 +10,7 @@ from gui.prb_control.ctrl_events import g_prbCtrlEvents
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.formatters import messages
 from gui.prb_control.functional import interfaces
+from gui.prb_control.functional.event_vehicle_extension import EventVehicleMeta
 from gui.prb_control.restrictions.permissions import PreQueuePermissions
 from gui.prb_control.settings import FUNCTIONAL_FLAG, CTRL_ENTITY_TYPE
 from gui.prb_control.settings import REQUEST_TYPE
@@ -186,6 +187,10 @@ class PreQueueFunctional(NoPreQueueFunctional):
         self._invokeListeners('onKickedFromArena', self._queueType, *args)
         self._exitFromQueueUI()
 
+    def onArenaJoinFailure(self, *args):
+        self._invokeListeners('onArenaJoinFailure', self._queueType, *args)
+        self._exitFromQueueUI()
+
     def _goToQueueUI(self):
         return FUNCTIONAL_FLAG.UNDEFINED
 
@@ -194,6 +199,7 @@ class PreQueueFunctional(NoPreQueueFunctional):
 
 
 class AccountQueueFunctional(PreQueueFunctional):
+    __metaclass__ = EventVehicleMeta
 
     def __init__(self, queueType, subscriber, flags = FUNCTIONAL_FLAG.UNDEFINED):
         super(AccountQueueFunctional, self).__init__(queueType, subscriber, flags)
@@ -282,6 +288,10 @@ class AccountQueueFunctional(PreQueueFunctional):
     def onKickedFromArena(self, *args):
         self._requestCtx.stopProcessing(True)
         super(AccountQueueFunctional, self).onKickedFromArena(*args)
+
+    def onArenaJoinFailure(self, *args):
+        self._requestCtx.stopProcessing(True)
+        super(AccountQueueFunctional, self).onArenaJoinFailure(*args)
 
     def _doQueue(self, ctx):
         raise NotImplementedError('Routine _doQueue must be overridden')

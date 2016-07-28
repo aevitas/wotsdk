@@ -193,14 +193,23 @@ class ClientUnit(UnitBase):
     def isSquad(self):
         return self._prebattleTypeID == PREBATTLE_TYPE.SQUAD
 
+    def isEvent(self):
+        return self._prebattleTypeID == PREBATTLE_TYPE.EVENT
+
     def isFalloutSquad(self):
         return self._prebattleTypeID == PREBATTLE_TYPE.FALLOUT
+
+    def isPrebattlesSquad(self):
+        return self._prebattleTypeID in PREBATTLE_TYPE.SQUAD_PREBATTLES
 
     def isFortBattle(self):
         return self._prebattleTypeID == PREBATTLE_TYPE.FORT_BATTLE
 
     def isClub(self):
         return self._prebattleTypeID == PREBATTLE_TYPE.CLUBS
+
+    def isEvent(self):
+        return self._prebattleTypeID == PREBATTLE_TYPE.EVENT
 
     def isRated(self):
         return self.isClub() and self.getExtra().isRatedBattle

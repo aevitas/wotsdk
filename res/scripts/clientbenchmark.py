@@ -129,7 +129,7 @@ def assembleCompoundModel2(models, position, vehicleDesc):
     BigWorld.loadResourceListBG((assembler,), functools.partial(setupTank, chassisFashion, gunFashion, vehicleDesc, worldMatrix))
 
 
-TANK_NAMES = ['ussr:R04_T-34', 'ussr:KV4']
+TANK_NAMES = ['ussr:R04_T-34', 'ussr:R73_KV4']
 EXAMPLE_COUNT = 1
 
 def exhibit(tankNames = None, pivotPoint = None, shift = Vector3(0, 0, 10), assembler = assembleCompoundModel2):

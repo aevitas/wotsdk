@@ -218,6 +218,10 @@ def _migrateTo23(core, data, initialized):
         data['gameData'][GAME.SHOW_VEH_MODELS_ON_MAP] = 2
 
 
+def _migrateTo24(core, data, initialized):
+    data['carousel_filter']['event'] = True
+
+
 _versions = ((1,
   _initializeDefaultSettings,
   True,
@@ -304,6 +308,10 @@ _versions = ((1,
   False),
  (23,
   _migrateTo23,
+  False,
+  False),
+ (24,
+  _migrateTo24,
   False,
   False))
 

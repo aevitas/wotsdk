@@ -96,7 +96,7 @@ class VehicleTrailEffects(Component):
             if time < self.__trailParticlesDelayBeforeShow:
                 return
             movementInfo = Math.Vector4(vehicleAppearance.fashion.movementInfo.value)
-            vehicleSpeedRel = vehicle.filter.speedInfo.value[2] / vehicle.typeDescriptor.physics['speedLimits'][0]
+            vehicleSpeedRel = vehicle.speedInfo.value[2] / vehicle.typeDescriptor.physics['speedLimits'][0]
             tooSlow = abs(vehicleSpeedRel) < 0.1
             waterHeight = None if not vehicleAppearance.isInWater else vehicleAppearance.waterHeight
             effectIndexes = self.__getEffectIndexesUnderVehicle(vehicleAppearance)

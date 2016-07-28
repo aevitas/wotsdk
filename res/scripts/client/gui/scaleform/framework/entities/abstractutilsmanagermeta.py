@@ -89,12 +89,3 @@ class UtilsManagerMeta(BaseDAAPIModule):
         :return Boolean:
         """
         self._printOverrideError('isTwelveHoursFormat')
-
-    def as_setImageCacheSettingsS(self, maxSize, minSize):
-        """
-        :param maxSize:
-        :param minSize:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_setImageCacheSettings(maxSize, minSize)

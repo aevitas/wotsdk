@@ -93,7 +93,7 @@ class DetailedEngineState(assembly_utility.Component):
 
     def refresh(self, delta):
         vehicleTypeDescriptor = self._vehicle.typeDescriptor
-        vehicleSpeed = self._vehicle.filter.speedInfo.value[0]
+        vehicleSpeed = self._vehicle.speedInfo.value[0]
         if vehicleSpeed > 0.0:
             self._relativeSpeed = vehicleSpeed / vehicleTypeDescriptor.physics['speedLimits'][0]
         else:
@@ -147,7 +147,7 @@ class DetailedEngineStateWWISE(DetailedEngineState):
         self.calculateRPM()
         self.calculateGear()
         if not self._vehicle.isPlayerVehicle or self._vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-            speed = self._vehicle.filter.speedInfo.value[0]
+            speed = self._vehicle.speedInfo.value[0]
             self.__speed = (speed - self.__speed) * 0.2 * delta
             speedRange = self._vehicle.typeDescriptor.physics['speedLimits'][0] + self._vehicle.typeDescriptor.physics['speedLimits'][1]
             speedRangeGear = speedRange / 3
@@ -177,7 +177,7 @@ class DetailedEngineStateWWISE(DetailedEngineState):
             if self._gearUp and self._gearUpCbk is not None:
                 self._gearUpCbk()
             self._gearNum = self.__newPhysicGear
-        self.__rotationSpeed = self._vehicle.filter.speedInfo.value[1]
+        self.__rotationSpeed = self._vehicle.speedInfo.value[1]
         self.__roatationRelSpeed = self.__rotationSpeed / self._vehicle.typeDescriptor.physics['rotationSpeedLimit']
         self._engineLoad = 2 if self._mode == 3 else self._mode
         self._roughnessValue = -(self._vehicle.pitch - self.__prevPitch) / delta

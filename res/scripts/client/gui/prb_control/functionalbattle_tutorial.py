@@ -18,6 +18,7 @@ class _TutorialQueueEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onTutorialEnqueueFailure += functional.onEnqueueError
         g_playerEvents.onKickedFromTutorialQueue += functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena += functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure += functional.onArenaJoinFailure
 
     def unsubscribe(self, functional):
         g_playerEvents.onTutorialEnqueued -= functional.onEnqueued
@@ -25,6 +26,7 @@ class _TutorialQueueEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onTutorialEnqueueFailure -= functional.onEnqueueError
         g_playerEvents.onKickedFromTutorialQueue -= functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena -= functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure -= functional.onArenaJoinFailure
 
 
 class TutorialQueueFunctional(prequeue.AccountQueueFunctional):
@@ -57,6 +59,10 @@ class TutorialQueueFunctional(prequeue.AccountQueueFunctional):
 
     def onKickedFromArena(self, *args):
         super(TutorialQueueFunctional, self).onKickedFromArena(*args)
+        g_prbCtrlEvents.onPreQueueFunctionalDestroyed()
+
+    def onArenaJoinFailure(self, *args):
+        super(TutorialQueueFunctional, self).onArenaJoinFailure(*args)
         g_prbCtrlEvents.onPreQueueFunctionalDestroyed()
 
     def _doQueue(self, ctx):

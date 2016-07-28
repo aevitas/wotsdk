@@ -133,7 +133,7 @@ def updateAccountDossier(dossierDescr, battleResults, dossierXP, vehDossiers, ma
         for vehTypeCompDescr, (_, vehDossierDescr) in vehDossiers.iteritems():
             __updateAccountRecords(bonusCaps, dossierDescr, vehDossierDescr)
 
-    if bool(bonusCaps & BONUS_CAPS.DOSSIER_15X15):
+    if bool(bonusCaps & BONUS_CAPS.DOSSIER_ACHIEVEMENTS_15X15):
         _updatePerBattleSeries(dossierDescr['achievements'], 'reliableComradeSeries', battleResults['tdamageDealt'] == 0 and not battleResults['tdestroyedModules'])
     if bool(bonusCaps & BONUS_CAPS.DOSSIER_7X7):
         __updateCapturePointsWithBaseCapture(dossierDescr, battleResults)

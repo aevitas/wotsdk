@@ -1,22 +1,22 @@
 # Embedded file name: scripts/client/AvatarInputHandler/DynamicCameras/ArcadeCamera.py
-from collections import namedtuple
 import math
-import weakref
+from collections import namedtuple
+import BattleReplay
 import BigWorld
-import Math
 import Keys
-from Math import Vector2, Vector3, Vector4, Matrix
+import Math
+import Settings
+import constants
 from AvatarInputHandler import mathUtils, cameras
-from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
-from AvatarInputHandler.DynamicCameras import createOscillatorFromSection, CameraDynamicConfig, AccelerationSmoother
 from AvatarInputHandler.AimingSystems.ArcadeAimingSystem import ArcadeAimingSystem
+from AvatarInputHandler.DynamicCameras import createOscillatorFromSection, CameraDynamicConfig, AccelerationSmoother
 from AvatarInputHandler.Oscillator import Oscillator, CompoundOscillator
 from AvatarInputHandler.VideoCamera import KeySensor
 from AvatarInputHandler.cameras import ICamera, readFloat, readVec2, ImpulseReason, FovExtended
-import BattleReplay
-import Settings
-import constants
+from Math import Vector2, Vector3, Vector4, Matrix
+from avatar_helpers import aim_global_binding
 from debug_utils import LOG_WARNING, LOG_ERROR
+from helpers.CallbackDelayer import CallbackDelayer, TimeDeltaMeter
 from vehicle_systems.tankStructure import TankPartIndexes, TankPartNames
 
 def getCameraAsSettingsHolder(settingsDataSec):
@@ -118,8 +118,9 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
     angles = property(lambda self: (self.__aimingSystem.yaw, self.__aimingSystem.pitch))
     aimingSystem = property(lambda self: self.__aimingSystem)
     vehicleMProv = property(__getVehicleMProv, __setVehicleMProv)
+    __aimOffset = aim_global_binding.bind(aim_global_binding.BINDING_ID.AIM_OFFSET)
 
-    def __init__(self, dataSec, aim):
+    def __init__(self, dataSec, defaultOffset = None):
         CallbackDelayer.__init__(self)
         TimeDeltaMeter.__init__(self)
         self.__shiftKeySensor = None
@@ -129,8 +130,6 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.__dynamicCfg = CameraDynamicConfig()
         self.__accelerationSmoother = None
         self.__readCfg(dataSec)
-        self.__cam = None
-        self.__aim = None
         self.__onChangeControlMode = None
         self.__aimingSystem = None
         self.__curSense = 0
@@ -139,16 +138,15 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.__vehiclesToCollideWith = set()
         self.__focalPointDist = 1.0
         self.__autoUpdateDxDyDz = Vector3(0.0)
-        self.__defaultAimOffset = (0.0, 0.0)
-        if aim is None:
-            return
-        else:
-            self.__aim = weakref.proxy(aim)
+        self.__updatedByKeyboard = False
+        if defaultOffset is not None:
+            self.__defaultAimOffset = defaultOffset
             self.__cam = BigWorld.HomingCamera()
-            aimOffset = self.__aim.offset()
-            self.__cam.aimPointClipCoords = Vector2(aimOffset)
-            self.__defaultAimOffset = (aimOffset[0], aimOffset[1])
-            return
+            self.__cam.aimPointClipCoords = defaultOffset
+        else:
+            self.__defaultAimOffset = Vector2()
+            self.__cam = None
+        return
 
     def create(self, pivotPos, onChangeControlMode = None, postmortemMode = False):
         self.__onChangeControlMode = onChangeControlMode
@@ -182,7 +180,6 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.disable()
         self.__onChangeControlMode = None
         self.__cam = None
-        self.__aim = None
         if self.__aimingSystem is not None:
             self.__aimingSystem.destroy()
             self.__aimingSystem = None
@@ -239,7 +236,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
     def enable(self, preferredPos = None, closesDist = False, postmortemParams = None, turretYaw = None, gunPitch = None):
         replayCtrl = BattleReplay.g_replayCtrl
         if replayCtrl.isRecording:
-            replayCtrl.setAimClipPosition(Vector2(self.__aim.offset()))
+            replayCtrl.setAimClipPosition(self.__aimOffset)
         self.measureDeltaTime()
         camDist = None
         vehicle = BigWorld.player().getVehicleAttached()
@@ -318,6 +315,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
         self.__noiseOscillator.reset()
         self.__accelerationSmoother.reset()
         self.__autoUpdateDxDyDz.set(0)
+        self.__updatedByKeyboard = False
         self.__inputInertia.teleport(self.__calcRelativeDist())
         FovExtended.instance().resetFov()
         return
@@ -325,6 +323,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
     def update(self, dx, dy, dz, rotateMode = True, zoomMode = True, updatedByKeyboard = False):
         self.__curSense = self.__cfg['keySensitivity'] if updatedByKeyboard else self.__cfg['sensitivity']
         self.__curScrollSense = self.__cfg['keySensitivity'] if updatedByKeyboard else self.__cfg['scrollSensitivity']
+        self.__updatedByKeyboard = updatedByKeyboard
         if updatedByKeyboard:
             self.__autoUpdateDxDyDz.set(dx, dy, dz)
         else:
@@ -384,16 +383,18 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
             distDelta = dz * float(self.__curScrollSense)
             distMinMax = self.__cfg['distRange']
             newDist = mathUtils.clamp(distMinMax.min, distMinMax.max, prevDist - distDelta)
-            if abs(newDist - prevDist) > 0.001:
+            floatEps = 0.001
+            if abs(newDist - prevDist) > floatEps:
                 self.__aimingSystem.distanceFromFocus = newDist
                 self.__userCfg['startDist'] = newDist
                 self.__inputInertia.glideFov(self.__calcRelativeDist())
                 self.__aimingSystem.aimMatrix = self.__calcAimMatrix()
                 distChanged = True
-            changeControlMode = prevDist == newDist and mathUtils.almostZero(newDist - distMinMax.min)
-            if changeControlMode and self.__onChangeControlMode is not None:
-                self.__onChangeControlMode()
-                return
+            if not self.__updatedByKeyboard:
+                if abs(newDist - prevDist) < floatEps and mathUtils.almostZero(newDist - distMinMax.min):
+                    if self.__onChangeControlMode is not None:
+                        self.__onChangeControlMode()
+                        return
         if rotateMode:
             self.__updateAngles(dx, dy)
         if ENABLE_INPUT_ROTATION_INERTIA and not distChanged:
@@ -451,7 +452,7 @@ class ArcadeCamera(ICamera, CallbackDelayer, TimeDeltaMeter):
             if replayCtrl.isRecording:
                 replayCtrl.setAimClipPosition(aimOffset)
         self.__cam.aimPointClipCoords = aimOffset
-        self.__aim.offset(aimOffset)
+        self.__aimOffset = aimOffset
         if self.__shiftKeySensor is not None:
             self.__shiftKeySensor.update(1.0)
             if self.__shiftKeySensor.currentVelocity.lengthSquared > 0.0:

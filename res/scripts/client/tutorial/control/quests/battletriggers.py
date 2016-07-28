@@ -8,7 +8,7 @@ class UseItemsTrigger(TriggerWithValidateVar):
         self.isRunning = True
         if not self.isSubscribed:
             self.isSubscribed = True
-            eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+            eqCtrl = g_sessionProvider.shared.equipments
             if eqCtrl is not None:
                 eqCtrl.onEquipmentUpdated += self.__onEquipmentUpdated
         self.toggle(isOn=self.isOn())
@@ -24,7 +24,7 @@ class UseItemsTrigger(TriggerWithValidateVar):
             self.toggle(isOn=self.isOn(True))
 
     def clear(self):
-        eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+        eqCtrl = g_sessionProvider.shared.equipments
         if eqCtrl is not None:
             eqCtrl.onEquipmentUpdated -= self.__onEquipmentUpdated
         self.isSubscribed = False
@@ -38,14 +38,14 @@ class InstallItemsTrigger(TriggerWithValidateVar):
         self.isRunning = True
         if not self.isSubscribed:
             self.isSubscribed = True
-            eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+            eqCtrl = g_sessionProvider.shared.equipments
             if eqCtrl is not None:
                 eqCtrl.onEquipmentUpdated += self.__onEquipmentAdded
         self.toggle(isOn=self.isOn())
         return
 
     def isOn(self):
-        eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+        eqCtrl = g_sessionProvider.shared.equipments
         if eqCtrl is not None:
             conditionVar = self.getVar()
             itemsList = conditionVar.get('items', [])
@@ -59,7 +59,7 @@ class InstallItemsTrigger(TriggerWithValidateVar):
         self.toggle(isOn=self.isOn())
 
     def clear(self):
-        eqCtrl = g_sessionProvider.getEquipmentsCtrl()
+        eqCtrl = g_sessionProvider.shared.equipments
         if eqCtrl is not None:
             eqCtrl.onEquipmentUpdated -= self.__onEquipmentAdded
         self.isSubscribed = False

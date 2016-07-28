@@ -95,6 +95,8 @@ class TOOLTIPS_CONSTANTS(object):
     PRIVATE_QUESTS_FEMALE_TANKMAN_AWARD = 'femaleTankmanPersonalQuestAward'
     PRIVATE_QUESTS_TOKENS_AWARD = 'tokensPersonalQuestAward'
     BOOSTERS_BOOSTER_INFO = 'boostersBoosterInfo'
+    BOOSTERS_QUESTS = 'boostersQuests'
+    BOOSTERS_SHOP = 'boostersShop'
     VEHICLE_PARAMETERS = 'vehicleParameters'
     VEHICLE_PREVIEW_PARAMETERS = 'vehiclePreviewParameters'
     VEHICLE_PREVIEW_CREW_MEMBER = 'vehiclePreviewCrewMember'

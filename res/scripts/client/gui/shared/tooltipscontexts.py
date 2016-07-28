@@ -5,6 +5,7 @@ from dossiers2.ui.achievements import ACHIEVEMENT_BLOCK
 from CurrentVehicle import g_currentVehicle, g_currentPreviewVehicle
 from collections import namedtuple
 from gui.Scaleform.daapi.view.lobby.server_events import events_helpers
+from gui.goodies.GoodiesCache import g_goodiesCache
 from gui.shared.items_parameters import params_helper
 from gui.shared.items_parameters.formatters import NO_BONUS_SIMPLIFIED_FORMATTERS, SIMPLIFIED_FORMATTERS
 from shared_utils import findFirst
@@ -528,6 +529,37 @@ class BoosterContext(ToolTipContext):
 
     def __init__(self, fieldsToExclude = None):
         super(BoosterContext, self).__init__(TOOLTIP_COMPONENT.BOOSTER, fieldsToExclude)
+
+    def getStatsConfiguration(self, booster):
+        return BoosterStatsConfiguration()
+
+    def buildItem(self, boosterID):
+        return g_goodiesCache.getBooster(boosterID)
+
+
+class ShopBoosterContext(BoosterContext):
+
+    def getStatsConfiguration(self, booster):
+        value = super(ShopBoosterContext, self).getStatsConfiguration(booster)
+        value.buyPrice = True
+        return value
+
+
+class QuestsBoosterContext(BoosterContext):
+
+    def getStatsConfiguration(self, booster):
+        value = super(QuestsBoosterContext, self).getStatsConfiguration(booster)
+        value.quests = True
+        return value
+
+
+class BoosterStatsConfiguration(object):
+    __slots__ = ('buyPrice', 'quests', 'activeState')
+
+    def __init__(self):
+        self.buyPrice = False
+        self.quests = False
+        self.activeState = True
 
 
 class HangarServerStatusContext(ToolTipContext):

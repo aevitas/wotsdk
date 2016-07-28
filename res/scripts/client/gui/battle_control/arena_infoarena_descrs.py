@@ -2,13 +2,11 @@
 from collections import namedtuple
 import weakref
 import BattleReplay
-from constants import ARENA_GUI_TYPE, ARENA_GUI_TYPE_LABEL
 from constants import IS_DEVELOPMENT
 from gui.Scaleform import getNecessaryArenaFrameName
 from gui.Scaleform.locale.ARENAS import ARENAS
 from gui.Scaleform.locale.INGAME_GUI import INGAME_GUI
 from gui.Scaleform.locale.MENU import MENU
-from gui.battle_control import arena_info
 from gui.battle_control.arena_info import settings
 from gui.prb_control.formatters import getPrebattleFullDescription
 from gui.shared.formatters import text_styles
@@ -85,19 +83,18 @@ class IArenaGuiDescription(object):
 
 
 class DefaultArenaGuiDescription(IArenaGuiDescription):
-    __slots__ = ('_arena', '_team', '_questInfo', '_isPersonalDataSet')
+    __slots__ = ('_visitor', '_team', '_questInfo', '_isPersonalDataSet')
 
-    def __init__(self, arena):
+    def __init__(self, visitor):
         super(DefaultArenaGuiDescription, self).__init__()
-        raise arena.arenaType is not None or AssertionError('Type of arena can not be None')
-        self._arena = weakref.proxy(arena)
+        self._visitor = weakref.proxy(visitor)
         self._team = 0
         self._isPersonalDataSet = False
         self._questInfo = None
         return
 
     def clear(self):
-        self._arena = None
+        self._visitor = None
         return
 
     def isPersonalDataSet(self):
@@ -110,38 +107,39 @@ class DefaultArenaGuiDescription(IArenaGuiDescription):
             self._questInfo = self.makeQuestInfo(vo)
 
     def isBaseExists(self):
-        return functions.isBaseExists(self._arena.arenaType.id, self._team)
+        return functions.isBaseExists(self._visitor.type.getID(), self._team)
 
     def getTypeName(self, isInBattle = True):
-        name = self._arena.arenaType.name
+        name = self._visitor.type.getName()
         if isInBattle:
             name = toUpper(name)
         return name
 
     def getDescriptionString(self, isInBattle = True):
-        return i18n.makeString('#menu:loading/battleTypes/{}'.format(self._arena.guiType))
+        return i18n.makeString('#menu:loading/battleTypes/{}'.format(self._visitor.getArenaGuiType()))
 
     def getWinString(self, isInBattle = True):
-        return functions.getBattleSubTypeWinText(self._arena.arenaType.id, 1 if self.isBaseExists() else 2)
+        return functions.getBattleSubTypeWinText(self._visitor.type.getID(), 1 if self.isBaseExists() else 2)
 
     def getFrameLabel(self):
         return 'neutral'
 
     def getLegacyFrameLabel(self):
-        return self._arena.guiType + 1
+        return self._visitor.getArenaGuiType() + 1
 
     def getTeamName(self, team):
         teamName = _getDefaultTeamName(self._team == team)
-        if 'opponents' in (self._arena.extraData or {}):
-            opponents = self._arena.extraData['opponents']
+        data = self._visitor.getArenaExtraData() or {}
+        if 'opponents' in data:
+            opponents = data['opponents']
             teamName = opponents.get('%s' % team, {}).get('name', teamName)
         return teamName
 
     def getSmallIcon(self):
-        return arena_info.getArenaIcon(settings.SMALL_MAP_IMAGE_SF_PATH, self._arena.arenaType, self._arena.guiType)
+        return self._visitor.getArenaIcon(settings.SMALL_MAP_IMAGE_SF_PATH)
 
     def getScreenIcon(self):
-        return arena_info.getArenaIcon(settings.SCREEN_MAP_IMAGE_RES_PATH, self._arena.arenaType, self._arena.guiType)
+        return self._visitor.getArenaIcon(settings.SCREEN_MAP_IMAGE_RES_PATH)
 
     def getGuiEventType(self):
         return 'normal'
@@ -163,21 +161,21 @@ class ArenaWithBasesDescription(DefaultArenaGuiDescription):
     __slots__ = ()
 
     def getDescriptionString(self, isInBattle = True):
-        return i18n.makeString('#arenas:type/{}/name'.format(functions.getArenaSubTypeName(self._arena.arenaType.id)))
+        return i18n.makeString('#arenas:type/{}/name'.format(functions.getArenaSubTypeName(self._visitor.type.getID())))
 
     def getFrameLabel(self):
-        return getNecessaryArenaFrameName(functions.getArenaSubTypeName(self._arena.arenaType.id), self.isBaseExists())
+        return getNecessaryArenaFrameName(functions.getArenaSubTypeName(self._visitor.type.getID()), self.isBaseExists())
 
     def getLegacyFrameLabel(self):
         return self.getFrameLabel()
 
     def isInvitationEnabled(self):
-        guiType = self._arena.guiType
-        return not BattleReplay.g_replayCtrl.isPlaying and (guiType == ARENA_GUI_TYPE.RANDOM or guiType == ARENA_GUI_TYPE.TRAINING and IS_DEVELOPMENT)
+        guiVisitor = self._visitor.gui
+        return not BattleReplay.g_replayCtrl.isPlaying and (guiVisitor.isRandomBattle() or guiVisitor.isTrainingBattle() and IS_DEVELOPMENT)
 
     def isQuestEnabled(self):
-        guiType = self._arena.guiType
-        return guiType == ARENA_GUI_TYPE.RANDOM or guiType == ARENA_GUI_TYPE.TRAINING and IS_DEVELOPMENT
+        guiVisitor = self._visitor.gui
+        return guiVisitor.isRandomBattle() or guiVisitor.isTrainingBattle() and IS_DEVELOPMENT
 
     def makeQuestInfo(self, vo):
         pQuests = vo.player.getRandomPotapovQuests()
@@ -191,7 +189,7 @@ class ArenaWithLabelDescription(DefaultArenaGuiDescription):
     __slots__ = ()
 
     def getFrameLabel(self):
-        return ARENA_GUI_TYPE_LABEL.LABELS[self._arena.guiType]
+        return self._visitor.gui.getLabel()
 
     def getLegacyFrameLabel(self):
         return self.getFrameLabel()
@@ -268,10 +266,10 @@ class FalloutBattlesDescription(ArenaWithLabelDescription):
     __slots__ = ()
 
     def getWinString(self, isInBattle = True):
-        if isInBattle and self._arena.guiType == ARENA_GUI_TYPE.FALLOUT_MULTITEAM:
+        if isInBattle and self._visitor.gui.isFalloutMultiTeam():
             return i18n.makeString(ARENAS.TYPE_FALLOUTMUTLITEAM_DESCRIPTION)
         else:
-            return i18n.makeString('#arenas:type/{}/description'.format(functions.getArenaSubTypeName(self._arena.arenaType.id)))
+            return i18n.makeString('#arenas:type/{}/description'.format(functions.getArenaSubTypeName(self._visitor.type.getID())))
 
     def getGuiEventType(self):
         return 'fallout'
@@ -287,19 +285,19 @@ class FalloutBattlesDescription(ArenaWithLabelDescription):
             return _QuestInfo(i18n.makeString(INGAME_GUI.POTAPOVQUESTS_TIP_NOQUESTS_BATTLETYPE), '', '')
 
 
-def createDescription(arena):
-    guiType = arena.guiType
-    if guiType in (ARENA_GUI_TYPE.RANDOM, ARENA_GUI_TYPE.TRAINING):
-        description = ArenaWithBasesDescription(arena)
-    elif guiType == ARENA_GUI_TYPE.TUTORIAL:
-        description = TutorialBattleDescription(arena)
-    elif guiType in ARENA_GUI_TYPE.FALLOUT_RANGE:
-        description = FalloutBattlesDescription(arena)
-    elif guiType != ARENA_GUI_TYPE.UNKNOWN and guiType in ARENA_GUI_TYPE_LABEL.LABELS:
-        description = ArenaWithLabelDescription(arena)
+def createDescription(arenaVisitor):
+    guiVisitor = arenaVisitor.gui
+    if guiVisitor.isRandomBattle() or guiVisitor.isTrainingBattle():
+        description = ArenaWithBasesDescription(arenaVisitor)
+    elif guiVisitor.isTutorialBattle():
+        description = TutorialBattleDescription(arenaVisitor)
+    elif guiVisitor.isFalloutBattle():
+        description = FalloutBattlesDescription(arenaVisitor)
+    elif guiVisitor.hasLabel():
+        description = ArenaWithLabelDescription(arenaVisitor)
     else:
-        description = DefaultArenaGuiDescription(arena)
-    l10nDescription = getPrebattleFullDescription(arena.extraData or {})
+        description = DefaultArenaGuiDescription(arenaVisitor)
+    l10nDescription = getPrebattleFullDescription(arenaVisitor.getArenaExtraData() or {})
     if l10nDescription:
         description = ArenaWithL10nDescription(description, l10nDescription)
     return description

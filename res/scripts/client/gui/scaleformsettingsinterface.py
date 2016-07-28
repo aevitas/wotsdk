@@ -16,7 +16,6 @@ from gui import GUI_SETTINGS, g_guiResetters
 from gui.GraphicsPresets import GraphicsPresets
 from gui.GraphicsResolutions import g_graficsResolutions
 from gui.shared.utils.key_mapping import getScaleformKey
-from gui.Scaleform import VoiceChatInterface
 from windows import UIInterface
 from debug_utils import LOG_DEBUG, LOG_NOTE, LOG_ERROR
 from post_processing import g_postProcessing
@@ -25,6 +24,8 @@ from gui.Scaleform.Waiting import Waiting
 from Vibroeffects import VibroManager
 from helpers import getClientOverride
 from account_helpers.settings_core.SettingsCore import g_settingsCore
+from messenger.m_constants import PROTO_TYPE
+from messenger.proto import proto_getter
 
 class SettingsInterface(UIInterface):
     KEYBOARD_MAPPING_COMMANDS = {'movement': {'forward': 'CMD_MOVE_FORWARD',
@@ -180,6 +181,10 @@ class SettingsInterface(UIInterface):
             del self.KEYBOARD_MAPPING_BLOCKS_ORDER[self.KEYBOARD_MAPPING_BLOCKS_ORDER.index('voicechat')]
             self.KEYBOARD_MAPPING_BLOCKS_ORDER = tuple(self.KEYBOARD_MAPPING_BLOCKS_ORDER)
         return
+
+    @proto_getter(PROTO_TYPE.BW_CHAT2)
+    def bwProto(self):
+        return None
 
     def populateUI(self, proxy):
         UIInterface.populateUI(self, proxy)
@@ -464,7 +469,7 @@ class SettingsInterface(UIInterface):
     @process
     def __updateCaptureDevices(self):
         Waiting.show('__updateCaptureDevices')
-        yield VoiceChatInterface.g_instance.requestCaptureDevices()
+        yield self.bwProto.voipController.requestCaptureDevices()
         opt = g_settingsCore.options.getSetting(SOUND.CAPTURE_DEVICES)
         Waiting.hide('__updateCaptureDevices')
         self.call('SettingsDialog.updateCaptureDevices', [opt.get()] + opt.getOptions())
@@ -521,7 +526,7 @@ class SettingsInterface(UIInterface):
 
     def onTabSelected(self, cbID, tabId):
         if tabId == SETTINGS.SOUNDTITLE:
-            VoiceChatInterface.g_instance.processFailedMessage()
+            self.bwProto.voipController.invalidateInitialization()
 
     def apply(self, restartApproved, callbackId, settings):
         restartClient = False

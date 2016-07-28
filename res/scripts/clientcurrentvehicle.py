@@ -183,9 +183,6 @@ class _CurrentVehicle(_CachedVehicle):
         else:
             return None
 
-    def isPresent(self):
-        return self.item is not None
-
     def isBroken(self):
         return self.isPresent() and self.item.isBroken
 
@@ -226,7 +223,10 @@ class _CurrentVehicle(_CachedVehicle):
         return self.isPresent() and self.item.isAwaitingBattle
 
     def isOnlyForEventBattles(self):
-        return self.item.isOnlyForEventBattles
+        return self.isPresent() and self.item.isOnlyForEventBattles
+
+    def isEvent(self):
+        return self.isPresent() and self.item.isEvent
 
     def isAlive(self):
         return self.isPresent() and self.item.isAlive
@@ -250,8 +250,16 @@ class _CurrentVehicle(_CachedVehicle):
         vehicle = g_itemsCache.items.getVehicle(vehInvID)
         if vehicle is None:
             invVehs = g_itemsCache.items.getVehicles(criteria=REQ_CRITERIA.INVENTORY)
+
+            def notEvent(x, y):
+                if x.isOnlyForEventBattles and not y.isOnlyForEventBattles:
+                    return 1
+                if not x.isOnlyForEventBattles and y.isOnlyForEventBattles:
+                    return -1
+                return cmp(x, y)
+
             if len(invVehs):
-                vehInvID = sorted(invVehs.itervalues())[0].invID
+                vehInvID = sorted(invVehs.itervalues(), cmp=notEvent)[0].invID
             else:
                 vehInvID = 0
         self._selectVehicle(vehInvID)
@@ -372,9 +380,6 @@ class _CurrentPreviewVehicle(_CachedVehicle):
             vehicle = g_itemsCache.items.getItemByCD(self.item.intCD)
             return vehicle.invID
         return 0
-
-    def isPresent(self):
-        return self.item is not None
 
     def refreshModel(self):
         if self.isPresent():

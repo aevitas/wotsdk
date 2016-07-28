@@ -17,3 +17,17 @@ class CursorMeta(View):
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setCursor(cursor)
+
+    def as_showCursorS(self):
+        """
+        :return :
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_showCursor()
+
+    def as_hideCursorS(self):
+        """
+        :return :
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_hideCursor()

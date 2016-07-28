@@ -1,9 +1,9 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/messengerBar/ChannelListContextMenuHandler.py
+from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
+from gui.Scaleform.framework.managers.context_menu import AbstractContextMenuHandler
+from gui.Scaleform.locale.MENU import MENU
 from gui.shared import EVENT_BUS_SCOPE
 from gui.shared.events import ChannelCarouselEvent
-from gui.Scaleform.locale.MENU import MENU
-from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
-from gui.Scaleform.managers.context_menu.AbstractContextMenuHandler import AbstractContextMenuHandler
 
 class CHANNEL(object):
     CLOSE_CURRENT = 'closeCurrent'

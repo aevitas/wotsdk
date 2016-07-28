@@ -123,14 +123,13 @@ class _AppLoader(object):
         self.__updateState()
 
     def startBattle(self):
-        self.__appFactory.createBattle()
+        self.__appFactory.createBattle(self.__ctx.arenaGuiType)
 
     def startLogitech(self):
         self.__appFactory.createLogitech()
 
-    def changeSpace(self, spaceID, arenaGuiType = ARENA_GUI_TYPE.UNKNOWN):
+    def changeSpace(self, spaceID):
         self.__ctx.guiSpaceID = spaceID
-        self.__ctx.arenaGuiType = arenaGuiType
         return self.__updateState()
 
     def showLogin(self):
@@ -140,12 +139,14 @@ class _AppLoader(object):
         return self.changeSpace(_SPACE_ID.LOBBY)
 
     def showBattleLoading(self, arenaGuiType = ARENA_GUI_TYPE.UNKNOWN):
-        return self.changeSpace(_SPACE_ID.BATTLE_LOADING, arenaGuiType=arenaGuiType)
+        self.__ctx.arenaGuiType = arenaGuiType
+        return self.changeSpace(_SPACE_ID.BATTLE_LOADING)
 
-    def showBattle(self, arenaGuiType = ARENA_GUI_TYPE.UNKNOWN):
-        return self.changeSpace(_SPACE_ID.BATTLE, arenaGuiType=arenaGuiType)
+    def showBattle(self):
+        return self.changeSpace(_SPACE_ID.BATTLE)
 
     def destroyBattle(self):
+        self.__ctx.arenaGuiType = ARENA_GUI_TYPE.UNKNOWN
         if self.__ctx.dsnReason != _DSN_REASON.UNDEFINED:
             return False
         return self.changeSpace(_SPACE_ID.WAITING)
@@ -214,6 +215,9 @@ class _AppLoader(object):
 
     def syncCursor(self, appNS, flags = _CTRL_FLAG.CURSOR_VISIBLE):
         self.__appFactory.syncCursor(appNS, flags=flags)
+
+    def handleKeyInBattle(self, isDown, key, mods):
+        return self.__appFactory.handleKeyInBattle(isDown, key, mods)
 
     def __updateState(self):
         result = False

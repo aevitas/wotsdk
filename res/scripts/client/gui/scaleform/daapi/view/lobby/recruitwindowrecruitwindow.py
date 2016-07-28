@@ -16,6 +16,8 @@ from gui.shared import g_itemsCache
 from gui.shared.utils import decorators
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.processors.tankman import TankmanRecruit, TankmanEquip, TankmanRecruitAndEquip
+from gui.shared.money import Money
+from gui.shared.tooltips.formatters import packActionTooltipData
 
 class RecruitWindow(RecruitWindowMeta):
 
@@ -57,7 +59,7 @@ class RecruitWindow(RecruitWindowMeta):
         g_clientUpdateManager.removeObjectCallbacks(self)
 
     def __getInitialData(self):
-        credits, gold = g_itemsCache.items.stats.money
+        money = g_itemsCache.items.stats.money
         shop = g_itemsCache.items.shop
         upgradeParams = shop.tankmanCost
         defUpgradeParams = shop.defaults.tankmanCost
@@ -65,24 +67,14 @@ class RecruitWindow(RecruitWindowMeta):
         schoolUpgradeDefPrice = round(defUpgradeParams[1]['credits'])
         schoolUpgradeAction = None
         if schoolUpgradePrice != schoolUpgradeDefPrice:
-            schoolUpgradeAction = {'type': ACTION_TOOLTIPS_TYPE.ECONOMICS,
-             'key': 'creditsTankmanCost',
-             'isBuying': True,
-             'state': (ACTION_TOOLTIPS_STATE.DISCOUNT, None),
-             'newPrice': (schoolUpgradePrice, 0),
-             'oldPrice': (schoolUpgradeDefPrice, 0)}
+            schoolUpgradeAction = packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'creditsTankmanCost', True, Money(credits=schoolUpgradePrice), Money(credits=schoolUpgradeDefPrice))
         academyUpgradePrice = round(upgradeParams[2]['gold'])
         academyUpgradeDefPrice = round(defUpgradeParams[2]['gold'])
         academyUpgradeAction = None
         if academyUpgradePrice != academyUpgradeDefPrice:
-            academyUpgradeAction = {'type': ACTION_TOOLTIPS_TYPE.ECONOMICS,
-             'key': 'goldTankmanCost',
-             'isBuying': True,
-             'state': (None, ACTION_TOOLTIPS_STATE.DISCOUNT),
-             'newPrice': (0, academyUpgradePrice),
-             'oldPrice': (0, academyUpgradeDefPrice)}
-        data = {'credits': credits,
-         'gold': gold,
+            academyUpgradeAction = packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'goldTankmanCost', True, Money(gold=academyUpgradePrice), Money(gold=academyUpgradeDefPrice))
+        data = {'credits': money.credits,
+         'gold': money.gold,
          'schoolUpgradePrice': schoolUpgradePrice,
          'schoolUpgradeActionPriceData': schoolUpgradeAction,
          'academyUpgradePrice': academyUpgradePrice,

@@ -7,6 +7,7 @@ from UnitBase import UNIT_SLOT, INV_ID_CLEAR_VEHICLE, UNIT_ROLE, UNIT_ERROR, ROS
 from UnitBase import SORTIE_DIVISION
 import account_helpers
 from gui.prb_control.functional import action_handlers
+from gui.prb_control.functional.decorators import vehicleAmmoCheck
 from gui.prb_control.restrictions import createUnitActionValidator
 from gui.prb_control.restrictions.permissions import IntroUnitPermissions
 from gui.prb_control.settings import UNIT_RESTRICTION
@@ -128,6 +129,12 @@ class SquadEntry(UnitEntry):
 
     def _doCreate(self, unitMgr, ctx):
         unitMgr.createSquad()
+
+
+class EventSquadEntry(SquadEntry):
+
+    def _doCreate(self, unitMgr, ctx):
+        unitMgr.createEventSquad()
 
 
 class FalloutSquadEntry(UnitEntry):
@@ -285,7 +292,7 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
                 inSlots = unit.getPlayerSlots()
                 if dbID in inSlots:
                     isPlayerReady = unit.isPlayerReadyInSlot(inSlots[dbID])
-            if self.getEntityType() in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
+            if self.getEntityType() in PREBATTLE_TYPE.SQUAD_PREBATTLES:
                 return permissions.SquadPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
             else:
                 return permissions.UnitPermissions(roles, unit._flags, pDbID == dbID, isPlayerReady)
@@ -579,10 +586,9 @@ class IntroFunctional(_UnitFunctional):
         self._hasEntity = True
         self._searchHandler = unit_ext.UnitAutoSearchHandler(self)
         self._searchHandler.init()
-        if g_currentVehicle.isPresent():
+        selectedVehs = self.getSelectedVehicles('selectedIntroVehicles')
+        if not selectedVehs and g_currentVehicle.isPresent():
             selectedVehs = [g_currentVehicle.item.intCD]
-        else:
-            selectedVehs = []
         self.setSelectedVehicles('selectedIntroVehicles', selectedVehs)
         from gui.clubs.ClubsController import g_clubsCtrl
         from gui.clubs.club_helpers import ClubListPaginator, ClubFinder
@@ -805,6 +811,8 @@ class UnitFunctional(_UnitFunctional):
     def createActionHandler(self, prbType):
         if prbType == PREBATTLE_TYPE.SQUAD:
             actionHandler = action_handlers.SquadActionsHandler(self)
+        elif prbType == PREBATTLE_TYPE.EVENT:
+            actionHandler = action_handlers.EventSquadActionsHandler(self)
         elif prbType == PREBATTLE_TYPE.FALLOUT:
             actionHandler = action_handlers.FalloutSquadActionsHandler(self)
         else:
@@ -852,7 +860,7 @@ class UnitFunctional(_UnitFunctional):
         result = True
         if unit.isSortie():
             result = not self.getPlayerInfo().isLegionary()
-        elif unit.isSquad() or unit.isFalloutSquad():
+        elif unit.isPrebattlesSquad():
             result = False
         return result
 
@@ -1214,6 +1222,7 @@ class UnitFunctional(_UnitFunctional):
                 self._deferredReset = True
         g_eventDispatcher.updateUI()
 
+    @vehicleAmmoCheck
     def togglePlayerReadyAction(self, launchChain = False):
         notReady = not self.getPlayerInfo().isReady
         if notReady:
@@ -1239,6 +1248,9 @@ class UnitFunctional(_UnitFunctional):
         result = False
         name = action.actionName
         if name == PREBATTLE_ACTION_NAME.SQUAD and self._prbType in (PREBATTLE_TYPE.SQUAD, PREBATTLE_TYPE.FALLOUT):
+            g_eventDispatcher.showUnitWindow(self._prbType)
+            result = True
+        if name == PREBATTLE_ACTION_NAME.EVENT_SQUAD and self._prbType in (PREBATTLE_TYPE.EVENT,):
             g_eventDispatcher.showUnitWindow(self._prbType)
             result = True
         if name == PREBATTLE_ACTION_NAME.FORT and self._prbType in (PREBATTLE_TYPE.SORTIE, PREBATTLE_TYPE.FORT_BATTLE):

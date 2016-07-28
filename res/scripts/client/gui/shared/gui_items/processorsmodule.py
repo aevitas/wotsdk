@@ -10,6 +10,8 @@ from gui.shared import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.gui_items.processors import ItemProcessor, makeI18nSuccess, makeI18nError, VehicleItemProcessor, plugins, makeSuccess
 from gui.shared.formatters import formatPrice
+from gui.shared.money import Money
+from gui.shared.tooltips.formatters import packActionTooltipData
 from gui.shared.utils.requesters.ItemsRequester import ItemsRequester
 from helpers import i18n
 
@@ -77,6 +79,9 @@ class ModuleTradeProcessor(ModuleProcessor):
          'money': formatPrice(self._getOpPrice())}
 
     def _getOpPrice(self):
+        """
+        @return Returns an instance of Money
+        """
         raise NotImplemented
 
 
@@ -109,8 +114,8 @@ class ModuleBuyer(ModuleTradeProcessor):
     def _getOpPrice(self):
         price = self.item.altPrice or self.item.buyPrice
         if self.buyForCredits:
-            return (price[0] * self.count, 0)
-        return (0, price[1] * self.count)
+            return self.count * Money(credits=price.credits)
+        return self.count * Money(gold=price.gold)
 
     def _successHandler(self, code, ctx = None):
         sysMsgType = SM_TYPE.PurchaseForCredits if self.buyForCredits else SM_TYPE.PurchaseForGold
@@ -136,7 +141,7 @@ class ModuleSeller(ModuleTradeProcessor):
         super(ModuleSeller, self).__init__(item, count, 'sell')
 
     def _getOpPrice(self):
-        return (self.item.sellPrice[0] * self.count, self.item.sellPrice[1] * self.count)
+        return self.item.sellPrice * self.count
 
     def _successHandler(self, code, ctx = None):
         return makeI18nSuccess(self._formMessage('success'), type=SM_TYPE.Selling, **self._getMsgCtx())
@@ -204,12 +209,7 @@ class OptDeviceInstaller(ModuleInstallProcessor):
         defaultCost = g_itemsCache.items.shop.defaults.paidRemovalCost
         action = None
         if self.cost != defaultCost:
-            action = {'type': ACTION_TOOLTIPS_TYPE.ECONOMICS,
-             'key': 'paidRemovalCost',
-             'isBuying': True,
-             'state': (None, ACTION_TOOLTIPS_STATE.DISCOUNT),
-             'newPrice': (0, self.cost),
-             'oldPrice': (0, defaultCost)}
+            action = packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'paidRemovalCost', True, Money(gold=self.cost), Money(gold=defaultCost))
         addPlugins = []
         if install:
             addPlugins += (plugins.MessageConfirmator('installConfirmationNotRemovable', ctx={'name': item.userName}, isEnabled=not item.isRemovable),)
@@ -425,7 +425,7 @@ class BuyAndInstallItemProcessor(ModuleBuyer):
               'isLocked': True}), plugins.CompatibilityInstallValidator(vehicle, item, slotIdx), plugins.ModuleBuyerConfirmator('confirmBuyAndInstall', ctx={'userString': item.userName,
               'typeString': self.item.userType,
               'conflictedEqs': conflictMsg,
-              'credits': BigWorld.wg_getIntegralFormat(self._getOpPrice()[0])})])
+              'credits': BigWorld.wg_getIntegralFormat(self._getOpPrice().credits)})])
             if item.itemTypeID == GUI_ITEM_TYPE.TURRET:
                 self.addPlugin(plugins.TurretCompatibilityInstallValidator(vehicle, item, self.__gunCompDescr))
             elif item.itemTypeID == GUI_ITEM_TYPE.OPTIONALDEVICE:
@@ -434,7 +434,7 @@ class BuyAndInstallItemProcessor(ModuleBuyer):
         else:
             self.addPlugins([plugins.ModuleBuyerConfirmator('confirmBuyNotInstall', ctx={'userString': item.userName,
               'typeString': self.item.userType,
-              'credits': BigWorld.wg_getIntegralFormat(self._getOpPrice()[0]),
+              'credits': BigWorld.wg_getIntegralFormat(self._getOpPrice().credits),
               'reason': self.__makeInstallReasonMsg(installReason)})])
 
     def __makeConflictMsg(self, conflictedText):

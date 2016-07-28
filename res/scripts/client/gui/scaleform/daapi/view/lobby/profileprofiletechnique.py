@@ -25,13 +25,11 @@ class ProfileTechnique(ProfileTechniqueMeta):
         super(ProfileTechnique, self)._populate()
         self.as_setInitDataS(self._getInitData())
 
-    def _getInitData(self, isFallout = False):
-        dropDownProvider = [self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.ALL),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FALLOUT),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.HISTORICAL),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.TEAM),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.STATICTEAM),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.CLAN)]
+    def _getInitData(self, accountDossier = None, isFallout = False):
+        dropDownProvider = [self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.ALL), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FALLOUT)]
+        if accountDossier is not None and accountDossier.getHistoricalStats().getVehicles():
+            dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.HISTORICAL))
+        dropDownProvider.extend((self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.TEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.STATICTEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.CLAN)))
         if g_lobbyContext.getServerSettings().isFortsEnabled():
             dropDownProvider.extend((self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FORTIFICATIONS_SORTIES), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FORTIFICATIONS_BATTLES)))
         return {'dropDownProvider': dropDownProvider,
@@ -74,7 +72,7 @@ class ProfileTechnique(ProfileTechniqueMeta):
         return i18n.makeString(emptyScreenLabelsDictionary[self._battlesType])
 
     def _sendAccountData(self, targetData, accountDossier):
-        self.as_setInitDataS(self._getInitData(self._battlesType == PROFILE_DROPDOWN_KEYS.FALLOUT))
+        self.as_setInitDataS(self._getInitData(accountDossier, self._battlesType == PROFILE_DROPDOWN_KEYS.FALLOUT))
         self.as_responseDossierS(self._battlesType, self._getTechniqueListVehicles(targetData), '', self.getEmptyScreenLabel())
 
     def _getTechniqueListVehicles(self, targetData, addVehiclesThatInHangarOnly = False):

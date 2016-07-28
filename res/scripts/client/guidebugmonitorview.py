@@ -10,6 +10,7 @@ class DebugMonitorView(DebugView):
         DebugView.__init__(self, textureName, parentGUI)
         self.__contentInfo = {}
         self.__newContentInfo = {}
+        self.setAutoUpdate(True)
 
     def destroy(self):
         DebugView.destroy(self)

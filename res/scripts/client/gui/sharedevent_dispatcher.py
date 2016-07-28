@@ -11,6 +11,15 @@ from gui.prb_control.settings import CTRL_ENTITY_TYPE
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.genConsts.FORTIFICATION_ALIASES import FORTIFICATION_ALIASES
 
+class SETTINGS_TAB_INDEX(object):
+    GAME = 0
+    GRAPHICS = 1
+    SOUND = 2
+    CONTROL = 3
+    AIM = 4
+    MARKERS = 5
+
+
 def _showBattleResults(arenaUniqueID, dataProvider):
     g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.BATTLE_RESULTS, getViewName(VIEW_ALIAS.BATTLE_RESULTS, str(arenaUniqueID)), ctx={'dataProvider': dataProvider}), EVENT_BUS_SCOPE.LOBBY)
 
@@ -137,8 +146,12 @@ def showChangeDivisionWindow(division):
      'division': division}), scope=EVENT_BUS_SCOPE.LOBBY)
 
 
-def runTutorialChain(id):
-    g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.START_TRAINING, settingsID='TRIGGERS_CHAINS', initialChapter=id, restoreIfRun=True))
+def stopTutorial():
+    g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.STOP_TRAINING), scope=EVENT_BUS_SCOPE.GLOBAL)
+
+
+def runTutorialChain(chapterID):
+    g_eventBus.handleEvent(events.TutorialEvent(events.TutorialEvent.START_TRAINING, settingsID='TRIGGERS_CHAINS', initialChapter=chapterID, restoreIfRun=True))
 
 
 def changeAppResolution(width, height, scale):
@@ -160,3 +173,8 @@ def requestProfile(databaseID, userName, successCallback):
     else:
         successCallback(databaseID, userName)
     return
+
+
+def showSettingsWindow(redefinedKeyMode = False, tabIndex = None):
+    g_eventBus.handleEvent(events.LoadViewEvent(VIEW_ALIAS.SETTINGS_WINDOW, ctx={'redefinedKeyMode': redefinedKeyMode,
+     'tabIndex': tabIndex}), scope=EVENT_BUS_SCOPE.GLOBAL)

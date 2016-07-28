@@ -4,8 +4,8 @@ import gui
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
 from gui.shared.formatters.time_formatters import RentLeftFormatter
 from gui.shared.gui_items import GUI_ITEM_TYPE
-from gui.shared.tooltips import getItemActionTooltipData
-from gui.shared.tooltips import getItemRentActionTooltipData
+from gui.shared.tooltips.formatters import packItemActionTooltipData
+from gui.shared.tooltips.formatters import packItemRentActionTooltipData
 from gui.shared.utils import CLIP_ICON_PATH
 from gui.shared.gui_items.Vehicle import Vehicle
 from helpers import i18n, html
@@ -137,10 +137,10 @@ class ResearchItemsObjDumper(_BaseDumper):
         credits, gold = item.minRentPrice or item.buyPrice
         action = None
         if item.buyPrice != item.defaultPrice and not minRentPricePackage:
-            action = getItemActionTooltipData(item)
+            action = packItemActionTooltipData(item)
         elif minRentPricePackage:
             if minRentPricePackage['rentPrice'] != minRentPricePackage['defaultRentPrice']:
-                action = getItemRentActionTooltipData(item, minRentPricePackage)
+                action = packItemRentActionTooltipData(item, minRentPricePackage)
         return {'id': nodeCD,
          'nameString': item.shortUserName,
          'primaryClass': vClass,
@@ -240,10 +240,10 @@ class NationObjDumper(_BaseDumper):
         action = None
         minRentPricePackage = item.getRentPackage()
         if item.buyPrice != item.defaultPrice and not minRentPricePackage:
-            action = getItemActionTooltipData(item)
+            action = packItemActionTooltipData(item)
         elif minRentPricePackage:
             if minRentPricePackage['rentPrice'] != minRentPricePackage['defaultRentPrice']:
-                action = getItemRentActionTooltipData(item, minRentPricePackage)
+                action = packItemRentActionTooltipData(item, minRentPricePackage)
         return {'id': nodeCD,
          'state': node['state'],
          'type': item.itemTypeName,

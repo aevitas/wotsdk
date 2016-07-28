@@ -2,6 +2,7 @@
 import weakref
 from gui.shared.gui_items import GUI_ITEM_TYPE
 from gui.shared.items_parameters import params
+from gui.shared.money import Money
 from items import vehicles
 import nations
 
@@ -48,7 +49,7 @@ class ShopDataParser(object):
         for intCD in self.__getListOfCompDescrs(nationID, itemTypeID):
             if intCD in prices:
                 yield (intCD,
-                 prices[intCD],
+                 Money(*prices[intCD]),
                  intCD in hiddenInShop,
                  intCD in sellForGold)
 
@@ -68,13 +69,16 @@ class ShopDataParser(object):
         return self.data.get('vehiclesToSellForGold', set([]))
 
     def getPrice(self, intCD):
-        return self.getPrices().get(intCD, (0, 0))
+        return Money(*self._getRawPrice(intCD))
 
     def isHidden(self, intCD):
         return intCD in self.getHiddenItems()
 
     def isSellForGold(self, intCD):
         return intCD in self.getSellForGoldItems()
+
+    def _getRawPrice(self, intCD):
+        return self.getPrices().get(intCD, ())
 
     def __getListOfCompDescrs(self, nationID = None, itemTypeID = None):
         itemTypes = [itemTypeID]

@@ -299,7 +299,7 @@ class ReplayBattleState(BattleState):
 
     def _getNextState(self, ctx):
         if ctx.guiSpaceID == _SPACE_ID.WAITING:
-            newState = ReplayLoadingState()
+            newState = ReplayLoadingState(arenaGuiType=self._arenaGuiType)
         else:
             newState = None
         return newState

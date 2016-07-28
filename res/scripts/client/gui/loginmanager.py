@@ -127,23 +127,22 @@ class Manager(object):
     def _getHost(self, authMethod, hostName):
         if hostName != AUTO_LOGIN_QUERY_URL:
             return hostName
-        pickledData = self._preferences['peripheryLifetime']
-        if pickledData:
-            try:
-                peripheryID, expirationTimestamp = pickle.loads(pickledData)
-            except:
-                LOG_DEBUG("Couldn't to read pickled periphery data. Connecting to {0}.".format(hostName))
-                return hostName
-
-            if expirationTimestamp > time.time():
-                host = g_preDefinedHosts.periphery(peripheryID, False)
-                if authMethod != CONNECTION_METHOD.BASIC and host.urlToken:
-                    return host.urlToken
-                else:
-                    return host.url
-            else:
-                return hostName
         else:
+            pickledData = self._preferences['peripheryLifetime']
+            if pickledData:
+                try:
+                    peripheryID, expirationTimestamp = pickle.loads(pickledData)
+                except:
+                    LOG_DEBUG("Couldn't to read pickled periphery data. Connecting to {0}.".format(hostName))
+                    return hostName
+
+                if expirationTimestamp > time.time():
+                    host = g_preDefinedHosts.periphery(peripheryID, False)
+                    if host is None:
+                        return hostName
+                    if authMethod != CONNECTION_METHOD.BASIC and host.urlToken:
+                        return host.urlToken
+                    return host.url
             return hostName
 
     def __dumpUserName(self, name):

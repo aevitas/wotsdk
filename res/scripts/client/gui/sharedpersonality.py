@@ -36,6 +36,7 @@ from gui.shared.view_helpers.UsersInfoHelper import UsersInfoHelper
 from gui.shared.utils.HangarSpace import g_hangarSpace
 from gui.shared.utils.RareAchievementsCache import g_rareAchievesCache
 from gui.login import g_loginManager
+from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
 try:
     from gui import mods
     guiModsInit = mods.init
@@ -48,10 +49,13 @@ except ImportError:
 @process
 def onAccountShowGUI(ctx):
     global onCenterIsLongDisconnected
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.SHOW_GUI)
     g_lobbyContext.onAccountShowGUI(ctx)
     yield g_itemsCache.update(CACHE_SYNC_REASON.SHOW_GUI)
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.QUESTS_SYNC)
     g_eventsCache.start()
     yield g_eventsCache.update()
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.USER_SERVER_SETTINGS_SYNC)
     yield g_settingsCache.update()
     if not g_itemsCache.isSynced():
         g_appLoader.goToLoginByError('#menu:disconnect/codes/0')
@@ -260,11 +264,13 @@ def fini():
 
 
 def onConnected():
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.CONNECTED)
     guiModsSendEvent('onConnected')
     game_control.g_instance.onConnected()
 
 
 def onDisconnected():
+    g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.DISCONNECTED)
     g_loginManager.writePeripheryLifetime()
     guiModsSendEvent('onDisconnected')
     g_prbLoader.onDisconnected()

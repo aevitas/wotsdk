@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/server_events/EventsWindow.py
 import BigWorld
+from account_helpers.settings_core.ServerSettingsManager import SETTINGS_SECTIONS
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core.settings_constants import TUTORIAL
 import constants
@@ -150,7 +151,7 @@ class EventsWindow(QuestsWindowMeta):
             serverSettings = getattr(player, 'serverSettings', {})
             if 'isTutorialEnabled' in serverSettings:
                 isTutorialEnabled = serverSettings['isTutorialEnabled']
-        return g_settingsCore.serverSettings.getTutorialSetting(TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED) and isTutorialEnabled
+        return g_settingsCore.serverSettings.getSectionSettings(SETTINGS_SECTIONS.TUTORIAL, TUTORIAL.WAS_QUESTS_TUTORIAL_STARTED) and isTutorialEnabled
 
     def __getChainsViewAlias(self):
         if self._navInfo.selectedPQType == _QA.SEASON_VIEW_TAB_RANDOM:

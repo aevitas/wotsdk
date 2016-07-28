@@ -5,7 +5,7 @@ import ResMgr
 import Settings
 import i18n
 import constants
-from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG
+from debug_utils import LOG_CURRENT_EXCEPTION
 VERSION_FILE_PATH = '../version.xml'
 gEffectsDisabled = lambda : False
 
@@ -128,7 +128,6 @@ def isIntroVideoSettingChanged(userPrefs = None):
     import account_shared
     mainVersion = account_shared.getClientMainVersion()
     lastVideoVersion = userPrefs.readString(Settings.INTRO_VIDEO_VERSION, '')
-    LOG_DEBUG('!!!!!!', lastVideoVersion, mainVersion, lastVideoVersion != mainVersion)
     return lastVideoVersion != mainVersion
 
 

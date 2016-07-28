@@ -118,15 +118,17 @@ class LobbyHeaderMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setGoldFishEnabled(isEnabled, playAnimation, tooltip, tooltipType)
 
-    def as_updateSquadS(self, isInSquad, tooltip, tooltipType):
+    def as_updateSquadS(self, isInSquad, tooltip, tooltipType, isEvent, icon):
         """
         :param isInSquad:
         :param tooltip:
         :param tooltipType:
+        :param isEvent:
+        :param icon:
         :return :
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_updateSquad(isInSquad, tooltip, tooltipType)
+            return self.flashObject.as_updateSquad(isInSquad, tooltip, tooltipType, isEvent, icon)
 
     def as_nameResponseS(self, data):
         """
@@ -144,21 +146,17 @@ class LobbyHeaderMeta(BaseDAAPIComponent):
         if self._isDAAPIInited():
             return self.flashObject.as_setClanEmblem(tID)
 
-    def as_setPremiumParamsS(self, isPremiumAccount, btnLabel, doLabel, isYear, disableTTHeader, disableTTBody, isHasAction, tooltip, tooltipType):
+    def as_setPremiumParamsS(self, btnLabel, doLabel, isHasAction, tooltip, tooltipType):
         """
-        :param isPremiumAccount:
         :param btnLabel:
         :param doLabel:
-        :param isYear:
-        :param disableTTHeader:
-        :param disableTTBody:
         :param isHasAction:
         :param tooltip:
         :param tooltipType:
         :return :
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setPremiumParams(isPremiumAccount, btnLabel, doLabel, isYear, disableTTHeader, disableTTBody, isHasAction, tooltip, tooltipType)
+            return self.flashObject.as_setPremiumParams(btnLabel, doLabel, isHasAction, tooltip, tooltipType)
 
     def as_updateBattleTypeS(self, battleTypeName, battleTypeIcon, isEnabled, tooltip, tooltipType, battleTypeID):
         """

@@ -10,16 +10,6 @@ class ModulesPanelMeta(BaseDAAPIComponent):
     null
     """
 
-    def setVehicleModule(self, newId, slotIdx, oldId, isRemove):
-        """
-        :param newId:
-        :param slotIdx:
-        :param oldId:
-        :param isRemove:
-        :return :
-        """
-        self._printOverrideError('setVehicleModule')
-
     def showModuleInfo(self, moduleId):
         """
         :param moduleId:

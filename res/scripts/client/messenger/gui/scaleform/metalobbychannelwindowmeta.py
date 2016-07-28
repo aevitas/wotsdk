@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/messenger/gui/Scaleform/meta/LobbyChannelWindowMeta.py
-from messenger.gui.Scaleform.view.SimpleChannelWindow import SimpleChannelWindow
+from messenger.gui.Scaleform.view.lobby.SimpleChannelWindow import SimpleChannelWindow
 
 class LobbyChannelWindowMeta(SimpleChannelWindow):
     """

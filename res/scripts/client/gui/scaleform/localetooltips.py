@@ -39,6 +39,7 @@ class TOOLTIPS(object):
     SQUADWINDOW_BUTTONS_INVITE = '#tooltips:squadWindow/buttons/invite'
     SQUADWINDOW_BUTTONS_RECOMMEND = '#tooltips:squadWindow/buttons/recommend'
     SQUADWINDOW_BUTTONS_LEAVESQUAD = '#tooltips:squadWindow/buttons/leaveSquad'
+    SQUADWINDOW_BUTTONS_LEAVEEVENTSQUAD = '#tooltips:squadWindow/buttons/leaveEventSquad'
     SQUADWINDOW_BUTTONS_BTNFIGHT = '#tooltips:squadWindow/buttons/btnFight'
     SQUADWINDOW_BUTTONS_BTNNOTREADY = '#tooltips:squadWindow/buttons/btnNotReady'
     SQUADWINDOW_BUTTONS_SENDMESSAGE = '#tooltips:squadWindow/buttons/sendMessage'
@@ -46,6 +47,7 @@ class TOOLTIPS(object):
     SQUADWINDOW_TEAMMATE_NOTVALIDVEHICLE = '#tooltips:squadWindow/teammate/notValidVehicle'
     SQUADWINDOW_DEMANDFORVEHICLE_NOTVALIDVEHICLE = '#tooltips:squadWindow/demandForVehicle/notValidVehicle'
     SQUADWINDOW_DOMINATION_VEHICLESINFOICON = '#tooltips:squadWindow/domination/vehiclesInfoIcon'
+    CYBERSPORT_UNIT_FIGHTBTN_EVENTVEHICLEWRONGMODE = '#tooltips:cyberSport/unit/fightBtn/eventVehicleWrongMode'
     LOGIN_LEGAL = '#tooltips:login/legal'
     LOGIN_REMEMBERPASSWORD_SIMPLE = '#tooltips:login/rememberPassword/simple'
     LOGIN_REMEMBERPASSWORD_SOCIAL = '#tooltips:login/rememberPassword/social'
@@ -80,6 +82,7 @@ class TOOLTIPS(object):
     HANGAR_CREW_RUDY_DOG = '#tooltips:hangar/crew/rudy/dog'
     HEADER_ACCOUNT = '#tooltips:header/account'
     HEADER_SQUAD = '#tooltips:header/squad'
+    HEADER_EVENTSQUAD = '#tooltips:header/eventSquad'
     HEADER_DOMINATIONSQUAD = '#tooltips:header/dominationSquad'
     HEADER_SQUAD_MEMBER = HEADER_SQUAD + '_member'
     HEADER_BATTLETYPE = '#tooltips:header/battleType'
@@ -403,7 +406,7 @@ class TOOLTIPS(object):
     RESEARCHPAGE_VEHICLE_STATUS_PARENTMODULEISLOCKED = '#tooltips:researchPage/vehicle/status/parentModuleIsLocked'
     RESEARCHPAGE_MODULE_STATUS_NOTENOUGHXP = '#tooltips:researchPage/module/status/notEnoughXP'
     MODULEFITS_GOLD_ERROR = '#tooltips:moduleFits/gold_error'
-    MODULEFITS_CREDIT_ERROR = '#tooltips:moduleFits/credit_error'
+    MODULEFITS_CREDITS_ERROR = '#tooltips:moduleFits/credits_error'
     MODULEFITS_OPERATION_ERROR = '#tooltips:moduleFits/operation_error'
     BATTLETYPES_FORTIFICATION_DISABLED = BATTLETYPES_FORTIFICATION + '/disabled'
     SQUADWINDOW_INFOICON_TECH = '#tooltips:squadWindow/infoIcon/tech'
@@ -514,6 +517,8 @@ class TOOLTIPS(object):
     SQUADWINDOW_BUTTONS_RECOMMEND_BODY = SQUADWINDOW_BUTTONS_RECOMMEND + '/body'
     SQUADWINDOW_BUTTONS_LEAVESQUAD_HEADER = SQUADWINDOW_BUTTONS_LEAVESQUAD + '/header'
     SQUADWINDOW_BUTTONS_LEAVESQUAD_BODY = SQUADWINDOW_BUTTONS_LEAVESQUAD + '/body'
+    SQUADWINDOW_BUTTONS_LEAVEEVENTSQUAD_HEADER = SQUADWINDOW_BUTTONS_LEAVEEVENTSQUAD + '/header'
+    SQUADWINDOW_BUTTONS_LEAVEEVENTSQUAD_BODY = SQUADWINDOW_BUTTONS_LEAVEEVENTSQUAD + '/body'
     SQUADWINDOW_INFOICON_TECH_HEADER = SQUADWINDOW_INFOICON_TECH + '/header'
     SQUADWINDOW_INFOICON_TECH_BODY = SQUADWINDOW_INFOICON_TECH + '/body'
     SQUADWINDOW_INFOICON_TECHRESTRICTIONS_HEADER = SQUADWINDOW_INFOICON_TECH + 'Restrictions/header'
@@ -771,6 +776,7 @@ class TOOLTIPS(object):
     ACHIEVEMENT_PARAMS_MAXPIERCINGSERIES = ACHIEVEMENT_PARAMS + '/maxPiercingSeries'
     ACHIEVEMENT_PARAMS_MAXTACTICALBREAKTHROUGHSERIES = ACHIEVEMENT_PARAMS + '/maxTacticalBreakthroughSeries'
     ACHIEVEMENT_PARAMS_MAXVICTORYMARCHSERIES = ACHIEVEMENT_PARAMS + '/maxVictoryMarchSeries'
+    ACHIEVEMENT_PARAMS_MAXEFC2016WINSERIES = ACHIEVEMENT_PARAMS + '/maxEFC2016WinSeries'
     ACHIEVEMENT_PARAMS_NO_CLASS_ACHIEVEMENT_LEFT = ACHIEVEMENT_PARAMS + '/no_class_achievement_left'
     ACHIEVEMENT_PARAMS_LEFT4 = ACHIEVEMENT_PARAMS + '/left4'
     ACHIEVEMENT_PARAMS_LEFT3 = ACHIEVEMENT_PARAMS + '/left3'
@@ -816,6 +822,8 @@ class TOOLTIPS(object):
     HEADER_SQUAD_MEMBER_BODY = HEADER_SQUAD + '_member/body'
     HEADER_SQUAD_HEADER = HEADER_SQUAD + '/header'
     HEADER_SQUAD_BODY = HEADER_SQUAD + '/body'
+    HEADER_EVENTSQUAD_HEADER = HEADER_EVENTSQUAD + '/header'
+    HEADER_EVENTSQUAD_BODY = HEADER_EVENTSQUAD + '/body'
     HEADER_DOMINATIONSQUAD_HEADER = HEADER_DOMINATIONSQUAD + '/header'
     HEADER_DOMINATIONSQUAD_BODY = HEADER_DOMINATIONSQUAD + '/body'
     HEADER_BATTLETYPE_HEADER = HEADER_BATTLETYPE + '/header'
@@ -897,8 +905,8 @@ class TOOLTIPS(object):
     HANGAR_AMMO_PANEL_DEVICE_EMPTY_BODY = HANGAR_AMMO_PANEL_DEVICE_EMPTY + '/body'
     HANGAR_AMMO_PANEL_EQUIPMENT_EMPTY_HEADER = HANGAR_AMMO_PANEL_EQUIPMENT_EMPTY + '/header'
     HANGAR_AMMO_PANEL_EQUIPMENT_EMPTY_BODY = HANGAR_AMMO_PANEL_EQUIPMENT_EMPTY + '/body'
-    MODULEFITS_CREDIT_ERROR_HEADER = MODULEFITS_CREDIT_ERROR + '/header'
-    MODULEFITS_CREDIT_ERROR_TEXT = MODULEFITS_CREDIT_ERROR + '/text'
+    MODULEFITS_CREDITS_ERROR_HEADER = MODULEFITS_CREDITS_ERROR + '/header'
+    MODULEFITS_CREDITS_ERROR_TEXT = MODULEFITS_CREDITS_ERROR + '/text'
     MODULEFITS_GOLD_ERROR_HEADER = MODULEFITS_GOLD_ERROR + '/header'
     MODULEFITS_GOLD_ERROR_TEXT = MODULEFITS_GOLD_ERROR + '/text'
     MODULEFITS_OPERATION_ERROR_HEADER = MODULEFITS_OPERATION_ERROR + '/header'
@@ -922,8 +930,8 @@ class TOOLTIPS(object):
     MODULEFITS_NOT_REMOVABLE_NOTE_HEADER = '#tooltips:moduleFits/not_removable/note_header'
     MODULEFITS_NOT_REMOVABLE_NOTE = '#tooltips:moduleFits/not_removable/note'
     MODULEFITS_NOT_REMOVABLE_DISMANTLING_PRICE = '#tooltips:moduleFits/not_removable/dismantling/price'
-    DEVICEFITS_CREDIT_ERROR_HEADER = '#tooltips:deviceFits/credit_error/header'
-    DEVICEFITS_CREDIT_ERROR_TEXT = '#tooltips:deviceFits/credit_error/text'
+    DEVICEFITS_CREDITS_ERROR_HEADER = '#tooltips:deviceFits/credits_error/header'
+    DEVICEFITS_CREDITS_ERROR_TEXT = '#tooltips:deviceFits/credits_error/text'
     DEVICEFITS_NEED_TURRET_HEADER = '#tooltips:deviceFits/need_turret/header'
     DEVICEFITS_NEED_TURRET_TEXT = '#tooltips:deviceFits/need_turret/text'
     DEVICEFITS_TOO_HEAVY_HEADER = '#tooltips:deviceFits/too_heavy/header'
@@ -1243,6 +1251,7 @@ class TOOLTIPS(object):
     TECHTREEPAGE_NATIONS_UK = '#tooltips:techTreePage/nations/uk'
     TECHTREEPAGE_NATIONS_JAPAN = '#tooltips:techTreePage/nations/japan'
     TECHTREEPAGE_NATIONS_CZECH = '#tooltips:techTreePage/nations/czech'
+    TECHTREEPAGE_NATIONS_SWEDEN = '#tooltips:techTreePage/nations/sweden'
     VEHICLESELLDIALOG_RENDERER_ALERTICON_HEADER = VEHICLESELLDIALOG_RENDERER_ALERTICON + '/header'
     VEHICLESELLDIALOG_RENDERER_ALERTICON_BODY = VEHICLESELLDIALOG_RENDERER_ALERTICON + '/body'
     ACHIEVEMENT_CUSTOM_NOTENOUGH = '#tooltips:achievement/custom/notEnough'
@@ -1366,6 +1375,8 @@ class TOOLTIPS(object):
     CYBERSPORT_UNIT_FIGHTBTN_NOTINSLOT_BODY = CYBERSPORT_UNIT_FIGHTBTN_NOTINSLOT + '/body'
     CYBERSPORT_UNIT_FIGHTBTN_PRESSFORREADY_BODY = CYBERSPORT_UNIT_FIGHTBTN_PRESSFORREADY + '/body'
     CYBERSPORT_UNIT_FIGHTBTN_PRESSFORNOTREADY_BODY = CYBERSPORT_UNIT_FIGHTBTN_PRESSFORNOTREADY + '/body'
+    CYBERSPORT_UNIT_FIGHTBTN_EVENTVEHICLEWRONGMODE_HEADER = CYBERSPORT_UNIT_FIGHTBTN_EVENTVEHICLEWRONGMODE + '/header'
+    CYBERSPORT_UNIT_FIGHTBTN_EVENTVEHICLEWRONGMODE_BODY = CYBERSPORT_UNIT_FIGHTBTN_EVENTVEHICLEWRONGMODE + '/body'
     HISTORICALBATTLES_SHOWBATTLEHISTORY_HEADER = '#tooltips:historicalBattles/showBattleHistory/header'
     HISTORICALBATTLES_SHOWBATTLEHISTORY_BODY = '#tooltips:historicalBattles/showBattleHistory/body'
     HISTORICALBATTLES_DATESTATUS_STARTDATE = '#tooltips:historicalBattles/dateStatus/startDate'
@@ -2044,6 +2055,7 @@ class TOOLTIPS(object):
     HANGARTUTORIAL_NATIONS_CHINA = '#tooltips:hangarTutorial/nations/china'
     HANGARTUTORIAL_NATIONS_JAPAN = '#tooltips:hangarTutorial/nations/japan'
     HANGARTUTORIAL_NATIONS_CZECH = '#tooltips:hangarTutorial/nations/czech'
+    HANGARTUTORIAL_NATIONS_SWEDEN = '#tooltips:hangarTutorial/nations/sweden'
     HANGARTUTORIAL_RESEARCHTREE_TITLE = '#tooltips:hangarTutorial/researchTree/title'
     HANGARTUTORIAL_RESEARCHTREE_DESCRIPTION = '#tooltips:hangarTutorial/researchTree/description'
     HANGARTUTORIAL_RESEARCHTREE_TECHBLOCK_COMMONTECH_TITLE = '#tooltips:hangarTutorial/researchTree/techBlock/commonTech/title'
@@ -2172,6 +2184,8 @@ class TOOLTIPS(object):
     CUSTOMIZATION_FILTERPOPOVER_BONUSDESCRIPTION_HEADER = '#tooltips:customization/filterPopover/bonusDescription/header'
     CUSTOMIZATION_FILTERPOPOVER_BONUSDESCRIPTION_BODY = '#tooltips:customization/filterPopover/bonusDescription/body'
     CUSTOMIZATION_BONUSPANEL_BONUS_HEADER = '#tooltips:customization/bonusPanel/bonus/header'
+    EVENT_SQUAD_DISABLE_HEADER = '#tooltips:event/squad/disable/header'
+    EVENT_SQUAD_DISABLE_BODY = '#tooltips:event/squad/disable/body'
     CUSTOMIZATION_BONUSPANEL_BONUS_ENTIRECREW_BODY = '#tooltips:customization/bonusPanel/bonus/entireCrew/body'
     CUSTOMIZATION_BONUSPANEL_BONUS_COMMANDER_BODY = '#tooltips:customization/bonusPanel/bonus/commander/body'
     CUSTOMIZATION_BONUSPANEL_BONUS_AIMER_BODY = '#tooltips:customization/bonusPanel/bonus/aimer/body'
@@ -2254,6 +2268,7 @@ class TOOLTIPS(object):
     VEHICLEPREVIEW_CREW_INFLUENCE_ENGINEPOWER = VEHICLEPREVIEW_CREW + '/influence/enginePower'
     VEHICLEPREVIEW_CREW_INFLUENCE_RADIODISTANCE = VEHICLEPREVIEW_CREW + '/influence/radioDistance'
     VEHICLEPREVIEW_CREW_ADDITIONALROLES = VEHICLEPREVIEW_CREW + '/additionalRoles'
+    SQUADWINDOW_EVENTVEHICLE = '#tooltips:squadWindow/eventVehicle'
     TANK_PARAMS_DESC_ENUM = (TANK_PARAMS_DESC_MAXHEALTH,
      TANK_PARAMS_DESC_VEHICLEWEIGHT,
      TANK_PARAMS_DESC_ENGINEPOWER,
@@ -2302,7 +2317,8 @@ class TOOLTIPS(object):
      TECHTREEPAGE_NATIONS_FRANCE,
      TECHTREEPAGE_NATIONS_UK,
      TECHTREEPAGE_NATIONS_JAPAN,
-     TECHTREEPAGE_NATIONS_CZECH)
+     TECHTREEPAGE_NATIONS_CZECH,
+     TECHTREEPAGE_NATIONS_SWEDEN)
     VEHICLE_RENTLEFT_ENUM = (VEHICLE_RENTLEFT_DAYS, VEHICLE_RENTLEFT_HOURS, VEHICLE_RENTLEFT_BATTLES)
     FORTIFICATION_TRANSPORTING_ENUM = (FORTIFICATION_TRANSPORTING_EMPTYSTORAGE_HEADER,
      FORTIFICATION_TRANSPORTING_EMPTYSTORAGE_BODY,

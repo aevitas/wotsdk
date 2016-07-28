@@ -10,12 +10,18 @@ class TankCarouselMeta(BaseDAAPIComponent):
     null
     """
 
-    def vehicleChange(self, vehicleInventoryId):
+    def selectVehicle(self, id):
         """
-        :param vehicleInventoryId:
+        :param id:
         :return :
         """
-        self._printOverrideError('vehicleChange')
+        self._printOverrideError('selectVehicle')
+
+    def buyTank(self):
+        """
+        :return :
+        """
+        self._printOverrideError('buyTank')
 
     def buySlot(self):
         """
@@ -23,30 +29,12 @@ class TankCarouselMeta(BaseDAAPIComponent):
         """
         self._printOverrideError('buySlot')
 
-    def buyTankClick(self):
+    def setFilter(self, id):
         """
+        :param id:
         :return :
         """
-        self._printOverrideError('buyTankClick')
-
-    def setVehiclesFilterOld(self, nation, vehicleType, favoriteSelected, gameModeSelected):
-        """
-        :param nation:
-        :param vehicleType:
-        :param favoriteSelected:
-        :param gameModeSelected:
-        :return :
-        """
-        self._printOverrideError('setVehiclesFilterOld')
-
-    def setVehiclesFilter(self, bonusSelected, favoriteSelected, gameModeSelected):
-        """
-        :param bonusSelected:
-        :param favoriteSelected:
-        :param gameModeSelected:
-        :return :
-        """
-        self._printOverrideError('setVehiclesFilter')
+        self._printOverrideError('setFilter')
 
     def resetFilters(self):
         """
@@ -54,62 +42,12 @@ class TankCarouselMeta(BaseDAAPIComponent):
         """
         self._printOverrideError('resetFilters')
 
-    def setVehicleSelected(self, vehicleInventoryId, selected):
+    def as_getDataProviderS(self):
         """
-        :param vehicleInventoryId:
-        :param selected:
-        :return :
-        """
-        self._printOverrideError('setVehicleSelected')
-
-    def moveVehiclesSelectionSlot(self, vehicleInventoryId):
-        """
-        :param vehicleInventoryId:
-        :return :
-        """
-        self._printOverrideError('moveVehiclesSelectionSlot')
-
-    def as_setMultiselectionModeS(self, data):
-        """
-        :param data:
-        :return :
+        :return Object:
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setMultiselectionMode(data)
-
-    def as_setMultiselectionButtonLabelsS(self, activateLabel, deactivateLabel, disabledTooltip):
-        """
-        :param activateLabel:
-        :param deactivateLabel:
-        :param disabledTooltip:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_setMultiselectionButtonLabels(activateLabel, deactivateLabel, disabledTooltip)
-
-    def as_updateMultiselectionDataS(self, multiselectData):
-        """
-        :param multiselectData:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_updateMultiselectionData(multiselectData)
-
-    def as_setCarouselFilterOldS(self, data):
-        """
-        :param data:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_setCarouselFilterOld(data)
-
-    def as_initCarouselFilterOldS(self, data):
-        """
-        :param data:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_initCarouselFilterOld(data)
+            return self.flashObject.as_getDataProvider()
 
     def as_setCarouselFilterS(self, data):
         """
@@ -149,28 +87,3 @@ class TankCarouselMeta(BaseDAAPIComponent):
         """
         if self._isDAAPIInited():
             return self.flashObject.as_blinkCounter()
-
-    def as_setParamsS(self, params):
-        """
-        :param params:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_setParams(params)
-
-    def as_updateVehiclesS(self, vehiclesData, isSet):
-        """
-        :param vehiclesData:
-        :param isSet:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_updateVehicles(vehiclesData, isSet)
-
-    def as_showVehiclesS(self, compactDescrList):
-        """
-        :param compactDescrList:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_showVehicles(compactDescrList)

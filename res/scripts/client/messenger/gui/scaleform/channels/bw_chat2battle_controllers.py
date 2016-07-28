@@ -2,7 +2,6 @@
 from gui.battle_control import g_sessionProvider
 from gui.shared import g_eventBus, EVENT_BUS_SCOPE
 from gui.shared.events import MessengerEvent
-from gui.battle_control.arena_info import isArenaInWaiting
 from messenger.ext import isBattleChatEnabled
 from messenger.formatters import chat_message
 from messenger.formatters.users_messages import getBroadcastIsInCoolDownMessage
@@ -18,7 +17,7 @@ from messenger.m_constants import CLIENT_ERROR_ID
 def _checkArenaInWaiting(func):
 
     def wrapper(*args, **kwargs):
-        if not isArenaInWaiting():
+        if not g_sessionProvider.arenaVisitor.isArenaInWaiting():
             func(*args, **kwargs)
         else:
             g_messengerEvents.onErrorReceived(ClientError(CLIENT_ERROR_ID.WAITING_BEFORE_START))
@@ -77,7 +76,7 @@ class TeamChannelController(_ChannelController):
 
     def isEnabled(self):
         result = super(TeamChannelController, self).isEnabled()
-        hasAnyTeammates = len(list(g_sessionProvider.getArenaDP().getVehiclesIterator())) > 1
+        hasAnyTeammates = g_sessionProvider.getArenaDP().getAlliesVehiclesNumber() > 1
         return result and hasAnyTeammates
 
     def _formatCommand(self, command):

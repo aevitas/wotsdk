@@ -4,16 +4,15 @@ import BigWorld
 from account_helpers.settings_core import settings_constants
 from account_helpers.settings_core.SettingsCore import g_settingsCore
 from account_helpers.settings_core.options import BattleLoadingTipSetting
-import constants
 from gui.Scaleform.locale.BATTLE_TUTORIAL import BATTLE_TUTORIAL
 from helpers import tips
-from gui.Scaleform.locale.FALLOUT import FALLOUT
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.LobbyContext import g_lobbyContext
-from gui.battle_control import g_sessionProvider, arena_info
+from gui.battle_control import g_sessionProvider
 from gui.battle_control.arena_info.interfaces import IArenaVehiclesController
-from gui.battle_control.arena_info import isFalloutClassic, hasRespawns, player_format
-from gui.battle_control.arena_info.arena_vos import VehicleActions, getRespawnVOsComparator
+from gui.battle_control.arena_info import player_format
+from gui.battle_control.arena_info import vos_collections
+from gui.battle_control.arena_info.arena_vos import VehicleActions
 from gui.battle_control.arena_info.settings import INVALIDATE_OP
 from gui.battle_control.arena_info.settings import SMALL_MAP_IMAGE_SF_PATH
 from gui.shared.formatters import text_styles
@@ -22,7 +21,8 @@ from gui.Scaleform.daapi import LobbySubView
 from gui.Scaleform.daapi.view.meta.BaseBattleLoadingMeta import BaseBattleLoadingMeta
 from gui.Scaleform.daapi.view.fallout_info_panel_helper import getHelpTextAsDicts
 from messenger.storage import storage_getter
-from gui.shared.utils import toUpper
+from messenger.m_constants import PROTO_TYPE
+from messenger.proto import proto_getter
 DEFAULT_BATTLES_COUNT = 100
 
 class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesController):
@@ -31,13 +31,17 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
     def __init__(self, _ = None):
         super(BattleLoading, self).__init__()
         self._battleCtx = None
+        self._arenaVisitor = None
         self._isArenaTypeDataInited = False
         self.__isTipInited = False
-        self.__isFallout = isFalloutClassic()
         return
 
     @storage_getter('users')
     def usersStorage(self):
+        return None
+
+    @proto_getter(PROTO_TYPE.BW_CHAT2)
+    def bwProto(self):
         return None
 
     def _populate(self):
@@ -55,8 +59,14 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
             BigWorld.wg_enableGUIBackground(False, True)
         super(BattleLoading, self)._dispose()
 
-    def setBattleCtx(self, battleCtx):
+    def startControl(self, battleCtx, arenaVisitor):
         self._battleCtx = battleCtx
+        self._arenaVisitor = arenaVisitor
+
+    def stopControl(self):
+        self._battleCtx = None
+        self._arenaVisitor = None
+        return
 
     def invalidateArenaInfo(self):
         arenaDP = self._battleCtx.getArenaDP()
@@ -67,52 +77,53 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
 
     def invalidateVehiclesInfo(self, arenaDP):
         regionGetter = player_format.getRegionCode
-        isSpeaking = self.app.voiceChatManager.isPlayerSpeaking
+        isSpeaking = self.bwProto.voipController.isPlayerSpeaking
         userGetter = self.usersStorage.getUser
         actionGetter = VehicleActions.getBitMask
         playerTeam = arenaDP.getNumberOfTeam()
-        if hasRespawns():
-            sortFunction = getRespawnVOsComparator
+        if self._arenaVisitor.hasRespawns():
+            sortKey = vos_collections.RespawnSortKey
         else:
-            sortFunction = None
-        for isEnemy in (False, True):
+            sortKey = vos_collections.VehicleInfoSortKey
+        isFallout = self._arenaVisitor.gui.isFalloutClassic()
+        for isEnemy, collection in ((False, vos_collections.AllyItemsCollection(sortKey=sortKey)), (True, vos_collections.EnemyItemsCollection(sortKey=sortKey))):
             result = []
-            for vInfoVO, _, viStatsVO in arenaDP.getVehiclesIterator(isEnemy, sortFunction=sortFunction):
-                result.append(self._makeItem(vInfoVO, viStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vInfoVO), self.__isFallout))
+            for vInfoVO, vStatsVO in collection.iterator(arenaDP):
+                result.append(self._makeItem(vInfoVO, vStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vInfoVO), isFallout))
 
             self.as_setVehiclesDataS({'vehiclesInfo': result,
              'isEnemy': isEnemy})
 
-        return
-
     def addVehicleInfo(self, vo, arenaDP):
         playerTeam = arenaDP.getNumberOfTeam()
         isEnemy = arenaDP.isEnemyTeam(vo.team)
-        viStatsVO = arenaDP.getVehicleInteractiveStats(vo.vehicleID)
-        item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
+        vStatsVO = arenaDP.getVehicleStats(vo.vehicleID)
+        item = self._makeItem(vo, vStatsVO, self.usersStorage.getUser, self.bwProto.voipController.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
         data = {'vehicleInfo': item,
-         'vehiclesIDs': arenaDP.getVehiclesIDs(isEnemy),
+         'vehiclesIDs': self._getInfoCollection(isEnemy).ids(self._battleCtx.getArenaDP()),
          'isEnemy': isEnemy}
         self.as_addVehicleInfoS(data)
 
-    def invalidateVehicleInfo(self, flags, vo, arenaDP):
+    def updateVehiclesInfo(self, updated, arenaDP):
         playerTeam = arenaDP.getNumberOfTeam()
-        isEnemy = arenaDP.isEnemyTeam(vo.team)
-        viStatsVO = arenaDP.getVehicleInteractiveStats(vo.vehicleID)
-        if flags & INVALIDATE_OP.SORTING > 0:
-            vehiclesIDs = arenaDP.getVehiclesIDs(isEnemy)
-        else:
-            vehiclesIDs = None
-        item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
-        self.as_updateVehicleInfoS({'vehicleInfo': item,
-         'vehiclesIDs': vehiclesIDs,
-         'isEnemy': isEnemy})
+        for flags, vo in updated:
+            isEnemy = arenaDP.isEnemyTeam(vo.team)
+            vStatsVO = arenaDP.getVehicleStats(vo.vehicleID)
+            if flags & INVALIDATE_OP.SORTING > 0:
+                vehiclesIDs = self._getInfoCollection(isEnemy).ids(self._battleCtx.getArenaDP())
+            else:
+                vehiclesIDs = None
+            item = self._makeItem(vo, vStatsVO, self.usersStorage.getUser, self.bwProto.voipController.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
+            self.as_updateVehicleInfoS({'vehicleInfo': item,
+             'vehiclesIDs': vehiclesIDs,
+             'isEnemy': isEnemy})
+
         return
 
     def invalidateVehicleStatus(self, flags, vo, arenaDP):
         isEnemy = arenaDP.isEnemyTeam(vo.team)
         if flags & INVALIDATE_OP.SORTING > 0:
-            vehiclesIDs = arenaDP.getVehiclesIDs(isEnemy)
+            vehiclesIDs = self._getInfoCollection(isEnemy).ids(self._battleCtx.getArenaDP())
         else:
             vehiclesIDs = None
         self.as_setVehicleStatusS({'vehicleID': vo.vehicleID,
@@ -138,7 +149,18 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
         else:
             BigWorld.wg_enableGUIBackground(False, False)
 
-    def _makeItem(self, vInfoVO, viStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, squadIdx, isFallout = False):
+    def _getInfoCollection(self, isEnemy):
+        if self._arenaVisitor.hasRespawns():
+            sortKey = vos_collections.RespawnSortKey
+        else:
+            sortKey = vos_collections.VehicleInfoSortKey
+        if isEnemy:
+            collection = vos_collections.EnemyItemsCollection(sortKey=sortKey)
+        else:
+            collection = vos_collections.AllyItemsCollection(sortKey=sortKey)
+        return collection
+
+    def _makeItem(self, vInfoVO, vStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, squadIdx, isFallout = False):
         player = vInfoVO.player
         vTypeVO = vInfoVO.vehicleType
         dbID = player.accountDBID
@@ -173,24 +195,23 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
         pass
 
     def _setTipsInfo(self):
-        arena = arena_info.getClientArena()
         arenaDP = self._battleCtx.getArenaDP()
-        if arena_info.hasResourcePoints():
+        if self._arenaVisitor.hasResourcePoints():
             bgUrl = RES_ICONS.MAPS_ICONS_EVENTINFOPANEL_FALLOUTRESOURCEPOINTSEVENT
-        elif arena_info.hasFlags():
+        elif self._arenaVisitor.hasFlags():
             bgUrl = RES_ICONS.MAPS_ICONS_EVENTINFOPANEL_FALLOUTFLAGSEVENT
         else:
             bgUrl = ''
-        if self.__isFallout:
+        if self._arenaVisitor.gui.isFalloutClassic():
             self.as_setEventInfoPanelDataS({'bgUrl': bgUrl,
-             'items': getHelpTextAsDicts(arena_info.getArenaType())})
-            self.as_setVisualTipInfoS(self.__makeVisualTipVO(arenaDP, arena))
+             'items': getHelpTextAsDicts(self._arenaVisitor)})
+            self.as_setVisualTipInfoS(self.__makeVisualTipVO(arenaDP))
         elif not self.__isTipInited:
             battlesCount = DEFAULT_BATTLES_COUNT
             if g_lobbyContext.getBattlesCount() is not None:
                 battlesCount = g_lobbyContext.getBattlesCount()
             classTag, vLvl, nation = arenaDP.getVehicleInfo().getTypeInfo()
-            criteria = tips.getTipsCriteria(arena)
+            criteria = tips.getTipsCriteria(self._arenaVisitor)
             criteria.setBattleCount(battlesCount)
             criteria.setClassTag(classTag)
             criteria.setLevel(vLvl)
@@ -198,7 +219,7 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
             tip = criteria.find()
             self.as_setTipTitleS(text_styles.highTitle(tip.status))
             self.as_setTipS(text_styles.playerOnline(tip.body))
-            self.as_setVisualTipInfoS(self.__makeVisualTipVO(arenaDP, arena, tip))
+            self.as_setVisualTipInfoS(self.__makeVisualTipVO(arenaDP, tip))
             self.__isTipInited = True
         return
 
@@ -206,11 +227,8 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
         return vInfoVO.squadIndex
 
     def _addArenaTypeData(self):
-        arenaType = arena_info.getArenaType()
-        if arenaType is not None:
-            self.as_setMapIconS(SMALL_MAP_IMAGE_SF_PATH % arenaType.geometryName)
+        self.as_setMapIconS(SMALL_MAP_IMAGE_SF_PATH % self._arenaVisitor.type.getGeometryName())
         BigWorld.wg_setGUIBackground(self._battleCtx.getArenaScreenIcon())
-        return
 
     def _addArenaExtraData(self, arenaDP):
         arenaInfoData = {'mapName': self._battleCtx.getArenaTypeName(isInBattle=False),
@@ -219,8 +237,7 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
          'battleTypeFrameLabel': self._battleCtx.getArenaFrameLabel(),
          'allyTeamName': self._battleCtx.getTeamName(enemy=False),
          'enemyTeamName': self._battleCtx.getTeamName(enemy=True)}
-        arena = arena_info.getClientArena()
-        if arena.guiType == constants.ARENA_GUI_TYPE.TUTORIAL:
+        if self._arenaVisitor.gui.isTutorialBattle():
             arenaInfoData['tipText'] = text_styles.main(BATTLE_TUTORIAL.LOADING_HINT_TEXT)
         self.as_setArenaInfoS(arenaInfoData)
 
@@ -228,12 +245,12 @@ class BattleLoading(LobbySubView, BaseBattleLoadingMeta, IArenaVehiclesControlle
         vInfoVO = arenaDP.getVehicleInfo()
         self.as_setPlayerDataS(vInfoVO.vehicleID, vInfoVO.getSquadID())
 
-    def __makeVisualTipVO(self, arenaDP, arena, tip = None):
+    def __makeVisualTipVO(self, arenaDP, tip = None):
         setting = g_settingsCore.options.getSetting(settings_constants.GAME.BATTLE_LOADING_INFO)
-        settingID = setting.getSettingID(isInSandbox=arena_info.isInSandboxBattle(arena), isFallout=arena_info.isFalloutBattle())
+        settingID = setting.getSettingID(isVisualOnly=self._arenaVisitor.gui.isSandboxBattle() or self._arenaVisitor.gui.isEventBattle(), isFallout=self._arenaVisitor.gui.isFalloutBattle())
         return {'settingID': settingID,
          'tipIcon': tip.icon if settingID == BattleLoadingTipSetting.OPTIONS.VISUAL else None,
-         'arenaTypeID': arena_info.getArenaTypeID(),
+         'arenaTypeID': self._arenaVisitor.type.getID(),
          'minimapTeam': arenaDP.getNumberOfTeam(),
          'showMinimap': settingID == BattleLoadingTipSetting.OPTIONS.MINIMAP}
 
@@ -243,27 +260,29 @@ class FalloutMultiTeamBattleLoading(BattleLoading):
     def addVehicleInfo(self, vo, arenaDP):
         playerTeam = arenaDP.getNumberOfTeam()
         isEnemy = arenaDP.isEnemyTeam(vo.team)
-        viStatsVO = arenaDP.getVehicleInteractiveStats(vo.vehicleID)
-        item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
+        vStatsVO = arenaDP.getVehicleStats(vo.vehicleID)
+        item = self._makeItem(vo, vStatsVO, self.usersStorage.getUser, self.bwProto.voipController.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
         self.as_addVehicleInfoS({'vehicleInfo': item,
-         'vehiclesIDs': arenaDP.getAllVehiclesIDs()})
+         'vehiclesIDs': self._getInfoCollection(True).ids(self._battleCtx.getArenaDP())})
 
-    def invalidateVehicleInfo(self, flags, vo, arenaDP):
+    def updateVehiclesInfo(self, updated, arenaDP):
         playerTeam = arenaDP.getNumberOfTeam()
-        isEnemy = arenaDP.isEnemyTeam(vo.team)
-        viStatsVO = arenaDP.getVehicleInteractiveStats(vo.vehicleID)
-        if flags & INVALIDATE_OP.SORTING > 0:
-            vehiclesIDs = arenaDP.getAllVehiclesIDs()
-        else:
-            vehiclesIDs = None
-        item = self._makeItem(vo, viStatsVO, self.usersStorage.getUser, self.app.voiceChatManager.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
-        self.as_updateVehicleInfoS({'vehicleInfo': item,
-         'vehiclesIDs': vehiclesIDs})
+        for flags, vo in updated:
+            isEnemy = arenaDP.isEnemyTeam(vo.team)
+            vStatsVO = arenaDP.getVehicleStats(vo.vehicleID)
+            if flags & INVALIDATE_OP.SORTING > 0:
+                vehiclesIDs = self._getInfoCollection(isEnemy).ids(self._battleCtx.getArenaDP())
+            else:
+                vehiclesIDs = None
+            item = self._makeItem(vo, vStatsVO, self.usersStorage.getUser, self.bwProto.voipController.isPlayerSpeaking, VehicleActions.getBitMask, player_format.getRegionCode, playerTeam, isEnemy, self._getSquadIdx(arenaDP, vo))
+            self.as_updateVehicleInfoS({'vehicleInfo': item,
+             'vehiclesIDs': vehiclesIDs})
+
         return
 
     def invalidateVehicleStatus(self, flags, vo, arenaDP):
         if flags & INVALIDATE_OP.SORTING > 0:
-            vehiclesIDs = arenaDP.getAllVehiclesIDs()
+            vehiclesIDs = self._getInfoCollection(arenaDP.isEnemyTeam(vo.team)).ids(self._battleCtx.getArenaDP())
         else:
             vehiclesIDs = None
         self.as_setVehicleStatusS({'vehicleID': vo.vehicleID,
@@ -277,37 +296,36 @@ class FalloutMultiTeamBattleLoading(BattleLoading):
 
     def invalidateVehiclesInfo(self, arenaDP):
         regionGetter = player_format.getRegionCode
-        isSpeaking = self.app.voiceChatManager.isPlayerSpeaking
+        isSpeaking = self.bwProto.voipController.isPlayerSpeaking
         userGetter = self.usersStorage.getUser
         actionGetter = VehicleActions.getBitMask
         playerTeam = arenaDP.getNumberOfTeam()
         result = []
-        if hasRespawns():
-            sortFunction = getRespawnVOsComparator
-        else:
-            sortFunction = None
-        for vInfoVO, _, viStatsVO in arenaDP.getAllVehiclesIteratorByTeamScore(sortFunction=sortFunction):
-            result.append(self._makeItem(vInfoVO, viStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, playerTeam != vInfoVO.team, self._getSquadIdx(arenaDP, vInfoVO)))
+        collection = self._getInfoCollection(True)
+        for vInfoVO, vStatsVO in collection.iterator(arenaDP):
+            result.append(self._makeItem(vInfoVO, vStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, playerTeam != vInfoVO.team, self._getSquadIdx(arenaDP, vInfoVO)))
 
         self.as_setVehiclesDataS({'vehiclesInfo': result})
-        return
 
-    def _makeItem(self, vInfoVO, viStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, squadIdx, isFallout = True):
-        result = super(FalloutMultiTeamBattleLoading, self)._makeItem(vInfoVO, viStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, squadIdx, isFallout)
-        result['points'] = viStatsVO.winPoints
+    def _getInfoCollection(self, isEnemy):
+        if self._arenaVisitor.hasRespawns():
+            sortKey = vos_collections.WinPointsAndRespawnSortKey
+        else:
+            sortKey = vos_collections.WinPointsAndVehicleInfoSortKey
+        return vos_collections.FalloutMultiTeamItemsCollection(sortKey=sortKey)
+
+    def _makeItem(self, vInfoVO, vStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, squadIdx, isFallout = True):
+        result = super(FalloutMultiTeamBattleLoading, self)._makeItem(vInfoVO, vStatsVO, userGetter, isSpeaking, actionGetter, regionGetter, playerTeam, isEnemy, squadIdx, isFallout)
+        result['points'] = vStatsVO.winPoints
         return result
 
     def _setTipsInfo(self):
         self.as_setEventInfoPanelDataS({'bgUrl': RES_ICONS.MAPS_ICONS_EVENTINFOPANEL_FALLOUTFLAGSEVENT,
-         'items': getHelpTextAsDicts(arena_info.getArenaType())})
-
-    def _getSquadIdx(self, arenaDP, vInfoVO):
-        return arenaDP.getMultiTeamsIndexes()[vInfoVO.team]
+         'items': getHelpTextAsDicts(self._arenaVisitor)})
 
     def _addArenaExtraData(self, arenaDP):
-        winText = text_styles.main(FALLOUT.BATTLELOADING_MULTITEAM_WINTEXT)
-        arenaInfoData = {'mapName': toUpper(arena_info.getArenaType().name),
-         'battleTypeLocaleStr': '#menu:loading/battleTypes/%d' % arena_info.getArenaGuiType(),
-         'winText': winText,
-         'battleTypeFrameLabel': arena_info.getArenaGuiTypeLabel()}
+        arenaInfoData = {'mapName': self._battleCtx.getArenaTypeName(isInBattle=False),
+         'battleTypeLocaleStr': self._battleCtx.getArenaDescriptionString(isInBattle=False),
+         'winText': text_styles.main(self._battleCtx.getArenaWinString(isInBattle=False)),
+         'battleTypeFrameLabel': self._battleCtx.getArenaFrameLabel()}
         self.as_setArenaInfoS(arenaInfoData)

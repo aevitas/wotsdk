@@ -40,14 +40,6 @@ class BattleTypeSelectPopoverMeta(SmartPopOverView):
         if self._isDAAPIInited():
             return self.flashObject.as_update(items, isShowDemonstrator, demonstratorEnabled)
 
-    def as_setDemonstrationEnabledS(self, demonstratorEnabled):
-        """
-        :param demonstratorEnabled:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_setDemonstrationEnabled(demonstratorEnabled)
-
     def as_showMiniClientInfoS(self, description, hyperlink):
         """
         :param description:

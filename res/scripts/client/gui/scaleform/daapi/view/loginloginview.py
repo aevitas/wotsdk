@@ -33,6 +33,7 @@ from helpers.time_utils import makeLocalServerTime
 from predefined_hosts import AUTO_LOGIN_QUERY_URL, AUTO_LOGIN_QUERY_ENABLED, g_preDefinedHosts
 from external_strings_utils import isAccountLoginValid, isPasswordValid, _PASSWORD_MIN_LENGTH, _PASSWORD_MAX_LENGTH
 from external_strings_utils import _LOGIN_NAME_MIN_LENGTH
+from helpers.statistics import g_statistics, HANGAR_LOADING_STATE
 
 class INVALID_FIELDS:
     ALL_VALID = 0
@@ -62,6 +63,7 @@ class LoginView(LoginPageMeta):
         self.__capsLockCallbackID = None
         self.__backgroundMode = _VIDEO_BG_MODE
         self.__isSoundMuted = False
+        self.__customLoginStatus = None
         self._autoSearchVisited = False
         self._rememberUser = False
         g_loginManager.servers.updateServerList()
@@ -75,13 +77,16 @@ class LoginView(LoginPageMeta):
         self._rememberUser = rememberUser
 
     def onLogin(self, userName, password, serverName, isSocialToken2Login):
+        g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.LOGIN, True)
         self._autoSearchVisited = serverName == AUTO_LOGIN_QUERY_URL
+        self.__customLoginStatus = None
         result = self.__validateCredentials(userName.lower().strip(), password.strip(), bool(g_loginManager.getPreference('token2')))
         if result.isValid:
             Waiting.show('login')
             g_loginManager.initiateLogin(userName, password, serverName, isSocialToken2Login, isSocialToken2Login or self._rememberUser)
         else:
             self.as_setErrorMessageS(result.errorMessage, result.invalidFields)
+        return
 
     def resetToken(self):
         g_loginManager.clearToken2Preference()
@@ -160,8 +165,8 @@ class LoginView(LoginPageMeta):
         self.as_enableS(True)
         self._servers.onServersStatusChanged += self.__updateServersList
         connectionManager.onRejected += self._onLoginRejected
-        g_playerEvents.onLoginQueueNumberReceived += self._onHandleQueue
-        g_playerEvents.onKickWhileLoginReceived += self._onKickedWhileLogin
+        connectionManager.onKickWhileLoginReceived += self._onKickedWhileLogin
+        connectionManager.onQueued += self._onHandleQueue
         g_playerEvents.onAccountShowGUI += self._clearLoginView
         self.as_setVersionS(getFullClientVersion())
         self.as_setCopyrightS(_ms(MENU.COPY), _ms(MENU.LEGAL))
@@ -185,9 +190,9 @@ class LoginView(LoginPageMeta):
             BigWorld.cancelCallback(self.__capsLockCallbackID)
             self.__capsLockCallbackID = None
         connectionManager.onRejected -= self._onLoginRejected
+        connectionManager.onKickWhileLoginReceived -= self._onKickedWhileLogin
+        connectionManager.onQueued -= self._onHandleQueue
         self._servers.onServersStatusChanged -= self.__updateServersList
-        g_playerEvents.onLoginQueueNumberReceived -= self.__loginQueueDialogShown
-        g_playerEvents.onKickWhileLoginReceived -= self._onKickedWhileLogin
         g_playerEvents.onAccountShowGUI -= self._clearLoginView
         self._serversDP.fini()
         self._serversDP = None
@@ -219,13 +224,16 @@ class LoginView(LoginPageMeta):
             self.__closeLoginRetryDialog()
 
     def _onKickedWhileLogin(self, peripheryID):
-        Waiting.hide('login')
-        messageType = 'another_periphery' if peripheryID else 'checkout_error'
-        self.as_setErrorMessageS(_ms(SYSTEM_MESSAGES.all(messageType)), INVALID_FIELDS.ALL_VALID)
-        if not self.__loginRetryDialogShown:
-            self.__showLoginRetryDialog({'waitingOpen': WAITING.titles(messageType),
-             'waitingClose': WAITING.BUTTONS_CEASE,
-             'message': _ms(WAITING.message(messageType), connectionManager.serverUserName)})
+        if peripheryID >= 0:
+            self.__customLoginStatus = 'another_periphery' if peripheryID else 'checkout_error'
+            if not self.__loginRetryDialogShown:
+                self.__showLoginRetryDialog({'waitingOpen': WAITING.titles(self.__customLoginStatus),
+                 'waitingClose': WAITING.BUTTONS_CEASE,
+                 'message': _ms(WAITING.message(self.__customLoginStatus), connectionManager.serverUserName)})
+        elif peripheryID == -2:
+            self.__customLoginStatus = 'centerRestart'
+        elif peripheryID == -3:
+            self.__customLoginStatus = 'versionMismatch'
 
     def _onHandleQueue(self, queueNumber):
         serverName = connectionManager.serverUserName
@@ -262,10 +270,13 @@ class LoginView(LoginPageMeta):
             self.__loginRejectedRateLimited()
         elif loginStatus in (LOGIN_STATUS.LOGIN_REJECTED_BAD_DIGEST, LOGIN_STATUS.LOGIN_BAD_PROTOCOL_VERSION):
             self.__loginRejectedUpdateNeeded()
+        elif loginStatus == LOGIN_STATUS.NOT_SET and self.__customLoginStatus is not None:
+            self.__loginRejectedWithCustomState()
         else:
             self.as_setErrorMessageS(_ms('#menu:login/status/' + loginStatus), _STATUS_TO_INVALID_FIELDS_MAPPING[loginStatus])
             self.__clearFields(_STATUS_TO_INVALID_FIELDS_MAPPING[loginStatus])
         self._dropLoginQueue(loginStatus)
+        return
 
     def _dropLoginQueue(self, loginStatus):
         """Safely drop login queue considering login status and current state of login queue.
@@ -341,6 +352,10 @@ class LoginView(LoginPageMeta):
             self.__showLoginRetryDialog({'waitingOpen': WAITING.TITLES_QUEUE,
              'waitingClose': WAITING.BUTTONS_EXITQUEUE,
              'message': _ms(WAITING.MESSAGE_AUTOLOGIN, connectionManager.serverUserName)})
+
+    def __loginRejectedWithCustomState(self):
+        self.as_setErrorMessageS(_ms('#menu:login/status/' + self.__customLoginStatus), INVALID_FIELDS.ALL_VALID)
+        self.__clearFields(INVALID_FIELDS.ALL_VALID)
 
     def __showLoginRetryDialog(self, data):
         self._clearLoginView()

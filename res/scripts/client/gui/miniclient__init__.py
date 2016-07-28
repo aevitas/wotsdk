@@ -6,6 +6,7 @@ import contacts as _contacts
 import dynamic_squads as _dynamic_squads
 import promo_controller as _promo_controller
 import fallout_controller as _fallout_controller
+import event as _event
 import preview as _preview
 from gui.miniclient.notifications import configure_pointcuts as _notifications_configure_pointcuts
 from lobby import configure_pointcuts as _configure_lobby_pointcuts
@@ -39,6 +40,7 @@ def configure_state():
         _dynamic_squads.InviteReceivedMessagePointcut()
         _promo_controller.ShowPromoBrowserPointcut()
         _fallout_controller.InitFalloutPointcut()
+        _event.InitEventPointcut()
         _preview.ChangeVehicleIsPreviewAllowed(config)
 
 

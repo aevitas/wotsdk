@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/data.py
-import operator
 from AccountCommands import LOCK_REASON
 from CurrentVehicle import g_currentVehicle
 from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR, LOG_DEBUG
@@ -14,7 +13,6 @@ from gui.Scaleform.daapi.view.lobby.techtree.settings import makeDefUnlockProps
 from gui.Scaleform.daapi.view.lobby.techtree.settings import UnlockProps, UnlockStats
 from gui.Scaleform.daapi.view.lobby.techtree.dumpers import _BaseDumper
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
-from gui.Scaleform.locale.MENU import MENU
 __all__ = ['ResearchItemsData', 'NationTreeData']
 
 class _ItemsData(object):
@@ -219,7 +217,7 @@ class _ItemsData(object):
     def _canBuy(self, nodeCD):
         item = self.getItem(nodeCD)
         canBuy, reason = item.mayPurchase(self._stats.money)
-        result = canBuy or reason == 'credit_error' and item.mayPurchaseWithExchange(self._stats.money, self._items.shop.exchangeRate)
+        result = canBuy or reason == 'credits_error' and item.mayPurchaseWithExchange(self._stats.money, self._items.shop.exchangeRate)
         return result
 
     def _canRentOrBuy(self, nodeCD):

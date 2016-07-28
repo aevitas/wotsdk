@@ -3,17 +3,20 @@ import weakref
 from collections import namedtuple
 import BigWorld
 import CommandMapping
+from gui import GUI_SETTINGS
 from gui.Scaleform.ColorSchemeManager import _ColorSchemeManager
+from gui.Scaleform.daapi.view.battle.fallout.battle_timer import FALLOUT_ENDING_SOON_TIME
 from gui.Scaleform.daapi.view.logitech.LogitechMonitorMeta import LogitechMonitorBattleMonoScreenMeta, LogitechMonitorBattleColoredScreenMeta
 from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
-from gui.app_loader import g_appLoader
-from gui.app_loader.settings import APP_NAME_SPACE
+from gui.Scaleform.genConsts.BATTLE_VIEW_ALIASES import BATTLE_VIEW_ALIASES
+from gui.app_loader.decorators import sf_battle
 from gui.battle_control import g_sessionProvider
-from gui.battle_control.battle_period_ctrl import ArenaPeriodController, ITimersBar
-from gui.battle_control.debug_ctrl import IDebugPanel, DebugController
+from gui.battle_control.controllers.period_ctrl import ArenaPeriodController, ITimersBar
+from gui.battle_control.controllers.debug_ctrl import IDebugPanel, DebugController
 from gui.shared import events, EVENT_BUS_SCOPE
+from gui.shared.events import ComponentEvent
 from helpers import i18n
-from messenger.gui.Scaleform.BattleEntry import BattleEntry as MessengerBattleEntry
+from messenger.gui.Scaleform.legacy_entry import LegacyBattleEntry as MessengerBattleEntry
 from messenger.m_constants import MESSENGER_SCOPE
 _VIEW_CMDS = (CommandMapping.CMD_CHAT_SHORTCUT_ATTACK,
  CommandMapping.CMD_CHAT_SHORTCUT_BACKTOBASE,
@@ -37,38 +40,59 @@ class _TimerPresenter(ITimersBar):
 
     def __init__(self, ui):
         super(_TimerPresenter, self).__init__()
+        arenaVisitor = g_sessionProvider.arenaVisitor
+        if arenaVisitor.gui.isFalloutBattle():
+            self.__endingSoonTime = FALLOUT_ENDING_SOON_TIME
+        else:
+            self.__endingSoonTime = arenaVisitor.type.getBattleEndingSoonTime()
         self.__ui = ui
         self.__arenaPeriodCtrl = ArenaPeriodController()
 
     def start(self):
+        self.__arenaPeriodCtrl.startControl(weakref.proxy(g_sessionProvider.getCtx()), weakref.proxy(g_sessionProvider.arenaVisitor))
         self.__arenaPeriodCtrl.setViewComponents(weakref.proxy(self), weakref.proxy(self))
         g_sessionProvider.addArenaCtrl(self.__arenaPeriodCtrl)
 
     def stop(self):
         g_sessionProvider.removeArenaCtrl(self.__arenaPeriodCtrl)
-        self.__arenaPeriodCtrl.clear()
+        self.__arenaPeriodCtrl.stopControl()
         self.__arenaPeriodCtrl.clearViewComponents()
 
-    def setTotalTime(self, level, totalTime):
-        self.__updateTimer(level, totalTime)
+    def setTotalTime(self, totalTime):
+        self.__updateTimer(totalTime)
 
     def hideTotalTime(self):
         pass
 
-    def setCountdown(self, state, level, timeLeft):
-        self.__updateTimer(level, timeLeft)
+    def setState(self, state):
+        pass
+
+    def setCountdown(self, state, timeLeft):
+        self.__updateTimer(timeLeft)
 
     def hideCountdown(self, state, speed):
         pass
 
-    def __updateTimer(self, level, time):
+    def __updateTimer(self, time):
         if self.__ui is not None and time >= 0:
             minutes, seconds = divmod(int(time), 60)
-            self.__ui.updateTimer(_TimerDisplayData(level=level, minutes='{:02d}'.format(minutes), seconds='{:02d}'.format(seconds)))
+            self.__ui.updateTimer(_TimerDisplayData(level=int(time <= self.__endingSoonTime), minutes='{:02d}'.format(minutes), seconds='{:02d}'.format(seconds)))
         return
 
 
 _FragsDisplayData = namedtuple('_FragsDisplayData', ('progress', 'allyFrags', 'enemyFrags'))
+
+def _makeFragsDisplayData(allyFrags, enemyFrags):
+    arenaDP = g_sessionProvider.getArenaDP()
+    vehsAlly = arenaDP.getAlliesVehiclesNumber()
+    vehsEnemy = arenaDP.getEnemiesVehiclesNumber()
+    if vehsAlly + vehsEnemy > 0:
+        progress = float(vehsAlly + allyFrags - enemyFrags) / (vehsAlly + vehsEnemy)
+    else:
+        progress = 0.5
+    progress = max(min(progress, 1.0), 0.0)
+    return _FragsDisplayData(progress, allyFrags, enemyFrags)
+
 
 class _IFragsView(object):
 
@@ -79,11 +103,15 @@ class _IFragsView(object):
         raise NotImplementedError
 
 
-class _FragsPresenter(EventSystemEntity):
+class _LegacyFragsPresenter(EventSystemEntity):
 
     def __init__(self, ui):
-        super(_FragsPresenter, self).__init__()
+        super(_LegacyFragsPresenter, self).__init__()
         self.__ui = ui
+
+    @sf_battle
+    def app(self):
+        return None
 
     def start(self):
         self.addListener(events.ScoreEvent.FRAGS_UPDATED, self.__fragsUpdated, EVENT_BUS_SCOPE.BATTLE)
@@ -93,21 +121,12 @@ class _FragsPresenter(EventSystemEntity):
         self.removeListener(events.ScoreEvent.FRAGS_UPDATED, self.__fragsUpdated, EVENT_BUS_SCOPE.BATTLE)
 
     def __updateFrags(self, ally, enemy):
-        arenaDP = g_sessionProvider.getArenaDP()
-        vehsAlly = sum((1 for x in arenaDP.getVehiclesIterator(enemy=False)))
-        vehsEnemy = sum((1 for x in arenaDP.getVehiclesIterator(enemy=True)))
-        if vehsAlly + vehsEnemy > 0:
-            progress = float(vehsAlly + ally - enemy) / (vehsAlly + vehsEnemy)
-        else:
-            progress = 0.5
-        progress = max(min(progress, 1.0), 0.0)
-        dd = _FragsDisplayData(progress, ally, enemy)
-        self.__ui.updateFrags(dd)
+        self.__ui.updateFrags(_makeFragsDisplayData(ally, enemy))
 
     def _updateWithCurrent(self):
-        battle = g_appLoader.getApp(appNS=APP_NAME_SPACE.SF_BATTLE)
+        battle = self.app
         if battle is not None and hasattr(battle, 'fragCorrelation'):
-            score = battle.fragCorrelation.getCurrentScore()
+            score = battle.fragCorrelation.getTotalScore()
             if score is not None:
                 ally, enemy = score
                 self.__updateFrags(ally, enemy)
@@ -117,6 +136,38 @@ class _FragsPresenter(EventSystemEntity):
         ctx = event.ctx
         ally, enemy = ctx['ally'], ctx['enemy']
         self.__updateFrags(ally, enemy)
+
+
+class _NewFragsPresenter(EventSystemEntity):
+
+    def __init__(self, ui):
+        super(_NewFragsPresenter, self).__init__()
+        self.__ui = ui
+
+    def start(self):
+        self.addListener(ComponentEvent.COMPONENT_REGISTERED, self.__onComponentRegistered)
+
+    def stop(self):
+        self.removeListener(ComponentEvent.COMPONENT_REGISTERED, self.__onComponentRegistered)
+
+    def __updateFrags(self, leftScore, rightScore):
+        self.__ui.updateFrags(_makeFragsDisplayData(leftScore, rightScore))
+
+    def __onComponentRegistered(self, event):
+        if event.alias == BATTLE_VIEW_ALIASES.BATTLE_STATISTIC_DATA_CONTROLLER:
+            collector = event.componentPy.getStatsCollector()
+            collector.onTotalScoreUpdated += self.__onTotalScoreUpdated
+            self.__updateFrags(*collector.getTotalScore())
+
+    def __onTotalScoreUpdated(self, leftScore, rightScore):
+        self.__updateFrags(leftScore, rightScore)
+
+
+def _FragsPresenter(ui):
+    if GUI_SETTINGS.useAS3Battle:
+        return _NewFragsPresenter(ui)
+    else:
+        return _LegacyFragsPresenter(ui)
 
 
 class LogitechMonitorBattleMonoScreen(LogitechMonitorBattleMonoScreenMeta, _ITimerView, _IFragsView):
@@ -172,11 +223,11 @@ class LogitechMonitorBattleColoredScreen(LogitechMonitorBattleColoredScreenMeta,
 
     def _onLoaded(self):
         self.__debugCtrl.setViewComponents(weakref.proxy(self))
-        self.__debugCtrl.start()
+        self.__debugCtrl.startControl()
         self._colorManager.populateUI(weakref.proxy(self._flashObject))
         self.__timerPresenter.start()
         self.__fragsPresenter.start()
-        vehStateCtrl = g_sessionProvider.getVehicleStateCtrl()
+        vehStateCtrl = g_sessionProvider.shared.vehicleState
         self.__isPostmortem = vehStateCtrl and vehStateCtrl.isInPostmortem
         if self.__isPostmortem:
             self.__onPostMortemSwitched()
@@ -190,11 +241,11 @@ class LogitechMonitorBattleColoredScreen(LogitechMonitorBattleColoredScreenMeta,
         return
 
     def _onUnloaded(self):
-        self.__debugCtrl.stop()
+        self.__debugCtrl.stopControl()
         self.__debugCtrl.clearViewComponents()
         self.__timerPresenter.stop()
         self.__fragsPresenter.stop()
-        ctrl = g_sessionProvider.getVehicleStateCtrl()
+        ctrl = g_sessionProvider.shared.vehicleState
         if ctrl is not None:
             ctrl.onPostMortemSwitched -= self.__onPostMortemSwitched
         CommandMapping.g_instance.onMappingChanged -= self.setCommands

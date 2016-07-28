@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/settings.py
+from gui import GUI_SETTINGS
 from gui.shared.gui_items.Vehicle import VEHICLE_BATTLE_TYPES_ORDER_INDICES
 from helpers import i18n
 from shared_utils import BitmaskHelper
@@ -32,6 +33,7 @@ class VEHICLE_STATUS(BitmaskHelper):
     IS_ALIVE = 1
     IS_READY = 2
     NOT_AVAILABLE = 4
+    STOP_RESPAWN = 8
 
 
 class PLAYER_STATUS(BitmaskHelper):
@@ -46,10 +48,12 @@ class PLAYER_STATUS(BitmaskHelper):
 
 class INVITATION_DELIVERY_STATUS(BitmaskHelper):
     NONE = 0
-    FORBIDDEN = 1
-    RECEIVED_FROM = 2
-    SENT_TO = 4
-    INACTIVE = 8
+    FORBIDDEN_BY_RECEIVER = 1
+    FORBIDDEN_BY_SENDER = 2
+    RECEIVED_FROM = 4
+    RECEIVED_INACTIVE = 8
+    SENT_TO = 16
+    SENT_INACTIVE = 32
 
 
 class PERSONAL_STATUS(BitmaskHelper):
@@ -60,6 +64,8 @@ class PERSONAL_STATUS(BitmaskHelper):
     IS_VEHICLE_LEVEL_SHOWN = 8
     IS_VEHICLE_COUNTER_SHOWN = 16
     IS_COLOR_BLIND = 32
+    SHOW_ALLY_INVITES = 64
+    SHOW_ENEMY_INVITES = 128
 
 
 class INVALIDATE_OP(BitmaskHelper):
@@ -68,9 +74,10 @@ class INVALIDATE_OP(BitmaskHelper):
     VEHICLE_STATUS = 2
     VEHICLE_INFO = 4
     VEHICLE_STATS = 8
-    PLAYER_STATUS = 16
-    PREBATTLE_CHANGED = 32
-    INVITATION_DELIVERY_STATUS = 64
+    VEHICLE_ISTATS = 16
+    PLAYER_STATUS = 32
+    PREBATTLE_CHANGED = 64
+    INVITATION_DELIVERY_STATUS = 128
 
 
 def makeVehicleIconName(vName):
@@ -91,3 +98,32 @@ def getOrderByVehicleClass(className = None):
     else:
         result = UNKNOWN_VEHICLE_CLASS_ORDER
     return result
+
+
+if GUI_SETTINGS.useAS3Battle:
+
+    def addUnknownContourIconToCache():
+        return True
+
+
+    def addContourIconToCache(_):
+        return True
+
+
+    def clearContourIconFromCache():
+        pass
+
+
+else:
+    from gui.shared import fo_precache
+
+    def addUnknownContourIconToCache():
+        fo_precache.add(UNKNOWN_CONTOUR_ICON_RES_PATH)
+
+
+    def addContourIconToCache(vName):
+        return fo_precache.add(makeContourIconResPath(vName))
+
+
+    def clearContourIconFromCache():
+        fo_precache.clear()

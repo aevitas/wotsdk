@@ -13,7 +13,7 @@ from helpers import getLocalizedData, i18n, time_utils
 from predefined_hosts import g_preDefinedHosts
 from shared_utils import findFirst
 from gui.shared import g_itemsCache
-from gui.server_events.bonuses import getBonusObj
+from gui.server_events.bonuses import getBonusObj, compareBonuses
 from gui.server_events.modifiers import getModifierObj, compareModifiers
 from gui.server_events.parsers import AccountRequirements, VehicleRequirements, PreBattleConditions, PostBattleConditions, BonusConditions
 from gui.Scaleform.locale.QUESTS import QUESTS
@@ -258,7 +258,7 @@ class Quest(ServerEventAbstract):
             if b is not None:
                 result.append(b)
 
-        return result
+        return sorted(result, cmp=compareBonuses, key=operator.methodcaller('getName'))
 
     def hasPremIGRVehBonus(self):
         vehBonuses = self.getBonuses('vehicles')
@@ -696,7 +696,7 @@ class PotapovQuest(Quest):
                 if b is not None:
                     result.append(b)
 
-        return sorted(result)
+        return sorted(result, cmp=compareBonuses, key=operator.methodcaller('getName'))
 
     def getTankmanBonus(self):
         for isMainBonus in (True, False):

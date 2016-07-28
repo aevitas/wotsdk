@@ -90,7 +90,7 @@ class PlayerVehicleNoAmmoTrigger(Trigger):
         super(PlayerVehicleNoAmmoTrigger, self).clear()
 
     def __addListeners(self):
-        ammoCtrl = g_sessionProvider.getAmmoCtrl()
+        ammoCtrl = g_sessionProvider.shared.ammo
         if ammoCtrl:
             ammoCtrl.onShellsAdded += self.__onShellsAdded
             ammoCtrl.onShellsUpdated += self.__onShellsUpdated
@@ -98,7 +98,7 @@ class PlayerVehicleNoAmmoTrigger(Trigger):
                 self.__ammoLayout[intCD] = quantity
 
     def __removeListeners(self):
-        ammoCtrl = g_sessionProvider.getAmmoCtrl()
+        ammoCtrl = g_sessionProvider.shared.ammo
         if ammoCtrl:
             ammoCtrl.onShellsAdded -= self.__onShellsAdded
             ammoCtrl.onShellsUpdated -= self.__onShellsUpdated

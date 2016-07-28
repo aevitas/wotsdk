@@ -2,7 +2,7 @@
 import base64
 import socket
 from ConnectionManager import connectionManager
-from urllib import urlencode
+from urllib import urlencode, quote_plus
 import BigWorld
 from constants import HAS_DEV_RESOURCES
 from Event import Event
@@ -50,7 +50,9 @@ class WebBridge(object):
         if serverStatus == _STATUS.OK:
             baseUrl = self.__getWgniBaseURL(isRegistration)
             loginParams = self.__getWgniParams(isExternal, isRegistration)
-            url = baseUrl + ('&' if isRegistration else '?') + urlencode(loginParams)
+            url = baseUrl + '?' + urlencode(loginParams)
+            if isRegistration and GUI_SETTINGS.registrationProxyURL:
+                url = GUI_SETTINGS.registrationProxyURL + '&lpurl=' + quote_plus(url)
             if not BigWorld.wg_openWebBrowser(url):
                 serverStatus = _STATUS.WEB_BROWSER_ERROR
         return serverStatus == _STATUS.OK
@@ -83,7 +85,7 @@ class WebBridge(object):
         if HAS_DEV_RESOURCES:
             from gui.development.mock.social_network_login import getServer as getWGNIServerMock
             if getWGNIServerMock() is not None:
-                baseUrl = 'http://127.0.0.1:{0}/{1}'.format(getWGNIServerMock().server_port, '?dummy=1' if isRegistration else '')
+                baseUrl = 'http://127.0.0.1:{0}/'.format(getWGNIServerMock().server_port)
         return baseUrl
 
     def __initDataServer(self, enableEncryption):

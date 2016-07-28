@@ -1,5 +1,4 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/module.py
-from BigWorld import wg_getIntegralFormat as _int
 from gui.shared.utils.requesters import REQ_CRITERIA
 from gui.shared import g_itemsCache
 from gui.shared.economics import getActionPrc
@@ -14,9 +13,10 @@ from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.formatters import text_styles
-from gui.shared.tooltips.common import BlocksTooltipData, getCurrencySetting
+from gui.shared.tooltips.common import BlocksTooltipData, makePriceBlock, CURRENCY_SETTINGS
 from gui.Scaleform.daapi.view.lobby.techtree.settings import NODE_STATE
 from gui.shared.tooltips import formatters
+from gui.shared.money import ZERO_MONEY
 from helpers.i18n import makeString as _ms
 from items import VEHICLE_COMPONENT_TYPE_NAMES, ITEM_TYPES
 _TOOLTIP_MIN_WIDTH = 420
@@ -88,6 +88,7 @@ class ModuleTooltipBlockConstructor(object):
                          'avgDamage',
                          'dispertionRadius',
                          AIMING_TIME_PROP_NAME,
+                         'maxShotDistance',
                          'weight'),
      GUI_ITEM_TYPE.ENGINE: ('enginePower', 'fireStartingChance', 'weight'),
      GUI_ITEM_TYPE.RADIO: ('radioDistance', 'weight'),
@@ -127,7 +128,7 @@ class HeaderBlockConstructor(ModuleTooltipBlockConstructor):
         if module.itemTypeName in VEHICLE_COMPONENT_TYPE_NAMES:
             desc = text_styles.stats(_ms(TOOLTIPS.level(str(module.level)))) + ' ' + _ms(TOOLTIPS.VEHICLE_LEVEL)
             imgPaddingLeft = 22
-        block.append(formatters.packImageTextBlockData(title=text_styles.highTitle(title), desc=text_styles.standard(desc), img=module.icon, imgPadding=formatters.packPadding(left=imgPaddingLeft), txtGap=-3, txtOffset=130 - self.leftPadding, padding=formatters.packPadding(top=-6, right=self.rightPadding)))
+        block.append(formatters.packImageTextBlockData(title=text_styles.highTitle(title), desc=text_styles.standard(desc), img=module.icon, imgPadding=formatters.packPadding(left=imgPaddingLeft), txtGap=-3, txtOffset=130 - self.leftPadding, padding=formatters.packPadding(top=-6)))
         if module.itemTypeID == GUI_ITEM_TYPE.GUN:
             vehicle = self.configuration.vehicle
             vDescr = vehicle.descriptor if vehicle is not None else None
@@ -171,11 +172,12 @@ class PriceBlockConstructor(ModuleTooltipBlockConstructor):
             isUnlocked = checkState(NODE_STATE.UNLOCKED)
             isAutoUnlock = checkState(NODE_STATE.AUTO_UNLOCKED)
             items = g_itemsCache.items
-            credits, gold = items.stats.money
-            itemPrice = (0, 0)
+            money = items.stats.money
+            itemPrice = ZERO_MONEY
             if module is not None:
                 itemPrice = module.buyPrice
-            isMoneyEnough = credits >= itemPrice[0] and gold >= itemPrice[1]
+            isMoneyEnough = money >= itemPrice
+            leftPadding = 92
             if unlockPrice and not isEqOrDev:
                 parentCD = vehicle.intCD if vehicle is not None else None
                 isAvailable, cost, need = getUnlockPrice(module.intCD, parentCD)
@@ -183,12 +185,12 @@ class PriceBlockConstructor(ModuleTooltipBlockConstructor):
                 if not isUnlocked and isNextToUnlock and need > 0:
                     neededValue = need
                 if cost > 0:
-                    block.append(self._makePriceBlock(cost, 'unlockPrice', neededValue))
+                    block.append(makePriceBlock(cost, CURRENCY_SETTINGS.UNLOCK_PRICE, neededValue, leftPadding=leftPadding, valueWidth=self._valueWidth))
             creditsActionPercent, goldActionPercent = (0, 0)
-            needCredits, needGold = (0, 0)
+            need = ZERO_MONEY
             if buyPrice and not isAutoUnlock:
-                creditsPrice, goldPrice = module.altPrice or module.buyPrice
-                defCreditsPrice, defGoldPrice = module.defaultAltPrice or module.defaultPrice
+                price = module.altPrice or module.buyPrice
+                defPrice = module.defaultAltPrice or module.defaultPrice
                 rootInInv = vehicle is not None and vehicle.isInInventory
                 if researchNode:
                     showNeeded = rootInInv and not isMoneyEnough and (isNextToUnlock or isUnlocked) and not (isInstalled or isInInventory)
@@ -197,18 +199,17 @@ class PriceBlockConstructor(ModuleTooltipBlockConstructor):
                     isModuleInInventory = module.isInInventory
                     showNeeded = not isModuleInInventory and isModuleUnlocked
                 if isEqOrDev or showNeeded:
-                    creditsNeeded = creditsPrice - credits if creditsPrice else 0
-                    goldNeeded = goldPrice - gold if goldPrice else 0
-                    needCredits, needGold = max(0, creditsNeeded), max(0, goldNeeded)
-                if creditsPrice > 0:
-                    creditsActionPercent = getActionPrc(creditsPrice, defCreditsPrice)
-                    block.append(self._makePriceBlock(creditsPrice, 'buyCreditsPrice', needCredits if needCredits > 0 else None, defCreditsPrice if defCreditsPrice > 0 else None, creditsActionPercent))
-                if goldPrice > 0:
-                    goldActionPercent = getActionPrc(goldPrice, defGoldPrice)
+                    need = price - money
+                    need = need.toNonNegative()
+                if price.credits > 0:
+                    creditsActionPercent = getActionPrc(price.credits, defPrice.credits)
+                    block.append(makePriceBlock(price.credits, CURRENCY_SETTINGS.BUY_CREDITS_PRICE, need.credits if need.credits > 0 else None, defPrice.credits if defPrice.credits > 0 else None, creditsActionPercent, self._valueWidth, leftPadding))
+                if price.gold > 0:
+                    goldActionPercent = getActionPrc(price.gold, defPrice.gold)
                     block.append(formatters.packTextBlockData(text=text_styles.standard(TOOLTIPS.VEHICLE_TEXTDELIMITER_OR), padding=formatters.packPadding(left=(101 if goldActionPercent > 0 else 81) + self.leftPadding)))
-                    block.append(self._makePriceBlock(goldPrice, 'buyGoldPrice', needGold if needGold > 0 else None, defGoldPrice if defGoldPrice > 0 else None, goldActionPercent))
+                    block.append(makePriceBlock(price.gold, CURRENCY_SETTINGS.BUY_GOLD_PRICE, need.gold if need.gold > 0 else None, defPrice.gold if defPrice.gold > 0 else None, goldActionPercent, self._valueWidth, leftPadding))
             if sellPrice:
-                block.append(self._makePriceBlock(module.sellPrice[0], 'sellPrice', oldPrice=module.defaultSellPrice[0], percent=module.sellActionPrc))
+                block.append(makePriceBlock(module.sellPrice.credits, CURRENCY_SETTINGS.SELL_PRICE, oldPrice=module.defaultSellPrice.credits, percent=module.sellActionPrc, valueWidth=self._valueWidth, leftPadding=leftPadding))
             if inventoryCount:
                 count = module.inventoryCount
                 if count > 0:
@@ -218,48 +219,9 @@ class PriceBlockConstructor(ModuleTooltipBlockConstructor):
                 count = len(module.getInstalledVehicles(inventoryVehicles.itervalues()))
                 if count > 0:
                     block.append(formatters.packTextParameterBlockData(name=text_styles.main(TOOLTIPS.VEHICLE_VEHICLECOUNT), value=text_styles.stats(count), valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5)))
-                    isInstalled = False
-                    if vehicle is not None:
-                        isFit, reason = module.mayInstall(vehicle, slotIdx)
-                        if not isFit:
-                            reason = reason.replace(' ', '_')
-                        isInstalled = reason == 'already_installed'
-                    if count > self.MAX_INSTALLED_LIST_LEN and (isInstalled or isMoneyEnough):
-                        hiddenVehicleCount = count - self.MAX_INSTALLED_LIST_LEN
-                        block.append(formatters.packTextParameterBlockData(name=text_styles.main(TOOLTIPS.SUITABLEVEHICLE_HIDDENVEHICLECOUNT), value=text_styles.stats(hiddenVehicleCount), valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5)))
-            notEnoughMoney = needCredits > 0 or needGold > 0
+            notEnoughMoney = need > ZERO_MONEY
             hasAction = creditsActionPercent > 0 or goldActionPercent > 0 or module.sellActionPrc > 0
             return (block, notEnoughMoney or hasAction)
-
-    def _makePriceBlock(self, price, currencySetting, neededValue = None, oldPrice = None, percent = 0):
-        needFormatted = ''
-        oldPriceText = ''
-        hasAction = percent != 0
-        settings = getCurrencySetting(currencySetting)
-        if settings is None:
-            return
-        else:
-            valueFormatted = settings.textStyle(_int(price))
-            icon = settings.icon
-            if neededValue is not None:
-                needFormatted = settings.textStyle(_int(neededValue))
-            if hasAction:
-                oldPriceText = text_styles.concatStylesToSingleLine(icon, settings.textStyle(_int(oldPrice)))
-            neededText = ''
-            if neededValue is not None:
-                neededText = text_styles.concatStylesToSingleLine(text_styles.main('('), text_styles.error(TOOLTIPS.VEHICLE_GRAPH_BODY_NOTENOUGH), ' ', needFormatted, ' ', icon, text_styles.main(')'))
-            text = text_styles.concatStylesWithSpace(text_styles.main(settings.text), neededText)
-            if hasAction:
-                actionText = text_styles.main(_ms(TOOLTIPS.VEHICLE_ACTION_PRC, actionPrc=text_styles.stats(str(percent) + '%'), oldPrice=oldPriceText))
-                text = text_styles.concatStylesToMultiLine(text, actionText)
-                if settings.frame == ICON_TEXT_FRAMES.GOLD:
-                    newPrice = (0, price)
-                else:
-                    newPrice = (price, 0)
-                return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
-                 'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=92))
-            return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=settings.frame, valueWidth=self._valueWidth, padding=formatters.packPadding(left=-5))
-            return
 
 
 class CommonStatsBlockConstructor(ModuleTooltipBlockConstructor):
@@ -418,7 +380,8 @@ class StatusBlockConstructor(ModuleTooltipBlockConstructor):
             isFit, reason = module.mayInstall(vehicle, slotIdx)
             vehicle.eqs = currentVehicleEqs
         inventoryVehicles = g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY).itervalues()
-        installedVehicles = map(lambda x: x.shortUserName, module.getInstalledVehicles(inventoryVehicles))[:self.MAX_INSTALLED_LIST_LEN]
+        totalInstalledVehicles = map(lambda x: x.shortUserName, module.getInstalledVehicles(inventoryVehicles))
+        installedVehicles = totalInstalledVehicles[:self.MAX_INSTALLED_LIST_LEN]
         tooltipHeader = None
         tooltipText = None
         if not isFit:
@@ -437,12 +400,16 @@ class StatusBlockConstructor(ModuleTooltipBlockConstructor):
             tooltipHeader, _ = getComplexStatus('#tooltips:deviceFits/already_installed' if module.itemTypeName == GUI_ITEM_TYPE.OPTIONALDEVICE else '#tooltips:moduleFits/already_installed')
             tooltipText = ', '.join(installedVehicles)
         if tooltipHeader is not None or tooltipText is not None:
+            if len(totalInstalledVehicles) > self.MAX_INSTALLED_LIST_LEN:
+                hiddenVehicleCount = len(totalInstalledVehicles) - self.MAX_INSTALLED_LIST_LEN
+                hiddenTxt = '%s %s' % (text_styles.main(TOOLTIPS.SUITABLEVEHICLE_HIDDENVEHICLECOUNT), text_styles.stats(hiddenVehicleCount))
+                tooltipText = '%s\n%s' % (tooltipText, hiddenTxt)
             block.append(self._packStatusBlock(tooltipHeader, tooltipText, titleFormatter))
         if checkBuying:
             isFit, reason = module.mayPurchase(g_itemsCache.items.stats.money)
             if not isFit:
                 reason = reason.replace(' ', '_')
-                if reason in ('gold_error', 'credit_error'):
+                if reason in ('gold_error', 'credits_error'):
                     titleFormatter = text_styles.critical
                 tooltipHeader, tooltipText = getComplexStatus('#tooltips:moduleFits/%s' % reason)
                 if tooltipHeader is not None or tooltipText is not None:

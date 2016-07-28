@@ -27,6 +27,8 @@ def createUnitActionValidator(prbType, rosterSettings, proxy):
             validator = limits.BalancedSquadActionValidator(rosterSettings)
         else:
             validator = limits.SquadActionValidator(rosterSettings)
+    elif prbType == PREBATTLE_TYPE.EVENT:
+        validator = limits.EventSquadActionValidator(rosterSettings)
     elif prbType == PREBATTLE_TYPE.FALLOUT:
         validator = limits.FalloutSquadActionValidator(rosterSettings)
     else:

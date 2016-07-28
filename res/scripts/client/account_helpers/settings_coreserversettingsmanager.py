@@ -21,8 +21,6 @@ class SETTINGS_SECTIONS(CONST_CONTAINER):
     AIM_3 = 'AIM_3'
     AIM_4 = 'AIM_4'
     MARKERS = 'MARKERS'
-    CAROUSEL_FILTER = 'CAROUSEL_FILTER'
-    FALLOUT_CAROUSEL_FILTER = 'FALLOUT_CAROUSEL_FILTER'
     CAROUSEL_FILTER_1 = 'CAROUSEL_FILTER_1'
     CAROUSEL_FILTER_2 = 'CAROUSEL_FILTER_2'
     FALLOUT_CAROUSEL_FILTER_1 = 'FALLOUT_CAROUSEL_FILTER_1'
@@ -105,16 +103,6 @@ class ServerSettingsManager(object):
                                  'markerAltVehicleName': 20,
                                  'markerAltPlayerName': 21}, offsets={'markerBaseHp': Offset(8, 65280),
                                  'markerAltHp': Offset(24, 4278190080L)}),
-     SETTINGS_SECTIONS.CAROUSEL_FILTER: Section(masks={'favoriteSelected': 1,
-                                         'nationIsNegative': 2,
-                                         'vehicleTypeIsNegative': 3,
-                                         'gameModeSelected': 4}, offsets={'nation': Offset(8, 65280),
-                                         'vehicleType': Offset(16, 16711680)}),
-     SETTINGS_SECTIONS.FALLOUT_CAROUSEL_FILTER: Section(masks={'favoriteSelected': 1,
-                                                 'nationIsNegative': 2,
-                                                 'vehicleTypeIsNegative': 3,
-                                                 'gameModeSelected': 4}, offsets={'nation': Offset(8, 65280),
-                                                 'vehicleType': Offset(16, 16711680)}),
      SETTINGS_SECTIONS.CAROUSEL_FILTER_1: Section(masks={'ussr': 0,
                                            'germany': 1,
                                            'usa': 2,
@@ -123,6 +111,7 @@ class ServerSettingsManager(object):
                                            'uk': 5,
                                            'japan': 6,
                                            'czech': 7,
+                                           'sweden': 8,
                                            'lightTank': 15,
                                            'mediumTank': 16,
                                            'heavyTank': 17,
@@ -142,7 +131,6 @@ class ServerSettingsManager(object):
                                            'elite': 1,
                                            'hideRented': 2,
                                            'igr': 3,
-                                           'gameMode': 4,
                                            'favorite': 5,
                                            'bonus': 6}, offsets={}),
      SETTINGS_SECTIONS.FALLOUT_CAROUSEL_FILTER_1: Section(masks={'ussr': 0,
@@ -153,6 +141,7 @@ class ServerSettingsManager(object):
                                                    'uk': 5,
                                                    'japan': 6,
                                                    'czech': 7,
+                                                   'sweden': 8,
                                                    'lightTank': 15,
                                                    'mediumTank': 16,
                                                    'heavyTank': 17,
@@ -212,10 +201,6 @@ class ServerSettingsManager(object):
     def __init__(self, core):
         self._core = weakref.proxy(core)
 
-    @property
-    def version(self):
-        return self.__version
-
     @process
     def applySettings(self):
         import BattleReplay
@@ -233,48 +218,6 @@ class ServerSettingsManager(object):
         user_prefs.loadFromServer(messenger_settings)
         self._core.storages.get('FOV').apply(False, True)
 
-    def getGameSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.GAME, key, default)
-
-    def setGameSettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.GAME, settings)
-
-    def getExtendedGameSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.GAME_EXTENDED, key, default)
-
-    def setExtendedGameSettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.GAME_EXTENDED, settings)
-
-    def getTutorialSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.TUTORIAL, key, default)
-
-    def setTutorialSetting(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.TUTORIAL, settings)
-
-    def getGameplaySetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.GAMEPLAY, key, default)
-
-    def setGameplaySettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.GAMEPLAY, settings)
-
-    def getGraphicsSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.GRAPHICS, key, default)
-
-    def setGraphicsSettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.GRAPHICS, settings)
-
-    def getSoundSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.SOUND, key, default)
-
-    def setSoundSettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.SOUND, settings)
-
-    def getControlsSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.CONTROLS, key, default)
-
-    def setControlsSettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.CONTROLS, settings)
-
     def getAimSetting(self, section, key, default = None):
         number = self.AIM_MAPPING[key]
         storageKey = 'AIM_%(section)s_%(number)d' % {'section': section.upper(),
@@ -289,13 +232,13 @@ class ServerSettingsManager(object):
             return default
 
     def getOnceOnlyHintsSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.ONCE_ONLY_HINTS, key, default)
+        return self.getSectionSettings(SETTINGS_SECTIONS.ONCE_ONLY_HINTS, key, default)
 
     def getOnceOnlyHintsSettings(self):
         return self.getSection(SETTINGS_SECTIONS.ONCE_ONLY_HINTS)
 
     def setOnceOnlyHintsSettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.ONCE_ONLY_HINTS, settings)
+        self.setSectionSettings(SETTINGS_SECTIONS.ONCE_ONLY_HINTS, settings)
 
     def _buildAimSettings(self, settings):
         settingToServer = {}
@@ -324,6 +267,7 @@ class ServerSettingsManager(object):
         if not storingValue:
             return
         g_settingsCache.setSettings(storingValue)
+        LOG_DEBUG('Applying AIM server settings: ', settings)
         self._core.onSettingsChanged(settings)
 
     def getMarkersSetting(self, section, key, default = None):
@@ -355,6 +299,7 @@ class ServerSettingsManager(object):
         if not storingValue:
             return
         g_settingsCache.setSettings(storingValue)
+        LOG_DEBUG('Applying MARKER server settings: ', settings)
         self._core.onSettingsChanged(settings)
 
     def getVersion(self):
@@ -362,6 +307,7 @@ class ServerSettingsManager(object):
 
     def setSettings(self, settings):
         g_settingsCache.setSettings(settings)
+        LOG_DEBUG('Applying server settings: ', settings)
         self._core.onSettingsChanged(settings)
 
     def getSetting(self, key, default = None):
@@ -374,11 +320,11 @@ class ServerSettingsManager(object):
         offsets = self.SECTIONS[section].offsets
         for m in masks:
             default = defaults.get(m, None)
-            result[m] = self._getSectionSettings(section, m, default)
+            result[m] = self.getSectionSettings(section, m, default)
 
         for o in offsets:
             default = defaults.get(o, None)
-            result[o] = self._getSectionSettings(section, o, default)
+            result[o] = self.getSectionSettings(section, o, default)
 
         return result
 
@@ -389,10 +335,6 @@ class ServerSettingsManager(object):
 
         return result
 
-    def setSection(self, section, settings):
-        if section in self.SECTIONS:
-            self._setSectionSettings(section, settings)
-
     def setSections(self, sections, settings):
         settingToServer = {}
         for section in sections:
@@ -402,13 +344,7 @@ class ServerSettingsManager(object):
 
         self.setSettings(settingToServer)
 
-    def getMarksOnGunSetting(self, key, default = None):
-        return self._getSectionSettings(SETTINGS_SECTIONS.MARKS_ON_GUN, key, default)
-
-    def setMarksOnGunSettings(self, settings):
-        self._setSectionSettings(SETTINGS_SECTIONS.MARKS_ON_GUN, settings)
-
-    def _getSectionSettings(self, section, key, default = None):
+    def getSectionSettings(self, section, key, default = None):
         storedValue = g_settingsCache.getSectionSettings(section, None)
         masks = self.SECTIONS[section].masks
         offsets = self.SECTIONS[section].offsets
@@ -417,14 +353,7 @@ class ServerSettingsManager(object):
         else:
             return default
 
-    def _buildSectionSettings(self, section, settings):
-        storedValue = g_settingsCache.getSectionSettings(section, None)
-        storingValue = storedValue if storedValue is not None else 0
-        masks = self.SECTIONS[section].masks
-        offsets = self.SECTIONS[section].offsets
-        return self._mapValues(settings, storingValue, masks, offsets)
-
-    def _setSectionSettings(self, section, settings):
+    def setSectionSettings(self, section, settings):
         storedSettings = self.getSection(section)
         storedValue = g_settingsCache.getSectionSettings(section, None)
         storingValue = self._buildSectionSettings(section, settings)
@@ -441,6 +370,14 @@ class ServerSettingsManager(object):
             LOG_DEBUG('Applying %s server settings: ' % section, settingsDiff)
             self._core.onSettingsChanged(settingsDiff)
             return
+
+    def _buildSectionSettings(self, section, settings):
+        storedValue = g_settingsCache.getSectionSettings(section, None)
+        storingValue = storedValue if storedValue is not None else 0
+        sectionMasks = self.SECTIONS[section]
+        masks = sectionMasks.masks
+        offsets = sectionMasks.offsets
+        return self._mapValues(settings, storingValue, masks, offsets)
 
     def _extractValue(self, key, storedValue, default, masks, offsets):
         if key in masks:
@@ -480,6 +417,7 @@ class ServerSettingsManager(object):
          'graphicsData': {},
          'marksOnGun': {},
          'fallout': {},
+         'carousel_filter': {},
          'clear': {}}
         yield migrateToVersion(currentVersion, self._core, data)
         self._setSettingsSections(data)
@@ -523,6 +461,9 @@ class ServerSettingsManager(object):
         fallout = data.get('fallout', {})
         if fallout:
             settings[SETTINGS_SECTIONS.FALLOUT] = self._buildSectionSettings(SETTINGS_SECTIONS.FALLOUT, fallout)
+        carousel_filter = data.get('carousel_filter', {})
+        if carousel_filter:
+            settings[SETTINGS_SECTIONS.CAROUSEL_FILTER_2] = self._buildSectionSettings(SETTINGS_SECTIONS.CAROUSEL_FILTER_2, carousel_filter)
         version = data.get(VERSION)
         if version is not None:
             settings[VERSION] = version

@@ -8,7 +8,6 @@ from constants import IS_CLIENT, IS_BASEAPP, IS_CELLAPP, IS_WEB, IS_DEVELOPMENT
 from functools import partial
 if IS_CLIENT:
     from helpers import i18n
-    import WWISE
 elif IS_WEB:
     from web_stubs import *
 
@@ -341,8 +340,6 @@ class Bomber(Equipment):
         self.modelName = _xml.readString(xmlCtx, section, 'modelName')
         if IS_CLIENT:
             self.soundEvent = _xml.readString(xmlCtx, section, 'wwsoundEvent')
-        else:
-            self.soundEvent = _xml.readString(xmlCtx, section, 'soundEvent')
         self.speed = _xml.readInt(xmlCtx, section, 'speed')
         self.heights = _xml.readTupleOfPositiveInts(xmlCtx, section, 'heights', 2)
         self.areaLength = _xml.readPositiveFloat(xmlCtx, section, 'areaLength')

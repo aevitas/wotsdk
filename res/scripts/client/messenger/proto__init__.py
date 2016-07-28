@@ -10,6 +10,7 @@ from messenger.proto.interfaces import IProtoPlugin
 from messenger.proto.migration import MigrationPlugin
 from messenger.proto.migration.MigrationServerSettings import MigrationServerSettings
 from messenger.proto.xmpp import XmppPlugin, XmppServerSettings
+from messenger.proto.xmpp.xmpp_constants import XMPP_MUC_CHANNEL_TYPE
 __all__ = ('BWProtoPlugin', 'BWProtoPlugin_chat2', 'XmppPlugin', 'MigrationPlugin')
 _SUPPORTED_PROTO_PLUGINS = {PROTO_TYPE.BW: BWProtoPlugin(),
  PROTO_TYPE.BW_CHAT2: BWProtoPlugin_chat2(),
@@ -81,6 +82,12 @@ class ServerSettings(object):
             result = self._isXmppUserRoomsEnabled()
         return result
 
+    def getSystemChannels(self, protoType):
+        if protoType is PROTO_TYPE.XMPP:
+            return self._getSystemChannels()
+        else:
+            return None
+
     def _isXmppEnabled(self):
         xmppName = PROTO_TYPE_NAMES[PROTO_TYPE.XMPP]
         if xmppName in self.__readonly__:
@@ -92,9 +99,17 @@ class ServerSettings(object):
     def _isXmppUserRoomsEnabled(self):
         xmppName = PROTO_TYPE_NAMES[PROTO_TYPE.XMPP]
         if xmppName in self.__readonly__:
-            result = self.__readonly__[xmppName].isMucServiceAllowed()
+            result = self.__readonly__[xmppName].isMucServiceAllowed(XMPP_MUC_CHANNEL_TYPE.USERS)
         else:
             result = False
+        return result
+
+    def _getSystemChannels(self):
+        xmppName = PROTO_TYPE_NAMES[PROTO_TYPE.XMPP]
+        if xmppName in self.__readonly__:
+            result = self.__readonly__[xmppName].getSystemChannels()
+        else:
+            result = None
         return result
 
 

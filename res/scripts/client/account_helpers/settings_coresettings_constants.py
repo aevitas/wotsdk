@@ -129,6 +129,7 @@ class SOUND(CONST_CONTAINER):
     VOIP_MIC = 'micVivoxVolume'
     VOIP_MASTER_FADE = 'masterFadeVivoxVolume'
     VOIP_SUPPORTED = 'voiceChatSupported'
+    BASS_BOOST = 'bassBoost'
 
 
 class CONTROLS(CONST_CONTAINER):

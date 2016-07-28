@@ -11,7 +11,7 @@ import ResMgr
 import constants
 from Event import Event, EventManager
 from shared_utils import BitmaskHelper
-from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_WARNING, LOG_ERROR
+from debug_utils import LOG_CURRENT_EXCEPTION, LOG_DEBUG, LOG_WARNING
 from helpers import i18n
 AUTO_LOGIN_QUERY_ENABLED = not (constants.IS_DEVELOPMENT or constants.IS_CHINA)
 AUTO_LOGIN_QUERY_URL = 'auto.login.app:0000'
@@ -376,13 +376,13 @@ class _PreDefinedHostList(object):
                     idx = len(self._hosts)
                     url = app.url
                     if url in self._urlMap:
-                        LOG_ERROR('Host url is already added. This host is ignored', url)
+                        LOG_WARNING('Host url is already added. This host is ignored', url)
                         continue
                     self._urlMap[url] = idx
                     urlToken = app.urlToken
                     if len(urlToken):
                         if urlToken in self._urlMap:
-                            LOG_ERROR('Alternative host url is already added. This url is ignored', app.url)
+                            LOG_WARNING('Alternative host url is already added. This url is ignored', app.url)
                         else:
                             self._urlMap[urlToken] = idx
                     self._nameMap[app.name] = idx

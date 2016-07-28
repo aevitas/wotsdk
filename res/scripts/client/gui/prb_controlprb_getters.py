@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/prb_control/prb_getters.py
 import BigWorld
-from constants import QUEUE_TYPE, PREBATTLE_TYPE_NAMES, ARENA_GUI_TYPE, PREBATTLE_TYPE, DEFAULT_LANGUAGE
+from constants import QUEUE_TYPE, PREBATTLE_TYPE_NAMES, ARENA_GUI_TYPE, PREBATTLE_TYPE, DEFAULT_LANGUAGE, ACCOUNT_ATTR
 from gui.prb_control.settings import makePrebattleSettings, VEHICLE_MAX_LEVEL
 
 def isInRandomQueue():
@@ -126,7 +126,8 @@ def getPrebattleTypeName(prbType = None):
 
 _ARENA_GUI_TYPE_BY_PRB_TYPE = {PREBATTLE_TYPE.SQUAD: ARENA_GUI_TYPE.RANDOM,
  PREBATTLE_TYPE.TRAINING: ARENA_GUI_TYPE.TRAINING,
- PREBATTLE_TYPE.COMPANY: ARENA_GUI_TYPE.COMPANY}
+ PREBATTLE_TYPE.COMPANY: ARENA_GUI_TYPE.COMPANY,
+ PREBATTLE_TYPE.EVENT: ARENA_GUI_TYPE.EVENT_BATTLES}
 _ARENA_GUI_TYPE_BY_QUEUE_TYPE = {QUEUE_TYPE.RANDOMS: ARENA_GUI_TYPE.RANDOM,
  QUEUE_TYPE.EVENT_BATTLES: ARENA_GUI_TYPE.EVENT_BATTLES,
  QUEUE_TYPE.FALLOUT_CLASSIC: ARENA_GUI_TYPE.FALLOUT_CLASSIC,
@@ -273,3 +274,15 @@ def getUnit(unitIdx, safe = False):
 
 def hasModalEntity():
     return getClientPrebattle() or getUnitIdx()
+
+
+def getTrainingBattleRoundLimits(accountAttrs):
+    """Returns training battle round limits in seconds.
+    They depend on account attributes. See base/Prebattle.py
+    
+    @return: (min_length, max_length)
+    """
+    if accountAttrs & ACCOUNT_ATTR.DAILY_BONUS_1:
+        return (60, 14400)
+    else:
+        return (300, 1800)

@@ -279,7 +279,7 @@ class ExchangeCreditsMeta(_ExchangeDialogMeta):
     def _getResourceToExchange(self):
         item = self._items.getItemByCD(self.getTypeCompDescr())
         price = item.altPrice or item.buyPrice
-        return price[0] - self._items.stats.credits
+        return price.credits - self._items.stats.credits
 
     def _getRateToColorScheme(self):
         return TEXT_COLOR_ID_CREDITS

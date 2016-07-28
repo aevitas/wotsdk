@@ -316,6 +316,7 @@ class CLANS(object):
     CLANINVITESWINDOW_TOOLTIPS_TABLE_INVITES_INVITEBUTTON = '#clans:clanInvitesWindow/tooltips/table/invites/inviteButton'
     CLANINVITESWINDOW_TOOLTIPS_TABLE_CANTACCEPTREQUEST_BODY = '#clans:clanInvitesWindow/tooltips/table/cantAcceptRequest/body'
     CLANINVITESWINDOW_TOOLTIPS_TABLE_CANTSENDINVITE_BODY = '#clans:clanInvitesWindow/tooltips/table/cantSendInvite/body'
+    CLANINVITESWINDOW_TOOLTIPS_TABLE_CANTACCEPTREQUESTDUETOCD_BODY = '#clans:clanInvitesWindow/tooltips/table/cantAcceptRequestDueToCD/body'
     CLANINVITESWINDOW_TOOLTIPS_REQUEST_REQUESTACCEPTED = '#clans:clanInvitesWindow/tooltips/request/requestAccepted'
     CLANINVITESWINDOW_TOOLTIPS_REQUEST_REQUESTDECLINED = '#clans:clanInvitesWindow/tooltips/request/requestDeclined'
     CLANINVITESWINDOW_TOOLTIPS_REQUEST_REQUESTSENT = '#clans:clanInvitesWindow/tooltips/request/requestSent'

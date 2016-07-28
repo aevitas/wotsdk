@@ -149,3 +149,12 @@ class HangarMeta(View):
         """
         if self._isDAAPIInited():
             return self.flashObject.as_hide3DSceneTooltip()
+
+    def as_setCarouselS(self, linkage, alias):
+        """
+        :param linkage:
+        :param alias:
+        :return :
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setCarousel(linkage, alias)

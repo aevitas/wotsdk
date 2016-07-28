@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/battle_control/avatar_getter.py
 import BigWorld
+import Math
 from gui import GUI_CTRL_MODE_FLAG
 from debug_utils import LOG_WARNING, LOG_CURRENT_EXCEPTION
 
@@ -27,7 +28,7 @@ def getForcedGuiControlModeFlags(avatar = None):
     return result
 
 
-def setForcedGuiControlMode(value, stopVehicle = False, enableAiming = True, cursorVisible = True, locked = True):
+def setForcedGuiControlMode(value, stopVehicle = False, enableAiming = True, cursorVisible = True):
     if value:
         flags = GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED
         if stopVehicle:
@@ -36,13 +37,12 @@ def setForcedGuiControlMode(value, stopVehicle = False, enableAiming = True, cur
             flags |= GUI_CTRL_MODE_FLAG.AIMING_ENABLED
         if cursorVisible:
             flags |= GUI_CTRL_MODE_FLAG.CURSOR_VISIBLE
-        if locked:
-            flags |= GUI_CTRL_MODE_FLAG.CTRL_LOCKED
     else:
         flags = GUI_CTRL_MODE_FLAG.CURSOR_DETACHED
     try:
         return BigWorld.player().setForcedGuiControlMode(flags)
     except AttributeError:
+        LOG_CURRENT_EXCEPTION()
         return False
 
 
@@ -70,6 +70,10 @@ def getPlayerVehicleID(avatar = None):
     return getattr(avatar, 'playerVehicleID', 0)
 
 
+def isPlayerTeamKillSuspected():
+    return bool(getattr(BigWorld.player(), 'tkillIsSuspected', 0))
+
+
 def isVehicleAlive(avatar = None):
     if avatar is None:
         avatar = BigWorld.player()
@@ -77,6 +81,18 @@ def isVehicleAlive(avatar = None):
         result = avatar.isVehicleAlive
     except AttributeError:
         LOG_WARNING('Attribute "isVehicleAlive" is not found')
+        result = False
+
+    return result
+
+
+def isVehicleOverturned(avatar = None):
+    if avatar is None:
+        avatar = BigWorld.player()
+    try:
+        result = avatar.isVehicleOverturned
+    except AttributeError:
+        LOG_WARNING('Attribute "isVehicleOverturned" is not found')
         result = False
 
     return result
@@ -241,3 +257,61 @@ def switchToOtherPlayer(vehicleID, avatar = None):
         LOG_WARNING('Attribute "selectPlayer" is not found')
 
     return
+
+
+def setComponentsVisibility(flag, avatar = None):
+    if avatar is None:
+        avatar = BigWorld.player()
+    try:
+        avatar.setComponentsVisibility(flag)
+    except AttributeError:
+        LOG_WARNING('Attribute "setComponentsVisibility" is not found')
+
+    return
+
+
+def getOwnVehiclePosition(avatar = None):
+    if avatar is None:
+        avatar = BigWorld.player()
+    try:
+        position = avatar.getOwnVehiclePosition()
+    except AttributeError:
+        position = None
+        LOG_WARNING('Attribute "getOwnVehiclePosition" is not found')
+
+    return position
+
+
+def getDistanceToTarget(target, avatar = None):
+    """Gets distance between target and player's vehicle.
+    :param target: BigWorld entity.
+    :param avatar: instance of player entity (avatar).
+    :return: float containing distance in meters.
+    """
+    ownPosition = getOwnVehiclePosition(avatar=avatar)
+    if ownPosition is not None:
+        return (target.position - ownPosition).length
+    else:
+        return 0.0
+        return
+
+
+def getDistanceToGunMarker(avatar = None):
+    """Gets distance between player's vehicle and his gun marker position.
+    It is used in strategic mode.
+    :param avatar: instance of player entity (avatar).
+    :return: float containing distance in meters.
+    """
+    if avatar is None:
+        avatar = BigWorld.player()
+    ownPosition = getOwnVehiclePosition(avatar=avatar)
+    if ownPosition is None:
+        return 0.0
+    else:
+        try:
+            gunPosition = avatar.gunRotator.markerInfo[0]
+        except AttributeError:
+            LOG_WARNING('Attribute "gunRotator.markerInfo" is not found')
+            return 0.0
+
+        return (ownPosition - Math.Vector3(*gunPosition)).length

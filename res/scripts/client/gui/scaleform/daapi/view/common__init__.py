@@ -5,6 +5,10 @@ from gui.Scaleform.framework import ViewSettings, GroupedViewSettings, ViewTypes
 from gui.Scaleform.framework.package_layout import PackageBusinessHandler
 from gui.shared.events import ShowDialogEvent
 
+def getContextMenuHandlers():
+    return ()
+
+
 def getViewSettings():
     from gui.Scaleform.daapi.view.common.report_bug import ReportBugPanel
     from gui.Scaleform.daapi.view.common.settings import SettingsWindow

@@ -228,6 +228,7 @@ class SETTINGS(object):
     SOUND_DYNAMICRANGE_NIGHTMODE = '#settings:sound/dynamicRange/nightMode'
     SOUND_SOUNDDEVICE_ACOUSTICS = '#settings:sound/soundDevice/acoustics'
     SOUND_SOUNDDEVICE_HEADPHONES = '#settings:sound/soundDevice/headphones'
+    SOUND_SOUNDDEVICE_LAPTOP = '#settings:sound/soundDevice/laptop'
     SOUND_SOUNDMODES_DEFAULT = '#settings:sound/soundModes/default'
     SOUND_SOUNDMODES_NATIONALDEFAULT = '#settings:sound/soundModes/nationalDefault'
     SOUND_SOUNDMODES_U01 = '#settings:sound/soundModes/U01'
@@ -449,6 +450,7 @@ class SETTINGS(object):
     SOUND_PRESETS_TITLE = '#settings:sound/presets/title'
     SOUND_DYNAMICRANGE_LABEL = '#settings:sound/dynamicRange/label'
     SOUND_SOUNDDEVICE_LABEL = '#settings:sound/soundDevice/label'
+    SOUND_BASSBOOST_LABEL = '#settings:sound/bassBoost/label'
     AIM_ENUM = (AIM_MIXING,
      AIM_MIXING_TYPE0,
      AIM_MIXING_TYPE1,

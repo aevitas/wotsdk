@@ -1,74 +1,76 @@
 # Embedded file name: scripts/client/gui/Scaleform/Battle.py
 import weakref
+import BattleReplay
 import BigWorld
+import CommandMapping
 import GUI
 import Math
 import SoundGroups
 import VOIP
 import constants
-import BattleReplay
-import CommandMapping
 from ConnectionManager import connectionManager
-from account_helpers.settings_core.SettingsCore import g_settingsCore
-from gui.Scaleform.daapi.view.battle import indicators
-from gui.Scaleform.daapi.view.battle.damage_info_panel import VehicleDamageInfoPanel
-from gui.Scaleform.daapi.view.battle.gas_attack import GasAttackPlugin
-from gui.Scaleform.daapi.view.battle.repair_timer import RepairTimerPlugin
-from gui.Scaleform.daapi.view.battle.resource_points import ResourcePointsPlugin
-from gui.Scaleform.daapi.view.battle.respawn_view import RespawnViewPlugin
-from gui.Scaleform.daapi.view.battle.PlayersPanelsSwitcher import PlayersPanelsSwitcher
-from gui.Scaleform.daapi.view.battle.RadialMenu import RadialMenu
-from gui.Scaleform.daapi.view.battle.flag_notification import FlagNotificationPlugin
-from gui.Scaleform.daapi.view.battle.players_panel import playersPanelFactory
-from gui.Scaleform.daapi.view.battle.score_panel import scorePanelFactory
-from gui.Scaleform.daapi.view.battle.ConsumablesPanel import ConsumablesPanel
-from gui.Scaleform.daapi.view.battle.BattleRibbonsPanel import BattleRibbonsPanel
-from gui.Scaleform.daapi.view.battle.TimersBar import TimersBar
-from gui.Scaleform.daapi.view.battle.battle_end_warning_panel import BattleEndWarningPanel, BattleEndWarningEmptyObject
-from gui.Scaleform.daapi.view.battle.damage_panel import DamagePanel
-from gui.Scaleform.daapi.view.battle.messages import PlayerMessages, VehicleErrorMessages, VehicleMessages
-from gui.Scaleform.daapi.view.battle.stats_form import statsFormFactory
-from gui.Scaleform.daapi.view.battle.teams_bases_panel import TeamBasesPanel
-from gui.Scaleform.daapi.view.battle.markers import MarkersManager
-from gui.Scaleform.daapi.view.common.report_bug import makeHyperLink, reportBugOpenConfirm
-from gui.Scaleform.locale.MENU import MENU
-import gui
-from gui.battle_control import g_sessionProvider
-from gui.battle_control.DynSquadViewListener import DynSquadViewListener
-from gui.battle_control.DynSquadViewListener import RecordDynSquadViewListener, ReplayDynSquadViewListener
-from gui.battle_control.battle_arena_ctrl import battleArenaControllerFactory
-from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE, BATTLE_CTRL, VIEW_COMPONENT_RULE
-from gui.battle_control.debug_ctrl import IDebugPanel
-from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
-from gui.shared.utils.plugins import PluginsCollection
-from messenger import MessengerEntry
-from windows import BattleWindow
 from SettingsInterface import SettingsInterface
-from debug_utils import LOG_DEBUG, LOG_ERROR
-from helpers import i18n, isPlayerAvatar
-from gui import DEPTH_OF_Battle, GUI_SETTINGS, g_tankActiveCamouflage, g_guiResetters, g_repeatKeyHandlers, game_control
+from account_helpers.settings_core.SettingsCore import g_settingsCore
+from debug_utils import LOG_DEBUG
+from gui import DEPTH_OF_Battle, GUI_SETTINGS, g_guiResetters, g_repeatKeyHandlers, game_control
 from gui.LobbyContext import g_lobbyContext
-from gui.Scaleform import VoiceChatInterface, ColorSchemeManager
+from gui.Scaleform import SCALEFORM_SWF_PATH
+from gui.Scaleform import ColorSchemeManager
+from gui.Scaleform.CursorDelegator import g_cursorDelegator
+from gui.Scaleform.DynSquadViewListener import DynSquadViewListener
+from gui.Scaleform.DynSquadViewListener import RecordDynSquadViewListener, ReplayDynSquadViewListener
+from gui.Scaleform.Minimap import Minimap
+from gui.Scaleform.MovingText import MovingText
 from gui.Scaleform.SoundManager import SoundManager
+from gui.Scaleform.daapi.view.battle.legacy import indicators
+from gui.Scaleform.daapi.view.battle.legacy.battle_end_warning_panel import BattleEndWarningPanel, BattleEndWarningEmptyObject
+from gui.Scaleform.daapi.view.battle.legacy.BattleRibbonsPanel import BattleRibbonsPanel
+from gui.Scaleform.daapi.view.battle.legacy.ConsumablesPanel import ConsumablesPanel
+from gui.Scaleform.daapi.view.battle.legacy.PlayersPanelsSwitcher import PlayersPanelsSwitcher
+from gui.Scaleform.daapi.view.battle.legacy.RadialMenu import RadialMenu
+from gui.Scaleform.daapi.view.battle.legacy.TimersBar import TimersBar
+from gui.Scaleform.daapi.view.battle.legacy.damage_info_panel import VehicleDamageInfoPanel
+from gui.Scaleform.daapi.view.battle.legacy.damage_panel import DamagePanel
+from gui.Scaleform.daapi.view.battle.legacy.flag_notification import FlagNotificationPlugin
+from gui.Scaleform.daapi.view.battle.legacy.gas_attack import GasAttackPlugin
+from gui.Scaleform.daapi.view.battle.legacy.markers import MarkersManager
+from gui.Scaleform.daapi.view.battle.legacy.messages import PlayerMessages, VehicleErrorMessages, VehicleMessages
+from gui.Scaleform.daapi.view.battle.legacy.players_panel import playersPanelFactory
+from gui.Scaleform.daapi.view.battle.legacy.repair_timer import RepairTimerPlugin
+from gui.Scaleform.daapi.view.battle.legacy.resource_points import ResourcePointsPlugin
+from gui.Scaleform.daapi.view.battle.legacy.respawn_view import RespawnViewPlugin
+from gui.Scaleform.daapi.view.battle.legacy.score_panel import scorePanelFactory
+from gui.Scaleform.daapi.view.battle.legacy.stats_form import statsFormFactory
+from gui.Scaleform.daapi.view.battle.legacy.teams_bases_panel import TeamBasesPanel
+from gui.Scaleform.daapi.view.battle.shared.crosshair_panel import CrosshairPanel
+from gui.Scaleform.daapi.view.common.report_bug import makeHyperLink, reportBugOpenConfirm
+from gui.Scaleform.ingame_help import IngameHelp
+from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.windows import UIInterface
+from gui.battle_control import avatar_getter
+from gui.battle_control import g_sessionProvider
+from gui.battle_control.battle_arena_ctrl import battleArenaControllerFactory
+from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE, BATTLE_CTRL_ID, VIEW_COMPONENT_RULE
+from gui.battle_control.controllers.debug_ctrl import IDebugPanel
+from gui.shared import g_eventBus, events, EVENT_BUS_SCOPE
 from gui.shared.denunciator import BattleDenunciator
 from gui.shared.utils.functions import makeTooltip
-from gui.Scaleform.windows import UIInterface
-from gui.Scaleform.MovingText import MovingText
-from gui.Scaleform.Minimap import Minimap
-from gui.Scaleform.CursorDelegator import g_cursorDelegator
-from gui.Scaleform.ingame_help import IngameHelp
-from gui.Scaleform import SCALEFORM_SWF_PATH
-from gui.battle_control.arena_info import hasFlags, hasRespawns, hasResourcePoints, isFalloutMultiTeam, hasRepairPoints, isFalloutBattle, hasGasAttack, isRandomBattle, getArenaType, battleEndWarningEnabled
-from gui.battle_control import avatar_getter
+from gui.shared.utils.plugins import PluginsCollection
+from helpers import i18n, isPlayerAvatar
+from messenger import MessengerEntry
+from messenger.m_constants import PROTO_TYPE
+from messenger.proto import proto_getter
+from messenger.proto.events import g_messengerEvents
+from windows import BattleWindow
 _SCOPE = EVENT_BUS_SCOPE.BATTLE
 _BATTLE_END_WARNING_COMPONENT = 'legacy/battleEndWarning'
-_COMPONENTS_TO_CTRLS = ((BATTLE_CTRL.HIT_DIRECTION, ('legacy/hitDirection',)),
- (BATTLE_CTRL.TEAM_BASES, ('legacy/teamBasesPanel',)),
- (BATTLE_CTRL.DEBUG, ('legacy/debugPanel',)),
- (BATTLE_CTRL.PERIOD, ('legacy/battleTimer',
+_COMPONENTS_TO_CTRLS = [(BATTLE_CTRL_ID.HIT_DIRECTION, ('legacy/hitDirection',)),
+ (BATTLE_CTRL_ID.TEAM_BASES, ('legacy/teamBasesPanel',)),
+ (BATTLE_CTRL_ID.DEBUG, ('legacy/debugPanel',)),
+ (BATTLE_CTRL_ID.ARENA_PERIOD, ('legacy/battleTimer',
    'legacy/prebattleTimer',
    'legacy/ppSwitcher',
-   _BATTLE_END_WARNING_COMPONENT)))
+   _BATTLE_END_WARNING_COMPONENT))]
 
 class Battle(BattleWindow):
     teamBasesPanel = property(lambda self: self.__teamBasesPanel)
@@ -88,6 +90,7 @@ class Battle(BattleWindow):
     rightPlayersPanel = property(lambda self: self.__rightPlayersPanel)
     ribbonsPanel = property(lambda self: self.__ribbonsPanel)
     ppSwitcher = property(lambda self: self.__ppSwitcher)
+    crosshairPanel = property(lambda self: self.__crosshairPanel)
     VEHICLE_DESTROY_TIMER = {'ALL': 'all',
      constants.VEHICLE_MISC_STATUS.VEHICLE_DROWN_WARNING: 'drown',
      constants.VEHICLE_MISC_STATUS.VEHICLE_IS_OVERTURNED: 'overturn'}
@@ -105,22 +108,29 @@ class Battle(BattleWindow):
      VEHICLE_VIEW_STATE.OBSERVED_BY_ENEMY: '_showSixthSenseIndicator'}
 
     def __init__(self, appNS):
-        g_sessionProvider.registerViewComponents(*_COMPONENTS_TO_CTRLS)
         self.__ns = appNS
+        self.__isVisible = True
         self.__soundManager = None
         self.__arena = BigWorld.player().arena
+        self.__crosshairPanel = None
+        components = _COMPONENTS_TO_CTRLS[:]
         self.__plugins = PluginsCollection(self)
         plugins = {}
-        if hasFlags():
+        visitor = g_sessionProvider.arenaVisitor
+        if visitor.hasFlags():
+            components.append((BATTLE_CTRL_ID.FLAG_NOTS, ('fallout/flagsNots',)))
             plugins['flagNotification'] = FlagNotificationPlugin
-        if hasRepairPoints():
+        if visitor.hasRepairPoints():
             plugins['repairTimer'] = RepairTimerPlugin
-        if hasRespawns() and (constants.IS_DEVELOPMENT or not BattleReplay.g_replayCtrl.isPlaying):
+        if visitor.hasRespawns() and (constants.IS_DEVELOPMENT or not BattleReplay.g_replayCtrl.isPlaying):
+            components.append((BATTLE_CTRL_ID.RESPAWN, ('fallout/respawn',)))
             plugins['respawnView'] = RespawnViewPlugin
-        if hasResourcePoints():
+        if visitor.hasResourcePoints():
             plugins['resources'] = ResourcePointsPlugin
-        if hasGasAttack():
+        if visitor.hasGasAttack():
+            components.append((BATTLE_CTRL_ID.GAS_ATTACK, ('fallout/gasAttack',)))
             plugins['gasAttack'] = GasAttackPlugin
+        g_sessionProvider.registerViewComponents(*components)
         self.__plugins.addPlugins(plugins)
         self.__denunciator = BattleDenunciator()
         self.__timerSounds = {}
@@ -158,6 +168,10 @@ class Battle(BattleWindow):
     def soundManager(self):
         return self.__soundManager
 
+    @proto_getter(PROTO_TYPE.BW_CHAT2)
+    def bwProto(self):
+        return None
+
     def attachCursor(self, flags = 0):
         return g_cursorDelegator.activateCursor()
 
@@ -178,9 +192,12 @@ class Battle(BattleWindow):
             self.__fragCorrelation.populate()
         return
 
-    def showAll(self, event):
-        self.call('battle.showAll', [event.ctx['visible']])
+    def showAll(self, _):
+        self.__isVisible = not self.__isVisible
         self.damagePanel.showAll(self.__cameraMode != 'video')
+        self.call('battle.showAll', [self.__isVisible])
+        g_eventBus.handleEvent(events.GameEvent(events.GameEvent.GUI_VISIBILITY, {'visible': self.__isVisible}), scope=EVENT_BUS_SCOPE.BATTLE)
+        avatar_getter.setComponentsVisibility(self.__isVisible)
 
     def showCursor(self, isShow):
         self.cursorVisibility(-1, isShow)
@@ -281,30 +298,30 @@ class Battle(BattleWindow):
         event = events.AppLifeCycleEvent
         g_eventBus.handleEvent(event(self.__ns, event.INITIALIZING))
         player = BigWorld.player()
-        voice = VoiceChatInterface.g_instance
         LOG_DEBUG('[Battle] afterCreate')
         setattr(self.movie, '_global.wg_isShowLanguageBar', GUI_SETTINGS.isShowLanguageBar)
         setattr(self.movie, '_global.wg_isShowServerStats', constants.IS_SHOW_SERVER_STATS)
         setattr(self.movie, '_global.wg_isShowVoiceChat', GUI_SETTINGS.voiceChat)
-        setattr(self.movie, '_global.wg_voiceChatProvider', voice.voiceChatProvider)
+        setattr(self.movie, '_global.wg_voiceChatProvider', self.__getVoiceChatProvider())
         setattr(self.movie, '_global.wg_isChina', constants.IS_CHINA)
         setattr(self.movie, '_global.wg_isKorea', constants.IS_KOREA)
         setattr(self.movie, '_global.wg_isReplayPlaying', BattleReplay.g_replayCtrl.isPlaying)
         BattleWindow.afterCreate(self)
         addListener = g_eventBus.addListener
         addListener(events.GameEvent.HELP, self.toggleHelpWindow, scope=_SCOPE)
-        addListener(events.GameEvent.GUI_VISIBILITY, self.showAll, scope=_SCOPE)
+        addListener(events.GameEvent.TOGGLE_GUI, self.showAll, scope=_SCOPE)
         player.inputHandler.onPostmortemVehicleChanged += self.onPostmortemVehicleChanged
         player.inputHandler.onCameraChanged += self.onCameraChanged
         g_settingsCore.onSettingsChanged += self.__accs_onSettingsChanged
         g_settingsCore.interfaceScale.onScaleChanged += self.__onRecreateDevice
-        isMutlipleTeams = isFalloutMultiTeam()
-        isFallout = isFalloutBattle()
+        visitor = g_sessionProvider.arenaVisitor
+        isMutlipleTeams = visitor.gui.isFalloutMultiTeam()
+        isFallout = visitor.gui.isFalloutBattle()
         self.proxy = weakref.proxy(self)
         self.__battle_flashObject = self.proxy.getMember('_level0')
         if self.__battle_flashObject:
             self.__battle_flashObject.resync()
-        voice.populateUI(self.proxy)
+        voice = g_messengerEvents.voip
         voice.onPlayerSpeaking += self.setPlayerSpeaking
         voice.onVoiceChatInitFailed += self.onVoiceChatInitFailed
         self.colorManager = ColorSchemeManager._ColorSchemeManager()
@@ -317,10 +334,10 @@ class Battle(BattleWindow):
         self.__soundManager.populateUI(self.proxy)
         self.__debugPanel = DebugPanel()
         self.__timersBar = TimersBar(self.proxy, isFallout)
-        if battleEndWarningEnabled():
-            self.__battleEndWarningPanel = BattleEndWarningPanel(self.proxy, getArenaType())
+        if visitor.isBattleEndWarningEnabled():
+            self.__battleEndWarningPanel = BattleEndWarningPanel(self.proxy, visitor.type, SoundGroups.g_instance)
         else:
-            self.__battleEndWarningPanel = BattleEndWarningEmptyObject(self.proxy, getArenaType())
+            self.__battleEndWarningPanel = BattleEndWarningEmptyObject(self.proxy, visitor.type, SoundGroups.g_instance)
         self.__teamBasesPanel = TeamBasesPanel(self.proxy)
         self.__consumablesPanel = ConsumablesPanel(self.proxy)
         self.__damagePanel = DamagePanel(self.proxy)
@@ -356,6 +373,8 @@ class Battle(BattleWindow):
          'dead': g_settingsCore.getSetting('dead'),
          'ally': g_settingsCore.getSetting('ally')}
         self.__markersManager.setMarkerSettings(markers)
+        self.__crosshairPanel = CrosshairPanel()
+        self.__crosshairPanel.active(True)
         MessengerEntry.g_instance.gui.invoke('populateUI', self.proxy)
         g_guiResetters.add(self.__onRecreateDevice)
         g_repeatKeyHandlers.add(self.component.handleKeyEvent)
@@ -385,11 +404,10 @@ class Battle(BattleWindow):
         self.movie.setFocussed(SCALEFORM_SWF_PATH)
         self.call('battle.initDynamicSquad', self.__getDynamicSquadsInitParams(enableButton=not BattleReplay.g_replayCtrl.isPlaying))
         self.call('sixthSenseIndicator.setDuration', [GUI_SETTINGS.sixthSenseDuration])
-        g_tankActiveCamouflage[player.vehicleTypeDescriptor.type.compactDescr] = self.__arena.arenaType.vehicleCamouflageKind
         keyCode = CommandMapping.g_instance.get('CMD_VOICECHAT_MUTE')
         if not BigWorld.isKeyDown(keyCode):
             VOIP.getVOIPManager().setMicMute(True)
-        ctrl = g_sessionProvider.getVehicleStateCtrl()
+        ctrl = g_sessionProvider.shared.vehicleState
         ctrl.onVehicleStateUpdated += self.__onVehicleStateUpdated
         ctrl.onPostMortemSwitched += self.__onPostMortemSwitched
         if BattleReplay.g_replayCtrl.isPlaying:
@@ -404,8 +422,8 @@ class Battle(BattleWindow):
         LOG_DEBUG('[Battle] beforeDelete')
         removeListener = g_eventBus.removeListener
         removeListener(events.GameEvent.HELP, self.toggleHelpWindow, scope=_SCOPE)
-        removeListener(events.GameEvent.GUI_VISIBILITY, self.showAll, scope=_SCOPE)
-        ctrl = g_sessionProvider.getVehicleStateCtrl()
+        removeListener(events.GameEvent.TOGGLE_GUI, self.showAll, scope=_SCOPE)
+        ctrl = g_sessionProvider.shared.vehicleState
         if ctrl is not None:
             ctrl.onVehicleStateUpdated -= self.__onVehicleStateUpdated
             ctrl.onPostMortemSwitched -= self.__onPostMortemSwitched
@@ -415,9 +433,8 @@ class Battle(BattleWindow):
             player.inputHandler.onCameraChanged -= self.onCameraChanged
         if self.colorManager:
             self.colorManager.dispossessUI()
-        voice = VoiceChatInterface.g_instance
+        voice = g_messengerEvents.voip
         if voice:
-            voice.dispossessUI(self.proxy)
             voice.onPlayerSpeaking -= self.setPlayerSpeaking
             voice.onVoiceChatInitFailed -= self.onVoiceChatInitFailed
         if self.__plugins is not None:
@@ -465,7 +482,6 @@ class Battle(BattleWindow):
         remove('legacy/ppSwitcher')
         if self.__arenaCtrl is not None:
             g_sessionProvider.removeArenaCtrl(self.__arenaCtrl)
-            self.__arenaCtrl.clear()
             self.__arenaCtrl = None
         self.__ppSwitcher.destroy()
         self.__debugPanel.dispossessUI()
@@ -480,6 +496,9 @@ class Battle(BattleWindow):
         if self.__dynSquadListener:
             self.__dynSquadListener.destroy()
             self.__dynSquadListener = None
+        if self.__crosshairPanel is not None:
+            self.__crosshairPanel.close()
+            self.__crosshairPanel = None
         BattleWindow.beforeDelete(self)
         event = events.AppLifeCycleEvent
         g_eventBus.handleEvent(event(self.__ns, event.DESTROYED))
@@ -501,8 +520,7 @@ class Battle(BattleWindow):
         self.call('destroyTimer.onFireInVehicle', [bool])
 
     def onVoiceChatInitFailed(self):
-        if GUI_SETTINGS.voiceChat:
-            self.call('VoiceChat.initFailed', [])
+        self.call('VoiceChat.initFailed', [])
 
     def clearCommands(self):
         pass
@@ -531,7 +549,14 @@ class Battle(BattleWindow):
             self.__markersManager.showDynamic(vID, flag)
 
     def isPlayerSpeaking(self, accountDBID):
-        return VoiceChatInterface.g_instance.isPlayerSpeaking(accountDBID)
+        return self.bwProto.voipController.isPlayerSpeaking(accountDBID)
+
+    def __getVoiceChatProvider(self):
+        if self.bwProto.voipController.isVivox():
+            return 'vivox'
+        if self.bwProto.voipController.isYY():
+            return 'YY'
+        return 'unknown'
 
     def __onPostMortemSwitched(self):
         if self.radialMenu is not None:
@@ -548,43 +573,23 @@ class Battle(BattleWindow):
         avatar_getter.setForcedGuiControlMode(visible, stopVehicle=False, enableAiming=enableAiming)
 
     def tryLeaveRequest(self, _):
-        resStr = 'quitBattle'
-        replayCtrl = BattleReplay.g_replayCtrl
-        canRespawn = False
-        player = BigWorld.player()
-        if hasRespawns():
-            isVehicleAlive = not g_sessionProvider.getArenaDP().getVehicleInteractiveStats().stopRespawn
-            canRespawn = isVehicleAlive
+        exitResult = g_sessionProvider.getExitResult()
+        if exitResult.playerInfo is not None:
+            igrType = exitResult.playerInfo.igrType
         else:
-            isVehicleAlive = getattr(player, 'isVehicleAlive', False)
-        isVehicleOverturned = getattr(player, 'isVehicleOverturned', False)
-        isNotTraining = self.__arena.guiType != constants.ARENA_GUI_TYPE.TRAINING
-        if not replayCtrl.isPlaying:
-            if constants.IS_KOREA and gui.GUI_SETTINGS.igrEnabled and self.__arena is not None and isNotTraining:
-                vehicleID = getattr(player, 'playerVehicleID', -1)
-                if vehicleID in self.__arena.vehicles:
-                    vehicle = self.__arena.vehicles[vehicleID]
-                    if isVehicleAlive and vehicle.get('igrType') != constants.IGR_TYPE.NONE:
-                        resStr = 'quitBattleIGR'
-                else:
-                    LOG_ERROR("Player's vehicle not found", vehicleID)
-            if canRespawn:
-                isDeserter = isVehicleAlive and isNotTraining
-            else:
-                isDeserter = isVehicleAlive and isNotTraining and not isVehicleOverturned
-            if isDeserter:
-                resStr += '/deserter'
+            igrType = constants.IGR_TYPE.NONE
+        if constants.IS_KOREA and GUI_SETTINGS.igrEnabled and igrType != constants.IGR_TYPE.NONE:
+            resStr = 'quitBattleIGR'
         else:
-            isDeserter = False
-        self.__callEx('tryLeaveResponse', [resStr, isDeserter])
+            resStr = 'quitBattle'
+        if exitResult.isDeserter:
+            self.__callEx('tryLeaveResponse', [resStr + '/deserter', True])
+        else:
+            self.__callEx('tryLeaveResponse', [resStr, False])
         return
 
     def onExitBattle(self, _):
-        arena = getattr(BigWorld.player(), 'arena', None)
-        LOG_DEBUG('onExitBattle', arena)
-        if arena:
-            BigWorld.player().leaveArena()
-        return
+        g_sessionProvider.exit()
 
     def toggleHelpWindow(self, _):
         self.__callEx('showHideHelp', [not self.__isHelpWindowShown])
@@ -619,7 +624,7 @@ class Battle(BattleWindow):
         reportBugOpenConfirm(g_sessionProvider.getArenaDP().getVehicleInfo().player.accountDBID)
 
     def __getDynamicSquadsInitParams(self, enableAlly = True, enableEnemy = False, enableButton = True):
-        return [isRandomBattle() and enableAlly, enableEnemy, isRandomBattle() and enableButton]
+        return [self.__arena.guiType == constants.ARENA_GUI_TYPE.RANDOM and enableAlly, enableEnemy, enableButton]
 
     def __populateData(self):
         ctx = g_sessionProvider.getCtx()
@@ -700,63 +705,6 @@ class Battle(BattleWindow):
     def getVehicleNameLength(self, isEnemy):
         panel = self.rightPlayersPanel if isEnemy else self.leftPlayersPanel
         return panel.getVehicleNameLength()
-
-    def getTeamBasesPanel(self):
-        return self.__teamBasesPanel
-
-    def getBattleTimer(self):
-        return self.__timersBar
-
-    def getPreBattleTimer(self):
-        return self.__timersBar
-
-    def getConsumablesPanel(self):
-        return self.__consumablesPanel
-
-    def getDamagePanel(self):
-        return self.__damagePanel
-
-    def getMarkersManager(self):
-        return self.__markersManager
-
-    def getVErrorsPanel(self):
-        return self.__vErrorsPanel
-
-    def getVMsgsPanel(self):
-        return self.__vMsgsPanel
-
-    def getPMsgsPanel(self):
-        return self.__pMsgsPanel
-
-    def getMinimap(self):
-        return self.__minimap
-
-    def getRadialMenu(self):
-        return self.__radialMenu
-
-    def getDamageInfoPanel(self):
-        return self.__damageInfoPanel
-
-    def getFragCorrelation(self):
-        return self.__fragCorrelation
-
-    def getStatsForm(self):
-        return self.__statsForm
-
-    def getLeftPlayersPanel(self):
-        return self.__leftPlayersPanel
-
-    def getRightPlayersPanel(self):
-        return self.__rightPlayersPanel
-
-    def getRibbonsPanel(self):
-        return self.__ribbonsPanel
-
-    def getPlayersPanelsSwitcher(self):
-        return self.__ppSwitcher
-
-    def getDebugPanel(self):
-        return self.__debugPanel
 
 
 class DebugPanel(UIInterface, IDebugPanel):

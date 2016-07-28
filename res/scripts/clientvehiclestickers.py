@@ -147,7 +147,8 @@ class ModelStickers():
         if self.__model is None:
             return
         else:
-            self.__parentNode.detach(self.__stickerModel)
+            if self.__stickerModel.attached:
+                self.__parentNode.detach(self.__stickerModel)
             self.__stickerModel.clear()
             self.__model = None
             self.__parentNode = None

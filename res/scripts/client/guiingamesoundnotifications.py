@@ -10,7 +10,7 @@ import WWISE
 
 class IngameSoundNotifications(object):
     __CFG_SECTION_PATH = 'gui/sound_notifications.xml'
-    QueueItem = namedtuple('QueueItem', ('soundPath', 'time', 'minTimeBetweenEvents', 'idToBind', 'checkFn'))
+    QueueItem = namedtuple('QueueItem', ('soundPath', 'time', 'minTimeBetweenEvents', 'idToBind', 'checkFn', 'soundPos'))
 
     def __init__(self):
         self.__readConfig()
@@ -52,7 +52,7 @@ class IngameSoundNotifications(object):
 
         return
 
-    def play(self, eventName, vehicleIdToBind = None, checkFn = None):
+    def play(self, eventName, vehicleIdToBind = None, checkFn = None, eventPos = None):
         replayCtrl = BattleReplay.g_replayCtrl
         if replayCtrl.isPlaying and replayCtrl.isTimeWarpInProgress:
             return
@@ -75,10 +75,13 @@ class IngameSoundNotifications(object):
                             idToBind = BigWorld.player().vehicle.id
                     soundPath = soundDesc['sound']
                     minTimeBetweenEvents = soundDesc['minTimeBetweenEvents']
-                    queueItem = IngameSoundNotifications.QueueItem(soundPath, time + soundDesc['timeout'], minTimeBetweenEvents, idToBind, checkFn)
+                    queueItem = IngameSoundNotifications.QueueItem(soundPath, time + soundDesc['timeout'], minTimeBetweenEvents, idToBind, checkFn, eventPos)
                     if rules == 0:
                         try:
-                            SoundGroups.g_instance.playSound2D(soundDesc['sound'])
+                            if eventPos is not None:
+                                SoundGroups.g_instance.playCameraOriented(soundDesc['sound'], eventPos)
+                            else:
+                                SoundGroups.g_instance.playSound2D(soundDesc['sound'])
                         except:
                             pass
 
@@ -152,12 +155,9 @@ class IngameSoundNotifications(object):
             return
         else:
             queue = self.__soundQueues[category]
-            succes = False
             time = BigWorld.time()
-            soundPath = ''
-            sound = None
-            while not succes and len(queue) > 0:
-                soundPath, timeout, minTimeBetweenEvents, vehicleIdToBind, checkFn = queue[0]
+            while len(queue) > 0:
+                soundPath, timeout, minTimeBetweenEvents, vehicleIdToBind, checkFn, sndPos = queue[0]
                 del queue[0]
                 if vehicleIdToBind is not None:
                     vehicles = BigWorld.player().arena.vehicles
@@ -168,16 +168,17 @@ class IngameSoundNotifications(object):
                     continue
                 if time > timeout:
                     continue
-                succes = True
-                sound = SoundGroups.g_instance.getSound2D(soundPath)
-                if not succes:
-                    LOG_ERROR('Failed to load sound %s' % soundPath)
+                if sndPos is not None:
+                    sound = SoundGroups.g_instance.getCameraOriented(soundPath, sndPos)
+                else:
+                    sound = SoundGroups.g_instance.getSound2D(soundPath)
+                if sound is not None:
+                    sound.setCallback(partial(self.__onSoundEnd, category))
+                    sound.play()
+                    self.__activeEvents[category] = {'sound': sound,
+                     'soundPath': soundPath}
+                return
 
-            if sound is not None and succes:
-                sound.setCallback(partial(self.__onSoundEnd, category))
-                sound.play()
-                self.__activeEvents[category] = {'sound': sound,
-                 'soundPath': soundPath}
             return
 
     def __readConfig(self):
@@ -213,7 +214,7 @@ class ComplexSoundNotifications(object):
         self.__isAimingEnded = isEnded
 
     def notifyEnemySpotted(self, isPlural):
-        self.__ingameSoundNotifications.cancel('enemy_sighted_for_team', True)
+        self.__ingameSoundNotifications.cancel('`p`p', True)
         if isPlural:
             self.__ingameSoundNotifications.play('enemies_sighted')
         else:

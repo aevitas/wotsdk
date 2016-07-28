@@ -62,6 +62,7 @@ class CombatEquipmentManager(object):
         self.__callbackDelayer = CallbackDelayer()
         self.__selectedAreas = {}
         self.__wings = {}
+        self.__isGUIVisible = True
         if _ENABLE_DEBUG_DRAW:
             self.debugPolyLine = Flock.DebugPolyLine()
             self.debugPoints = []
@@ -141,9 +142,19 @@ class CombatEquipmentManager(object):
         if area is not None:
             area.destroy()
         self.__selectedAreas[areaUID] = self.createEquipmentSelectedArea(pos, dir, eq)
+        area = self.__selectedAreas[areaUID]
+        if area is not None:
+            area.setGUIVisible(self.__isGUIVisible)
         self.__callbackDelayer.delayCallback(timer, functools.partial(self.__delayedAreaDestroy, areaUID))
-        g_sessionProvider.getEquipmentsCtrl().showMarker(eq, pos, dir, timer)
+        ctrl = g_sessionProvider.shared.equipments
+        if ctrl is not None:
+            ctrl.showMarker(eq, pos, dir, timer)
         return
+
+    def setGUIVisible(self, isVisible):
+        self.__isGUIVisible = isVisible
+        for area in self.__selectedAreas.itervalues():
+            area.setGUIVisible(self.__isGUIVisible)
 
     @staticmethod
     def __calcBombsDistribution(bombsCnt, areaWidth, areaLength):

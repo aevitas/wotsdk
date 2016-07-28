@@ -122,6 +122,13 @@ class ApplicationMeta(BaseDAAPIModule):
         """
         self._printOverrideError('setTutorialMgr')
 
+    def setImageManager(self, mgr):
+        """
+        :param mgr:
+        :return :
+        """
+        self._printOverrideError('setImageManager')
+
     def handleGlobalKeyEvent(self, command):
         """
         :param command:

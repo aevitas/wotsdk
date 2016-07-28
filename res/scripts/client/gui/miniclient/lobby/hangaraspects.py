@@ -66,11 +66,13 @@ class DeviceButtonsFlickering(aop.Aspect):
     def atCall(self, cd):
         if g_currentVehicle.isPresent() and not self.__vehicle_is_available(g_currentVehicle.item):
             original_args = list(cd._args)
-            device = original_args[0]
-            device['tooltipType'] = TOOLTIPS_CONSTANTS.COMPLEX
-            device['tooltip'] = makeTooltip(None, None, None, MINICLIENT.AMMUNITION_PANEL_WARN_TOOLTIP)
-            cd.avoid()
-            return False
+            devices = original_args[0]['devices']
+            for device in devices:
+                device['tooltipType'] = TOOLTIPS_CONSTANTS.COMPLEX
+                device['tooltip'] = makeTooltip(None, None, None, MINICLIENT.AMMUNITION_PANEL_WARN_TOOLTIP)
+
+            cd.change()
+            return (original_args, cd.kwargs)
         else:
             return
             return

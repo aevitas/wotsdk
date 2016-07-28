@@ -144,6 +144,7 @@ class MESSENGER(object):
     DIALOGS_SQUAD_MESSAGE_ALLREADY = '#messenger:dialogs/squad/message/allReady'
     DIALOGS_SQUAD_MESSAGE_GETREADY = '#messenger:dialogs/squad/message/getReady'
     DIALOGS_SQUAD_MESSAGE_GETNOTREADY = '#messenger:dialogs/squad/message/getNotReady'
+    DIALOGS_SQUAD_EVENT_VEHICLE = '#messenger:dialogs/squad/event/vehicle'
     DIALOGS_SQUAD_MESSAGE_INVALIDVEHICLELEVEL = '#messenger:dialogs/squad/message/invalidVehicleLevel'
     DIALOGS_SQUAD_MESSAGE_VEHICLES_DIFFERENTLEVELS = '#messenger:dialogs/squad/message/vehicles/differentLevels'
     DIALOGS_FALLOUTSQUADCHANNEL_VEHICLES = '#messenger:dialogs/falloutSquadChannel/vehicles'
@@ -162,6 +163,7 @@ class MESSENGER(object):
     DIALOGS_SQUADCHANNEL_VEHICLES = '#messenger:dialogs/squadChannel/vehicles'
     DIALOGS_SQUADCHANNEL_VEHICLESLBL = '#messenger:dialogs/squadChannel/vehiclesLbl'
     DIALOGS_SIMPLESQUAD_VEHICLELEVEL = '#messenger:dialogs/simpleSquad/vehicleLevel'
+    DIALOGS_EVENTSQUAD_VEHICLE = '#messenger:dialogs/eventSquad/vehicle'
     DIALOGS_SQUADCHANNEL_BATTLETYPE = '#messenger:dialogs/squadChannel/battleType'
     DIALOGS_SQUADCHANNEL_BATTLETYPEDOMINATION = '#messenger:dialogs/squadChannel/battleTypeDomination'
     DIALOGS_SQUADCHANNEL_BUTTONS_INVITE = '#messenger:dialogs/squadChannel/buttons/invite'
@@ -176,6 +178,7 @@ class MESSENGER(object):
     DIALOGS_SQUADCHANNEL_CONTEXT_KICKPLAYER = '#messenger:dialogs/squadChannel/context/kickPlayer'
     DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATION = '#messenger:dialogs/squadChannel/headerMsg/squadFormation'
     DIALOGS_SQUADCHANNEL_HEADERMSG_SQUADFORMATIONRESTRICTION = '#messenger:dialogs/squadChannel/headerMsg/squadFormationRestriction'
+    DIALOGS_SQUADCHANNEL_HEADERMSG_EVENTFORMATIONRESTRICTION = '#messenger:dialogs/squadChannel/headerMsg/eventFormationRestriction'
     DIALOGS_SQUADCHANNEL_HEADERMSG_DYNSQUAD = '#messenger:dialogs/squadChannel/headerMsg/dynSquad'
     DIALOGS_TEAMCHANNEL_CONTEXT_KICKPLAYER = '#messenger:dialogs/teamChannel/context/kickPlayer'
     DIALOGS_BSCHANNEL_CONTEXT_KICKPLAYER = '#messenger:dialogs/bsChannel/context/kickPlayer'
@@ -400,6 +403,7 @@ class MESSENGER(object):
     SERVICECHANNELMESSAGES_PREMIUMEXTENDED = '#messenger:serviceChannelMessages/premiumExtended'
     SERVICECHANNELMESSAGES_PREMIUMEXPIRED = '#messenger:serviceChannelMessages/premiumExpired'
     SERVICECHANNELMESSAGES_BOOSTEREXPIRED = '#messenger:serviceChannelMessages/boosterExpired'
+    SERVICECHANNELMESSAGES_BOOSTERDISABLED = '#messenger:serviceChannelMessages/boosterDisabled'
     SERVICECHANNELMESSAGES_CREDITSANDGOLDRECEIVEDASGIFT = '#messenger:serviceChannelMessages/creditsAndGoldReceivedAsGift'
     SERVICECHANNELMESSAGES_CREDITSRECEIVEDASGIFT = '#messenger:serviceChannelMessages/creditsReceivedAsGift'
     SERVICECHANNELMESSAGES_GOLDRECEIVEDASGIFT = '#messenger:serviceChannelMessages/goldReceivedAsGift'
@@ -614,6 +618,7 @@ class MESSENGER(object):
     CLIENT_ACTION_JOIN_USER_ROOM = '#messenger:client_action/JOIN_USER_ROOM'
     CLIENT_ACTION_LEAVE_USER_ROOM = '#messenger:client_action/LEAVE_USER_ROOM'
     CLIENT_ACTION_SEARCH_USER_ROOM = '#messenger:client_action/SEARCH_USER_ROOM'
+    CLIENT_ACTION_FIND_USERS_BY_PREFIX = '#messenger:client_action/FIND_USERS_BY_PREFIX'
     CUSTOM_CLIENT_ACTION_ADMIN_CHAT_COMMAND = '#messenger:custom_client_action/ADMIN_CHAT_COMMAND'
     SERVICECHANNELMESSAGES_VEHICLERENTED = '#messenger:serviceChannelMessages/vehicleRented'
     SERVICECHANNELMESSAGES_RENTALSEXPIRED = '#messenger:serviceChannelMessages/rentalsExpired'
@@ -794,7 +799,8 @@ class MESSENGER(object):
      CLIENT_ACTION_CREATE_USER_ROOM,
      CLIENT_ACTION_JOIN_USER_ROOM,
      CLIENT_ACTION_LEAVE_USER_ROOM,
-     CLIENT_ACTION_SEARCH_USER_ROOM)
+     CLIENT_ACTION_SEARCH_USER_ROOM,
+     CLIENT_ACTION_FIND_USERS_BY_PREFIX)
     CHAT_ACTION_ENUM = (CHAT_ACTION_BROADCAST_UNIT_MESSAGE,
      CHAT_ACTION_BROADCAST_BATTLE_MESSAGE,
      CHAT_ACTION_BROADCAST_CLUB_MESSAGE,

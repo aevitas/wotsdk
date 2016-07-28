@@ -144,9 +144,9 @@ _FORMAT_SETTINGS = {'relativePower': _integralFormat,
  'reloadTimeSecs': _niceFormat,
  'gunRotationSpeed': _niceFormat,
  'turretRotationSpeed': _niceFormat,
- 'turretYawLimits': _listFormat,
- 'gunYawLimits': _listFormat,
- 'pitchLimits': _listFormat,
+ 'turretYawLimits': _niceListFormat,
+ 'gunYawLimits': _niceListFormat,
+ 'pitchLimits': _niceListFormat,
  'clipFireRate': _niceListFormat,
  'aimingTime': _niceRangeFormat,
  'shotDispersionAngle': _niceFormat,
@@ -168,7 +168,7 @@ _FORMAT_SETTINGS = {'relativePower': _integralFormat,
  'circularVisionRadius': _niceFormat,
  'radioDistance': _niceFormat,
  'maxLoad': _niceFormat,
- 'rotationSpeed': _integralFormat,
+ 'rotationSpeed': _niceFormat,
  'fireStartingChance': _percentFormat,
  'armor': _listFormat,
  'caliber': _niceFormat,
@@ -227,14 +227,8 @@ def simlifiedVehicleParameter(parameter):
 
 
 def _formatParameter(parameterName, paramValue, parameterState = None, colorScheme = None):
-
-    def getDefaultParameterState():
-        if isinstance(paramValue, collections.Iterable):
-            return [None] * len(paramValue)
-        else:
-            return None
-
-    parameterState = parameterState or getDefaultParameterState()
+    if parameterState is None and isinstance(paramValue, collections.Sequence):
+        parameterState = [None] * len(paramValue)
     settings = _FORMAT_SETTINGS.get(parameterName, _listFormat)
     rounder = settings['rounder']
     doSmartRound = parameterName in _SMART_ROUND_PARAMS
@@ -251,7 +245,7 @@ def _formatParameter(parameterName, paramValue, parameterState = None, colorSche
         if doSmartRound and len(set(paramValue)) == 1:
             if paramValue[0] > 0:
                 return applyFormat(paramValue[0], parameterState[0])
-            return None
+            return
         else:
             separator = settings['separator']
             paramsList = [ applyFormat(val, parameterState[idx]) for idx, val in enumerate(paramValue) ]
@@ -259,8 +253,8 @@ def _formatParameter(parameterName, paramValue, parameterState = None, colorSche
     else:
         if paramValue != 0:
             return applyFormat(paramValue, parameterState)
-        return None
-    return None
+        return
+    return
 
 
 def getFormattedParamsList(descriptor, parameters, excludeRelative = False):

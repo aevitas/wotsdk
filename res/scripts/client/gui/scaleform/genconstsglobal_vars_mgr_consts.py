@@ -8,4 +8,4 @@ class GLOBAL_VARS_MGR_CONSTS(object):
     __author__ = 'yaml_processor'
     null
     """
-    BATTLE = 'BATTLE'
+    BATTLE = 'BATTLE_V2'

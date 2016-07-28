@@ -1,5 +1,5 @@
 # Embedded file name: scripts/client/messenger/gui/Scaleform/meta/SearchContactViewMeta.py
-from messenger.gui.Scaleform.view.BaseContactView import BaseContactView
+from messenger.gui.Scaleform.view.lobby.BaseContactView import BaseContactView
 
 class SearchContactViewMeta(BaseContactView):
     """

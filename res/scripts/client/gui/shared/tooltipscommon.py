@@ -11,6 +11,7 @@ import ArenaType
 import fortified_regions
 from account_helpers.settings_core import g_settingsCore
 from gui.Scaleform.genConsts.ICON_TEXT_FRAMES import ICON_TEXT_FRAMES
+from gui.goodies.GoodiesCache import g_goodiesCache
 from shared_utils import findFirst, CONST_CONTAINER
 from gui.Scaleform.daapi.view.lobby.profile.ProfileUtils import ProfileUtils
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
@@ -29,6 +30,7 @@ from gui.shared.gui_items.Vehicle import VEHICLE_TAGS
 from gui.shared.view_helpers import UsersInfoHelper
 from gui.LobbyContext import g_lobbyContext
 from gui.shared.tooltips import efficiency
+from gui.shared.money import Money, Currency
 from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter, makeClanFullName, makeClubFullName, makeContactStatusDescription
 from predefined_hosts import g_preDefinedHosts, HOST_AVAILABILITY, getPingStatus, PING_STATUSES
 from ConnectionManager import connectionManager
@@ -953,8 +955,8 @@ class ActionTooltipData(ToolTipBaseData):
         actionNames = None
         body = ''
         descr = ''
-        newCredits, newGold = newPrice
-        oldCredits, oldGold = oldPrice
+        newPrice = Money(*newPrice)
+        oldPrice = Money(*oldPrice)
         newPriceValue = 0
         newPriceCurrency = None
         oldPriceValue = 0
@@ -963,9 +965,9 @@ class ActionTooltipData(ToolTipBaseData):
         rentCompensation = None
         if type == ACTION_TOOLTIPS_TYPE.ECONOMICS:
             actions = g_eventsCache.getEconomicsAction(key)
-            newPriceValue = newCredits if forCredits else newGold
-            oldPriceValue = oldCredits if forCredits else oldGold
-            newPriceCurrency = oldPriceCurrency = 'credits' if forCredits else 'gold'
+            newPriceValue = newPrice.credits if forCredits else newPrice.gold
+            oldPriceValue = oldPrice.credits if forCredits else oldPrice.gold
+            newPriceCurrency = oldPriceCurrency = Currency.CREDITS if forCredits else Currency.GOLD
             if actions:
                 actionNames = map(lambda x: x[1], actions)
                 if key == 'freeXPToTManXPRate':
@@ -975,16 +977,15 @@ class ActionTooltipData(ToolTipBaseData):
             actions = g_eventsCache.getRentAction(item, rentPackage)
             if actions:
                 actionNames = map(itemgetter(1), actions)
-                newPriceValue = newCredits if forCredits else newGold
-                oldPriceValue = oldCredits if forCredits else oldGold
-                newPriceCurrency = oldPriceCurrency = 'credits' if forCredits else 'gold'
+                newPriceValue = newPrice.credits if forCredits else newPrice.gold
+                oldPriceValue = oldPrice.credits if forCredits else oldPrice.gold
+                newPriceCurrency = oldPriceCurrency = Currency.CREDITS if forCredits else Currency.GOLD
         elif type == ACTION_TOOLTIPS_TYPE.ITEM:
             item = g_itemsCache.items.getItemByCD(int(key))
             useGold = item.isPremium and not forCredits and isBuying
-            newPriceValue = newGold if useGold else newCredits
-            newPriceCurrency = 'gold' if useGold else 'credits'
-            oldPriceValue = oldGold if useGold else oldCredits
-            oldPriceCurrency = 'gold' if useGold else 'credits'
+            newPriceValue = newPrice.gold if useGold else newPrice.credits
+            oldPriceValue = oldPrice.gold if useGold else oldPrice.credits
+            newPriceCurrency = oldPriceCurrency = Currency.GOLD if useGold else Currency.CREDITS
             actions = g_eventsCache.getItemAction(item, True, forCredits)
             if item.itemTypeID in (GUI_ITEM_TYPE.SHELL, GUI_ITEM_TYPE.OPTIONALDEVICE, GUI_ITEM_TYPE.EQUIPMENT) and item.isPremium and not useGold:
                 actions += g_eventsCache.getEconomicsAction('exchangeRateForShellsAndEqs')
@@ -1003,28 +1004,28 @@ class ActionTooltipData(ToolTipBaseData):
 
                     sellForGoldAction = findFirst(filter, sellingActions)
                     if sellForGoldAction:
-                        newPriceValue = newGold
-                        newPriceCurrency = 'gold'
+                        newPriceValue = newPrice.gold
+                        newPriceCurrency = Currency.GOLD
             if item.itemTypeID == GUI_ITEM_TYPE.VEHICLE and isBuying:
-                if item.isRented and not item.rentalIsOver and item.rentCompensation[1] > 0:
+                if item.isRented and not item.rentalIsOver and item.rentCompensation.gold > 0:
                     hasRentCompensation = True
-                    rentCompensation = item.rentCompensation[1]
+                    rentCompensation = item.rentCompensation.gold
         elif type == ACTION_TOOLTIPS_TYPE.CAMOUFLAGE:
             intCD, type = cPickle.loads(key)
             actions = g_eventsCache.getCamouflageAction(intCD) + g_eventsCache.getEconomicsAction(type)
             if actions:
                 actionNames = map(lambda x: x[1], actions)
-                newPriceValue = newCredits if forCredits else newGold
-                oldPriceValue = oldCredits if forCredits else oldGold
-                newPriceCurrency = oldPriceCurrency = 'credits' if forCredits else 'gold'
+                newPriceValue = newPrice.credits if forCredits else newPrice.gold
+                oldPriceValue = oldPrice.credits if forCredits else oldPrice.gold
+                newPriceCurrency = oldPriceCurrency = Currency.CREDITS if forCredits else Currency.GOLD
         elif type == ACTION_TOOLTIPS_TYPE.EMBLEMS:
             group, type = cPickle.loads(key)
             actions = g_eventsCache.getEmblemsAction(group) + g_eventsCache.getEconomicsAction(type)
             if actions:
                 actionNames = map(lambda x: x[1], actions)
-                newPriceValue = newCredits if forCredits else newGold
-                oldPriceValue = oldCredits if forCredits else oldGold
-                newPriceCurrency = oldPriceCurrency = 'credits' if forCredits else 'gold'
+                newPriceValue = newPrice.credits if forCredits else newPrice.gold
+                oldPriceValue = oldPrice.credits if forCredits else oldPrice.gold
+                newPriceCurrency = oldPriceCurrency = Currency.CREDITS if forCredits else Currency.GOLD
         elif type == ACTION_TOOLTIPS_TYPE.AMMO:
             item = g_itemsCache.items.getItemByCD(int(key))
             actions = []
@@ -1033,9 +1034,17 @@ class ActionTooltipData(ToolTipBaseData):
 
             if actions:
                 actionNames = map(lambda x: x[1], actions)
-                newPriceValue = newCredits
-                oldPriceValue = oldCredits
-                newPriceCurrency = oldPriceCurrency = 'credits'
+                newPriceValue = newPrice.credits
+                oldPriceValue = newPrice.credits
+                newPriceCurrency = oldPriceCurrency = Currency.CREDITS
+        elif type == ACTION_TOOLTIPS_TYPE.BOOSTER:
+            booster = g_goodiesCache.getBooster(int(key))
+            actions = g_eventsCache.getBoosterAction(booster, isBuying, forCredits)
+            if actions:
+                actionNames = map(lambda x: x[1], actions)
+                newPriceValue = newPrice.credits if forCredits else newPrice.gold
+                oldPriceValue = oldPrice.credits if forCredits else oldPrice.gold
+                newPriceCurrency = oldPriceCurrency = Currency.CREDITS if forCredits else Currency.GOLD
         if actionNames:
             actionNames = set(actionNames)
         if newPriceCurrency and oldPriceCurrency and newPriceValue is not None and oldPriceValue:
@@ -1324,15 +1333,68 @@ class LadderRegulations(ToolTipBaseData):
 
 
 _CurrencySetting = namedtuple('_CurrencySetting', 'text, icon, textStyle, frame')
-CURRENCY_SETTINGS = {'buyCreditsPrice': _CurrencySetting(TOOLTIPS.VEHICLE_BUY_PRICE, icons.credits(), text_styles.credits, ICON_TEXT_FRAMES.CREDITS),
- 'buyGoldPrice': _CurrencySetting(TOOLTIPS.VEHICLE_BUY_PRICE, icons.gold(), text_styles.gold, ICON_TEXT_FRAMES.GOLD),
- 'sellPrice': _CurrencySetting(TOOLTIPS.VEHICLE_SELL_PRICE, icons.credits(), text_styles.credits, ICON_TEXT_FRAMES.CREDITS),
- 'unlockPrice': _CurrencySetting(TOOLTIPS.VEHICLE_UNLOCK_PRICE, icons.xp(), text_styles.expText, ICON_TEXT_FRAMES.XP)}
 
-def getCurrencySetting(key):
-    if key in CURRENCY_SETTINGS:
-        return CURRENCY_SETTINGS[key]
+class CURRENCY_SETTINGS(object):
+    BUY_CREDITS_PRICE = 'buyCreditsPrice'
+    BUY_GOLD_PRICE = 'buyGoldPrice'
+    RENT_CREDITS_PRICE = 'rentCreditsPrice'
+    RENT_GOLD_PRICE = 'rentGoldPrice'
+    SELL_PRICE = 'sellPrice'
+    UNLOCK_PRICE = 'unlockPrice'
+
+    @classmethod
+    def getRentSetting(cls, currency):
+        if currency == Currency.CREDITS:
+            return cls.RENT_CREDITS_PRICE
+        return cls.RENT_GOLD_PRICE
+
+    @classmethod
+    def getBuySetting(cls, currency):
+        if currency == Currency.CREDITS:
+            return cls.BUY_CREDITS_PRICE
+        return cls.BUY_GOLD_PRICE
+
+
+_OPERATIONS_SETTINGS = {CURRENCY_SETTINGS.BUY_CREDITS_PRICE: _CurrencySetting(TOOLTIPS.VEHICLE_BUY_PRICE, icons.credits(), text_styles.credits, ICON_TEXT_FRAMES.CREDITS),
+ CURRENCY_SETTINGS.BUY_GOLD_PRICE: _CurrencySetting(TOOLTIPS.VEHICLE_BUY_PRICE, icons.gold(), text_styles.gold, ICON_TEXT_FRAMES.GOLD),
+ CURRENCY_SETTINGS.RENT_CREDITS_PRICE: _CurrencySetting(TOOLTIPS.VEHICLE_MINRENTALSPRICE, icons.credits(), text_styles.credits, ICON_TEXT_FRAMES.CREDITS),
+ CURRENCY_SETTINGS.RENT_GOLD_PRICE: _CurrencySetting(TOOLTIPS.VEHICLE_MINRENTALSPRICE, icons.gold(), text_styles.gold, ICON_TEXT_FRAMES.GOLD),
+ CURRENCY_SETTINGS.SELL_PRICE: _CurrencySetting(TOOLTIPS.VEHICLE_SELL_PRICE, icons.credits(), text_styles.credits, ICON_TEXT_FRAMES.CREDITS),
+ CURRENCY_SETTINGS.UNLOCK_PRICE: _CurrencySetting(TOOLTIPS.VEHICLE_UNLOCK_PRICE, icons.xp(), text_styles.expText, ICON_TEXT_FRAMES.XP)}
+
+def _getCurrencySetting(key):
+    if key in _OPERATIONS_SETTINGS:
+        return _OPERATIONS_SETTINGS[key]
     else:
         LOG_ERROR('Unsupported currency type "' + key + '"!')
         return None
         return None
+
+
+def makePriceBlock(price, currencySetting, neededValue = None, oldPrice = None, percent = 0, valueWidth = -1, leftPadding = 61):
+    _int = BigWorld.wg_getIntegralFormat
+    needFormatted = ''
+    oldPriceText = ''
+    hasAction = percent != 0
+    settings = _getCurrencySetting(currencySetting)
+    if settings is None:
+        return
+    else:
+        valueFormatted = settings.textStyle(_int(price))
+        icon = settings.icon
+        if neededValue is not None:
+            needFormatted = settings.textStyle(_int(neededValue))
+        if hasAction:
+            oldPriceText = text_styles.concatStylesToSingleLine(icon, settings.textStyle(_int(oldPrice)))
+        neededText = ''
+        if neededValue is not None:
+            neededText = text_styles.concatStylesToSingleLine(text_styles.main('('), text_styles.error(TOOLTIPS.VEHICLE_GRAPH_BODY_NOTENOUGH), ' ', needFormatted, ' ', icon, text_styles.main(')'))
+        text = text_styles.concatStylesWithSpace(text_styles.main(settings.text), neededText)
+        if hasAction:
+            actionText = text_styles.main(makeString(TOOLTIPS.VEHICLE_ACTION_PRC, actionPrc=text_styles.stats(str(percent) + '%'), oldPrice=oldPriceText))
+            text = text_styles.concatStylesToMultiLine(text, actionText)
+            newPrice = Money(gold=price) if settings.frame == ICON_TEXT_FRAMES.GOLD else Money(credits=price)
+            return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
+             'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=leftPadding))
+        return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=settings.frame, valueWidth=valueWidth, padding=formatters.packPadding(left=-5))
+        return

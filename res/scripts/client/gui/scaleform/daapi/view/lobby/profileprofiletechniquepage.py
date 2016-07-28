@@ -33,8 +33,8 @@ class ProfileTechniquePage(ProfileTechniquePageMeta):
         self.as_setSelectedVehicleIntCDS(int(self._selectedData.get('itemCD')) if self._selectedData else -1)
         return
 
-    def _getInitData(self, isFallout = False):
-        initDataResult = super(ProfileTechniquePage, self)._getInitData(isFallout)
+    def _getInitData(self, accountDossier = None, isFallout = False):
+        initDataResult = super(ProfileTechniquePage, self)._getInitData(accountDossier, isFallout)
         initDataResult['hangarVehiclesLabel'] = makeString(PROFILE.SECTION_TECHNIQUE_WINDOW_HANGARVEHICLESLABEL)
         initDataResult['isInHangarSelected'] = self.__isInHangarSelected
         return initDataResult

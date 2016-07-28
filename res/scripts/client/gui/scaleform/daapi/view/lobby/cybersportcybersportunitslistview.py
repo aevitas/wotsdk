@@ -2,7 +2,6 @@
 from functools import partial
 from UnitBase import UNIT_BROWSER_TYPE
 from constants import PREBATTLE_TYPE
-from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.view.lobby.rally.rally_dps import ManualSearchDataProvider
 from gui.Scaleform.daapi.view.meta.CyberSportUnitsListMeta import CyberSportUnitsListMeta
 from gui.Scaleform.genConsts.CYBER_SPORT_ALIASES import CYBER_SPORT_ALIASES
@@ -14,10 +13,7 @@ from gui.clubs.settings import getLadderChevron64x64, CLIENT_CLUB_STATE
 from gui.prb_control.functional import unit_ext
 from gui.prb_control.prb_helpers import UnitListener
 from gui.prb_control.settings import REQUEST_TYPE
-from gui.shared.utils.requesters import REQ_CRITERIA
-from gui.shared import events, g_itemsCache
-from gui.shared.event_bus import EVENT_BUS_SCOPE
-from gui.shared.events import CSVehicleSelectEvent
+from gui.shared import events
 from gui.clubs import events_dispatcher as club_events
 from gui.shared.formatters import text_styles
 from gui.shared.view_helpers import ClubEmblemsHelper, CooldownHelper
@@ -29,8 +25,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
     def __init__(self):
         super(CyberSportUnitsListView, self).__init__()
         self._isBackButtonClicked = False
-        self._section = 'selectedListVehicles'
-        self._selectedVehicles = self.unitFunctional.getSelectedVehicles(self._section)
         self._unitTypeFlags = UNIT_BROWSER_TYPE.ALL
         self._cooldown = CooldownHelper(self.getCoolDownRequests(), self._onCooldownHandle, events.CoolDownEvent.PREBATTLE)
         self.__currentEmblem = None
@@ -52,19 +46,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
     def setTeamFilters(self, showOnlyStatic):
         self._unitTypeFlags = UNIT_BROWSER_TYPE.RATED_CLUBS if showOnlyStatic else UNIT_BROWSER_TYPE.ALL
         self.__recenterList()
-
-    def filterVehicles(self):
-        levelsRange = self.unitFunctional.getRosterSettings().getLevelsRange()
-        if self._selectedVehicles is not None and len(self._selectedVehicles) > 0:
-            selectedVehicles = self._selectedVehicles
-        else:
-            selectedVehicles = [ k for k, v in g_itemsCache.items.getVehicles(REQ_CRITERIA.INVENTORY).items() if v.level in levelsRange ]
-        self.fireEvent(events.LoadViewEvent(CYBER_SPORT_ALIASES.VEHICLE_SELECTOR_POPUP_PY, ctx={'isMultiSelect': True,
-         'infoText': CYBERSPORT.WINDOW_VEHICLESELECTOR_INFO_SEARCH,
-         'selectedVehicles': selectedVehicles,
-         'section': 'cs_list_view_vehicle',
-         'levelsRange': levelsRange}), scope=EVENT_BUS_SCOPE.LOBBY)
-        return
 
     def loadPrevious(self):
         listReq = unit_ext.getListReq()
@@ -97,12 +78,10 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
     def _populate(self):
         super(CyberSportUnitsListView, self)._populate()
         self._cooldown.start()
-        self.addListener(CSVehicleSelectEvent.VEHICLE_SELECTED, self.__onVehiclesSelectedTeams)
         self.startUnitListening()
         if self.unitFunctional.getEntityType() != PREBATTLE_TYPE.NONE:
             self.unitFunctional.setEntityType(PREBATTLE_TYPE.UNIT)
         unit_ext.initListReq(self._unitTypeFlags).start(self.__onUnitsListUpdated)
-        g_clientUpdateManager.addCallbacks({'inventory.1': self.__onVehiclesChanged})
         self.as_setSearchResultTextS(_ms(CYBERSPORT.WINDOW_UNITLISTVIEW_FOUNDTEAMS), '', self.__getFiltersData())
         headerDescription = CYBERSPORT.WINDOW_UNITLISTVIEW_DESCRIPTION
         headerTitle = CYBERSPORT.WINDOW_UNITLISTVIEW_TITLE
@@ -125,8 +104,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
             if listReq:
                 listReq.stop()
         self.stopUnitListening()
-        self.removeListener(CSVehicleSelectEvent.VEHICLE_SELECTED, self.__onVehiclesSelectedTeams)
-        g_clientUpdateManager.removeObjectCallbacks(self)
         super(CyberSportUnitsListView, self)._dispose()
         return
 
@@ -174,11 +151,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
         if selectedIdx is not None:
             self.as_selectByIndexS(selectedIdx)
         return
-
-    def __onVehiclesSelectedTeams(self, event):
-        self._selectedVehicles = event.ctx
-        self.unitFunctional.setSelectedVehicles(self._section, self._selectedVehicles)
-        self.__recenterList()
 
     def __setDetailsData(self, unitID, vo):
         _, unit = self.unitFunctional.getUnit(unitID)
@@ -234,10 +206,6 @@ class CyberSportUnitsListView(CyberSportUnitsListMeta, UnitListener, ClubListene
     def __updateView(self, user):
         self._searchDP.updateListItem(user.getID())
         self.__refreshDetails(self._searchDP.selectedRallyIndex)
-
-    def __onVehiclesChanged(self, *args):
-        self._selectedVehicles = self.unitFunctional.getSelectedVehicles(self._section)
-        self.unitFunctional.setSelectedVehicles(self._section, self._selectedVehicles)
 
     def __recenterList(self):
         listReq = unit_ext.getListReq()

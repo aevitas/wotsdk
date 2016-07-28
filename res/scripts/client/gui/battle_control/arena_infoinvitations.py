@@ -1,11 +1,16 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/invitations.py
+import BattleReplay
 from adisp import process
 from constants import PREBATTLE_TYPE, INVITATION_TYPE
 from gui.battle_control.arena_info.settings import INVITATION_DELIVERY_STATUS
 from gui.battle_control.requests.context import SendInvitesCtx
 from gui.prb_control.prb_helpers import prbInvitesProperty
+from ids_generators import SequenceIDGenerator
 from unit_roster_config import SquadRoster
-_DELIVERY_STATUS = INVITATION_DELIVERY_STATUS
+_STATUS = INVITATION_DELIVERY_STATUS
+_SEND_ACTION_NAME = 'DynSquad.SendInvitationToSquad'
+_ACCEPT_ACTION_NAME = 'DynSquad.AcceptInvitationToSquad'
+_REJECT_ACTION_NAME = 'DynSquad.RejectInvitationToSquad'
 
 class SquadInvitationsFilter(object):
     __slots__ = ('__arenaUniqueID', '__isReceivingProhibited', '__isSendingProhibited', '__received', '__sent')
@@ -40,18 +45,33 @@ class SquadInvitationsFilter(object):
                 self.__isSendingProhibited = True
 
     def addReceivedInvite(self, invite):
-        if not self.__isInviteValid(invite):
-            return (0, _DELIVERY_STATUS.NONE)
-        self.__received[invite.creatorDBID] = invite.clientID
-        return (invite.creatorDBID, _DELIVERY_STATUS.RECEIVED_FROM)
+        if invite is None:
+            return (0, _STATUS.NONE)
+        else:
+            self.__received[invite.creatorDBID] = invite.clientID
+            include = _STATUS.RECEIVED_FROM
+            if not self.__isInviteValid(invite):
+                include |= _STATUS.RECEIVED_INACTIVE
+            return (invite.creatorDBID, include)
 
     def addSentInvite(self, invite):
-        if not self.__isInviteValid(invite):
-            return (0, _DELIVERY_STATUS.NONE)
-        self.__sent[invite.receiverDBID] = invite.clientID
-        return (invite.receiverDBID, _DELIVERY_STATUS.RECEIVED_FROM)
+        if invite is None:
+            return (0, _STATUS.NONE)
+        else:
+            self.__sent[invite.receiverDBID] = invite.clientID
+            include = _STATUS.SENT_TO
+            if not self.__isInviteValid(invite):
+                include |= _STATUS.SENT_INACTIVE
+            return (invite.receiverDBID, include)
 
     def filterReceivedInvites(self, getter, added, changed, deleted):
+        """Filters received invites.
+        It's generator that returns item containing tuple(accountDBID, include, exclude).
+        :param getter: function to get invite data.
+        :param added: list of invites IDs that are added.
+        :param changed: list of invites IDs that are changed.
+        :param deleted: list of invites IDs that are deleted.
+        """
         for clientID in added:
             invite = getter(clientID)
             if invite is None:
@@ -59,14 +79,16 @@ class SquadInvitationsFilter(object):
             if not self.__isInviteValid(invite):
                 continue
             self.__received[invite.creatorDBID] = invite.clientID
-            yield (invite.creatorDBID, _DELIVERY_STATUS.RECEIVED_FROM)
+            yield (invite.creatorDBID, _STATUS.RECEIVED_FROM, _STATUS.RECEIVED_INACTIVE)
 
         for clientID in changed:
             invite = getter(clientID)
             if invite is None:
                 continue
-            if not self.__isInviteValid(invite) and self.__received.pop(invite.creatorDBID, None) is not None:
-                yield (invite.creatorDBID, _DELIVERY_STATUS.INACTIVE)
+            if self.__isInviteValid(invite):
+                yield (invite.creatorDBID, _STATUS.RECEIVED_FROM, _STATUS.RECEIVED_INACTIVE)
+            else:
+                yield (invite.creatorDBID, _STATUS.RECEIVED_INACTIVE, _STATUS.NONE)
 
         inverted = dict(zip(self.__received.values(), self.__received.keys()))
         for clientID in deleted:
@@ -74,11 +96,18 @@ class SquadInvitationsFilter(object):
                 continue
             accountDBID = inverted[clientID]
             if self.__received.pop(accountDBID, None) is not None:
-                yield (accountDBID, _DELIVERY_STATUS.INACTIVE)
+                yield (accountDBID, _STATUS.NONE, _STATUS.RECEIVED_FROM | _STATUS.RECEIVED_INACTIVE)
 
         return
 
     def filterSentInvites(self, getter, added, changed, deleted):
+        """Filters sent invites.
+        It's generator that returns item containing tuple(accountDBID, include, exclude).
+        :param getter: function to get invite data.
+        :param added: list of invites IDs that are added.
+        :param changed: list of invites IDs that are changed.
+        :param deleted: list of invites IDs that are deleted.
+        """
         for clientID in added:
             invite = getter(clientID)
             if invite is None:
@@ -86,14 +115,16 @@ class SquadInvitationsFilter(object):
             if not self.__isInviteValid(invite):
                 continue
             self.__sent[invite.receiverDBID] = invite.clientID
-            yield (invite.receiverDBID, _DELIVERY_STATUS.SENT_TO)
+            yield (invite.receiverDBID, _STATUS.SENT_TO, _STATUS.SENT_INACTIVE)
 
         for clientID in changed:
             invite = getter(clientID)
             if invite is None:
                 continue
-            if not self.__isInviteValid(invite) and self.__sent.pop(invite.receiverDBID, None) is not None:
-                yield (invite.receiverDBID, _DELIVERY_STATUS.INACTIVE)
+            if self.__isInviteValid(invite):
+                yield (invite.receiverDBID, _STATUS.SENT_TO, _STATUS.SENT_INACTIVE)
+            else:
+                yield (invite.receiverDBID, _STATUS.SENT_INACTIVE, _STATUS.NONE)
 
         inverted = dict(zip(self.__sent.values(), self.__sent.keys()))
         for clientID in deleted:
@@ -101,7 +132,7 @@ class SquadInvitationsFilter(object):
                 continue
             accountDBID = inverted[clientID]
             if self.__sent.pop(accountDBID, None) is not None:
-                yield (accountDBID, _DELIVERY_STATUS.INACTIVE)
+                yield (accountDBID, _STATUS.NONE, _STATUS.SENT_TO | _STATUS.SENT_INACTIVE)
 
         return
 
@@ -115,12 +146,20 @@ class SquadInvitationsFilter(object):
         return True
 
 
-class SquadInvitationsHandler(object):
-    __slots__ = ()
+class _SquadInvitationsHandler(object):
+    __slots__ = ('__sessionProvider',)
+
+    def __init__(self, setup):
+        super(_SquadInvitationsHandler, self).__init__()
+        self.__sessionProvider = setup.sessionProvider
 
     @prbInvitesProperty
     def prbInvites(self):
         return None
+
+    def clear(self):
+        self.__sessionProvider = None
+        return
 
     def send(self, playerID):
         self.__onSendInviteToSquad(playerID)
@@ -139,17 +178,82 @@ class SquadInvitationsHandler(object):
 
     @process
     def __onSendInviteToSquad(self, playerID):
-        from gui.battle_control import g_sessionProvider
-        yield g_sessionProvider.sendRequest(SendInvitesCtx(databaseIDs=(playerID,)))
+        yield self.__sessionProvider.sendRequest(SendInvitesCtx(databaseIDs=(playerID,)))
 
     def __getInviteID(self, playerID, isCreator, incomingInvites):
         invites = self.prbInvites.getInvites(incoming=incomingInvites, onlyActive=True)
         if isCreator:
-            getter = lambda i: i.creatorDBID
+
+            def getter(item):
+                return item.creatorDBID
+
         else:
-            getter = lambda i: i.receiverDBID
+
+            def getter(item):
+                return item.receiverDBID
+
         for invite in invites:
             if invite.type == INVITATION_TYPE.SQUAD and getter(invite) == playerID:
                 return invite.clientID
 
         return None
+
+
+class _SquadInvitationsRecorder(_SquadInvitationsHandler):
+    """ This class wraps _SquadInvitationsHandler in order to record player's
+    actions with dyn squads during replay recording."""
+    __slots__ = ('__idGen',)
+
+    def __init__(self, setup):
+        super(_SquadInvitationsRecorder, self).__init__(setup)
+        self.__idGen = SequenceIDGenerator()
+
+    def send(self, playerID):
+        BattleReplay.g_replayCtrl.serializeCallbackData(_SEND_ACTION_NAME, (self.__idGen.next(), playerID))
+        super(_SquadInvitationsRecorder, self).send(playerID)
+
+    def accept(self, playerID):
+        BattleReplay.g_replayCtrl.serializeCallbackData(_ACCEPT_ACTION_NAME, (self.__idGen.next(), playerID))
+        super(_SquadInvitationsRecorder, self).accept(playerID)
+
+    def reject(self, playerID):
+        BattleReplay.g_replayCtrl.serializeCallbackData(_REJECT_ACTION_NAME, (self.__idGen.next(), playerID))
+        super(_SquadInvitationsRecorder, self).reject(playerID)
+
+
+class _SquadInvitationsPlayer(_SquadInvitationsHandler):
+    """ This class wraps _SquadInvitationsHandler in order to simulate player's
+    actions with dyn squads during replay."""
+    __slots__ = ()
+
+    def __init__(self, setup):
+        super(_SquadInvitationsPlayer, self).__init__(setup)
+        setCallback = BattleReplay.g_replayCtrl.setDataCallback
+        for action, method in [(_SEND_ACTION_NAME, self.__onSend), (_ACCEPT_ACTION_NAME, self.__onAccept), (_REJECT_ACTION_NAME, self.__onReject)]:
+            setCallback(action, method)
+
+    def clear(self):
+        delCallback = BattleReplay.g_replayCtrl.delDataCallback
+        for eventName, method in [(_SEND_ACTION_NAME, self.__onSend), (_ACCEPT_ACTION_NAME, self.__onAccept), (_REJECT_ACTION_NAME, self.__onReject)]:
+            delCallback(eventName, method)
+
+        super(_SquadInvitationsPlayer, self).clear()
+
+    def __onSend(self, _, playerID):
+        self.send(playerID)
+
+    def __onAccept(self, _, playerID):
+        self.accept(playerID)
+
+    def __onReject(self, _, playerID):
+        self.reject(playerID)
+
+
+def createInvitationsHandler(setup):
+    if setup.isReplayPlaying:
+        handler = _SquadInvitationsPlayer(setup)
+    elif setup.isReplayRecording:
+        handler = _SquadInvitationsRecorder(setup)
+    else:
+        handler = _SquadInvitationsHandler(setup)
+    return handler

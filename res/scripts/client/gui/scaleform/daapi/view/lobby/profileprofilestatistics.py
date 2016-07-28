@@ -46,12 +46,10 @@ class ProfileStatistics(ProfileStatisticsMeta, ClubListener):
         self.startClubListening()
 
     def _setInitData(self, accountDossier = None):
-        dropDownProvider = [self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.ALL),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FALLOUT),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.HISTORICAL),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.TEAM),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.STATICTEAM),
-         self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.CLAN)]
+        dropDownProvider = [self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.ALL), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FALLOUT)]
+        if accountDossier is not None and accountDossier.getHistoricalStats().getVehicles():
+            dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.HISTORICAL))
+        dropDownProvider.extend((self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.TEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.STATICTEAM), self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.CLAN)))
         if g_lobbyContext.getServerSettings().isFortsEnabled():
             dropDownProvider.append(self._dataProviderEntryAutoTranslate(PROFILE_DROPDOWN_KEYS.FORTIFICATIONS))
         seasonItems = [self._dataProviderEntry(PROFILE_DROPDOWN_KEYS.STATICTEAM, PROFILE.PROFILE_SEASONSDROPDOWN_ALL)]

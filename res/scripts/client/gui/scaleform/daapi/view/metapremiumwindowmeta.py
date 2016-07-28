@@ -27,12 +27,10 @@ class PremiumWindowMeta(SimpleWindowMeta):
         if self._isDAAPIInited():
             return self.flashObject.as_setHeader(prc, bonus1, bonus2)
 
-    def as_setRatesS(self, header, rates, selectedRateId):
+    def as_setRatesS(self, data):
         """
-        :param header:
-        :param rates:
-        :param selectedRateId:
+        :param data:
         :return :
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setRates(header, rates, selectedRateId)
+            return self.flashObject.as_setRates(data)

@@ -61,7 +61,6 @@ class ShowShooting(EntityExtra):
             gunModel = data['_gunModel']
             effPlayer = data['_effectsListPlayer']
             effPlayer.stop()
-            withShot = 0
             if burstCount == 1:
                 effPlayer.play(gunModel, None, partial(self.stop, data))
                 withShot = 1

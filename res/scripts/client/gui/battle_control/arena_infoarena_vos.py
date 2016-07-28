@@ -1,24 +1,22 @@
 # Embedded file name: scripts/client/gui/battle_control/arena_info/arena_vos.py
 import operator
-from debug_utils import LOG_ERROR
-from gui.battle_control import vehicle_getter
-from gui.shared import fo_precache
-from gui.shared.gui_items.Vehicle import getShortUserName
-import nations
 from collections import defaultdict
+import nations
 from constants import IGR_TYPE, FLAG_ACTION
+from debug_utils import LOG_ERROR
 from gui import makeHtmlString
+from gui.battle_control import avatar_getter, vehicle_getter
+from gui.battle_control.arena_info import settings
 from gui.server_events import g_eventsCache
-from gui.battle_control.arena_info import settings, getPlayerVehicleID
-from gui.battle_control.arena_info import isPlayerTeamKillSuspected
-from items.vehicles import VEHICLE_CLASS_TAGS, PREMIUM_IGR_TAGS
 from gui.shared.gui_items import Vehicle
+from gui.shared.gui_items.Vehicle import getShortUserName, VEHICLE_TAGS
+from items.vehicles import VEHICLE_CLASS_TAGS
 _INVALIDATE_OP = settings.INVALIDATE_OP
 _VEHICLE_STATUS = settings.VEHICLE_STATUS
 _PLAYER_STATUS = settings.PLAYER_STATUS
 _DELIVERY_STATUS = settings.INVITATION_DELIVERY_STATUS
 
-def _getClassTag(tags):
+def getClassTag(tags):
     subSet = VEHICLE_CLASS_TAGS & tags
     result = None
     if len(subSet):
@@ -26,59 +24,16 @@ def _getClassTag(tags):
     return result
 
 
-def _isObserver(tags):
-    if len(tags):
-        result = bool(tags & frozenset(('observer',)))
-    else:
-        result = False
-    return result
+def isObserver(tags):
+    return VEHICLE_TAGS.OBSERVER in tags
 
 
-def _isPremiumIGR(tags):
-    if len(tags):
-        result = bool(tags & PREMIUM_IGR_TAGS)
-    else:
-        result = False
-    return result
+def isPremium(tags):
+    return VEHICLE_TAGS.PREMIUM in tags
 
 
-def getVehicleVOsComparator(x, y):
-    xvInfoVO, xvStatsVO, xviStatsVO = x
-    yvInfoVO, yvStatsVO, yviStatsVO = y
-    result = cmp(xvInfoVO.team, yvInfoVO.team)
-    if result:
-        return result
-    result = cmp(yvInfoVO.isAlive(), xvInfoVO.isAlive())
-    if result:
-        return result
-    result = cmp(xvInfoVO.vehicleType, yvInfoVO.vehicleType)
-    if result:
-        return result
-    return cmp(xvInfoVO.player, yvInfoVO.player)
-
-
-def getRespawnVOsComparator(x, y):
-    xvInfoVO, xvStatsVO, xviStatsVO = x
-    yvInfoVO, yvStatsVO, yviStatsVO = y
-    result = cmp(xvInfoVO.team, yvInfoVO.team)
-    if result:
-        return result
-    result = cmp(xviStatsVO.stopRespawn, yviStatsVO.stopRespawn)
-    if result:
-        return result
-    result = cmp(xvInfoVO.vehicleType, yvInfoVO.vehicleType)
-    if result:
-        return result
-    return cmp(xvInfoVO.player, yvInfoVO.player)
-
-
-def getFragCorrelationVOsComparator(x, y):
-    xvInfoVO, _, _ = x
-    yvInfoVO, _, _ = y
-    result = cmp(yvInfoVO.isAlive(), xvInfoVO.isAlive())
-    if result:
-        return result
-    return cmp(xvInfoVO.vehicleType.getOrderByClass(), yvInfoVO.vehicleType.getOrderByClass())
+def isPremiumIGR(tags):
+    return VEHICLE_TAGS.PREMIUM_IGR in tags
 
 
 class PlayerInfoVO(object):
@@ -162,9 +117,9 @@ class VehicleTypeInfoVO(object):
             vehicleType = vehicleDescr.type
             self.compactDescr = vehicleType.compactDescr
             tags = vehicleType.tags
-            self.classTag = _getClassTag(tags)
-            self.isObserver = _isObserver(tags)
-            self.isPremiumIGR = _isPremiumIGR(tags)
+            self.classTag = getClassTag(tags)
+            self.isObserver = isObserver(tags)
+            self.isPremiumIGR = isPremiumIGR(tags)
             self.turretYawLimits = vehicle_getter.getYawLimits(vehicleDescr)
             self.shortName = vehicleType.shortUserString
             self.name = Vehicle.getUserName(vehicleType=vehicleType, textPrefix=True)
@@ -176,7 +131,7 @@ class VehicleTypeInfoVO(object):
             vName = vehicleType.name
             self.iconName = settings.makeVehicleIconName(vName)
             self.iconPath = settings.makeContourIconSFPath(vName)
-            if not fo_precache.add(settings.makeContourIconResPath(vName)):
+            if not settings.addContourIconToCache(vName):
                 self.iconName = settings.UNKNOWN_CONTOUR_ICON_NAME
                 self.iconPath = settings.UNKNOWN_CONTOUR_ICON_SF_PATH
         else:
@@ -242,12 +197,12 @@ class VehicleArenaInfoVO(object):
             return result
         return cmp(self.player, other.player)
 
-    def updateVehicleStatus(self, invalidate = _INVALIDATE_OP.NONE, isAlive = None, isAvatarReady = None, **kwargs):
-        prev, self.vehicleStatus = self.vehicleStatus, self.__getVehicleStatus(isAlive, isAvatarReady)
+    def updateVehicleStatus(self, invalidate = _INVALIDATE_OP.NONE, isAlive = None, isAvatarReady = None, stopRespawn = False, **kwargs):
+        prev, self.vehicleStatus = self.vehicleStatus, self.__getVehicleStatus(isAlive, isAvatarReady, stopRespawn)
         diff = self.vehicleStatus ^ prev
         if diff:
             invalidate = _INVALIDATE_OP.addIfNot(invalidate, _INVALIDATE_OP.VEHICLE_STATUS)
-            if diff & _VEHICLE_STATUS.IS_ALIVE > 0:
+            if diff & _VEHICLE_STATUS.IS_ALIVE > 0 or diff & _VEHICLE_STATUS.STOP_RESPAWN > 0:
                 invalidate = _INVALIDATE_OP.addIfNot(invalidate, _INVALIDATE_OP.SORTING)
         return invalidate
 
@@ -264,11 +219,12 @@ class VehicleArenaInfoVO(object):
                 invalidate = _INVALIDATE_OP.addIfNot(invalidate, _INVALIDATE_OP.PLAYER_STATUS)
         return invalidate
 
-    def updateInvitationStatus(self, invalidate = _INVALIDATE_OP.NONE, external = _DELIVERY_STATUS.NONE, forbidInBattleInvitations = False, **kwargs):
+    def updateInvitationStatus(self, invalidate = _INVALIDATE_OP.NONE, include = _DELIVERY_STATUS.NONE, exclude = _DELIVERY_STATUS.NONE, forbidInBattleInvitations = False, **kwargs):
         status = self.invitationDeliveryStatus
         if forbidInBattleInvitations:
-            status = _DELIVERY_STATUS.addIfNot(status, _DELIVERY_STATUS.FORBIDDEN)
-        status = _DELIVERY_STATUS.addIfNot(status, external)
+            status = _DELIVERY_STATUS.addIfNot(status, _DELIVERY_STATUS.FORBIDDEN_BY_RECEIVER)
+        status = _DELIVERY_STATUS.addIfNot(status, include)
+        status = _DELIVERY_STATUS.removeIfHas(status, exclude)
         if self.invitationDeliveryStatus ^ status:
             self.invitationDeliveryStatus = status
             invalidate = _INVALIDATE_OP.addIfNot(invalidate, _INVALIDATE_OP.INVITATION_DELIVERY_STATUS)
@@ -307,7 +263,7 @@ class VehicleArenaInfoVO(object):
     def isTeamKiller(self, playerTeam = None):
         if playerTeam is not None and self.team != playerTeam:
             return False
-        elif self.vehicleID == getPlayerVehicleID() and isPlayerTeamKillSuspected():
+        elif self.vehicleID == avatar_getter.getPlayerVehicleID() and avatar_getter.isPlayerTeamKillSuspected():
             return True
         else:
             return self.playerStatus & _PLAYER_STATUS.IS_TEAM_KILLER > 0
@@ -348,7 +304,7 @@ class VehicleArenaInfoVO(object):
         return igrLabel
 
     @staticmethod
-    def __getVehicleStatus(isAlive = None, isAvatarReady = None):
+    def __getVehicleStatus(isAlive = None, isAvatarReady = None, stopRespawn = False):
         vehicleStatus = _VEHICLE_STATUS.DEFAULT
         if isAlive:
             vehicleStatus |= _VEHICLE_STATUS.IS_ALIVE
@@ -356,6 +312,8 @@ class VehicleArenaInfoVO(object):
             vehicleStatus |= _VEHICLE_STATUS.IS_READY
         if isAlive is None or isAvatarReady is None:
             vehicleStatus = _VEHICLE_STATUS.NOT_AVAILABLE
+        if stopRespawn:
+            vehicleStatus |= _VEHICLE_STATUS.STOP_RESPAWN
         return vehicleStatus
 
     def __getPlayerStatus(self, isTeamKiller = None):
@@ -370,24 +328,125 @@ class VehicleArenaInfoVO(object):
     def __getInvitationStatus(forbidInBattleInvitations = False):
         invitationStatus = _DELIVERY_STATUS.NONE
         if forbidInBattleInvitations:
-            invitationStatus = _DELIVERY_STATUS.FORBIDDEN
+            invitationStatus = _DELIVERY_STATUS.FORBIDDEN_BY_RECEIVER
         return invitationStatus
 
 
+class VehicleArenaInteractiveStatsVO(object):
+    __slots__ = ('xp', 'damageDealt', 'capturePts', 'flagActions', 'winPoints', 'deathCount', 'resourceAbsorbed', 'stopRespawn', 'equipmentDamage', 'equipmentKills', 'teamWinPoints', 'team')
+
+    def __init__(self, xp = 0, damageDealt = 0, capturePts = 0, flagActions = None, winPoints = 0, deathCount = 0, resourceAbsorbed = 0, stopRespawn = False, equipmentDamage = 0, equipmentKills = 0, *args):
+        super(VehicleArenaInteractiveStatsVO, self).__init__()
+        self.xp = xp
+        self.damageDealt = damageDealt
+        self.capturePts = capturePts
+        self.flagActions = flagActions or (0,) * len(FLAG_ACTION.RANGE)
+        self.winPoints = winPoints
+        self.deathCount = deathCount
+        self.resourceAbsorbed = resourceAbsorbed
+        self.stopRespawn = stopRespawn
+        self.equipmentDamage = equipmentDamage
+        self.equipmentKills = equipmentKills
+        self.teamWinPoints = 0
+
+    def clear(self):
+        self.xp = 0
+        self.damageDealt = 0
+        self.capturePts = 0
+        self.flagActions = (0,) * len(FLAG_ACTION.RANGE)
+        self.winPoints = 0
+        self.deathCount = 0
+        self.resourceAbsorbed = 0
+        self.stopRespawn = False
+        self.equipmentDamage = 0
+        self.equipmentKills = 0
+        self.teamWinPoints = 0
+
+    def update(self, xp = 0, damageDealt = 0, capturePts = 0, flagActions = None, winPoints = 0, deathCount = 0, resourceAbsorbed = 0, stopRespawn = False, equipmentDamage = 0, equipmentKills = 0, *args):
+        result = _INVALIDATE_OP.VEHICLE_ISTATS
+        self.xp += xp
+        self.damageDealt += damageDealt
+        self.capturePts += capturePts
+        if flagActions is not None:
+            self.flagActions = map(operator.add, self.flagActions, flagActions)
+        if winPoints:
+            result |= _INVALIDATE_OP.SORTING
+        self.winPoints += winPoints
+        self.deathCount += deathCount
+        self.resourceAbsorbed += resourceAbsorbed
+        self.stopRespawn = self.stopRespawn or stopRespawn
+        self.equipmentDamage += equipmentDamage
+        self.equipmentKills += equipmentKills
+        return result
+
+    def getCapturedFlags(self):
+        return self.flagActions[FLAG_ACTION.CAPTURED]
+
+    def getTotalDamage(self):
+        return self.damageDealt + self.equipmentDamage
+
+
 class VehicleArenaStatsVO(object):
-    __slots__ = ('vehicleID', 'frags')
+    """Value object containing statistics that are related to vehicles."""
+    __slots__ = ('vehicleID', '__frags', '__interactive')
 
     def __init__(self, vehicleID, frags = 0, **kwargs):
         super(VehicleArenaStatsVO, self).__init__()
         self.vehicleID = vehicleID
-        self.frags = frags
+        self.__frags = frags
+        self.__interactive = None
+        return
 
     def __repr__(self):
-        return 'VehicleArenaStatsVO(vehicleID = {0:n}, frags = {1:n})'.format(self.vehicleID, self.frags)
+        return 'VehicleArenaStatsVO(vehicleID = {}, frags = {}, interactive = {})'.format(self.vehicleID, self.__frags, self.__interactive)
 
-    def update(self, frags = None, **kwargs):
-        self.frags = frags
-        return _INVALIDATE_OP.VEHICLE_STATS
+    @property
+    def frags(self):
+        if self.__interactive is not None:
+            return self.__frags + self.__interactive.equipmentKills
+        else:
+            return self.__frags
+            return
+
+    @property
+    def interactive(self):
+        if self.__interactive is None:
+            self.__interactive = VehicleArenaInteractiveStatsVO()
+        return self.__interactive
+
+    @property
+    def stopRespawn(self):
+        if self.__interactive is not None:
+            return self.__interactive.stopRespawn
+        else:
+            return False
+            return
+
+    @property
+    def winPoints(self):
+        if self.__interactive is not None:
+            return self.__interactive.winPoints
+        else:
+            return 0
+            return
+
+    def clearInteractiveStats(self):
+        if self.__interactive is not None:
+            self.__interactive.clear()
+        return
+
+    def updateInteractiveStats(self, *args):
+        if self.__interactive is None:
+            self.__interactive = VehicleArenaInteractiveStatsVO()
+        return self.__interactive.update(*args)
+
+    def updateVehicleStats(self, frags = None, **kwargs):
+        if frags is not None:
+            self.__frags = frags
+            return _INVALIDATE_OP.VEHICLE_STATS
+        else:
+            return _INVALIDATE_OP.NONE
+            return
 
 
 class VehicleArenaStatsDict(defaultdict):
@@ -396,44 +455,9 @@ class VehicleArenaStatsDict(defaultdict):
         self[key] = value = VehicleArenaStatsVO(key)
         return value
 
-
-class VehicleArenaInteractiveStatsVO(object):
-    __slots__ = ('vehicleID', 'xp', 'damageDealt', 'capturePts', 'flagActions', 'winPoints', 'deathCount', 'resourceAbsorbed', 'stopRespawn', 'equipmentDamage', 'equipmentKills')
-
-    def __init__(self, vehicleID, xp = 0, damageDealt = 0, capturePts = 0, flagActions = None, winPoints = 0, deathCount = 0, resourceAbsorbed = 0, stopRespawn = False, equipmentDamage = 0, equipmentKills = 0, *args):
-        super(VehicleArenaInteractiveStatsVO, self).__init__()
-        self.vehicleID = vehicleID
-        self.xp = xp
-        self.damageDealt = damageDealt
-        self.capturePts = capturePts
-        self.flagActions = flagActions or [0] * len(FLAG_ACTION.RANGE)
-        self.winPoints = winPoints
-        self.deathCount = deathCount
-        self.resourceAbsorbed = resourceAbsorbed
-        self.stopRespawn = stopRespawn
-        self.equipmentDamage = equipmentDamage
-        self.equipmentKills = equipmentKills
-
-    def update(self, xp = 0, damageDealt = 0, capturePts = 0, flagActions = None, winPoints = 0, deathCount = 0, resourceAbsorbed = 0, stopRespawn = False, equipmentDamage = 0, equipmentKills = 0, *args):
-        self.xp += xp
-        self.damageDealt += damageDealt
-        self.capturePts += capturePts
-        if flagActions is not None:
-            self.flagActions = map(operator.add, self.flagActions, flagActions)
-        self.winPoints += winPoints
-        self.deathCount += deathCount
-        self.resourceAbsorbed += resourceAbsorbed
-        self.stopRespawn = self.stopRespawn or stopRespawn
-        self.equipmentDamage += equipmentDamage
-        self.equipmentKills += equipmentKills
-        return _INVALIDATE_OP.VEHICLE_STATS
-
-
-class VehicleArenaInteractiveStatsDict(defaultdict):
-
-    def __missing__(self, key):
-        self[key] = value = VehicleArenaInteractiveStatsVO(key)
-        return value
+    def clearInteractiveStats(self):
+        for vo in self.itervalues():
+            vo.clearInteractiveStats()
 
 
 class VehicleActions(object):

@@ -22,6 +22,7 @@ class CONTROLLER(CONST_CONTAINER):
     AWARD = 'award'
     BOOSTERS = 'boosters'
     FALLOUT = 'fallout'
+    CLAN_LOCK = 'clanLock'
 
 
 class BROWSER(CONST_CONTAINER):

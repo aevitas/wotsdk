@@ -197,3 +197,11 @@ class AimMeta(BaseDAAPIModule):
         """
         if self._isDAAPIInited():
             return self.flashObject.as_clearPreviousCorrection()
+
+    def as_setZoomS(self, zoomStr):
+        """
+        :param zoomStr:
+        :return :
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setZoom(zoomStr)

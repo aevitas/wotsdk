@@ -65,6 +65,7 @@ class SFApplication(Flash, ApplicationMeta):
         self._gameInputMgr = None
         self._cacheMgr = None
         self._tutorialMgr = None
+        self._imageManager = None
         self.__initialized = False
         self.__ns = appNS
         self.__geShowed = False
@@ -136,6 +137,10 @@ class SFApplication(Flash, ApplicationMeta):
         return None
 
     @property
+    def imageManager(self):
+        return self._imageManager
+
+    @property
     def initialized(self):
         return self.__initialized
 
@@ -146,6 +151,18 @@ class SFApplication(Flash, ApplicationMeta):
     @property
     def ctrlModeFlags(self):
         return self.__guiCtrlModeFlags
+
+    def isModalViewShown(self):
+        """ Is any modal window shown.
+        For example, this routine is needed to avoid key handling in battle UI if modal window is shown.
+        :return: return True if some modal window is shown.
+        """
+        manager = self._containerMgr
+        if manager is not None:
+            result = manager.isModalViewsIsExists()
+        else:
+            result = False
+        return result
 
     def toggleEditor(self):
         from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
@@ -171,7 +188,7 @@ class SFApplication(Flash, ApplicationMeta):
 
     def afterCreate(self):
         self.fireEvent(AppLifeCycleEvent(self.__ns, AppLifeCycleEvent.INITIALIZING))
-        LOG_DEBUG('[SFApplication] afterCreate')
+        LOG_DEBUG('[SFApplication] afterCreate', self.__ns)
         super(SFApplication, self).afterCreate()
         self._createManagers()
         self.as_registerManagersS()
@@ -189,7 +206,7 @@ class SFApplication(Flash, ApplicationMeta):
         self._loadWaiting()
 
     def beforeDelete(self):
-        LOG_DEBUG('[SFApplication] beforeDelete')
+        LOG_DEBUG('[SFApplication] beforeDelete', self.__ns)
         self.removeListener(GameEvent.CHANGE_APP_RESOLUTION, self.__onAppResolutionChanged, scope=EVENT_BUS_SCOPE.GLOBAL)
         self._removeGameCallbacks()
         if self._containerMgr is not None:
@@ -240,6 +257,9 @@ class SFApplication(Flash, ApplicationMeta):
         if self.__daapiBridge is not None:
             self.__daapiBridge.clear()
             self.__daapiBridge = None
+        if self._imageManager is not None:
+            self._imageManager.destroy()
+            self._imageManager = None
         super(SFApplication, self).beforeDelete()
         self.proxy = None
         self.fireEvent(AppLifeCycleEvent(self.__ns, AppLifeCycleEvent.DESTROYED))
@@ -339,6 +359,10 @@ class SFApplication(Flash, ApplicationMeta):
     def setTutorialMgr(self, flashObject):
         self._tutorialMgr.setFlashObject(flashObject)
 
+    def setImageManager(self, flashObject):
+        if self._imageManager and flashObject:
+            self._imageManager.setFlashObject(flashObject)
+
     def onAsInitializationCompleted(self):
         self.__initialized = True
         self.fireEvent(AppLifeCycleEvent(self.__ns, AppLifeCycleEvent.INITIALIZED))
@@ -377,6 +401,7 @@ class SFApplication(Flash, ApplicationMeta):
         self._gameInputMgr = self._createGameInputManager()
         self._cacheMgr = self._createCacheManager()
         self._tutorialMgr = self._createTutorialManager()
+        self._imageManager = self._createImageManager()
 
     def _addGameCallbacks(self):
         g_guiResetters.add(self.__onScreenResolutionChanged)
@@ -429,6 +454,9 @@ class SFApplication(Flash, ApplicationMeta):
         return None
 
     def _createCacheManager(self):
+        return None
+
+    def _createImageManager(self):
         return None
 
     def _createTutorialManager(self):

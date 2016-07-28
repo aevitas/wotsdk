@@ -8,6 +8,7 @@ from helpers import i18n
 from items import vehicles as veh_core
 from gui.shared.gui_items import FittingItem, _ICONS_MASK
 from gui.shared.utils import GUN_CLIP, GUN_CAN_BE_CLIP
+from gui.shared.money import Currency
 MODULE_TYPES_ORDER = ('vehicleGun', 'vehicleTurret', 'vehicleEngine', 'vehicleChassis', 'vehicleRadio', 'vehicleFuelTank')
 MODULE_TYPES_ORDER_INDICES = dict(((n, i) for i, n in enumerate(MODULE_TYPES_ORDER)))
 SHELL_TYPES_ORDER = (SHELL_TYPES.ARMOR_PIERCING,
@@ -243,7 +244,8 @@ class Shell(FittingItem):
         @param proxy:
         @return:
         """
-        return (buyPrice[0] + buyPrice[1] * proxy.exchangeRateForShellsAndEqs, buyPrice[1])
+        creditsPrice = buyPrice.exchange(Currency.GOLD, Currency.CREDITS, proxy.exchangeRateForShellsAndEqs)
+        return buyPrice.replace(Currency.CREDITS, creditsPrice.credits)
 
     def _getFormatLongUserName(self, kind):
         if self.nationID == nations.INDICES['germany']:

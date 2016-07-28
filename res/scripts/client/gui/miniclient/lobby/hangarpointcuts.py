@@ -23,7 +23,7 @@ class MaintenanceButtonFlickering(aop.Pointcut):
 class DeviceButtonsFlickering(aop.Pointcut):
 
     def __init__(self, config):
-        aop.Pointcut.__init__(self, 'gui.Scaleform.daapi.view.lobby.hangar.AmmunitionPanel', 'AmmunitionPanel', 'updateDeviceTooltip', aspects=(aspects.DeviceButtonsFlickering(config),))
+        aop.Pointcut.__init__(self, 'gui.Scaleform.daapi.view.lobby.hangar.AmmunitionPanel', 'AmmunitionPanel', 'as_setDataS', aspects=(aspects.DeviceButtonsFlickering(config),))
 
 
 class TankModelHangarVisibility(aop.Pointcut):

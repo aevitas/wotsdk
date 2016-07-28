@@ -1062,7 +1062,7 @@ class VehicleType(object):
         if section.has_key('premiumVehicleXPFactor'):
             self.premiumVehicleXPFactor = _xml.readNonNegativeFloat(xmlCtx, section, 'premiumVehicleXPFactor')
         self.premiumVehicleXPFactor = max(self.premiumVehicleXPFactor, 0.0)
-        if not IS_CLIENT:
+        if not IS_CLIENT and not IS_BOT:
             self.xpFactor = _xml.readNonNegativeFloat(xmlCtx, section, 'xpFactor')
             self.creditsFactor = _xml.readNonNegativeFloat(xmlCtx, section, 'creditsFactor')
             self.freeXpFactor = _xml.readNonNegativeFloat(xmlCtx, section, 'freeXpFactor')
@@ -1917,7 +1917,7 @@ def _readHull(xmlCtx, section):
      'weight': _xml.readNonNegativeFloat(xmlCtx, section, 'weight'),
      'maxHealth': _xml.readInt(xmlCtx, section, 'maxHealth', 1),
      'ammoBayHealth': _readDeviceHealthParams(xmlCtx, section, 'ammoBayHealth', False)}
-    if not IS_CLIENT:
+    if not IS_CLIENT and not IS_BOT:
         res['armorHomogenization'] = _xml.readPositiveFloat(xmlCtx, section, 'armorHomogenization')
     v = []
     for s in _xml.getSubsection(xmlCtx, section, 'turretPositions').values():
@@ -2103,7 +2103,7 @@ def _readChassis(xmlCtx, section, compactDescr, unlocksDescrs = None, parentItem
     if not 0.0 < v[0] <= v[1] <= v[2]:
         _xml.raiseWrongSection(xmlCtx, 'terrainResistance')
     res['terrainResistance'] = v
-    if not IS_CLIENT:
+    if not IS_CLIENT and not IS_BOT:
         res['armorHomogenization'] = 1.0
         res['bulkHealthFactor'] = _xml.readPositiveFloat(xmlCtx, section, 'bulkHealthFactor')
     res.update(_readDeviceHealthParams(xmlCtx, section))
@@ -2484,7 +2484,7 @@ def _readTurret(xmlCtx, section, compactDescr, unlocksDescrs = None, parentItem 
      'rotationSpeed': radians(_xml.readPositiveFloat(xmlCtx, section, 'rotationSpeed')),
      'turretRotatorHealth': _readDeviceHealthParams(xmlCtx, section, 'turretRotatorHealth'),
      'surveyingDeviceHealth': _readDeviceHealthParams(xmlCtx, section, 'surveyingDeviceHealth')}
-    if not IS_CLIENT:
+    if not IS_CLIENT and not IS_BOT:
         res['armorHomogenization'] = _xml.readPositiveFloat(xmlCtx, section, 'armorHomogenization')
     if section.has_key('invisibilityFactor'):
         res['invisibilityFactor'] = _xml.readNonNegativeFloat(xmlCtx, section, 'invisibilityFactor')
@@ -2951,7 +2951,7 @@ def _readShell(xmlCtx, section, name, nationID, shellTypeID, icons):
     if kind not in _shellKinds:
         _xml.raiseWrongXml(xmlCtx, 'kind', "unknown shell kind '%s'" % kind)
     res['kind'] = kind
-    if not IS_CLIENT:
+    if not IS_CLIENT and not IS_BOT:
         if kind.startswith('ARMOR_PIERCING'):
             res['normalizationAngle'] = radians(_xml.readNonNegativeFloat(xmlCtx, section, 'normalizationAngle'))
             res['ricochetAngleCos'] = cos(radians(_xml.readNonNegativeFloat(xmlCtx, section, 'ricochetAngle')))
@@ -2987,7 +2987,8 @@ def _readShot(xmlCtx, section, nationID, projectileSpeedFactor):
      'piercingPower': _xml.readVector2(xmlCtx, section, 'piercingPower'),
      'speed': _xml.readPositiveFloat(xmlCtx, section, 'speed') * projectileSpeedFactor,
      'gravity': _xml.readNonNegativeFloat(xmlCtx, section, 'gravity') * projectileSpeedFactor ** 2,
-     'maxDistance': _xml.readPositiveFloat(xmlCtx, section, 'maxDistance')}
+     'maxDistance': _xml.readPositiveFloat(xmlCtx, section, 'maxDistance'),
+     'maxHeight': section.readFloat('maxHeight', 1000000.0)}
     return res
 
 
@@ -3116,7 +3117,7 @@ def _readDeviceHealthParams(xmlCtx, section, subsectionName = '', withHysteresis
      'maxRegenHealth': _xml.readInt(xmlCtx, section, 'maxRegenHealth', 0)}
     if res['maxRegenHealth'] > res['maxHealth']:
         _xml.raiseWrongSection(xmlCtx, 'maxRegenHealth')
-    if not IS_CLIENT:
+    if not IS_CLIENT and not IS_BOT:
         res['healthRegenPerSec'] = _xml.readNonNegativeFloat(xmlCtx, section, 'healthRegenPerSec')
         res['healthBurnPerSec'] = _xml.readNonNegativeFloat(xmlCtx, section, 'healthBurnPerSec')
         res['chanceToHit'] = None if not section.has_key('chanceToHit') else _xml.readFraction(xmlCtx, section, 'chanceToHit')
@@ -3490,6 +3491,8 @@ def _readShotEffects(xmlCtx, section):
         res['armorHit'] = __readEffectsTimeLine(xmlCtx, _xml.getSubsection(xmlCtx, section, 'armorHit'))
         res['armorCriticalHit'] = __readEffectsTimeLine(xmlCtx, _xml.getSubsection(xmlCtx, section, 'armorCriticalHit'))
         res['armorResisted'] = __readEffectsTimeLine(xmlCtx, _xml.getSubsection(xmlCtx, section, 'armorResisted'))
+        if section.has_key('armorSplashHit'):
+            res['armorSplashHit'] = __readEffectsTimeLine(xmlCtx, _xml.getSubsection(xmlCtx, section, 'armorSplashHit'))
         if not artillery and not airstrike:
             model = _xml.readNonEmptyString(xmlCtx, section, 'projectile/model')
             modelOwnShot = section.readString('projectile/modelOwnShot', model)
@@ -3597,7 +3600,8 @@ def _readCommonConfig(xmlCtx, section):
      'maxSignals': _xml.readInt(xmlCtx, section, 'miscParams/hornCooldown/maxSignals', 1)}
     res['miscParams'] = {'projectileSpeedFactor': _xml.readPositiveFloat(xmlCtx, section, 'miscParams/projectileSpeedFactor'),
      'hornCooldown': hornCooldownParams,
-     'minFireStartingDamage': _xml.readNonNegativeFloat(xmlCtx, section, 'miscParams/minFireStartingDamage')}
+     'minFireStartingDamage': _xml.readNonNegativeFloat(xmlCtx, section, 'miscParams/minFireStartingDamage'),
+     'allowMortarShooting': _xml.readBool(xmlCtx, section, 'miscParams/allowMortarShooting')}
     if IS_CLIENT:
         v = {}
         for lodName in _xml.getSubsection(xmlCtx, section, 'lodLevels').keys():
@@ -3878,7 +3882,7 @@ def _readCamouflage(xmlCtx, section, ids, groups, nationID, priceFactors, notInS
 
 def _readColors(xmlCtx, section, sectionName, requiredSize):
     res = []
-    if not IS_CLIENT:
+    if not IS_CLIENT and not IS_BOT:
         for sname, subsection in _xml.getChildren(xmlCtx, section, sectionName):
             res.append(0)
 

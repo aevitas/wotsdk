@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/gui/shared/events.py
+from collections import namedtuple
 from gui.shared.event_bus import SharedEvent
 from shared_utils import CONST_CONTAINER
 __all__ = ['ArgsEvent',
@@ -52,7 +53,11 @@ class GameEvent(HasCtxEvent):
     HELP = 'game/help'
     MINIMAP_CMD = 'game/minimapCmd'
     RADIAL_MENU_CMD = 'game/radialMenuCmd'
+    TOGGLE_GUI = 'game/toggleGUI'
     GUI_VISIBILITY = 'game/guiVisibility'
+    MARKERS_2D_VISIBILITY = 'game/markers2DVisibility'
+    CROSSHAIR_VISIBILITY = 'game/crosshairVisibility'
+    CROSSHAIR_VIEW = 'game/crosshairView'
     FULL_STATS = 'game/fullStats'
     SHOW_CURSOR = 'game/showCursor'
     HIDE_CURSOR = 'game/hideCursor'
@@ -117,6 +122,7 @@ class ShowDialogEvent(SharedEvent):
     SHOW_DEMOUNT_DEVICE_DIALOG = 'showDemountDeviceDialog'
     SHOW_DESTROY_DEVICE_DIALOG = 'showDestroyDeviceDialog'
     SHOW_CONFIRM_MODULE = 'showConfirmModule'
+    SHOW_CONFIRM_BOOSTER = 'showConfirmBooster'
     SHOW_SYSTEM_MESSAGE_DIALOG = 'showSystemMessageDialog'
     SHOW_DISMISS_TANKMAN_DIALOG = 'showDismissTankmanDialog'
     SHOW_CYBER_SPORT_DIALOG = 'showCyberSportDialog'
@@ -234,6 +240,8 @@ class CloseWindowEvent(SharedEvent):
         self.isAgree = isAgree
 
 
+coolDownEventParams = namedtuple('coolDownEventParams', 'eventType, requestScope, actionId')
+
 class CoolDownEvent(SharedEvent):
     GLOBAL = 'globalCoolDown'
     PREBATTLE = 'prebattleCoolDown'
@@ -299,6 +307,7 @@ class ChannelManagementEvent(HasCtxEvent):
     REQUEST_TO_EXIT = 'rqExitChannel'
     REGISTER_BATTLE = 'registerBattleComponent'
     UNREGISTER_BATTLE = 'unregisterBattleComponent'
+    MESSAGE_FADING_ENABLED = 'messageFadingEnabled'
 
     def __init__(self, clientID, eventType = None, ctx = None):
         super(ChannelManagementEvent, self).__init__(eventType, ctx)

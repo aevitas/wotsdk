@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/gui/shared/tooltips/vehicle.py
 import constants
-from debug_utils import LOG_ERROR
+from debug_utils import LOG_ERROR, LOG_WARNING
 from gui.Scaleform.genConsts.BLOCKS_TOOLTIP_TYPES import BLOCKS_TOOLTIP_TYPES
 from gui.Scaleform.genConsts.ICON_TEXT_FRAMES import ICON_TEXT_FRAMES
 from gui.Scaleform.locale.RES_ICONS import RES_ICONS
@@ -8,16 +8,17 @@ from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.ITEM_TYPES import ITEM_TYPES
 from gui.game_control import getFalloutCtrl
-from gui.shared.formatters import text_styles, icons
+from gui.shared.formatters import text_styles
 from gui.shared.formatters.time_formatters import RentLeftFormatter
 from gui.shared.items_parameters import RELATIVE_PARAMS, MAX_RELATIVE_VALUE, formatters as param_formatter, params_helper
-from gui.shared.tooltips.common import BlocksTooltipData
+from gui.shared.tooltips.common import BlocksTooltipData, makePriceBlock, CURRENCY_SETTINGS
 from helpers import i18n, time_utils, int2roman
 from gui.Scaleform.daapi.view.lobby.techtree.settings import NODE_STATE
 from gui.shared import g_itemsCache
 from gui.shared.tooltips import getComplexStatus, getUnlockPrice, TOOLTIP_TYPE
 from gui.shared.gui_items.Vehicle import Vehicle
 from gui.shared.tooltips import formatters
+from gui.shared.money import Money, Currency
 from helpers.i18n import makeString as _ms
 from BigWorld import wg_getIntegralFormat as _int
 from gui.shared.gui_items.Vehicle import VEHICLE_CLASS_NAME
@@ -306,70 +307,45 @@ class PriceBlockConstructor(VehicleTooltipBlockConstructor):
             if unlockPrice:
                 isAvailable, cost, need = getUnlockPrice(self.vehicle.intCD, parentCD)
                 if cost > 0:
-                    neededValue = 0
+                    neededValue = None
                     if isAvailable and not isUnlocked and need > 0 and techTreeNode is not None:
                         neededValue = need
-                    block.append(self._makePriceBlock(cost, TOOLTIPS.VEHICLE_UNLOCK_PRICE, ICON_TEXT_FRAMES.XP, neededValue))
+                    block.append(makePriceBlock(cost, CURRENCY_SETTINGS.UNLOCK_PRICE, neededValue, valueWidth=self._valueWidth))
             if buyPrice and not (self.vehicle.isDisabledForBuy or self.vehicle.isPremiumIGR or self.vehicle.isTelecom):
                 price = self.vehicle.buyPrice
-                credits, gold = g_itemsCache.items.stats.money
-                creditsBuyPrice = price[0]
-                goldBuyPrice = price[1]
-                creditsNeeded = creditsBuyPrice - credits if creditsBuyPrice else 0
-                goldNeeded = goldBuyPrice - gold if goldBuyPrice else 0
-                neededValue = 0
+                money = g_itemsCache.items.stats.money
                 actionPrc = self.vehicle.actionPrc
                 defaultPrice = self.vehicle.defaultPrice
-                if goldBuyPrice == 0:
-                    currencyType = ICON_TEXT_FRAMES.CREDITS
-                    buyPriceText = creditsBuyPrice
-                    oldPrice = defaultPrice[0]
-                    if creditsNeeded > 0:
-                        neededValue = creditsNeeded
-                else:
-                    currencyType = ICON_TEXT_FRAMES.GOLD
-                    buyPriceText = goldBuyPrice
-                    oldPrice = defaultPrice[1]
-                    if goldNeeded > 0:
-                        neededValue = goldNeeded
+                currency = price.getCurrency()
+                buyPriceText = price.get(currency)
+                oldPrice = defaultPrice.get(currency)
+                neededValue = price.get(currency) - money.get(currency)
+                neededValue = neededValue if neededValue > 0 else None
                 if isInInventory or not isInInventory and not isUnlocked and not isNextToUnlock:
-                    neededValue = 0
-                block.append(self._makePriceBlock(buyPriceText, TOOLTIPS.VEHICLE_BUY_PRICE, currencyType, neededValue, oldPrice, actionPrc))
+                    neededValue = None
+                block.append(makePriceBlock(buyPriceText, CURRENCY_SETTINGS.getBuySetting(currency), neededValue, oldPrice, actionPrc, valueWidth=self._valueWidth))
             if sellPrice and not self.vehicle.isTelecom:
-                creditsPrice = self.vehicle.sellPrice[0]
-                goldPrice = self.vehicle.sellPrice[1]
-                if goldPrice == 0:
-                    sellPriceText = text_styles.credits(_int(creditsPrice))
-                    sellPriceIcon = ICON_TEXT_FRAMES.CREDITS
-                else:
-                    sellPriceText = text_styles.gold(_int(goldPrice))
+                sellPrice = self.vehicle.sellPrice
+                if sellPrice.isSet(Currency.GOLD):
+                    sellPriceText = text_styles.gold(_int(sellPrice.gold))
                     sellPriceIcon = ICON_TEXT_FRAMES.GOLD
+                else:
+                    sellPriceText = text_styles.credits(_int(sellPrice.credits))
+                    sellPriceIcon = ICON_TEXT_FRAMES.CREDITS
                 block.append(formatters.packTextParameterWithIconBlockData(name=text_styles.main(TOOLTIPS.VEHICLE_SELL_PRICE), value=sellPriceText, icon=sellPriceIcon, valueWidth=self._valueWidth, padding=paddings))
             if minRentPrice and not self.vehicle.isPremiumIGR:
                 minRentPricePackage = self.vehicle.getRentPackage()
                 if minRentPricePackage:
-                    minRentPriceValue = minRentPricePackage['rentPrice']
-                    minDefaultRentPriceValue = minRentPricePackage['defaultRentPrice']
+                    minRentPriceValue = Money(*minRentPricePackage['rentPrice'])
+                    minDefaultRentPriceValue = Money(*minRentPricePackage['defaultRentPrice'])
                     actionPrc = self.vehicle.getRentPackageActionPrc(minRentPricePackage['days'])
-                    credits, gold = g_itemsCache.items.stats.money
-                    creditsPrice = minRentPriceValue[0]
-                    goldPrice = minRentPriceValue[1]
-                    enoughCreditsForRent = credits - creditsPrice >= 0
-                    enoughGoldForRent = gold - goldPrice >= 0
-                    neededValue = 0
-                    if goldPrice == 0:
-                        price = creditsPrice
-                        oldPrice = minDefaultRentPriceValue[0]
-                        currencyType = ICON_TEXT_FRAMES.CREDITS
-                        if not enoughCreditsForRent:
-                            neededValue = credits - creditsPrice
-                    else:
-                        price = goldPrice
-                        oldPrice = minDefaultRentPriceValue[1]
-                        currencyType = ICON_TEXT_FRAMES.GOLD
-                        if not enoughGoldForRent:
-                            neededValue = gold - goldPrice
-                    block.append(self._makePriceBlock(price, TOOLTIPS.VEHICLE_MINRENTALSPRICE, currencyType, neededValue, oldPrice, actionPrc))
+                    money = g_itemsCache.items.stats.money
+                    currency = minRentPriceValue.getCurrency()
+                    price = minRentPriceValue.get(currency)
+                    oldPrice = minDefaultRentPriceValue.get(currency)
+                    neededValue = minRentPriceValue.get(currency) - money.get(currency)
+                    neededValue = neededValue if neededValue > 0 else None
+                    block.append(makePriceBlock(price, CURRENCY_SETTINGS.getRentSetting(currency), neededValue, oldPrice, actionPrc, valueWidth=self._valueWidth))
             if rentals and not self.vehicle.isPremiumIGR:
                 rentFormatter = RentLeftFormatter(self.vehicle.rentInfo)
                 rentLeftInfo = rentFormatter.getRentLeftStr('#tooltips:vehicle/rentLeft/%s', formatter=lambda key, countType, count, _ = None: {'left': count,
@@ -379,49 +355,6 @@ class PriceBlockConstructor(VehicleTooltipBlockConstructor):
             notEnoughMoney = neededValue > 0
             hasAction = actionPrc > 0
             return (block, notEnoughMoney or hasAction)
-
-    def _makePriceBlock(self, price, text, currencyType, neededValue = 0, oldPrice = None, percent = 0):
-        needFormatted = ''
-        oldPriceText = ''
-        hasAction = percent != 0
-        if currencyType == ICON_TEXT_FRAMES.CREDITS:
-            valueFormatted = text_styles.credits(_int(price))
-            icon = icons.credits()
-            if neededValue > 0:
-                needFormatted = text_styles.credits(_int(neededValue))
-            if hasAction:
-                oldPriceText = text_styles.concatStylesToSingleLine(icons.credits(), text_styles.credits(_int(oldPrice)))
-        elif currencyType == ICON_TEXT_FRAMES.GOLD:
-            valueFormatted = text_styles.gold(_int(price))
-            icon = icons.gold()
-            if neededValue > 0:
-                needFormatted = text_styles.gold(_int(neededValue))
-            if hasAction:
-                oldPriceText = text_styles.concatStylesToSingleLine(icons.gold(), text_styles.gold(_int(oldPrice)))
-        elif currencyType == ICON_TEXT_FRAMES.XP:
-            valueFormatted = text_styles.expText(_int(price))
-            icon = icons.xp()
-            if neededValue > 0:
-                needFormatted = text_styles.expText(_int(neededValue))
-        else:
-            LOG_ERROR('Unsupported currency type "' + currencyType + '"!')
-            return None
-        neededText = ''
-        if neededValue > 0:
-            neededText = text_styles.concatStylesToSingleLine(text_styles.main('('), text_styles.error(TOOLTIPS.VEHICLE_GRAPH_BODY_NOTENOUGH), ' ', needFormatted, ' ', icon, text_styles.main(')'))
-        text = text_styles.concatStylesWithSpace(text_styles.main(text), neededText)
-        if hasAction:
-            actionText = text_styles.main(_ms(TOOLTIPS.VEHICLE_ACTION_PRC, actionPrc=text_styles.stats(str(percent) + '%'), oldPrice=oldPriceText))
-            text = text_styles.concatStylesToMultiLine(text, actionText)
-            if currencyType == ICON_TEXT_FRAMES.GOLD:
-                newPrice = (0, price)
-            else:
-                newPrice = (price, 0)
-            return formatters.packSaleTextParameterBlockData(name=text, saleData={'newPrice': newPrice,
-             'valuePadding': -8}, actionStyle='alignTop', padding=formatters.packPadding(left=61))
-        else:
-            return formatters.packTextParameterWithIconBlockData(name=text, value=valueFormatted, icon=currencyType, valueWidth=self._valueWidth, padding=formatters.packPadding(left=-3))
-            return None
 
 
 class CommonStatsBlockConstructor(VehicleTooltipBlockConstructor):
@@ -596,8 +529,8 @@ class StatusBlockConstructor(VehicleTooltipBlockConstructor):
                 level = Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
                 if reason == 'gold_error':
                     tooltip = TOOLTIPS.MODULEFITS_GOLD_ERROR
-                elif reason == 'credit_error':
-                    tooltip = TOOLTIPS.MODULEFITS_CREDIT_ERROR
+                elif reason == 'credits_error':
+                    tooltip = TOOLTIPS.MODULEFITS_CREDITS_ERROR
                 else:
                     tooltip = TOOLTIPS.MODULEFITS_OPERATION_ERROR
         header, text = getComplexStatus(tooltip)
@@ -612,20 +545,28 @@ class StatusBlockConstructor(VehicleTooltipBlockConstructor):
         if showCustomStates:
             isUnlocked = vehicle.isUnlocked
             isInInventory = vehicle.isInInventory
-            credits, gold = g_itemsCache.items.stats.money
+            money = g_itemsCache.items.stats.money
             price = vehicle.minRentPrice or vehicle.buyPrice
+            needMoney = price - money
+            needMoney = needMoney.toNonNegative()
             msg = None
             level = Vehicle.VEHICLE_STATE_LEVEL.WARNING
             if not isUnlocked:
                 msg = 'notUnlocked'
             elif isInInventory:
                 msg = 'inHangar'
-            elif credits < price[0]:
-                msg = 'notEnoughCredits'
-                level = Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
-            elif gold < price[1]:
-                msg = 'notEnoughGold'
-                level = Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
+            elif needMoney:
+                currency = needMoney.getCurrency(byWeight=False)
+                if currency == Currency.CREDITS:
+                    msg = 'notEnoughCredits'
+                    level = Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
+                elif currency == Currency.GOLD:
+                    msg = 'notEnoughGold'
+                    level = Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
+                else:
+                    msg = 'notEnough'
+                    level = Vehicle.VEHICLE_STATE_LEVEL.CRITICAL
+                    LOG_WARNING('Unsupported currency: ', currency)
             if msg is not None:
                 header, text = getComplexStatus('#tooltips:vehicleStatus/%s' % msg)
                 return {'header': header,

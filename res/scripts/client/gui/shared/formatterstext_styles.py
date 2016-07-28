@@ -140,6 +140,23 @@ def playerOnline(text):
     return _formatText('playerOnline', text)
 
 
+def alignText(text, align):
+    return _getStyle('alignText', {'message': text,
+     'align': align})
+
+
+def alignStandartText(text, align):
+    return alignText(standard(text), align)
+
+
+def vehicleStatusInfoText(text):
+    return _formatText('vehicleStatusInfoText', text)
+
+
+def vehicleStatusCriticalText(text):
+    return _formatText('vehicleStatusCriticalText', text)
+
+
 def getRawStyles(names):
     return dict(map(lambda name: (name, _getStyle(name)), names))
 

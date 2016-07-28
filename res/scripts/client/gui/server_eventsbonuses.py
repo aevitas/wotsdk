@@ -252,7 +252,7 @@ class BoosterBonus(SimpleBonus):
             _getBooster = g_goodiesCache.getBooster
             for boosterID, info in self._value.iteritems():
                 booster = _getBooster(int(boosterID))
-                if booster is not None:
+                if booster is not None and booster.enabled:
                     boosters[booster] = info.get('count', 1)
 
         return boosters
@@ -584,6 +584,18 @@ _BONUSES = {'credits': CreditsBonus,
  'customizations': CustomizationsBonus,
  'goodies': BoosterBonus,
  'strBonus': SimpleBonus}
+_BONUSES_PRIORITY = ('tokens',)
+_BONUSES_ORDER = dict(((n, idx) for idx, n in enumerate(_BONUSES_PRIORITY)))
+
+def compareBonuses(bonusName1, bonusName2):
+    if bonusName1 not in _BONUSES_ORDER and bonusName2 not in _BONUSES_ORDER:
+        return cmp(bonusName1, bonusName2)
+    if bonusName1 not in _BONUSES_ORDER:
+        return 1
+    if bonusName2 not in _BONUSES_ORDER:
+        return -1
+    return _BONUSES_ORDER[bonusName1] - _BONUSES_ORDER[bonusName2]
+
 
 def _getClassFromTree(tree, path):
     if not tree or not path:

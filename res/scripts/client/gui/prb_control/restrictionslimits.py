@@ -18,6 +18,10 @@ from shared_utils import findFirst
 class VehicleIsValid(IVehicleLimit):
 
     def check(self, teamLimits):
+        if not g_currentVehicle.isPresent():
+            return (False, PREBATTLE_RESTRICTION.VEHICLE_NOT_PRESENT)
+        if g_currentVehicle.isEvent():
+            return (False, PREBATTLE_RESTRICTION.VEHICLE_NOT_SUPPORTED)
         if g_currentVehicle.isFalloutOnly() and not getFalloutCtrl().isSelected():
             return (False, PREBATTLE_RESTRICTION.VEHICLE_FALLOUT_ONLY)
         if not g_currentVehicle.isReadyToFight():
@@ -277,10 +281,11 @@ class BattleSessionLimits(LimitsCollection):
 
 class _UnitActionValidator(object):
 
-    def __init__(self, rosterSettings, hasPlayersSearch = False):
+    def __init__(self, rosterSettings, hasPlayersSearch = False, useEventVehicles = False):
         super(_UnitActionValidator, self).__init__()
         self._hasPlayersSearch = hasPlayersSearch
         self._rosterSettings = weakref.proxy(rosterSettings)
+        self._useEventVehicles = useEventVehicles
 
     def clear(self):
         self._rosterSettings = None
@@ -312,12 +317,9 @@ class _UnitActionValidator(object):
             if flags.isLocked():
                 return (False, UNIT_RESTRICTION.UNIT_IS_LOCKED)
             return (False, UNIT_RESTRICTION.NOT_IN_SLOT)
-        if flags.isInArena():
-            return (False, UNIT_RESTRICTION.IS_IN_ARENA)
-        if flags.isInIdle():
-            return (False, UNIT_RESTRICTION.IS_IN_IDLE)
-        if not pInfo.isCreator() and flags.isInPreArena():
-            return (False, UNIT_RESTRICTION.IS_IN_PRE_ARENA)
+        valid, restriction = self._validateFlags(pInfo, flags, vInfos)
+        if not valid:
+            return (False, restriction)
         valid, restriction = self.validateVehicles(vInfos, flags)
         if not valid:
             return (False, restriction)
@@ -332,22 +334,26 @@ class _UnitActionValidator(object):
     def validateVehicles(self, vInfos, flags):
         if not findFirst(lambda v: not v.isEmpty(), vInfos, False):
             return (False, UNIT_RESTRICTION.VEHICLE_NOT_SELECTED)
-        for vInfo in vInfos:
-            vehicle = vInfo.getVehicle()
-            if vehicle and not vehicle.isReadyToPrebattle(checkForRent=not flags.isInPreArena()):
-                if vehicle.isBroken:
-                    return (False, UNIT_RESTRICTION.VEHICLE_BROKEN)
-                if not vehicle.isCrewFull:
-                    return (False, UNIT_RESTRICTION.VEHICLE_CREW_NOT_FULL)
-                if not flags.isInPreArena() and vehicle.rentalIsOver:
-                    return (False, UNIT_RESTRICTION.VEHICLE_RENT_IS_OVER)
-                if vehicle.isInBattle:
-                    return (False, UNIT_RESTRICTION.VEHICLE_IS_IN_BATTLE)
-                if vehicle.isFalloutOnly() and not getFalloutCtrl().isSelected():
-                    return (False, UNIT_RESTRICTION.VEHICLE_WRONG_MODE)
-                return (False, UNIT_RESTRICTION.VEHICLE_NOT_VALID)
+        else:
+            for vInfo in vInfos:
+                vehicle = vInfo.getVehicle()
+                if vehicle is not None:
+                    if vehicle.isEvent != self._useEventVehicles:
+                        return (False, UNIT_RESTRICTION.VEHICLE_WRONG_MODE)
+                    if not vehicle.isReadyToPrebattle(checkForRent=not flags.isInPreArena()):
+                        if vehicle.isBroken:
+                            return (False, UNIT_RESTRICTION.VEHICLE_BROKEN)
+                        if not vehicle.isCrewFull:
+                            return (False, UNIT_RESTRICTION.VEHICLE_CREW_NOT_FULL)
+                        if not flags.isInPreArena() and vehicle.rentalIsOver:
+                            return (False, UNIT_RESTRICTION.VEHICLE_RENT_IS_OVER)
+                        if vehicle.isInBattle:
+                            return (False, UNIT_RESTRICTION.VEHICLE_IS_IN_BATTLE)
+                        if vehicle.isFalloutOnly() and not getFalloutCtrl().isSelected():
+                            return (False, UNIT_RESTRICTION.VEHICLE_WRONG_MODE)
+                        return (False, UNIT_RESTRICTION.VEHICLE_NOT_VALID)
 
-        return (True, UNIT_RESTRICTION.UNDEFINED)
+            return (True, UNIT_RESTRICTION.UNDEFINED)
 
     def validateStateToStartBattle(self, flags):
         if not flags.isReady() and not flags.isInPreArena():
@@ -370,6 +376,15 @@ class _UnitActionValidator(object):
                 return (False, UNIT_RESTRICTION.MIN_TOTAL_LEVEL)
             if stats.curTotalLevel > stats.maxTotalLevel:
                 return (False, UNIT_RESTRICTION.MAX_TOTAL_LEVEL)
+        return (True, UNIT_RESTRICTION.UNDEFINED)
+
+    def _validateFlags(self, pInfo, flags, vInfos):
+        if flags.isInArena():
+            return (False, UNIT_RESTRICTION.IS_IN_ARENA)
+        if flags.isInIdle():
+            return (False, UNIT_RESTRICTION.IS_IN_IDLE)
+        if not pInfo.isCreator() and flags.isInPreArena():
+            return (False, UNIT_RESTRICTION.IS_IN_PRE_ARENA)
         return (True, UNIT_RESTRICTION.UNDEFINED)
 
 
@@ -482,14 +497,8 @@ class ClubsActionValidator(_UnitActionValidator):
 
 class SquadActionValidator(_UnitActionValidator):
 
-    def __init__(self, rosterSettings, hasPlayersSearch = False):
-        super(SquadActionValidator, self).__init__(rosterSettings, hasPlayersSearch)
-
-    def canPlayerDoAction(self, pInfo, flags, vInfo):
-        isValid, restriction = super(SquadActionValidator, self).canPlayerDoAction(pInfo, flags, vInfo)
-        if not isValid and restriction == UNIT_RESTRICTION.IS_IN_ARENA:
-            isValid, restriction = self.validateVehicles(vInfo, flags)
-        return (isValid, restriction)
+    def __init__(self, rosterSettings, hasPlayersSearch = False, useEventVehicles = False):
+        super(SquadActionValidator, self).__init__(rosterSettings, hasPlayersSearch, useEventVehicles)
 
     def validateVehicles(self, vInfo, flags):
         return super(SquadActionValidator, self).validateVehicles(self._validateVehiclesInfo(vInfo), flags)
@@ -512,6 +521,15 @@ class SquadActionValidator(_UnitActionValidator):
             vInfos = (unit_items.VehicleInfo(),)
         return vInfos
 
+    def _validateFlags(self, pInfo, flags, vInfos):
+        if flags.isInArena() and not pInfo.isInArena():
+            return (True, UNIT_RESTRICTION.UNDEFINED)
+        if flags.isInArena():
+            return (False, UNIT_RESTRICTION.IS_IN_ARENA)
+        if flags.isInIdle():
+            return (False, UNIT_RESTRICTION.IS_IN_IDLE)
+        return (True, UNIT_RESTRICTION.UNDEFINED)
+
 
 class BalancedSquadActionValidator(SquadActionValidator):
 
@@ -524,6 +542,12 @@ class BalancedSquadActionValidator(SquadActionValidator):
                     return (False, UNIT_RESTRICTION.VEHICLE_INVALID_LEVEL)
 
         return (valid, restriction)
+
+
+class EventSquadActionValidator(SquadActionValidator):
+
+    def __init__(self, rosterSettings, hasPlayersSearch = False):
+        super(EventSquadActionValidator, self).__init__(rosterSettings, hasPlayersSearch, useEventVehicles=True)
 
 
 class FalloutSquadActionValidator(SquadActionValidator):

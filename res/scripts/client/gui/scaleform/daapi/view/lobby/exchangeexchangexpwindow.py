@@ -77,8 +77,8 @@ class ExchangeXPWindow(ExchangeXpWindowMeta):
         exchangeHeaderData = {'labelText': labelBuilder.render(),
          'rateFromIcon': ICON_TEXT_FRAMES.GOLD,
          'rateToIcon': ICON_TEXT_FRAMES.ELITE_XP,
-         'rateFromTextColor': self.app.colorManager.getColorScheme(TEXT_MANAGER_STYLES.GOLD_TEXT).get('rgb'),
-         'rateToTextColor': self.app.colorManager.getColorScheme(TEXT_MANAGER_STYLES.CREDITS_TEXT).get('rgb')}
+         'rateFromTextColor': self.app.colorManager.getColorScheme('textColorGold').get('rgb'),
+         'rateToTextColor': self.app.colorManager.getColorScheme('textColorCredits').get('rgb')}
         vehicleData = {'isHaveElite': bool(values),
          'vehicleList': values,
          'tableHeader': self._getTableHeader(),

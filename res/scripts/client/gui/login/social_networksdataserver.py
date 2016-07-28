@@ -5,9 +5,10 @@ import hashlib
 from Event import Event
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
+from SocketServer import ThreadingMixIn
 from debug_utils import LOG_DEBUG
 from RequestHandler import RequestHandler
-from standalone.login import ThreadedHttpServer, HttpServer
+from standalone.login import HttpServer
 
 class DataServer(HttpServer):
 
@@ -38,13 +39,13 @@ class EncryptingDataServer(DataServer):
         return self._tokenSecret
 
 
-class ThreadedDataServer(DataServer, ThreadedHttpServer):
+class ThreadedDataServer(ThreadingMixIn, DataServer):
 
     def __init__(self, name):
         DataServer.__init__(self, name)
 
 
-class EncryptingThreadedDataServer(EncryptingDataServer, ThreadedHttpServer):
+class EncryptingThreadedDataServer(ThreadingMixIn, EncryptingDataServer):
 
     def __init__(self, name):
         EncryptingDataServer.__init__(self, name)

@@ -1,25 +1,21 @@
 # Embedded file name: scripts/client/AvatarInputHandler/DynamicCameras/SniperCamera.py
-import BigWorld
-import Math
-from Math import Vector2, Vector3, Matrix
-import math
-import random
-import weakref
-from AvatarInputHandler import mathUtils, DynamicCameras, AimingSystems, cameras
-from AvatarInputHandler.DynamicCameras import createCrosshairMatrix, createOscillatorFromSection, AccelerationSmoother
-from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSystem
-from helpers.CallbackDelayer import CallbackDelayer
-from AvatarInputHandler.Oscillator import Oscillator
-from AvatarInputHandler.cameras import ICamera, readFloat, readVec3, readBool, ImpulseReason, FovExtended
 import BattleReplay
+import BigWorld
 import Settings
 import constants
-from debug_utils import LOG_WARNING, LOG_DEBUG
+from AvatarInputHandler import mathUtils, cameras
+from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSystem
 from AvatarInputHandler.DynamicCameras import CameraDynamicConfig
+from AvatarInputHandler.DynamicCameras import createCrosshairMatrix, createOscillatorFromSection, AccelerationSmoother
+from AvatarInputHandler.cameras import ICamera, readFloat, readVec3, ImpulseReason, FovExtended
+from Math import Vector2, Vector3, Matrix
 from account_helpers.settings_core.SettingsCore import g_settingsCore
+from avatar_helpers import aim_global_binding
+from debug_utils import LOG_WARNING
+from helpers.CallbackDelayer import CallbackDelayer
 
 def getCameraAsSettingsHolder(settingsDataSec):
-    return SniperCamera(settingsDataSec, None, None)
+    return SniperCamera(settingsDataSec)
 
 
 class SniperCamera(ICamera, CallbackDelayer):
@@ -38,8 +34,10 @@ class SniperCamera(ICamera, CallbackDelayer):
     _MIN_REL_SPEED_ACC_SMOOTHING = 0.7
     camera = property(lambda self: self.__cam)
     aimingSystem = property(lambda self: self.__aimingSystem)
+    __aimOffset = aim_global_binding.bind(aim_global_binding.BINDING_ID.AIM_OFFSET)
+    __zoomFactor = aim_global_binding.bind(aim_global_binding.BINDING_ID.ZOOM_FACTOR)
 
-    def __init__(self, dataSec, aim, binoculars):
+    def __init__(self, dataSec, defaultOffset = None, binoculars = None):
         CallbackDelayer.__init__(self)
         self.__impulseOscillator = None
         self.__movementOscillator = None
@@ -47,7 +45,7 @@ class SniperCamera(ICamera, CallbackDelayer):
         self.__dynamicCfg = CameraDynamicConfig()
         self.__accelerationSmoother = None
         self.__readCfg(dataSec)
-        if aim is None or binoculars is None:
+        if binoculars is None:
             return
         else:
             self.__cam = BigWorld.FreeCamera()
@@ -57,10 +55,8 @@ class SniperCamera(ICamera, CallbackDelayer):
             self.__waitVehicleCallbackId = None
             self.__onChangeControlMode = None
             self.__aimingSystem = SniperAimingSystem(dataSec)
-            self.__aim = weakref.proxy(aim)
             self.__binoculars = binoculars
-            self.__defaultAimOffset = self.__aim.offset()
-            self.__defaultAimOffset = (self.__defaultAimOffset[0], self.__defaultAimOffset[1])
+            self.__defaultAimOffset = defaultOffset or Vector2()
             self.__crosshairMatrix = createCrosshairMatrix(offsetFromNearPlane=self.__dynamicCfg['aimMarkerDistance'])
             self.__prevTime = BigWorld.time()
             self.__autoUpdateDxDyDz = Vector3(0, 0, 0)
@@ -89,7 +85,6 @@ class SniperCamera(ICamera, CallbackDelayer):
         if self.__aimingSystem is not None:
             self.__aimingSystem.destroy()
             self.__aimingSystem = None
-        self.__aim = None
         CallbackDelayer.destroy(self)
         return
 
@@ -216,7 +211,7 @@ class SniperCamera(ICamera, CallbackDelayer):
         return
 
     def __applyZoom(self, zoomFactor):
-        BigWorld.player().inputHandler.aim._setZoom(zoomFactor)
+        self.__zoomFactor = zoomFactor
         if BattleReplay.g_replayCtrl.isRecording:
             BattleReplay.g_replayCtrl.serializeCallbackData('applyZoom', (zoomFactor,))
         FovExtended.instance().setFovByMultiplier(1 / zoomFactor)
@@ -257,7 +252,7 @@ class SniperCamera(ICamera, CallbackDelayer):
             self.__rotateAndZoom(self.__autoUpdateDxDyDz.x, self.__autoUpdateDxDyDz.y, self.__autoUpdateDxDyDz.z)
         self.__aimingSystem.update(deltaTime)
         localTransform, impulseTransform = self.__updateOscillators(deltaTime)
-        aimMatrix = cameras.getAimMatrix(*self.__defaultAimOffset)
+        aimMatrix = cameras.getAimMatrix(self.__defaultAimOffset.x, self.__defaultAimOffset.y)
         camMat = Matrix(aimMatrix)
         rodMat = mathUtils.createTranslationMatrix(-self.__dynamicCfg['pivotShift'])
         antiRodMat = mathUtils.createTranslationMatrix(self.__dynamicCfg['pivotShift'])
@@ -276,7 +271,7 @@ class SniperCamera(ICamera, CallbackDelayer):
             binocularsOffset = self.__calcAimOffset()
             if replayCtrl.isRecording:
                 replayCtrl.setAimClipPosition(aimOffset)
-        self.__aim.offset(aimOffset)
+        self.__aimOffset = aimOffset
         self.__binoculars.setMaskCenter(binocularsOffset.x, binocularsOffset.y)
         player = BigWorld.player()
         if allowModeChange and (self.__isPositionUnderwater(self.__aimingSystem.matrix.translation) or player.isGunLocked):

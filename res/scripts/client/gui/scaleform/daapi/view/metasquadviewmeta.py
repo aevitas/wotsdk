@@ -16,24 +16,13 @@ class SquadViewMeta(BaseRallyRoomView):
         """
         self._printOverrideError('leaveSquad')
 
-    def as_updateBattleTypeInfoS(self, tooltip, isVisible):
+    def as_updateBattleTypeS(self, data):
         """
-        :param tooltip:
-        :param isVisible:
+        :param data:
         :return :
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_updateBattleTypeInfo(tooltip, isVisible)
-
-    def as_updateBattleTypeS(self, battleTypeName, isEventEnabled, isNew):
-        """
-        :param battleTypeName:
-        :param isEventEnabled:
-        :param isNew:
-        :return :
-        """
-        if self._isDAAPIInited():
-            return self.flashObject.as_updateBattleType(battleTypeName, isEventEnabled, isNew)
+            return self.flashObject.as_updateBattleType(data)
 
     def as_isFalloutS(self, isFallout):
         """

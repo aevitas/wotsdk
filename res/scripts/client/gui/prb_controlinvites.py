@@ -479,7 +479,7 @@ class InvitesManager(UsersInfoHelper):
     def _updateInvite(self, other, userGetter):
         inviteID = other.clientID
         invite = self.__invites[inviteID]
-        if invite == other or self.__isInviteSenderIgnoredInBattle(invite, userGetter):
+        if invite == other or not invite.isActive() and self.__isInviteSenderIgnoredInBattle(invite, userGetter):
             return False
         prevCount = invite.count
         invite = invite._merge(other)

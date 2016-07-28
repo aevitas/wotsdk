@@ -537,22 +537,30 @@ class ClientHangarSpace():
         BigWorld.loadResourceListBG(tuple(resources), partial(self.__onFakeShadowLoaded))
 
     def __onFakeShadowLoaded(self, resourceRefs):
-        fakeShadowModel = resourceRefs[_CFG['shadow_model_name']]
-        shadowProxyNodes = [ udo for udo in BigWorld.userDataObjects.values() if isinstance(udo, TankHangarShadowProxy.TankHangarShadowProxy) ]
-        if len(shadowProxyNodes) == 1:
-            shadowProxy = shadowProxyNodes[0]
-            shadowXFormPosition = shadowProxy.position
-            shadowXFormOrientation = (shadowProxy.roll, shadowProxy.pitch, shadowProxy.yaw)
-        else:
-            LOG_DEBUG('Too many TankHangarShadowProxies? Or not enough.')
+        modelName = _CFG['shadow_model_name']
+        fakeShadowModel = None
+        if modelName not in resourceRefs.failedIDs and resourceRefs.has_key(modelName):
+            fakeShadowModel = resourceRefs[modelName]
+        if fakeShadowModel is None:
+            LOG_ERROR('Could not load model %s' % modelName)
             return
-        self.__fakeShadowId = BigWorld.createEntity('OfflineEntity', self.__spaceId, 0, shadowXFormPosition, shadowXFormOrientation, dict())
-        entity = BigWorld.entity(self.__fakeShadowId)
-        entity.model = fakeShadowModel
-        entity.model.position = shadowProxy.position
-        entity.model.yaw = shadowProxy.yaw
-        self.modifyFakeShadowScale(self.__fakeShadowScale)
-        self.modifyFakeShadowAsset(self.__fakeShadowAsset)
+        else:
+            shadowProxyNodes = [ udo for udo in BigWorld.userDataObjects.values() if isinstance(udo, TankHangarShadowProxy.TankHangarShadowProxy) ]
+            if len(shadowProxyNodes) == 1:
+                shadowProxy = shadowProxyNodes[0]
+                shadowXFormPosition = shadowProxy.position
+                shadowXFormOrientation = (shadowProxy.roll, shadowProxy.pitch, shadowProxy.yaw)
+            else:
+                LOG_DEBUG('Too many TankHangarShadowProxies? Or not enough.')
+                return
+            self.__fakeShadowId = BigWorld.createEntity('OfflineEntity', self.__spaceId, 0, shadowXFormPosition, shadowXFormOrientation, dict())
+            entity = BigWorld.entity(self.__fakeShadowId)
+            entity.model = fakeShadowModel
+            entity.model.position = shadowProxy.position
+            entity.model.yaw = shadowProxy.yaw
+            self.modifyFakeShadowScale(self.__fakeShadowScale)
+            self.modifyFakeShadowAsset(self.__fakeShadowAsset)
+            return
 
     def __getFakeShadowModel(self):
         fakeShadowId = self.__fakeShadowId

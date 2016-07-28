@@ -41,6 +41,8 @@ class MENU(object):
     LOGIN_STATUS_INVALID_PASSWORD = '#menu:login/status/invalid_password'
     LOGIN_STATUS_EMPTY_SERVER = '#menu:login/status/empty_server'
     LOGIN_STATUS_CONNECTING = '#menu:login/status/connecting'
+    LOGIN_STATUS_CHECKOUT_ERROR = '#menu:login/status/checkout_error'
+    LOGIN_STATUS_ANOTHER_PERIPHERY = '#menu:login/status/another_periphery'
     LOGIN_STATUS_NOT_SET = '#menu:login/status/NOT_SET'
     LOGIN_STATUS_UNAVAILABLE = '#menu:login/status/unavailable'
     LOGIN_STATUS_LOGIN_REJECTED_ALREADY_LOGGED_IN = '#menu:login/status/LOGIN_REJECTED_ALREADY_LOGGED_IN'
@@ -368,6 +370,7 @@ class MENU(object):
     NATIONS_JAPAN = '#menu:nations/japan'
     NATIONS_UK = '#menu:nations/uk'
     NATIONS_CZECH = '#menu:nations/czech'
+    NATIONS_SWEDEN = '#menu:nations/sweden'
     NATIONS_ALL = '#menu:nations/all'
     CAROUSELFILTER_IGR = '#menu:carouselFilter/igr'
     LEVELS_1 = '#menu:levels/1'
@@ -389,6 +392,7 @@ class MENU(object):
     NATION_TREE_TITLE_CHINA = '#menu:nation_tree/title/china'
     NATION_TREE_TITLE_JAPAN = '#menu:nation_tree/title/japan'
     NATION_TREE_TITLE_CZECH = '#menu:nation_tree/title/czech'
+    NATION_TREE_TITLE_SWEDEN = '#menu:nation_tree/title/sweden'
     SERVERSTATS_PLAYERSCOUNT = '#menu:serverStats/playersCount'
     SERVERSTATS_ARENASCOUNT = '#menu:serverStats/arenasCount'
     SERVERSTATS_PLAYERSINARENACOUNT = '#menu:serverStats/playersInArenaCount'
@@ -484,6 +488,7 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_TYPES_STANDARTLEAVE_DESCR = '#menu:headerButtons/battle/types/standartLeave/descr'
     HEADERBUTTONS_BATTLE_TYPES_SQUAD = '#menu:headerButtons/battle/types/squad'
     HEADERBUTTONS_BATTLE_TYPES_SQUAD_RANDOMBATTLE = '#menu:headerButtons/battle/types/squad/randomBattle'
+    HEADERBUTTONS_BATTLE_TYPES_SQUAD_EVENT = '#menu:headerButtons/battle/types/squad/event'
     HEADERBUTTONS_BATTLE_TYPES_SQUADLEAVEOWNER = '#menu:headerButtons/battle/types/squadLeaveOwner'
     HEADERBUTTONS_BATTLE_TYPES_SQUADLEAVE = '#menu:headerButtons/battle/types/squadLeave'
     HEADERBUTTONS_BATTLE_TYPES_SQUAD_DESCR = '#menu:headerButtons/battle/types/squad/descr'
@@ -493,6 +498,8 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_TYPES_TRAINING_DESCR = '#menu:headerButtons/battle/types/training/descr'
     HEADERBUTTONS_BATTLE_TYPES_LEAVETRAINING_DESCR = '#menu:headerButtons/battle/types/leaveTraining/descr'
     HEADERBUTTONS_BATTLE_TYPES_TRAININGLEAVEOWNER = '#menu:headerButtons/battle/types/trainingLeaveOwner'
+    HEADERBUTTONS_BATTLE_TYPES_SIMPLESQUAD = '#menu:headerButtons/battle/types/simpleSquad'
+    HEADERBUTTONS_BATTLE_TYPES_EVENTSQUAD = '#menu:headerButtons/battle/types/eventSquad'
     HEADERBUTTONS_BATTLE_TYPES_TRAININGLEAVE = '#menu:headerButtons/battle/types/trainingLeave'
     HEADERBUTTONS_BATTLE_TYPES_BATTLETEACHING = '#menu:headerButtons/battle/types/battleTeaching'
     HEADERBUTTONS_BATTLE_TYPES_SPEC = '#menu:headerButtons/battle/types/spec'
@@ -520,6 +527,7 @@ class MENU(object):
     HEADERBUTTONS_BATTLE_AVAILABLEUNTILSOON = '#menu:headerButtons/battle/availableUntilSoon'
     HEADERBUTTONS_BATTLE_MENU_STANDART = '#menu:headerButtons/battle/menu/standart'
     HEADERBUTTONS_BATTLE_MENU_FALLOUT = '#menu:headerButtons/battle/menu/fallout'
+    HEADERBUTTONS_BATTLE_MENU_EVENT = '#menu:headerButtons/battle/menu/event'
     HEADERBUTTONS_BATTLE_MENU_FALLOUT_14 = '#menu:headerButtons/battle/menu/fallout/14'
     HEADERBUTTONS_BATTLE_MENU_FALLOUT_15 = '#menu:headerButtons/battle/menu/fallout/15'
     HEADERBUTTONS_BATTLE_MENU_SQUAD = '#menu:headerButtons/battle/menu/squad'
@@ -631,7 +639,7 @@ class MENU(object):
     MODULEFITS_CENTER_UNAVAILABLE = '#menu:moduleFits/center_unavailable'
     COMMON_PREMIUMBUY = '#menu:common/premiumBuy'
     COMMON_PREMIUMCONTINUE = '#menu:common/premiumContinue'
-    MODULEFITS_CREDIT_ERROR = '#menu:moduleFits/credit_error'
+    MODULEFITS_CREDITS_ERROR = '#menu:moduleFits/credits_error'
     MODULEFITS_GOLD_ERROR = '#menu:moduleFits/gold_error'
     MODULEFITS_NEED_TURRET = '#menu:moduleFits/need_turret'
     MODULEFITS_NOT_FOR_THIS_VEHICLE_TYPE = '#menu:moduleFits/not_for_this_vehicle_type'
@@ -649,6 +657,8 @@ class MENU(object):
     MODULEFITS_REMOVENAME = '#menu:moduleFits/removeName'
     MODULEFITS_REMOVEDESCR = '#menu:moduleFits/removeDescr'
     MODULEFITS_REMOVETOOLTIP = '#menu:moduleFits/removeToolTip'
+    MODULEFITS_TITLE = '#menu:moduleFits/title'
+    OPTIONALDEVICEFITS_TITLE = '#menu:optionalDeviceFits/title'
     EXCHANGE_TITLE = '#menu:exchange/title'
     EXCHANGE_RATE = '#menu:exchange/rate'
     EXCHANGE_ONHAND = '#menu:exchange/onhand'
@@ -1219,6 +1229,7 @@ class MENU(object):
     CONTEXTMENU_GIVELEADERSHIP = '#menu:contextMenu/giveLeadership'
     CONTEXTMENU_TAKELEADERSHIP = '#menu:contextMenu/takeLeadership'
     CONTEXTMENU_CREATESQUAD = '#menu:contextMenu/createSquad'
+    CONTEXTMENU_CREATEEVENTSQUAD = '#menu:contextMenu/createEventSquad'
     CONTEXTMENU_INVITE = '#menu:contextMenu/invite'
     CONTEXTMENU_APPEAL = '#menu:contextMenu/appeal'
     CONTEXTMENU_OFFEND = '#menu:contextMenu/offend'
@@ -1514,12 +1525,14 @@ class MENU(object):
     BOOSTERSWINDOW_TYPEFILTERS_LABEL = '#menu:boostersWindow/typeFilters/label'
     BOOSTERSWINDOW_TABS_AVAILABLELABEL = '#menu:boostersWindow/tabs/availableLabel'
     BOOSTERSWINDOW_TABS_NOTAVAILABLELABEL = '#menu:boostersWindow/tabs/notAvailableLabel'
+    BOOSTERSWINDOW_TABS_BUYLABEL = '#menu:boostersWindow/tabs/buyLabel'
     BOOSTERSWINDOW_ACTIVEBOOSTERS = '#menu:boostersWindow/activeBoosters'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_HEADER = '#menu:boostersWindow/boostersTableRenderer/header'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_TIME = '#menu:boostersWindow/boostersTableRenderer/time'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_UNDEFINETIME = '#menu:boostersWindow/boostersTableRenderer/undefineTime'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_QUESTFOROPEN = '#menu:boostersWindow/boostersTableRenderer/questForOpen'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_ACTIVATEBTNLABEL = '#menu:boostersWindow/boostersTableRenderer/activateBtnLabel'
+    BOOSTERSWINDOW_BOOSTERSTABLERENDERER_BUYBTNLABEL = '#menu:boostersWindow/boostersTableRenderer/buyBtnLabel'
     BOOSTERSWINDOW_BOOSTERSTABLERENDERER_GOTOQUESTBTNLABEL = '#menu:boostersWindow/boostersTableRenderer/goToQuestBtnLabel'
     BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_NOTFOUND_TITLE = '#menu:boostersWindow/boostersTable/noInfo/notFound/title'
     BOOSTERSWINDOW_BOOSTERSTABLE_NOINFO_NOTFOUND_MESSAGE = '#menu:boostersWindow/boostersTable/noInfo/notFound/message'
@@ -1547,7 +1560,8 @@ class MENU(object):
      NATION_TREE_TITLE_UK,
      NATION_TREE_TITLE_CHINA,
      NATION_TREE_TITLE_JAPAN,
-     NATION_TREE_TITLE_CZECH)
+     NATION_TREE_TITLE_CZECH,
+     NATION_TREE_TITLE_SWEDEN)
     DATETIME_MONTHS_FULL_ENUM = (DATETIME_MONTHS_FULL_1,
      DATETIME_MONTHS_FULL_2,
      DATETIME_MONTHS_FULL_3,
@@ -1777,6 +1791,8 @@ class MENU(object):
      LOGIN_STATUS_INVALID_PASSWORD,
      LOGIN_STATUS_EMPTY_SERVER,
      LOGIN_STATUS_CONNECTING,
+     LOGIN_STATUS_CHECKOUT_ERROR,
+     LOGIN_STATUS_ANOTHER_PERIPHERY,
      LOGIN_STATUS_NOT_SET,
      LOGIN_STATUS_UNAVAILABLE,
      LOGIN_STATUS_LOGIN_REJECTED_ALREADY_LOGGED_IN,
@@ -2070,6 +2086,7 @@ class MENU(object):
      NATIONS_JAPAN,
      NATIONS_UK,
      NATIONS_CZECH,
+     NATIONS_SWEDEN,
      NATIONS_ALL)
     CONTEXTMENU_ENUM = (CONTEXTMENU_VEHICLEINFO,
      CONTEXTMENU_VEHICLEINFOEX,
@@ -2113,6 +2130,7 @@ class MENU(object):
      CONTEXTMENU_GIVELEADERSHIP,
      CONTEXTMENU_TAKELEADERSHIP,
      CONTEXTMENU_CREATESQUAD,
+     CONTEXTMENU_CREATEEVENTSQUAD,
      CONTEXTMENU_INVITE,
      CONTEXTMENU_APPEAL,
      CONTEXTMENU_OFFEND,

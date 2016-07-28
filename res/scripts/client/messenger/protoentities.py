@@ -58,7 +58,7 @@ class _ChatCommand(ChatEntity):
         return MESSENGER_COMMAND_TYPE.UNDEFINED
 
     def getCommandText(self):
-        return ''
+        return u''
 
 
 class OutChatCommand(_ChatCommand):
@@ -83,7 +83,7 @@ class ReceivedBattleChatCommand(_ChatCommand):
         return 0
 
     def getCommandText(self):
-        return ''
+        return u''
 
     def getVehMarker(self, mode = None, vehicle = None):
         result = self._getCommandVehMarker()
@@ -175,6 +175,9 @@ class ChannelEntity(ChatEntity, ChannelEvents):
         return False
 
     def isPrebattle(self):
+        return False
+
+    def isLazy(self):
         return False
 
     def getPrebattleType(self):

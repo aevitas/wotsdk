@@ -10,7 +10,9 @@ from gui.Scaleform.daapi.view.dialogs import I18nConfirmDialogMeta, rally_dialog
 from gui.prb_control.context import unit_ctx, SendInvitesCtx
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.formatters import messages
+from gui.prb_control.functional.decorators import vehicleAmmoCheck
 from gui.prb_control.settings import REQUEST_TYPE, FUNCTIONAL_FLAG
+from gui.server_events import g_eventsCache
 from messenger.storage import storage_getter
 
 class AbstractActionsHandler(object):
@@ -76,6 +78,7 @@ class CommonUnitActionsHandler(AbstractActionsHandler):
             g_eventDispatcher.setUnitProgressInCarousel(prbType, True)
         return FUNCTIONAL_FLAG.LOAD_WINDOW
 
+    @vehicleAmmoCheck
     def execute(self, customData):
         pInfo = self._functional.getPlayerInfo()
         if pInfo.isCreator():
@@ -145,6 +148,7 @@ class SquadActionsHandler(AbstractActionsHandler):
         self._loadWindow(squadCtx)
         return initResult
 
+    @vehicleAmmoCheck
     def execute(self, customData):
         if self._functional.isCreator():
             func = self._functional
@@ -213,6 +217,15 @@ class SquadActionsHandler(AbstractActionsHandler):
 
     def __onKickedFromQueue(self, *args):
         SystemMessages.pushMessage(messages.getKickReasonMessage('timeout'), type=SystemMessages.SM_TYPE.Warning)
+
+
+class EventSquadActionsHandler(SquadActionsHandler):
+
+    def _loadWindow(self, ctx):
+        g_eventDispatcher.loadEventSquad(ctx, self._getTeamReady())
+        if not self._functional.getPlayerInfo().isReady:
+            eventVehicle = g_eventsCache.getEventVehicles()[0]
+            g_currentVehicle.selectVehicle(eventVehicle.invID)
 
 
 class BalancedSquadActionsHandler(SquadActionsHandler):

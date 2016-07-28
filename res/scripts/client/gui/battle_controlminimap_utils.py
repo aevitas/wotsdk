@@ -26,8 +26,9 @@ else:
 
 
 def makeCellIndex(localX, localY):
-    column = int(MINIMAP_DIMENSION * localX / MINIMAP_SIZE[0])
-    row = int(MINIMAP_DIMENSION * localY / MINIMAP_SIZE[1])
+    limit = MINIMAP_DIMENSION - 1
+    column = min(limit, int(MINIMAP_DIMENSION * localX / MINIMAP_SIZE[0]))
+    row = min(limit, int(MINIMAP_DIMENSION * localY / MINIMAP_SIZE[1]))
     return column * MINIMAP_DIMENSION + row
 
 

@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/messenger/proto/migration/messages.py
+from messenger.m_constants import LAZY_CHANNEL
 from messenger.proto.bw import bw_chat_string_utils
 from messenger.proto.events import g_messengerEvents
 from messenger.proto.migration.proxy import MigrationProxy
@@ -17,7 +18,10 @@ class MessagesManagerProxy(MigrationProxy):
     def createUserRoom(self, name, password = ''):
         raise NotImplementedError
 
-    def joinToUserRoom(self, roomID, password = ''):
+    def joinToUserRoom(self, roomID, name, password = ''):
+        raise NotImplementedError
+
+    def getCompanyRoomName(self):
         raise NotImplementedError
 
 
@@ -38,9 +42,12 @@ class BWMessagesManagerProxy(MessagesManagerProxy):
         self._proto.channels.createChannel(name, password)
         return True
 
-    def joinToUserRoom(self, roomID, password = ''):
+    def joinToUserRoom(self, roomID, name, password = ''):
         self._proto.channels.joinToChannel(roomID, password)
         return True
+
+    def getCompanyRoomName(self):
+        return LAZY_CHANNEL.COMPANIES
 
 
 class XMPPMessagesManagerProxy(MessagesManagerProxy):
@@ -62,8 +69,11 @@ class XMPPMessagesManagerProxy(MessagesManagerProxy):
             g_messengerEvents.onErrorReceived(error)
         return result
 
-    def joinToUserRoom(self, roomID, password = ''):
-        result, error = self._proto.messages.joinToMUC(JID(roomID), password=password)
+    def joinToUserRoom(self, roomID, name, password = ''):
+        result, error = self._proto.messages.joinToMUC(JID(roomID), password=password, name=name)
         if not result:
             g_messengerEvents.onErrorReceived(error)
         return result
+
+    def getCompanyRoomName(self):
+        return LAZY_CHANNEL.XMPP_COMPANIES

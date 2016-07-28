@@ -37,12 +37,12 @@ class FalloutLocalStorage(LocalStorage):
     def release(self, queueType = QUEUE_TYPE.UNKNOWN):
         self.__settings['isEnabled'] = True
         self.__settings['falloutBattleType'] = queueType
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+        g_settingsCore.serverSettings.setSectionSettings(SETTINGS_SECTIONS.FALLOUT, self.__settings)
 
     def suspend(self):
         self.__settings['isEnabled'] = False
         self.__settings['falloutBattleType'] = QUEUE_TYPE.UNKNOWN
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+        g_settingsCore.serverSettings.setSectionSettings(SETTINGS_SECTIONS.FALLOUT, self.__settings)
 
     def isEnabled(self):
         return g_eventsCache.isFalloutEnabled() and bool(self.__settings['isEnabled'])
@@ -53,14 +53,14 @@ class FalloutLocalStorage(LocalStorage):
     def setBattleType(self, value):
         raise value in QUEUE_TYPE.FALLOUT or AssertionError('Unsupported battle type {} given!'.format(value))
         self.__settings['falloutBattleType'] = value
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+        g_settingsCore.serverSettings.setSectionSettings(SETTINGS_SECTIONS.FALLOUT, self.__settings)
 
     def isAutomatch(self):
         return bool(self.__settings['isAutomatch'])
 
     def setAutomatch(self, isAutomatch):
         self.__settings['isAutomatch'] = isAutomatch
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+        g_settingsCore.serverSettings.setSectionSettings(SETTINGS_SECTIONS.FALLOUT, self.__settings)
 
     def getVehiclesInvIDs(self, excludeEmpty = False):
         vehiclesIntCDs = self.__intCDs.get(self.getBattleType(), ())
@@ -125,16 +125,16 @@ class FalloutLocalStorage(LocalStorage):
 
     def setHasVehicleLvl8(self):
         self.__settings['hasVehicleLvl8'] = True
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+        g_settingsCore.serverSettings.setSectionSettings(SETTINGS_SECTIONS.FALLOUT, self.__settings)
 
     def hasVehicleLvl10(self):
         return bool(self.__settings.get('hasVehicleLvl10', None))
 
     def setHasVehicleLvl10(self):
         self.__settings['hasVehicleLvl10'] = True
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+        g_settingsCore.serverSettings.setSectionSettings(SETTINGS_SECTIONS.FALLOUT, self.__settings)
 
     def setHasVehicleLvls(self, hasVehicleLvl8 = False, hasVehicleLvl10 = False):
         self.__settings['hasVehicleLvl8'] = hasVehicleLvl8
         self.__settings['hasVehicleLvl10'] = hasVehicleLvl10
-        g_settingsCore.serverSettings.setSection(SETTINGS_SECTIONS.FALLOUT, self.__settings)
+        g_settingsCore.serverSettings.setSectionSettings(SETTINGS_SECTIONS.FALLOUT, self.__settings)

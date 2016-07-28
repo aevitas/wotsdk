@@ -360,6 +360,7 @@ class _PrebattleDispatcher(ListenersCollection):
         return result
 
     def pe_onArenaJoinFailure(self, errorCode, _):
+        self.__collection.reset()
         SystemMessages.pushMessage(messages.getJoinFailureMessage(errorCode), type=SystemMessages.SM_TYPE.Error)
 
     def pe_onKickedFromArena(self, reasonCode):

@@ -27,7 +27,7 @@ class WebBrowser(object):
     updateInterval = 0.01
     isSuccessfulLoad = property(lambda self: self.__successfulLoad)
 
-    def __init__(self, browserID, uiObj, texName, size, url = 'about:blank', useWhitelisting = True, isFocused = False):
+    def __init__(self, browserID, uiObj, texName, size, url = 'about:blank', useWhitelisting = False, isFocused = False):
         self.__browserID = browserID
         self.__cbID = None
         self.__baseUrl = url

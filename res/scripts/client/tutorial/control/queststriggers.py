@@ -1,6 +1,7 @@
 # Embedded file name: scripts/client/tutorial/control/quests/triggers.py
 import BigWorld
 from account_helpers.AccountSettings import AccountSettings
+from account_helpers.settings_core.ServerSettingsManager import SETTINGS_SECTIONS
 from gui.shared import g_eventBus, events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from tutorial import doc_loader
@@ -230,7 +231,7 @@ class InventoryVehicleTrigger(BuyVehicleTrigger):
     def isOn(self):
         vehicleCriteria = self.getVar()
         minLvl, maxLvl = vehicleCriteria.get('levelsRange', (1, 10))
-        criteria = REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.LEVELS(range(minLvl, maxLvl)) | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT
+        criteria = REQ_CRITERIA.INVENTORY | REQ_CRITERIA.VEHICLE.LEVELS(range(minLvl, maxLvl)) | ~REQ_CRITERIA.VEHICLE.EXPIRED_RENT | ~REQ_CRITERIA.VEHICLE.EVENT_BATTLE
         return bool(len(g_itemsCache.items.getVehicles(criteria)))
 
 
@@ -266,7 +267,7 @@ class TutorialIntSettingsTrigger(TriggerWithValidateVar):
         self.toggle(isOn=self.isOn())
 
     def isOn(self):
-        return g_settingsCore.serverSettings.getTutorialSetting(self.getVar(), False)
+        return g_settingsCore.serverSettings.getSectionSettings(SETTINGS_SECTIONS.TUTORIAL, self.getVar(), False)
 
     def clear(self):
         g_settingsCore.onSettingsChanged -= self.__onSettingsChanged
@@ -288,7 +289,10 @@ class TutorialAccountSettingsTrigger(TriggerWithValidateVar):
         self.toggle(isOn=self.isOn())
 
     def isOn(self):
-        return AccountSettings.getSettings(self.getVar())
+        var = self.getVar()
+        if var:
+            return var['value'] == AccountSettings.getSettings(var['key'])
+        return False
 
     def clear(self):
         AccountSettings.onSettingsChanging -= self.__onSettingsChanged
@@ -296,7 +300,7 @@ class TutorialAccountSettingsTrigger(TriggerWithValidateVar):
         self.isRunning = False
 
     def __onSettingsChanged(self, key, value):
-        if self.getVar() == key:
+        if key in self.getVar():
             self.toggle(isOn=self.isOn())
 
 
@@ -361,10 +365,9 @@ class TimerTrigger(TriggerWithValidateVar):
 
     def run(self):
         self.isRunning = True
-        if self._tutorial.getFlags().isActiveFlag(self._setVarID):
-            if self.__timerCallback is None:
-                self.isSubscribed = True
-                self.__timerCallback = BigWorld.callback(self.getVar(), self.__updateTimer)
+        if self.__timerCallback is None:
+            self.isSubscribed = True
+            self.__timerCallback = BigWorld.callback(self.getVar(), self.__updateTimer)
         self.toggle(isOn=False)
         return
 

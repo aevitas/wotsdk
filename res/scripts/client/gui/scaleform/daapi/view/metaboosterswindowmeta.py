@@ -10,9 +10,9 @@ class BoostersWindowMeta(AbstractWindowView):
     null
     """
 
-    def requestBoostersArray(self, isAvailable):
+    def requestBoostersArray(self, tabIndex):
         """
-        :param isAvailable:
+        :param tabIndex:
         :return :
         """
         self._printOverrideError('requestBoostersArray')

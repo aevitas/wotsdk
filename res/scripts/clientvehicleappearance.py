@@ -604,7 +604,7 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
         self.__chassisShadowForwardDecal.attach(vehicle, self.modelsDesc)
         self.__chassisShadowForwardDecal.attach(vehicle, self.modelsDesc)
         self.__applyVisibility()
-        self.__vehicle.model.height = self.__computeVehicleHeight()
+        self.__vehicle.model.height, _ = self.__computeVehicleHeight()
         self.onModelChanged()
         if 'observer' in vehicle.typeDescriptor.type.tags:
             vehicle.model.visible = False
@@ -869,7 +869,7 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             if self.__isPillbox or self.__vehicle is None:
                 return
             vehicle = self.__vehicle
-            self.__speedInfo = vehicle.filter.speedInfo.value
+            self.__speedInfo = vehicle.speedInfo.value
             if not self.__vehicle.isPlayerVehicle:
                 self.detailedEngineState.refresh(_PERIODIC_TIME)
             try:

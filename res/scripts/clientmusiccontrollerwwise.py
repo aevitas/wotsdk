@@ -104,7 +104,10 @@ class MusicController(object):
 
         def replace(self, event, eventId, playNew):
             if self.__event is not None:
-                self.stop(self.__event.name == event.name)
+                if self.__event.name == event.name:
+                    playNew = False
+                else:
+                    self.stop()
             self.__event = event
             self.__eventID = eventId
             if playNew is True:
@@ -126,11 +129,9 @@ class MusicController(object):
                         self.__event.play()
             return
 
-        def stop(self, force = False):
+        def stop(self):
             if self.__event is not None:
-                if force:
-                    self.__event.stop()
-                elif self.__eventID == MUSIC_EVENT_COMBAT_LOADING:
+                if self.__eventID == MUSIC_EVENT_COMBAT_LOADING:
                     WWISE.WW_eventGlobalSync('ue_stop_loadscreen_music')
                 elif self.__eventID >= MUSIC_EVENT_COMBAT_VICTORY and self.__eventID <= MUSIC_EVENT_COMBAT_DRAW:
                     WWISE.WW_eventGlobalSync('ue_events_hangar_stop_afterBattleMusic')

@@ -23,8 +23,8 @@ class CrashedTrackController:
         self.__flags = 0
         self.__model = None
         self.__fashion = None
-        self.__forceHide = False
         self.__loading = False
+        self.__visibilityMask = 15
         return
 
     def isLeftTrackBroken(self):
@@ -41,9 +41,10 @@ class CrashedTrackController:
         self.__fashion = None
         return
 
-    def setVisible(self, bool):
-        self.__forceHide = not bool
-        self.__setupTracksHiding(not bool)
+    def setVisible(self, visibilityMask):
+        self.__visibilityMask = visibilityMask
+        self.__applyVisibilityMask()
+        self.__setupTracksHiding()
 
     def __setupTrackAssembler(self):
         modelNames = getPartModelsFromDesc(self.__vehicleDesc, 'destroyed')
@@ -115,8 +116,9 @@ class CrashedTrackController:
                 self.__baseTrackFashion = None
             return
 
-    def __setupTracksHiding(self, force = False):
-        if force or self.__forceHide:
+    def __setupTracksHiding(self):
+        force = self.__visibilityMask == 0
+        if force:
             tracks = (True, True)
             invTracks = (True, True)
         else:
@@ -126,6 +128,13 @@ class CrashedTrackController:
             self.__baseTrackFashion.hideTracks(*tracks)
         if self.__fashion is not None:
             self.__fashion.hideTracks(*invTracks)
+        return
+
+    def __applyVisibilityMask(self):
+        colorPassEnabled = self.__visibilityMask & BigWorld.ColorPassBit != 0
+        if self.__model is not None:
+            self.__model.visible = self.__visibilityMask
+            self.__model.skipColorPass = not colorPassEnabled
         return
 
     def __onModelLoaded(self, resources):
@@ -143,4 +152,5 @@ class CrashedTrackController:
             self.__fashion.setCrashEffectCoeff(0.0)
             self.__setupTracksHiding()
             self.__entity.addModel(self.__model)
+            self.__applyVisibilityMask()
             return

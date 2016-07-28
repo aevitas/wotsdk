@@ -10,17 +10,22 @@ from gui.Scaleform.daapi.view.meta.CompanyListMeta import CompanyListMeta
 from gui.prb_control.context import prb_ctx
 from gui.prb_control.settings import REQUEST_TYPE
 from messenger.ext import channel_num_gen
-from messenger.gui.Scaleform.view import MESSENGER_VIEW_ALIAS
-from messenger.m_constants import LAZY_CHANNEL
+from messenger.gui.Scaleform.view.lobby import MESSENGER_VIEW_ALIAS
+from messenger.m_constants import PROTO_TYPE
+from messenger.proto import proto_getter
 
 class CompanyListView(CompanyListMeta, PrbListener):
 
     def __init__(self):
-        super(CompanyListView, self).__init__(LAZY_CHANNEL.COMPANIES)
+        super(CompanyListView, self).__init__(self.proto.messages.getCompanyRoomName())
         self.__listDP = None
         self.__proxy = None
         self.__bwListCB = None
         return
+
+    @proto_getter(PROTO_TYPE.MIGRATION)
+    def proto(self):
+        return None
 
     def setProxy(self, parent):
         self.__proxy = parent
@@ -46,7 +51,7 @@ class CompanyListView(CompanyListMeta, PrbListener):
         self.fireEvent(events.LoadViewEvent(MESSENGER_VIEW_ALIAS.FAQ_WINDOW), scope=EVENT_BUS_SCOPE.LOBBY)
 
     def getClientID(self):
-        return channel_num_gen.getClientID4LazyChannel(LAZY_CHANNEL.COMPANIES)
+        return channel_num_gen.getClientID4LazyChannel(self.proto.messages.getCompanyRoomName())
 
     def onPrbListReceived(self, prebattles):
         self.__proxy.as_hideWaitingS()

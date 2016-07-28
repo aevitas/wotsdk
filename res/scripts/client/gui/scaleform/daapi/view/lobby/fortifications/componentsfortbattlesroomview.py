@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/fortifications/components/FortBattlesRoomView.py
 import BigWorld
+from gui.LobbyContext import g_lobbyContext
 from gui.shared.fortifications.settings import CLIENT_FORT_STATE
 from helpers import i18n
 from UnitBase import UNIT_OP
@@ -142,12 +143,14 @@ class FortBattlesRoomView(FortRoomMeta, FortViewHelper, UnitListener):
             self.__updateVehiclesLabelSingle(fort_formatters.getTextLevel(maxLvl))
         else:
             self._updateVehiclesLabel(fort_formatters.getTextLevel(minLevel), fort_formatters.getTextLevel(maxLvl))
+        g_lobbyContext.getServerSettings().onServerSettingsChange += self.__onSettingsChanged
         self.addListener(events.CoolDownEvent.PREBATTLE, self._handleChangedDivision, scope=EVENT_BUS_SCOPE.LOBBY)
         self._setChangeDivisionCooldown()
 
     def _dispose(self):
         super(FortBattlesRoomView, self)._dispose()
         self.stopFortListening()
+        g_lobbyContext.getServerSettings().onServerSettingsChange -= self.__onSettingsChanged
         self.removeListener(events.CoolDownEvent.PREBATTLE, self._handleChangedDivision, scope=EVENT_BUS_SCOPE.LOBBY)
         self._cancelChangeDivisionCooldown()
 
@@ -227,3 +230,7 @@ class FortBattlesRoomView(FortRoomMeta, FortViewHelper, UnitListener):
         unitPermissions = self.unitFunctional.getPermissions()
         activeConsumes = self.unitFunctional.getExtra().getConsumables()
         self.as_showOrdersBgS(bool(not unitPermissions.canChangeConsumables() and len(activeConsumes)))
+
+    def __onSettingsChanged(self, diff):
+        if 'isFortsEnabled' in diff:
+            self._setActionButtonState()

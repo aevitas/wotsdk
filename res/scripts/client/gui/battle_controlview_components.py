@@ -2,9 +2,19 @@
 import weakref
 from debug_utils import LOG_WARNING, LOG_ERROR
 from gui.battle_control.battle_constants import VIEW_COMPONENT_RULE
+from gui.battle_control.controllers.interfaces import IBattleController
 
-class IViewComponentsController(object):
+class IViewComponentsController(IBattleController):
     __slots__ = ()
+
+    def getControllerID(self):
+        raise NotImplementedError
+
+    def stopControl(self):
+        raise NotImplementedError
+
+    def startControl(self, *args):
+        raise NotImplementedError
 
     def setViewComponents(self, *components):
         raise NotImplementedError
@@ -27,8 +37,8 @@ class _ComponentsBridge(object):
     
         1. Registers controllers:
             bridge = createComponentsBridge()
-            bridge.registerControllers(
-                (BATTLE_CTRL.DEBUG, debugCtrl), ...
+            bridge.registerController(
+                BATTLE_CTRL.DEBUG, debugCtrl
             )
     
         2. Sets configuration:
@@ -87,6 +97,7 @@ class _ComponentsBridge(object):
             that component.
         :param componentID: string containing unique component ID.
         :param component: instance of component.
+        :param rule: one of VIEW_COMPONENT_RULE.
         """
         if componentID not in self.__componentToCrl:
             return
@@ -133,26 +144,23 @@ class _ComponentsBridge(object):
                 ctrl.clearViewComponents()
             return
 
-    def registerController(self, ctrlID, ctrl):
+    def registerController(self, ctrl):
         """
         Registers controller in the bridge.
-        :param ctrlID: one of BATTLE_CTRL.*.
         :param ctrl: instance of controller that must be extended
             IViewComponentsController.
         """
         if not isinstance(ctrl, IViewComponentsController):
             raise ComponentsBridgeError('Controller {0} is not extended IViewComponentsController'.format(ctrl))
-        self.__ctrls[ctrlID] = weakref.proxy(ctrl)
+        self.__ctrls[ctrl.getControllerID()] = weakref.proxy(ctrl)
 
-    def registerControllers(self, *data):
+    def registerControllers(self, *ctrls):
         """
         Registers controllers in the bridge.
-        :param data: tuple((ctrlID, ctrl), ...)
+        :param ctrls: tuple(ctrl, ...)
         """
-        for item in data:
-            if len(item) < 2:
-                raise ComponentsBridgeError('Item is invalid: {}'.format(item))
-            self.registerController(*item[:2])
+        for ctrl in ctrls:
+            self.registerController(ctrl)
 
     def __getIndexByComponentID(self, ctrlID, componentID):
         if ctrlID not in self.__indexes:

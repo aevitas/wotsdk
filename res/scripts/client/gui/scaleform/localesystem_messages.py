@@ -9,11 +9,11 @@ class SYSTEM_MESSAGES(object):
     null
     """
     REPAIR_SUCCESS = '#system_messages:repair/success'
-    REPAIR_CREDIT_ERROR = '#system_messages:repair/credit_error'
+    REPAIR_CREDITS_ERROR = '#system_messages:repair/credits_error'
     REPAIR_SERVER_ERROR = '#system_messages:repair/server_error'
-    CHARGE_CREDIT_ERROR_GOLD = '#system_messages:charge/credit_error_gold'
-    CHARGE_CREDIT_ERROR_CREDITS = '#system_messages:charge/credit_error_credits'
-    CHARGE_CREDIT_ERROR = '#system_messages:charge/credit_error'
+    CHARGE_CREDITS_ERROR_GOLD = '#system_messages:charge/credits_error_gold'
+    CHARGE_CREDITS_ERROR_CREDITS = '#system_messages:charge/credits_error_credits'
+    CHARGE_CREDITS_ERROR = '#system_messages:charge/credits_error'
     CHARGE_MONEY_SPENT = '#system_messages:charge/money_spent'
     CHARGE_SUCCESS = '#system_messages:charge/success'
     CHARGE_SERVER_ERROR = '#system_messages:charge/server_error'
@@ -26,13 +26,22 @@ class SYSTEM_MESSAGES(object):
     PREMIUM_NOT_ENOUGH_GOLD = '#system_messages:premium/not_enough_gold'
     PREMIUM_WALLET_NOT_AVAILABLE = '#system_messages:premium/wallet_not_available'
     PREMIUM_POST_BATTLE_PREMIUM = '#system_messages:premium/post_battle_premium'
-    BOOSTER_ACTIVATIONSUCCESS = '#system_messages:booster/activationSuccess'
-    BOOSTER_SERVER_ERROR = '#system_messages:booster/server_error'
-    BOOSTER_NO_BOOSTERS = '#system_messages:booster/NO_BOOSTERS'
-    BOOSTER_ALREADY_USED = '#system_messages:booster/ALREADY_USED'
-    BOOSTER_DISABLED = '#system_messages:booster/DISABLED'
-    BOOSTER_EXCEPTION = '#system_messages:booster/EXCEPTION'
-    BOOSTER_WRONG_ARGS = '#system_messages:booster/WRONG_ARGS'
+    BOOSTER_ACTIVATE_SUCCESS = '#system_messages:booster_activate/success'
+    BOOSTER_ACTIVATE_SERVER_ERROR = '#system_messages:booster_activate/server_error'
+    BOOSTER_ACTIVATE_NO_BOOSTERS = '#system_messages:booster_activate/NO_BOOSTERS'
+    BOOSTER_ACTIVATE_ALREADY_USED = '#system_messages:booster_activate/ALREADY_USED'
+    BOOSTER_ACTIVATE_DISABLED = '#system_messages:booster_activate/DISABLED'
+    BOOSTER_ACTIVATE_EXCEPTION = '#system_messages:booster_activate/EXCEPTION'
+    BOOSTER_ACTIVATE_WRONG_ARGS = '#system_messages:booster_activate/WRONG_ARGS'
+    BOOSTER_BUY_SUCCESS = '#system_messages:booster_buy/success'
+    BOOSTER_BUY_SERVER_ERROR = '#system_messages:booster_buy/server_error'
+    BOOSTER_BUY_SERVER_ERROR_CENTERDOWN = '#system_messages:booster_buy/server_error_centerDown'
+    BOOSTER_BUY_NOT_ENOUGH_CREDITS = '#system_messages:booster_buy/not_enough_credits'
+    BOOSTER_BUY_NOT_ENOUGH_GOLD = '#system_messages:booster_buy/not_enough_gold'
+    BOOSTER_BUY_WALLET_NOT_AVAILABLE = '#system_messages:booster_buy/wallet_not_available'
+    BOOSTER_SELL_SUCCESS = '#system_messages:booster_sell/success'
+    BOOSTER_SELL_SERVER_ERROR = '#system_messages:booster_sell/server_error'
+    BOOSTER_SELL_SERVER_ERROR_CENTERDOWN = '#system_messages:booster_sell/server_error_centerDown'
     UPGRADETANKMAN_SUCCESS = '#system_messages:upgradeTankman/success'
     UPGRADETANKMAN_SERVER_ERROR = '#system_messages:upgradeTankman/server_error'
     ARENA_START_ERRORS_JOIN_TIME_OUT = '#system_messages:arena_start_errors/join/TIME_OUT'
@@ -75,6 +84,7 @@ class SYSTEM_MESSAGES(object):
     PREBATTLE_VEHICLEINVALID_LIMITS_SHELLS = '#system_messages:prebattle/vehicleInvalid/limits/shells'
     PREBATTLE_VEHICLEINVALID_LIMITS_TAGS = '#system_messages:prebattle/vehicleInvalid/limits/tags'
     PREBATTLE_VEHICLEINVALID_LIMITS_NOT_SUPPORTED = '#system_messages:prebattle/vehicleInvalid/limits/not_supported'
+    PREBATTLE_VEHICLEINVALID_NO_SELECTEDVEHICLE = '#system_messages:prebattle/vehicleInvalid/no_selectedVehicle'
     PREBATTLE_VEHICLEINVALID_NO_READYVEHICLE = '#system_messages:prebattle/vehicleInvalid/no_readyVehicle'
     PREBATTLE_VEHICLEINVALID_VEHICLENOTSUPPORTED = '#system_messages:prebattle/vehicleInvalid/vehicleNotSupported'
     PREBATTLE_VEHICLEINVALID_NOTSETREADYSTATUS = '#system_messages:prebattle/vehicleInvalid/notSetReadyStatus'
@@ -1267,11 +1277,11 @@ class SYSTEM_MESSAGES(object):
      CUSTOMIZATION_VEHICLE_DESTROYED,
      CUSTOMIZATION_VEHICLE_EXPLODED)
     all_ENUM = (REPAIR_SUCCESS,
-     REPAIR_CREDIT_ERROR,
+     REPAIR_CREDITS_ERROR,
      REPAIR_SERVER_ERROR,
-     CHARGE_CREDIT_ERROR_GOLD,
-     CHARGE_CREDIT_ERROR_CREDITS,
-     CHARGE_CREDIT_ERROR,
+     CHARGE_CREDITS_ERROR_GOLD,
+     CHARGE_CREDITS_ERROR_CREDITS,
+     CHARGE_CREDITS_ERROR,
      CHARGE_MONEY_SPENT,
      CHARGE_SUCCESS,
      CHARGE_SERVER_ERROR,
@@ -1284,13 +1294,22 @@ class SYSTEM_MESSAGES(object):
      PREMIUM_NOT_ENOUGH_GOLD,
      PREMIUM_WALLET_NOT_AVAILABLE,
      PREMIUM_POST_BATTLE_PREMIUM,
-     BOOSTER_ACTIVATIONSUCCESS,
-     BOOSTER_SERVER_ERROR,
-     BOOSTER_NO_BOOSTERS,
-     BOOSTER_ALREADY_USED,
-     BOOSTER_DISABLED,
-     BOOSTER_EXCEPTION,
-     BOOSTER_WRONG_ARGS,
+     BOOSTER_ACTIVATE_SUCCESS,
+     BOOSTER_ACTIVATE_SERVER_ERROR,
+     BOOSTER_ACTIVATE_NO_BOOSTERS,
+     BOOSTER_ACTIVATE_ALREADY_USED,
+     BOOSTER_ACTIVATE_DISABLED,
+     BOOSTER_ACTIVATE_EXCEPTION,
+     BOOSTER_ACTIVATE_WRONG_ARGS,
+     BOOSTER_BUY_SUCCESS,
+     BOOSTER_BUY_SERVER_ERROR,
+     BOOSTER_BUY_SERVER_ERROR_CENTERDOWN,
+     BOOSTER_BUY_NOT_ENOUGH_CREDITS,
+     BOOSTER_BUY_NOT_ENOUGH_GOLD,
+     BOOSTER_BUY_WALLET_NOT_AVAILABLE,
+     BOOSTER_SELL_SUCCESS,
+     BOOSTER_SELL_SERVER_ERROR,
+     BOOSTER_SELL_SERVER_ERROR_CENTERDOWN,
      UPGRADETANKMAN_SUCCESS,
      UPGRADETANKMAN_SERVER_ERROR,
      ARENA_START_ERRORS_JOIN_TIME_OUT,
@@ -1333,6 +1352,7 @@ class SYSTEM_MESSAGES(object):
      PREBATTLE_VEHICLEINVALID_LIMITS_SHELLS,
      PREBATTLE_VEHICLEINVALID_LIMITS_TAGS,
      PREBATTLE_VEHICLEINVALID_LIMITS_NOT_SUPPORTED,
+     PREBATTLE_VEHICLEINVALID_NO_SELECTEDVEHICLE,
      PREBATTLE_VEHICLEINVALID_NO_READYVEHICLE,
      PREBATTLE_VEHICLEINVALID_VEHICLENOTSUPPORTED,
      PREBATTLE_VEHICLEINVALID_NOTSETREADYSTATUS,

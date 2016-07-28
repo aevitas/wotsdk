@@ -1,11 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/techtree/research_cm_handlers.py
 from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
-from gui.Scaleform.locale.MENU import MENU
-from gui.Scaleform.managers.context_menu.AbstractContextMenuHandler import AbstractContextMenuHandler
+from gui.Scaleform.daapi.view.lobby.hangar.hangar_cm_handlers import MODULE, SimpleVehicleCMHandler, VEHICLE
 from gui.Scaleform.daapi.view.lobby.techtree.settings import NODE_STATE
 from gui.Scaleform.daapi.view.lobby.techtree.techtree_dp import g_techTreeDP
-from gui.Scaleform.daapi.view.lobby.hangar.hangar_cm_handlers import MODULE, SimpleVehicleCMHandler, VEHICLE
 from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
+from gui.Scaleform.framework.managers.context_menu import AbstractContextMenuHandler
+from gui.Scaleform.locale.MENU import MENU
 from gui.shared import g_itemsCache, event_dispatcher as shared_events
 from gui.shared.gui_items.items_actions import factory as ItemsActionsFactory
 

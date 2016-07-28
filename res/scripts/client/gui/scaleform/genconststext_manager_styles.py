@@ -33,6 +33,7 @@ class TEXT_MANAGER_STYLES(object):
     PLAYER_ONLINE = 'playerOnline'
     PLAYER_OFFLINE = 'playerOffline'
     COUNTER_TEXT = 'counterText'
+    COUNTER_LABEL_TEXT = 'counterLabelText'
     TUTORIAL_TEXT = 'tutorialText'
     VEHICLE_STATUS_INFO_TEXT = 'vehicleStatusInfoText'
     VEHICLE_STATUS_CRITICAL_TEXT = 'vehicleStatusCriticalText'

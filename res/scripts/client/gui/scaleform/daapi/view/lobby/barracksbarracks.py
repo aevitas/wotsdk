@@ -20,6 +20,8 @@ from gui.shared.gui_items import Tankman
 from gui.shared.gui_items.Tankman import TankmenComparator
 from gui.shared.gui_items.processors.common import TankmanBerthsBuyer
 from gui.shared.gui_items.processors.tankman import TankmanDismiss, TankmanUnload
+from gui.shared.money import Money
+from gui.shared.tooltips.formatters import packActionTooltipData
 from gui.shared.utils import decorators
 from gui.sounds.ambients import LobbySubViewEnv
 
@@ -65,7 +67,7 @@ class Barracks(BarracksMeta, LobbySubView, GlobalListener):
     def buyBerths(self):
         items = g_itemsCache.items
         berthPrice, berthsCount = items.shop.getTankmanBerthPrice(items.stats.tankmenBerthsCount)
-        result = yield TankmanBerthsBuyer((0, berthPrice), berthsCount).request()
+        result = yield TankmanBerthsBuyer(Money(gold=berthPrice), berthsCount).request()
         if len(result.userMsg):
             SystemMessages.g_instance.pushI18nMessage(result.userMsg, type=result.sysMsgType)
 
@@ -105,13 +107,8 @@ class Barracks(BarracksMeta, LobbySubView, GlobalListener):
         tankmenInBarracks = 0
         action = None
         if berthPrice[0] != defaultBerthPrice[0]:
-            action = {'type': ACTION_TOOLTIPS_TYPE.ECONOMICS,
-             'key': 'berthsPrices',
-             'isBuying': True,
-             'state': (None, ACTION_TOOLTIPS_STATE.DISCOUNT),
-             'newPrice': (0, berthPrice[0]),
-             'oldPrice': (0, defaultBerthPrice[0])}
-        gold = g_itemsCache.items.stats.money[1]
+            action = packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'berthsPrices', True, Money(gold=berthPrice[0]), Money(gold=defaultBerthPrice[0]))
+        gold = g_itemsCache.items.stats.money.gold
         enoughGold = True
         if berthPrice[0] > gold:
             enoughGold = False

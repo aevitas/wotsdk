@@ -13,8 +13,6 @@ from debug_utils import LOG_CURRENT_EXCEPTION
 KEY_FILTERS = 'filters'
 KEY_SETTINGS = 'settings'
 KEY_FAVORITES = 'favorites'
-CAROUSEL_FILTER = 'CAROUSEL_FILTER'
-FALLOUT_CAROUSEL_FILTER = 'FALLOUT_CAROUSEL_FILTER'
 CAROUSEL_FILTER_1 = 'CAROUSEL_FILTER_1'
 CAROUSEL_FILTER_2 = 'CAROUSEL_FILTER_2'
 FALLOUT_CAROUSEL_FILTER_1 = 'FALLOUT_CAROUSEL_FILTER_1'
@@ -55,14 +53,6 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                'inventory_shell': (4, 'ARMOR_PIERCING', 'ARMOR_PIERCING_CR', 'HOLLOW_CHARGE', 'HIGH_EXPLOSIVE', 'myVehicleGun', 0),
                'inventory_optionalDevice': ('myVehicle', 0, 'onVehicle'),
                'inventory_equipment': ('myVehicle', 0, 'onVehicle'),
-               CAROUSEL_FILTER: {'nation': -1,
-                                 'vehicleType': -1,
-                                 'favoriteSelected': False,
-                                 'gameModeSelected': False},
-               FALLOUT_CAROUSEL_FILTER: {'nation': -1,
-                                         'vehicleType': -1,
-                                         'favoriteSelected': False,
-                                         'gameModeSelected': False},
                CAROUSEL_FILTER_1: {'ussr': False,
                                    'germany': False,
                                    'usa': False,
@@ -71,6 +61,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                                    'uk': False,
                                    'japan': False,
                                    'czech': False,
+                                   'sweden': False,
                                    'lightTank': False,
                                    'mediumTank': False,
                                    'heavyTank': False,
@@ -90,7 +81,6 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                                    'elite': False,
                                    'igr': False,
                                    'hideRented': False,
-                                   'gameMode': False,
                                    'favorite': False,
                                    'bonus': False},
                FALLOUT_CAROUSEL_FILTER_1: {'ussr': False,
@@ -101,6 +91,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                                            'uk': False,
                                            'japan': False,
                                            'czech': False,
+                                           'sweden': False,
                                            'lightTank': False,
                                            'mediumTank': False,
                                            'heavyTank': False,
@@ -167,8 +158,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                SHOW_INVITE_COMMAND_BTN_ANIMATION: True},
  KEY_FAVORITES: {CURRENT_VEHICLE: 0,
                  FALLOUT_VEHICLES: {}},
- KEY_SETTINGS: {'unitWindow': {'selectedIntroVehicles': [],
-                               'selectedListVehicles': []},
+ KEY_SETTINGS: {'unitWindow': {'selectedIntroVehicles': []},
                 'fortSettings': {'clanDBID': 0,
                                  'battleConsumesIntroShown': False,
                                  'visitedBuildings': {_FBT.MILITARY_BASE,
@@ -317,6 +307,7 @@ DEFAULT_VALUES = {KEY_FILTERS: {STORE_TAB: 0,
                 LAST_PROMO_PATCH_VERSION: '',
                 'dynamicRange': 0,
                 'soundDevice': 0,
+                'bassBoost': False,
                 PREVIEW_INFO_PANEL_IDX: 0}}
 
 def _filterAccountSection(dataSec):
@@ -335,7 +326,7 @@ def _unpack(value):
 
 class AccountSettings(object):
     onSettingsChanging = Event.Event()
-    version = 22
+    version = 24
     __cache = {'login': None,
      'section': None}
     __isFirstRun = True
@@ -607,6 +598,15 @@ class AccountSettings(object):
 
                     accSettings.write('customization', _pack(newFormatItems))
 
+            if currVersion < 23:
+                for key, section in _filterAccountSection(ads):
+                    AccountSettings.__readSection(section, KEY_SETTINGS).deleteSection('FootballVehSelectedOnce')
+
+            if currVersion < 24:
+                for key, section in _filterAccountSection(ads):
+                    AccountSettings.__readSection(section, KEY_SETTINGS).deleteSection('FootballCustTriggerShown')
+                    AccountSettings.__readSection(section, KEY_SETTINGS).deleteSection('FootballVehSelectedOnce')
+
             ads.writeInt('version', AccountSettings.version)
         return
 
@@ -667,10 +667,11 @@ class AccountSettings(object):
 
     @staticmethod
     def __setValue(name, value, type):
-        if DEFAULT_VALUES[type].has_key(name) and AccountSettings.__getValue(name, type) != value:
-            fds = AccountSettings.__readSection(AccountSettings.__readUserSection(), type)
-            if DEFAULT_VALUES[type][name] != value:
-                fds.write(name, base64.b64encode(pickle.dumps(value)))
+        if not DEFAULT_VALUES[type].has_key(name):
+            raise AssertionError
+            if AccountSettings.__getValue(name, type) != value:
+                fds = AccountSettings.__readSection(AccountSettings.__readUserSection(), type)
+                DEFAULT_VALUES[type][name] != value and fds.write(name, base64.b64encode(pickle.dumps(value)))
             else:
                 fds.deleteSection(name)
             AccountSettings.onSettingsChanging(name, value)

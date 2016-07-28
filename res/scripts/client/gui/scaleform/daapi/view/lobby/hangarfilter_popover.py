@@ -8,7 +8,6 @@ from gui.prb_control.settings import VEHICLE_LEVELS
 from gui.shared.gui_items.Vehicle import VEHICLE_TYPES_ORDER
 from gui.shared.formatters import text_styles, icons
 from gui.shared.utils.functions import makeTooltip
-from gui.Scaleform.daapi.view.lobby.hangar.tank_carousel_filter import FILTER_VEHICLE_LEVELS
 from helpers.i18n import makeString as _ms
 from shared_utils import CONST_CONTAINER
 
@@ -21,11 +20,12 @@ class _SECTIONS(CONST_CONTAINER):
     RENT_VEHICLE = 5
 
 
+_VEHICLE_LEVEL_FILTERS = [ 'level_{}'.format(level) for level in VEHICLE_LEVELS ]
 _SECTIONS_MAP = {_SECTIONS.NATION: GUI_NATIONS,
  _SECTIONS.VEHICLE_TYPE: VEHICLE_TYPES_ORDER,
  _SECTIONS.SPECIAL_LEFT: ('premium',),
  _SECTIONS.SPECIAL_RIGHT: ('elite',),
- _SECTIONS.LEVELS: FILTER_VEHICLE_LEVELS,
+ _SECTIONS.LEVELS: _VEHICLE_LEVEL_FILTERS,
  _SECTIONS.RENT_VEHICLE: ('hideRented',)}
 if constants.IS_KOREA:
     _SECTIONS_MAP[_SECTIONS.SPECIAL_LEFT] = _SECTIONS_MAP[_SECTIONS.SPECIAL_LEFT] + ('igr',)
@@ -81,7 +81,7 @@ def _getInitialVO(filters, hasRentedVehicles):
 def _getUpdateVO(filters):
     return {'rentSelected': filters['hideRented'],
      'rentEnabled': not filters['igr'] if constants.IS_KOREA else True,
-     'levelsTypeSelected': [ filters[level] for level in FILTER_VEHICLE_LEVELS ],
+     'levelsTypeSelected': [ filters[level] for level in _VEHICLE_LEVEL_FILTERS ],
      'nationTypeSelected': [ filters[nation] for nation in GUI_NATIONS ],
      'vehicleTypeSelected': [ filters[vehType] for vehType in VEHICLE_TYPES_ORDER ],
      'specialTypeLeftSelected': [ filters[key] for key in _SECTIONS_MAP[_SECTIONS.SPECIAL_LEFT] ],
@@ -107,7 +107,7 @@ class FilterPopover(TankCarouselFilterPopoverMeta):
 
     def setTankCarousel(self, tankCarousel):
         self.__tankCarousel = tankCarousel
-        self.as_setInitDataS(_getInitialVO(self.__filter.getFilters(_POPOVER_FILERS), self.__tankCarousel.hasRentedVehicles))
+        self.as_setInitDataS(_getInitialVO(self.__filter.getFilters(_POPOVER_FILERS), self.__tankCarousel.hasRentedVehicles()))
         self.as_enableDefBtnS(not self.__filter.isDefault(_POPOVER_FILERS))
 
     def changeFilter(self, sectionId, itemId):
@@ -116,7 +116,7 @@ class FilterPopover(TankCarouselFilterPopoverMeta):
         :param sectionId: id of the section with filters (defined in _SECTIONS)
         :param itemId: index number of the filter option
         """
-        self.__filter.switch((_SECTIONS_MAP[sectionId][itemId],), save=False)
+        self.__filter.switch(_SECTIONS_MAP[sectionId][itemId], save=False)
         self.__update()
 
     def setDefaultFilter(self):
@@ -136,7 +136,7 @@ class FilterPopover(TankCarouselFilterPopoverMeta):
     def __update(self):
         self.as_setStateS(_getUpdateVO(self.__filter.getFilters(_POPOVER_FILERS)))
         self.as_enableDefBtnS(not self.__filter.isDefault(_POPOVER_FILERS))
-        self.__tankCarousel.showVehicles()
+        self.__tankCarousel.applyFilter()
 
     @property
     def __filter(self):

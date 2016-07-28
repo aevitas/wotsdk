@@ -36,10 +36,9 @@ from constants import DROWN_WARNING_LEVEL
 from gui.Scaleform.locale.MESSENGER import MESSENGER
 from gui.Scaleform.locale.READABLE_KEY_NAMES import READABLE_KEY_NAMES
 from gui.app_loader import g_appLoader
-from gui.battle_control import g_sessionProvider
+from gui.battle_control import g_sessionProvider, BattleSessionSetup
 from gui.battle_control import event_dispatcher as gui_event_dispatcher
-from gui.battle_control.BattleSessionProvider import BattleSessionProviderStartCtx
-from gui.battle_control.battle_constants import SHELL_SET_RESULT, VEHICLE_VIEW_STATE
+from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE
 from gui.wgnc import g_wgncProvider
 from helpers.i18n import makeString
 from items import ITEM_TYPE_INDICES, getTypeOfCompactDescr, vehicles
@@ -208,7 +207,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
              0.0,
              1.0]
             gas_attack.initAttackManager(self.arena)
-            g_sessionProvider.start(BattleSessionProviderStartCtx(avatar=self, replayCtrl=BattleReplay.g_replayCtrl, gasAttackMgr=gas_attack.gasAttackManager()))
+            g_sessionProvider.start(BattleSessionSetup(avatar=self, replayCtrl=BattleReplay.g_replayCtrl, gasAttackMgr=gas_attack.gasAttackManager()))
             self.__fireInVehicle = False
             self.__forcedGuiCtrlModeFlags = GUI_CTRL_MODE_FLAG.CURSOR_DETACHED
             self.__cruiseControlMode = _CRUISE_CONTROL_MODE.NONE
@@ -475,7 +474,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     self.__lastTimeOfKeyDown = time
                 if BigWorld.isKeyDown(Keys.KEY_CAPSLOCK) and isDown and constants.HAS_DEV_RESOURCES:
                     if key == Keys.KEY_ESCAPE:
-                        self.__setVisibleGUI(not self.__isGuiVisible)
+                        gui_event_dispatcher.toggleGUIVisibility()
                         return True
                     if key == Keys.KEY_1:
                         self.base.setDevelopmentFeature('heal', 0, '')
@@ -530,7 +529,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     return True
                 isGuiEnabled = self.isForcedGuiControlMode()
                 if not isGuiEnabled and cmdMap.isFired(CommandMapping.CMD_TOGGLE_GUI, key) and isDown:
-                    self.__setVisibleGUI(not self.__isGuiVisible)
+                    gui_event_dispatcher.toggleGUIVisibility()
                 if constants.HAS_DEV_RESOURCES and isDown:
                     if key == Keys.KEY_H and mods != 0:
                         import Cat
@@ -597,15 +596,13 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     if self.__stopUntilFire and isDown and not isGuiEnabled:
                         self.__stopUntilFire = False
                         self.__updateCruiseControlPanel()
-                    if not isGuiEnabled:
-                        self.moveVehicle(self.makeVehicleMovementCommandByKeys(), isDown)
+                    self.moveVehicle(self.makeVehicleMovementCommandByKeys(), isDown)
                     return True
                 if not isGuiEnabled and cmdMap.isFiredList(xrange(CommandMapping.CMD_AMMO_CHOICE_1, CommandMapping.CMD_AMMO_CHOICE_0 + 1), key) and isDown and mods == 0:
                     gui_event_dispatcher.choiceConsumable(key)
                     return True
                 if cmdMap.isFired(CommandMapping.CMD_RADIAL_MENU_SHOW, key) and self.__isVehicleAlive:
-                    aimOffset = (0, 0) if self.inputHandler.aim is None else self.inputHandler.aim.offset()
-                    gui_event_dispatcher.setRadialMenuCmd(key, isDown, aimOffset)
+                    gui_event_dispatcher.setRadialMenuCmd(key, isDown)
                     return True
                 if cmdMap.isFiredList((CommandMapping.CMD_CHAT_SHORTCUT_ATTACK,
                  CommandMapping.CMD_CHAT_SHORTCUT_BACKTOBASE,
@@ -648,15 +645,17 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 if self.isHornActive() and self.hornMode() != 'oneshot' and not cmdMap.isActive(CommandMapping.CMD_USE_HORN):
                     self.useHorn(False)
                     return True
-                if not isGuiEnabled and g_sessionProvider.getDrrScaleCtrl().handleKey(key, isDown):
+                if not isGuiEnabled and g_sessionProvider.shared.drrScale.handleKey(key, isDown):
                     return True
                 if cmdMap.isFiredList((CommandMapping.CMD_MINIMAP_SIZE_DOWN, CommandMapping.CMD_MINIMAP_SIZE_UP, CommandMapping.CMD_MINIMAP_VISIBLE), key) and isDown:
                     gui_event_dispatcher.setMinimapCmd(key)
                     return True
                 if cmdMap.isFired(CommandMapping.CMD_RELOAD_PARTIAL_CLIP, key) and isDown:
-                    g_sessionProvider.getAmmoCtrl().reloadPartialClip(self)
+                    g_sessionProvider.shared.ammo.reloadPartialClip(self)
                     return True
-                if key == Keys.KEY_ESCAPE and isDown and mods == 0 and g_sessionProvider.getEquipmentsCtrl().cancel():
+                if key == Keys.KEY_ESCAPE and isDown and mods == 0 and g_sessionProvider.shared.equipments.cancel():
+                    return True
+                if g_appLoader.handleKeyInBattle(isDown, key, mods):
                     return True
             except Exception:
                 LOG_CURRENT_EXCEPTION()
@@ -711,15 +710,13 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if prevEntity not in self.__vehicles:
             return
         else:
-            if self.inputHandler.aim is not None:
-                self.inputHandler.aim.clearTarget()
-            if not self.inputHandler.isDetached:
-                prevEntity.removeEdge()
-                self.target = None
+            g_sessionProvider.shared.feedback.setTargetInFocus(0, False)
+            prevEntity.removeEdge()
+            self.target = None
             TriggersManager.g_manager.deactivateTrigger(TRIGGER_TYPE.AIM_AT_VEHICLE)
             if self.__maySeeOtherVehicleDamagedDevices:
                 self.cell.monitorVehicleDamagedDevices(0)
-                g_sessionProvider.getFeedback().hideVehicleDamagedDevices()
+                g_sessionProvider.shared.feedback.hideVehicleDamagedDevices()
             return
 
     def targetFocus(self, entity):
@@ -727,10 +724,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             return
         else:
             self.target = entity
-            if self.inputHandler.aim:
-                self.inputHandler.aim.setTarget(entity)
+            g_sessionProvider.shared.feedback.setTargetInFocus(entity.id, True)
             isInTutorial = self.arena is not None and self.arena.guiType == constants.ARENA_GUI_TYPE.TUTORIAL
-            if (self.__isGuiVisible or isInTutorial) and entity.isAlive():
+            if (self.inputHandler.isGuiVisible or isInTutorial) and entity.isAlive():
                 TriggersManager.g_manager.activateTrigger(TRIGGER_TYPE.AIM_AT_VEHICLE, vehicleId=entity.id)
                 entity.drawEdge()
                 if self.__maySeeOtherVehicleDamagedDevices:
@@ -769,8 +765,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 self.__onInitStepCompleted()
             else:
                 vehicle.typeDescriptor.activeGunShotIndex = self.vehicleTypeDescriptor.activeGunShotIndex
-                if self.inputHandler.aim:
-                    self.inputHandler.aim.resetVehicleMatrix()
             if self.__disableRespawnMode:
                 self.__disableRespawnMode = False
                 self.inputHandler.deactivatePostmortem()
@@ -865,9 +859,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         self.__firstHealthUpdate = False
         self.__isVehicleAlive = isAlive
         LOG_DEBUG_DEV('[RESPAWN] client.Avatar.updateVehicleHealth', vehicleID, health, deathReasonID, isCrewActive, isRespawn, wasAlive)
-        aim = self.inputHandler.aim
-        if aim is not None:
-            aim.setHealth(health)
         g_sessionProvider.invalidateVehicleState(VEHICLE_VIEW_STATE.HEALTH, health, vehicleID)
         if not wasAlive and isAlive:
             self.__deviceStates = {}
@@ -904,20 +895,16 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
     def updateVehicleGunReloadTime(self, vehicleID, timeLeft, baseTime):
         if vehicleID != self.playerVehicleID:
             if not self.__isVehicleAlive and vehicleID == self.inputHandler.ctrl.curVehicleID:
-                aim = self.inputHandler.aim
-                if aim is not None:
-                    aim.updateAmmoState(timeLeft != -2)
+                g_sessionProvider.shared.feedback.setVehicleHasAmmo(vehicleID, timeLeft != -2)
             return
-        else:
-            self.__gunReloadCommandWaitEndTime = 0.0
-            if self.__prevGunReloadTimeLeft != timeLeft and timeLeft == 0.0:
-                self.soundNotifications.play('gun_reloaded')
-                VibroReloadController()
-            self.__prevGunReloadTimeLeft = timeLeft
-            if timeLeft < 0.0:
-                timeLeft = -1
-            g_sessionProvider.getAmmoCtrl().setGunReloadTime(timeLeft, baseTime)
-            return
+        self.__gunReloadCommandWaitEndTime = 0.0
+        if self.__prevGunReloadTimeLeft != timeLeft and timeLeft == 0.0:
+            self.soundNotifications.play('gun_reloaded')
+            VibroReloadController()
+        self.__prevGunReloadTimeLeft = timeLeft
+        if timeLeft < 0.0:
+            timeLeft = -1
+        g_sessionProvider.shared.ammo.setGunReloadTime(timeLeft, baseTime)
 
     def updateVehicleAmmo(self, compactDescr, quantity, quantityInClip, timeRemaining):
         if not compactDescr:
@@ -934,7 +921,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
      ITEM_TYPE_INDICES['equipment']: '_PlayerAvatar__processVehicleEquipments'}
 
     def updateVehicleOptionalDeviceStatus(self, deviceID, isOn):
-        g_sessionProvider.getOptDevicesCtrl().setOptionalDevice(deviceID, isOn)
+        g_sessionProvider.shared.optionalDevices.setOptionalDevice(deviceID, isOn)
 
     def updateVehicleMiscStatus(self, vehicleID, code, intArg, floatArg):
         if vehicleID != self.playerVehicleID and (self.__isVehicleAlive or vehicleID != self.inputHandler.ctrl.curVehicleID):
@@ -975,7 +962,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if self.isObserver():
             return
         elif code == VEHICLE_SETTING.CURRENT_SHELLS:
-            ammoCtrl = g_sessionProvider.getAmmoCtrl()
+            ammoCtrl = g_sessionProvider.shared.ammo
             if not ammoCtrl.setCurrentShellCD(value):
                 return
             shotIdx = ammoCtrl.getGunSettings().getShotIndex(value)
@@ -987,7 +974,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 self.onGunShotChanged()
             return
         elif code == VEHICLE_SETTING.NEXT_SHELLS:
-            g_sessionProvider.getAmmoCtrl().setNextShellCD(value)
+            g_sessionProvider.shared.ammo.setNextShellCD(value)
             return
         else:
             LOG_CODEPOINT_WARNING(code, value)
@@ -1051,12 +1038,12 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if vehicleID == self.playerVehicleID or not self.__isVehicleAlive and vehicleID == self.inputHandler.ctrl.curVehicleID:
             self.__showDamageIconAndPlaySound(damageCode, extra)
         if damageCode not in self.__damageInfoNoNotification:
-            g_sessionProvider.getBattleMessagesCtrl().showVehicleDamageInfo(self, damageCode, entityID, extra, equipmentID)
+            g_sessionProvider.shared.messages.showVehicleDamageInfo(self, damageCode, entityID, extra, equipmentID)
         return
 
     def showShotResults(self, results):
         arenaVehicles = self.arena.vehicles
-        setGuiShotResult = g_sessionProvider.getFeedback().setPlayerShotResults
+        setGuiShotResult = g_sessionProvider.shared.feedback.setPlayerShotResults
         VHF = VEHICLE_HIT_FLAGS
         enemies = {}
         burningEnemies = []
@@ -1080,7 +1067,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 if self.playerVehicleID != vehicleID:
                     setGuiShotResult(flags, vehicleID)
 
-        showMessage = g_sessionProvider.getBattleMessagesCtrl().showAllyHitMessage
+        showMessage = g_sessionProvider.shared.messages.showAllyHitMessage
         for vehicleID in damagedAllies:
             showMessage(vehicleID)
 
@@ -1151,9 +1138,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 self.cell.monitorVehicleDamagedDevices(0)
             return
         else:
-            feedback = g_sessionProvider.getFeedback()
+            feedback = g_sessionProvider.shared.feedback
             if target.id == vehicleID:
-                feedback.showVehicleDamagedDevices(vehicleID, damagedExtras, destroyedExtras, avatar=self)
+                feedback.showVehicleDamagedDevices(vehicleID, damagedExtras, destroyedExtras)
                 return
             if self.__maySeeOtherVehicleDamagedDevices:
                 self.cell.monitorVehicleDamagedDevices(target.id)
@@ -1177,10 +1164,10 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
 
     def syncVehicleAttrs(self, attrs):
         LOG_DEBUG('syncVehicleAttrs', attrs)
-        g_sessionProvider.getFeedback().setVehicleAttrs(self.playerVehicleID, attrs)
+        g_sessionProvider.shared.feedback.setVehicleAttrs(self.playerVehicleID, attrs)
 
     def showTracer(self, shooterID, shotID, isRicochet, effectsIndex, refStartPoint, velocity, gravity, maxShotDist):
-        if not self.userSeesWorld():
+        if not self.userSeesWorld() or not self.__isOnArena:
             return
         else:
             startPoint = refStartPoint
@@ -1200,8 +1187,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
             return
 
     def stopTracer(self, shotID, endPoint):
-        if self.userSeesWorld():
+        if self.userSeesWorld() and self.__projectileMover is not None:
             self.__projectileMover.hide(shotID, endPoint)
+        return
 
     def explodeProjectile(self, shotID, effectsIndex, effectMaterialIndex, endPoint, velocityDir, damagedDestructibles):
         if self.userSeesWorld():
@@ -1232,7 +1220,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
 
     def onBattleEvent(self, eventType, details):
         LOG_DEBUG_DEV('onBattleEvent, eventType = %s, details = %s' % (eventType, details))
-        g_sessionProvider.getFeedback().setPlayerAssistResult(eventType, details)
+        g_sessionProvider.shared.feedback.setPlayerAssistResult(eventType, details)
 
     def updateArena(self, updateType, argStr):
         self.arena.update(updateType, argStr)
@@ -1287,7 +1275,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         elif self.vehicleTypeDescriptor is None or self.vehicleTypeDescriptor.hornID is None:
             return
         elif start and not self.__hornCooldown.ask():
-            g_sessionProvider.getBattleMessagesCtrl().showVehicleMessage('HORN_IS_BLOCKED', max(1.0, self.__hornCooldown.banTime()))
+            g_sessionProvider.shared.messages.showVehicleMessage('HORN_IS_BLOCKED', max(1.0, self.__hornCooldown.banTime()))
             return
         else:
             playerVehicle = BigWorld.entities.get(self.playerVehicleID)
@@ -1477,7 +1465,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     self.__showVehicleError(msgName)
                     return
 
-            canShoot, error = g_sessionProvider.getAmmoCtrl().canShoot()
+            canShoot, error = g_sessionProvider.shared.ammo.canShoot()
             if not canShoot:
                 if not isRepeat and error in self.__cantShootCriticals:
                     self.__showVehicleError(self.__cantShootCriticals[error])
@@ -1486,7 +1474,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 return
             if self.__shotWaitingTimerID is not None:
                 return
-            if self.isGunLocked or self.__isOwnBarrelUnderWater() or self.__isShootPositionInsideOtherVehicle():
+            if self.isGunLocked or self.__isOwnBarrelUnderWater():
                 if not isRepeat:
                     self.__showVehicleError(self.__cantShootCriticals['gun_locked'])
                 return
@@ -1523,7 +1511,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
     def leaveArena(self):
         LOG_DEBUG('Avatar.leaveArena')
         from helpers import statistics
-        stats = statistics.g_statistics.getStatistics()
+        collector = statistics.g_statistics
+        collector.noteHangarLoadingState(statistics.HANGAR_LOADING_STATE.CONNECTED, True)
+        stats = collector.getStatistics()
         LOG_DEBUG(stats)
         try:
             if self.__projectileMover is not None:
@@ -1588,7 +1578,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if vehicle is None or not vehicle.isStarted:
             return self.__lastVehicleSpeeds
         else:
-            speedInfo = vehicle.filter.speedInfo.value
+            speedInfo = vehicle.speedInfo.value
             if getInstantaneous:
                 speed = speedInfo[2]
                 rspeed = speedInfo[3]
@@ -1645,8 +1635,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         idealFactor = multFactor * math.sqrt(1.0 + idealFactor)
         currTime = BigWorld.time()
         aimingFactor = aimingStartFactor * math.exp((aimingStartTime - currTime) / aimingTime)
-        aim = self.inputHandler.aim
-        isGunReload = aim.isGunReload() if aim is not None else False
+        isGunReload = g_sessionProvider.shared.ammo.isGunReloading()
         if aimingFactor < idealFactor:
             aimingFactor = idealFactor
             self.__aimingInfo[0] = currTime
@@ -1763,7 +1752,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         g_ctfManager.onEnterArena()
         MusicControllerWWISE.onEnterArena()
         TriggersManager.g_manager.enable(True)
-        BigWorld.wg_setUmbraEnabled(self.arena.arenaType.umbraEnabled)
         BigWorld.wg_enableTreeHiding(False)
         BigWorld.worldDrawEnabled(True)
         BigWorld.wg_setWaterTexScale(self.arena.arenaType.waterTexScale)
@@ -1815,7 +1803,6 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         if self.playerBonusesPanel is not None:
             self.playerBonusesPanel.start()
             self.playerBonusesPanel.setVisible(False)
-        self.__isGuiVisible = True
         self.arena.onVehicleKilled += self.__onArenaVehicleKilled
         MessengerEntry.g_instance.onAvatarInitGUI()
         g_appLoader.startBattle()
@@ -1843,9 +1830,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
         self.setForcedGuiControlMode(GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED | GUI_CTRL_MODE_FLAG.MOVING_DISABLED | GUI_CTRL_MODE_FLAG.AIMING_ENABLED)
         self.setForcedGuiControlMode(GUI_CTRL_MODE_FLAG.CURSOR_DETACHED)
 
-    def __setVisibleGUI(self, flag):
-        self.__isGuiVisible = flag
-        gui_event_dispatcher.setGUIVisibility(flag)
+    def setComponentsVisibility(self, flag):
         BigWorld.wg_enableTreeTransparency(flag)
         vehicle = BigWorld.entity(self.playerVehicleID)
         if vehicle is None:
@@ -1855,12 +1840,9 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 vehicle.drawEdge()
             else:
                 vehicle.removeEdge()
+            CombatEquipmentManager.setGUIVisible(self, flag)
             self.inputHandler.setGUIVisible(flag)
             return
-
-    @property
-    def isGuiVisible(self):
-        return self.__isGuiVisible
 
     def __doSetForcedGuiControlMode(self, value, enableAiming):
         self.inputHandler.detachCursor(value, enableAiming)
@@ -1883,11 +1865,11 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                 if self.gunRotator is not None:
                     self.gunRotator.start()
                 self.moveVehicle(self.makeVehicleMovementCommandByKeys(), False)
-                g_sessionProvider.getAmmoCtrl().applySettings(self)
+                g_sessionProvider.shared.ammo.applySettings(self)
             return
 
     def __showVehicleError(self, msgName, args = None):
-        g_sessionProvider.getBattleMessagesCtrl().showVehicleError(msgName, args)
+        g_sessionProvider.shared.messages.showVehicleError(msgName, args)
 
     def __showDamageIconAndPlaySound(self, damageCode, extra):
         deviceName = None
@@ -2011,8 +1993,8 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     LOG_CODEPOINT_WARNING()
                     return
                 self.__frags.add(targetID)
-                g_sessionProvider.getFeedback().setPlayerKillResult(targetID)
-            g_sessionProvider.getBattleMessagesCtrl().showVehicleKilledMessage(self, targetID, attackerID, equipmentID, reason)
+                g_sessionProvider.shared.feedback.setPlayerKillResult(targetID)
+            g_sessionProvider.shared.messages.showVehicleKilledMessage(self, targetID, attackerID, equipmentID, reason)
             return
 
     def __onArenaPeriodChange(self, period, periodEndTime, periodLength, periodAdditionalInfo):
@@ -2054,7 +2036,7 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
                     return
                 gunDescr = vehicle.typeDescriptor.gun
                 burstCount = gunDescr['burst'][0]
-                ammo = g_sessionProvider.getAmmoCtrl()
+                ammo = g_sessionProvider.shared.ammo
                 if ammo.getCurrentShellCD() is not None:
                     totalShots, shotsInClip = ammo.getCurrentShells()
                     if burstCount > totalShots > 0:
@@ -2173,10 +2155,10 @@ class PlayerAvatar(BigWorld.Entity, ClientChat, CombatEquipmentManager):
     def __processVehicleAmmo(self, compactDescr, quantity, quantityInClip, _):
         if self.isObserver():
             return
-        g_sessionProvider.getAmmoCtrl().setShells(compactDescr, quantity, quantityInClip)
+        g_sessionProvider.shared.ammo.setShells(compactDescr, quantity, quantityInClip)
 
     def __processVehicleEquipments(self, compactDescr, quantity, stage, timeRemaining):
-        g_sessionProvider.getEquipmentsCtrl().setEquipment(compactDescr, quantity, stage, timeRemaining)
+        g_sessionProvider.shared.equipments.setEquipment(compactDescr, quantity, stage, timeRemaining)
 
     def __isOwnBarrelUnderWater(self):
         ownVehicle = BigWorld.entity(self.playerVehicleID)

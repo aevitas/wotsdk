@@ -16,6 +16,7 @@ class NATIONS(object):
     JAPAN = '#nations:japan'
     CZECH = '#nations:czech'
     CHINA = '#nations:china'
+    SWEDEN = '#nations:sweden'
     all_ENUM = (USSR,
      GERMANY,
      USA,
@@ -23,7 +24,8 @@ class NATIONS(object):
      UK,
      JAPAN,
      CZECH,
-     CHINA)
+     CHINA,
+     SWEDEN)
 
     @staticmethod
     def all(key):

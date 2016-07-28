@@ -13,6 +13,7 @@ from helpers import i18n, time_utils
 from items import vehicles, tankmen, getTypeInfoByName
 from account_shared import LayoutIterator, getCustomizedVehCompDescr
 from gui.prb_control.settings import PREBATTLE_SETTING_NAME
+from gui.shared.money import ZERO_MONEY
 from gui.shared.gui_items import CLAN_LOCK, HasStrCD, FittingItem, GUI_ITEM_TYPE, getItemIconName, RentalInfoProvider
 from gui.shared.gui_items.vehicle_modules import Shell, VehicleChassis, VehicleEngine, VehicleRadio, VehicleFuelTank, VehicleTurret, VehicleGun
 from gui.shared.gui_items.artefacts import Equipment, OptionalDevice
@@ -155,7 +156,7 @@ class Vehicle(FittingItem, HasStrCD):
             if invDataTmp is not None:
                 invData = invDataTmp
             self.xp = proxy.stats.vehiclesXPs.get(self.intCD, self.xp)
-            if proxy.shop.winXPFactorMode == WIN_XP_FACTOR_MODE.ALWAYS or self.intCD not in proxy.stats.multipliedVehicles:
+            if proxy.shop.winXPFactorMode == WIN_XP_FACTOR_MODE.ALWAYS or self.intCD not in proxy.stats.multipliedVehicles and not self.isOnlyForEventBattles:
                 self.dailyXPFactor = proxy.shop.dailyXPFactor
             self.isElite = len(vehDescr.type.unlocksDescrs) == 0 or self.intCD in proxy.stats.eliteVehicles
             self.isFullyElite = self.isElite and len([ data for data in vehDescr.type.unlocksDescrs if data[1] not in proxy.stats.unlocks ]) == 0
@@ -202,7 +203,7 @@ class Vehicle(FittingItem, HasStrCD):
     @property
     def buyPrice(self):
         if self.isRented and not self.rentalIsOver:
-            return (self._buyPrice[0] - self.rentCompensation[0], self._buyPrice[1] - self.rentCompensation[1])
+            return self._buyPrice - self.rentCompensation
         return self._buyPrice
 
     def getUnlockDescrByIntCD(self, intCD):
@@ -214,31 +215,31 @@ class Vehicle(FittingItem, HasStrCD):
 
     def _calcSellPrice(self, proxy):
         if self.isRented:
-            return (0, 0)
-        price = list(self.sellPrice)
+            return ZERO_MONEY
+        price = self.sellPrice
         defaultDevices, installedDevices, _ = self.descriptor.getDevices()
         for defCompDescr, instCompDescr in izip(defaultDevices, installedDevices):
             if defCompDescr == instCompDescr:
                 continue
             modulePrice = FittingItem(defCompDescr, proxy).sellPrice
-            price = (price[0] - modulePrice[0], price[1] - modulePrice[1])
+            price = price - modulePrice
             modulePrice = FittingItem(instCompDescr, proxy).sellPrice
-            price = (price[0] + modulePrice[0], price[1] + modulePrice[1])
+            price = price + modulePrice
 
         return price
 
     def _calcDefaultSellPrice(self, proxy):
         if self.isRented:
-            return (0, 0)
-        price = list(self.defaultSellPrice)
+            return ZERO_MONEY
+        price = self.defaultSellPrice
         defaultDevices, installedDevices, _ = self.descriptor.getDevices()
         for defCompDescr, instCompDescr in izip(defaultDevices, installedDevices):
             if defCompDescr == instCompDescr:
                 continue
             modulePrice = FittingItem(defCompDescr, proxy).defaultSellPrice
-            price = (price[0] - modulePrice[0], price[1] - modulePrice[1])
+            price = price - modulePrice
             modulePrice = FittingItem(instCompDescr, proxy).defaultSellPrice
-            price = (price[0] + modulePrice[0], price[1] + modulePrice[1])
+            price = price + modulePrice
 
         return price
 
@@ -795,6 +796,8 @@ class Vehicle(FittingItem, HasStrCD):
         return True
 
     def mayPurchase(self, money):
+        if self.isOnlyForEventBattles:
+            return (False, 'isDisabledForBuy')
         if self.isDisabledForBuy:
             return (False, 'isDisabledForBuy')
         if self.isPremiumIGR:
@@ -809,19 +812,21 @@ class Vehicle(FittingItem, HasStrCD):
             if not mayPurchase:
                 return (False, 'rental_time_exceeded')
         if self.minRentPrice:
-            currency = ''
-            if self.minRentPrice[1]:
-                currency = 'gold'
-                if self.minRentPrice[1] <= money[1]:
-                    return (True, '')
-            if self.minRentPrice[0]:
-                currency = 'credit'
-                if self.minRentPrice[0] <= money[0]:
-                    return (True, '')
-            return (False, '%s_rent_error' % currency)
+            shortage = money.getShortage(self.minRentPrice)
+            if shortage:
+                currency, _ = shortage.pop()
+                return (False, '%s_rent_error' % currency)
+            return (True, '')
         return self.mayPurchase(money)
 
     def getRentPackage(self, days = None):
+        """
+        Returns rentPackage with min rent price if days is None, else return rentPackage
+        for selected daysPacket
+        :param days: dict ('days' : <int-type>, 'rentPrice' : <int-type>,
+                           'defaultRentPrice' : <int-type>)
+        :return: Rent package or None
+        """
         if days is not None:
             for package in self.rentPackages:
                 if package.get('days', None) == days:

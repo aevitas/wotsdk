@@ -63,10 +63,12 @@ class SquadWindow(SquadWindowMeta):
 
     def _populate(self):
         self.as_setComponentIdS(self._getSquadViewAlias())
-        title = ''.join((i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD), i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD_RANDOMBATTLE)))
-        self.as_setWindowTitleS(title)
         super(SquadWindow, self)._populate()
+        self.as_setWindowTitleS(self._getTitle())
         self.addListener(events.HideWindowEvent.HIDE_UNIT_WINDOW, self.__handleSquadWindowHide, scope=EVENT_BUS_SCOPE.LOBBY)
+
+    def _getTitle(self):
+        return ''.join((i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD), i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD_RANDOMBATTLE)))
 
     def _dispose(self):
         self.removeListener(events.HideWindowEvent.HIDE_UNIT_WINDOW, self.__handleSquadWindowHide, scope=EVENT_BUS_SCOPE.LOBBY)
@@ -91,3 +93,15 @@ class FalloutSquadWindow(SquadWindow):
 
     def _getSquadViewAlias(self):
         return PREBATTLE_ALIASES.FALLOUT_SQUAD_VIEW_PY
+
+
+class EventSquadWindow(SquadWindow):
+
+    def _getTitle(self):
+        return ''.join((i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD), i18n.makeString(MENU.HEADERBUTTONS_BATTLE_TYPES_SQUAD_EVENT)))
+
+    def getPrbType(self):
+        return PREBATTLE_TYPE.EVENT
+
+    def _getSquadViewAlias(self):
+        return PREBATTLE_ALIASES.EVENT_SQUAD_VIEW_PY

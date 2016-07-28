@@ -4,11 +4,12 @@ from constants import EQUIP_TMAN_CODE
 from debug_utils import LOG_DEBUG
 from items import tankmen
 from items.tankmen import SKILL_INDICES, getSkillsConfig, SKILL_NAMES
-from gui.SystemMessages import SM_TYPE
+from gui.SystemMessages import SM_TYPE, CURRENCY_TO_SM_TYPE
 from gui.shared import g_itemsCache
 from gui.shared.gui_items import GUI_ITEM_TYPE, Tankman
 from gui.shared.gui_items.processors import Processor, ItemProcessor, makeI18nSuccess, makeI18nError, plugins
 from gui.shared.formatters import formatPrice
+from gui.shared.money import Money, ZERO_MONEY
 
 class TankmanDismiss(ItemProcessor):
 
@@ -50,7 +51,7 @@ class TankmanRecruit(Processor):
 
     def _successHandler(self, code, ctx = None):
         tmanCost = self.__getRecruitPrice(self.tmanCostTypeIdx)
-        if tmanCost[0] > 0 or tmanCost[1] > 0:
+        if tmanCost:
             return makeI18nSuccess('recruit_window/financial_success', price=formatPrice(tmanCost), type=self.__getSysMsgType(), auxData=ctx)
         return makeI18nSuccess('recruit_window/success', type=self.__getSysMsgType(), auxData=ctx)
 
@@ -61,18 +62,14 @@ class TankmanRecruit(Processor):
     def __getRecruitPrice(self, tmanCostTypeIdx):
         upgradeCost = g_itemsCache.items.shop.tankmanCost[tmanCostTypeIdx]
         if tmanCostTypeIdx == 1:
-            return (upgradeCost['credits'], 0)
+            return Money(credits=upgradeCost['credits'])
         if tmanCostTypeIdx == 2:
-            return (0, upgradeCost['gold'])
-        return (0, 0)
+            return Money(gold=upgradeCost['gold'])
+        return ZERO_MONEY
 
     def __getSysMsgType(self):
         tmanCost = self.__getRecruitPrice(self.tmanCostTypeIdx)
-        if tmanCost[0] > 0:
-            return SM_TYPE.PurchaseForCredits
-        if tmanCost[1] > 0:
-            return SM_TYPE.PurchaseForGold
-        return SM_TYPE.Information
+        return CURRENCY_TO_SM_TYPE.get(tmanCost.getCurrency(byWeight=False), SM_TYPE.Information)
 
 
 class TankmanEquip(Processor):
@@ -139,25 +136,21 @@ class TankmanRecruitAndEquip(Processor):
     def _successHandler(self, code, ctx = None):
         tmanCost = self.__getRecruitPrice(self.tmanCostTypeIdx)
         prefix = self.__getSysMsgPrefix()
-        if tmanCost[0] > 0 or tmanCost[1] > 0:
+        if tmanCost:
             return makeI18nSuccess('%s/financial_success' % prefix, price=formatPrice(tmanCost), type=self.__getSysMsgType(), auxData=ctx)
         return makeI18nSuccess('%s/success' % prefix, type=self.__getSysMsgType(), auxData=ctx)
 
     def __getRecruitPrice(self, tmanCostTypeIdx):
         upgradeCost = g_itemsCache.items.shop.tankmanCost[tmanCostTypeIdx]
         if tmanCostTypeIdx == 1:
-            return (upgradeCost['credits'], 0)
+            return Money(credits=upgradeCost['credits'])
         if tmanCostTypeIdx == 2:
-            return (0, upgradeCost['gold'])
-        return (0, 0)
+            return Money(gold=upgradeCost['gold'])
+        return ZERO_MONEY
 
     def __getSysMsgType(self):
         tmanCost = self.__getRecruitPrice(self.tmanCostTypeIdx)
-        if tmanCost[0] > 0:
-            return SM_TYPE.PurchaseForCredits
-        if tmanCost[1] > 0:
-            return SM_TYPE.PurchaseForGold
-        return SM_TYPE.Information
+        return CURRENCY_TO_SM_TYPE.get(tmanCost.getCurrency(byWeight=False), SM_TYPE.Information)
 
     def __getSysMsgPrefix(self):
         if not self.isReplace:
@@ -232,17 +225,17 @@ class TankmanRetraining(ItemProcessor):
 
     def _successHandler(self, code, ctx = None):
         tmanCost = self._getRecruitPrice(self.tmanCostTypeIdx)
-        if tmanCost[0] > 0 or tmanCost[1] > 0:
+        if tmanCost:
             return makeI18nSuccess('retraining_tankman/financial_success', price=formatPrice(tmanCost), type=self._getSysMsgType(), auxData=ctx)
         return makeI18nSuccess('retraining_tankman/success', type=self._getSysMsgType(), auxData=ctx)
 
     def _getRecruitPrice(self, tmanCostTypeIdx):
         upgradeCost = g_itemsCache.items.shop.tankmanCost[tmanCostTypeIdx]
         if tmanCostTypeIdx == 1:
-            return (upgradeCost['credits'], 0)
+            return Money(credits=upgradeCost['credits'])
         if tmanCostTypeIdx == 2:
-            return (0, upgradeCost['gold'])
-        return (0, 0)
+            return Money(gold=upgradeCost['gold'])
+        return ZERO_MONEY
 
     def _getSysMsgType(self):
         tmanCost = self._getRecruitPrice(self.tmanCostTypeIdx)
@@ -280,7 +273,7 @@ class TankmanCrewRetraining(Processor):
         if crewMembersCount == 1:
             messagePrefix = 'retraining_tankman'
         crewRetrainingCost = self._getRecruitPrice(self.tmanCostTypeIdx)
-        if crewRetrainingCost[0] > 0 or crewRetrainingCost[1] > 0:
+        if crewRetrainingCost:
             return makeI18nSuccess('%s/financial_success' % messagePrefix, type=self._getSysMsgType(), auxData=ctx, price=formatPrice(crewRetrainingCost))
         return makeI18nSuccess('%s/success' % messagePrefix, type=self._getSysMsgType(), auxData=ctx)
 
@@ -295,15 +288,11 @@ class TankmanCrewRetraining(Processor):
     def _getRecruitPrice(self, tmanCostTypeIdx):
         crewMembersCount = len(self.tankmen)
         upgradeCost = g_itemsCache.items.shop.tankmanCost[tmanCostTypeIdx]
-        return (upgradeCost['credits'] * crewMembersCount, upgradeCost['gold'] * crewMembersCount)
+        return crewMembersCount * Money(**upgradeCost)
 
     def _getSysMsgType(self):
         tmanCost = self._getRecruitPrice(self.tmanCostTypeIdx)
-        if tmanCost[0] > 0:
-            return SM_TYPE.PurchaseForCredits
-        if tmanCost[1] > 0:
-            return SM_TYPE.PurchaseForGold
-        return SM_TYPE.Information
+        return CURRENCY_TO_SM_TYPE.get(tmanCost.getCurrency(byWeight=False), SM_TYPE.Information)
 
 
 class TankmanFreeToOwnXpConvertor(Processor):
@@ -355,7 +344,7 @@ class TankmanChangeRole(ItemProcessor):
         super(TankmanChangeRole, self).__init__(tankman, [plugins.MessageConfirmator('tankmanChageRole/unknownVehicle', ctx={'tankname': vehicle.userName}, isEnabled=not vehicle.isInInventory),
          plugins.VehicleValidator(vehicle, False),
          plugins.VehicleRoleValidator(vehicle, role),
-         plugins.MoneyValidator((0, self.__changeRoleCost))])
+         plugins.MoneyValidator(Money(gold=self.__changeRoleCost))])
 
     def _errorHandler(self, code, errStr = '', ctx = None):
         if len(errStr):
@@ -372,7 +361,7 @@ class TankmanChangeRole(ItemProcessor):
             auxData = makeI18nSuccess('change_tankman_role/slot_is_taken', vehicle=vehicle.shortUserName, role=roleStr)
         else:
             auxData = makeI18nSuccess('change_tankman_role/no_vehicle')
-        return makeI18nSuccess('change_tankman_role/success', money=formatPrice((0, self.__changeRoleCost)), type=msgType, auxData=auxData)
+        return makeI18nSuccess('change_tankman_role/success', money=formatPrice(Money(gold=self.__changeRoleCost)), type=msgType, auxData=auxData)
 
     def _request(self, callback):
         LOG_DEBUG('Make server request to change tankman role:', self.item, self.__roleIdx, self.__vehTypeCompDescr)
@@ -393,7 +382,7 @@ class TankmanDropSkills(ItemProcessor):
     def _successHandler(self, code, ctx = None):
         msgType = self.__getTankmanSysMsgType(self.dropSkillCostIdx)
         price = g_itemsCache.items.shop.dropSkillsCost.get(self.dropSkillCostIdx)
-        return makeI18nSuccess('drop_tankman_skill/success', money=formatPrice((price['credits'], price['gold'])), type=msgType)
+        return makeI18nSuccess('drop_tankman_skill/success', money=formatPrice(Money(**price)), type=msgType)
 
     def _request(self, callback):
         LOG_DEBUG('Make server request to drop tankman skills:', self.item, self.dropSkillCostIdx)
@@ -429,7 +418,7 @@ class TankmanChangePassport(ItemProcessor):
             goldPrice = g_itemsCache.items.shop.passportFemaleChangeCost
         else:
             goldPrice = g_itemsCache.items.shop.passportChangeCost
-        return makeI18nSuccess('replace_tankman/success', money=formatPrice((0, goldPrice)), type=SM_TYPE.PurchaseForGold)
+        return makeI18nSuccess('replace_tankman/success', money=formatPrice(Money(gold=goldPrice)), type=SM_TYPE.PurchaseForGold)
 
     def _request(self, callback):
         LOG_DEBUG('Make server request to change tankman passport:', self.item.invID, self.isPremium, self.isFemale, self.firstNameGroup, self.firstNameID, self.lastNameGroup, self.lastNameID)

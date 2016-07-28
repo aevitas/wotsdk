@@ -20,7 +20,7 @@ import SoundGroups
 import ArenaType
 from constants import CONTENT_TYPE
 from gui.GraphicsPresets import GraphicsPresets
-from gui.app_loader.decorators import sf_lobby
+from gui.app_loader.decorators import sf_lobby, app_getter
 from gui.shared import event_dispatcher
 from helpers import isPlayerAccount, isPlayerAvatar
 import nations
@@ -37,7 +37,7 @@ from Vibroeffects import VibroManager
 from messenger import g_settings as messenger_settings
 from account_helpers.AccountSettings import AccountSettings
 from account_helpers.settings_core.SettingsCore import g_settingsCore
-from account_helpers.settings_core.settings_constants import GRAPHICS
+from account_helpers.settings_core.settings_constants import GRAPHICS, SOUND
 from shared_utils import CONST_CONTAINER, forEach
 from gui import GUI_SETTINGS
 from gui.clans.clan_controller import g_clanCtrl
@@ -45,13 +45,13 @@ from gui.sounds import g_soundsCtrl
 from gui.shared.utils import graphics, functions
 from gui.shared.utils.graphics import g_monitorSettings
 from gui.shared.utils.key_mapping import getScaleformKey, getBigworldKey, getBigworldNameFromKey
-from gui.Scaleform import VoiceChatInterface
-from gui.battle_control import g_sessionProvider
 from ConnectionManager import connectionManager
 from gui.Scaleform.locale.SETTINGS import SETTINGS
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
 from gui.shared.formatters import icons
 from gui.shared.utils.functions import makeTooltip
+from messenger.m_constants import PROTO_TYPE
+from messenger.proto import proto_getter
 
 class APPLY_METHOD:
     NORMAL = 'normal'
@@ -695,19 +695,12 @@ class VOIPSupportSetting(ReadOnlySetting):
     def __init__(self):
         super(VOIPSupportSetting, self).__init__(self.__isSupported)
 
-    @sf_lobby
-    def app(self):
+    @proto_getter(PROTO_TYPE.BW_CHAT2)
+    def bwProto(self):
         return None
 
     def __isVoiceChatReady(self):
-        if g_sessionProvider.getCtx().isInBattle:
-            return VoiceChatInterface.g_instance.ready
-        else:
-            app = self.app
-            if app is not None and app.voiceChatManager is not None:
-                return app.voiceChatManager.ready
-            return False
-            return
+        return self.bwProto.voipController.isReady()
 
     def __isSupported(self):
         return VOIP.getVOIPManager().getVOIPDomain() != '' and self.__isVoiceChatReady()
@@ -934,8 +927,6 @@ class AspectRatioSetting(SettingAbstract):
 class DynamicRendererSetting(SettingAbstract):
 
     def _get(self):
-        if g_settingsCore.getSetting(GRAPHICS.DRR_AUTOSCALER_ENABLED):
-            return round(BigWorld.getDRRAutoscalerBaseScale(), 2) * 100
         return round(BigWorld.getDRRScale(), 2) * 100
 
     def _set(self, value):
@@ -1375,7 +1366,16 @@ class VehicleMarkerSetting(StorageAccountSetting):
     def getDefaultValue(self):
         return AccountSettings.getSettingsDefault(self.settingKey)[self.settingName]
 
+    def pack(self):
+        if GUI_SETTINGS.useAS3Battle:
+            return self.__getMarkerSettings(True)
+        else:
+            return super(VehicleMarkerSetting, self).pack()
+
     def _get(self):
+        return self.__getMarkerSettings()
+
+    def __getMarkerSettings(self, forcePackingHP = False):
         marker = {}
         for mType in self.OPTIONS.TYPES.ALL():
             for param in self.OPTIONS.PARAMS.ALL():
@@ -1385,7 +1385,7 @@ class VehicleMarkerSetting(StorageAccountSetting):
                     value = BattleReplay.g_replayCtrl.getSetting(self.settingName, {}).get(on, default)
                 else:
                     value = self._storage.extract(self.settingName, on, self._default[on])
-                if param == self.OPTIONS.PARAMS.HP and isPlayerAccount():
+                if param == self.OPTIONS.PARAMS.HP and (isPlayerAccount() or forcePackingHP):
                     marker[on] = self.PackStruct(value, [ '#settings:marker/hp/type%d' % mid for mid in xrange(4) ])._asdict()
                 else:
                     marker[on] = value
@@ -1502,8 +1502,8 @@ class BattleLoadingTipSetting(AccountDumpSetting):
         MINIMAP = 'minimap'
         TIPS_TYPES = (TEXT, VISUAL, MINIMAP)
 
-    def getSettingID(self, isInSandbox = False, isFallout = False):
-        if isInSandbox:
+    def getSettingID(self, isVisualOnly = False, isFallout = False):
+        if isVisualOnly:
             return self.OPTIONS.VISUAL
         settingID = self.OPTIONS.TIPS_TYPES[self._get()]
         if isFallout and settingID == BattleLoadingTipSetting.OPTIONS.VISUAL:
@@ -1730,7 +1730,7 @@ class KeyboardSetting(StorageControlSetting):
     def __init__(self, cmd, storage):
         super(KeyboardSetting, self).__init__(cmd, storage)
 
-    @sf_lobby
+    @app_getter
     def app(self):
         return None
 
@@ -1763,7 +1763,7 @@ class KeyboardSetting(StorageControlSetting):
         if value is not None:
             key = getBigworldNameFromKey(getBigworldKey(value))
         LOG_DEBUG('Settings key command', self.settingName, value, key)
-        if self.settingName == 'CMD_VOICECHAT_MUTE' and isPlayerAccount():
+        if self.settingName == 'CMD_VOICECHAT_MUTE' and self.app.gameInputManager is not None:
             self.app.gameInputManager.updateChatKeyHandlers(value)
         CommandMapping.g_instance.remove(self.settingName)
         CommandMapping.g_instance.add(self.settingName, key)
@@ -1967,11 +1967,27 @@ class DynamicSoundPresetSetting(_BaseSoundPresetSetting):
 class SoundDevicePresetSetting(_BaseSoundPresetSetting):
 
     def __init__(self, settingName, key, subKey = None):
-        super(SoundDevicePresetSetting, self).__init__(((g_soundsCtrl.system.setSoundSystem, 0), (g_soundsCtrl.system.setSoundSystem, 1)), settingName, key, subKey)
+        super(SoundDevicePresetSetting, self).__init__(((g_soundsCtrl.system.setSoundSystem, 0), (g_soundsCtrl.system.setSoundSystem, 1), (g_soundsCtrl.system.setSoundSystem, 2)), settingName, key, subKey)
 
     def _getOptions(self):
         settingsKey = '#settings:sound/soundDevice/%s'
-        return [ settingsKey % sName for sName in ('acoustics', 'headphones') ]
+        return [ settingsKey % sName for sName in ('acoustics', 'headphones', 'laptop') ]
+
+
+class BassBoostSetting(AccountDumpSetting):
+    """
+    Enable/disable bass boost WOTD-64517
+    """
+
+    def __init__(self):
+        AccountDumpSetting.__init__(self, SOUND.BASS_BOOST, SOUND.BASS_BOOST)
+
+    def _set(self, isEnabled):
+        self.setSystemValue(isEnabled)
+        AccountDumpSetting._set(self, isEnabled)
+
+    def setSystemValue(self, isEnabled):
+        g_soundsCtrl.system.setBassBoost(isEnabled)
 
 
 class AltVoicesSetting(StorageDumpSetting):
@@ -1984,8 +2000,8 @@ class AltVoicesSetting(StorageDumpSetting):
         REGULAR = 1
         NATIONAL = 2
 
-    def __init__(self, setttingName, storage):
-        super(AltVoicesSetting, self).__init__(setttingName, storage, True)
+    def __init__(self, settingName, storage):
+        super(AltVoicesSetting, self).__init__(settingName, storage, True)
         self.__previewSound = None
         self.__lastPreviewedValue = None
         self._handlers = {self.SOUND_MODE_TYPE.UNKNOWN: lambda *args: False,
@@ -1994,7 +2010,7 @@ class AltVoicesSetting(StorageDumpSetting):
         self.__previewNations = []
         return
 
-    @sf_lobby
+    @app_getter
     def app(self):
         return None
 
@@ -2006,6 +2022,9 @@ class AltVoicesSetting(StorageDumpSetting):
         if self.isSoundModeValid():
             self.clearPreviewSound()
             sndMgr = soundMgr or self.app.soundManager
+            if sndMgr is None:
+                LOG_ERROR('GUI sound manager is not found')
+                return
             sndPath = sndMgr.sounds.getEffectSound(next(self.ALT_VOICES_PREVIEW))
             if SoundGroups.g_instance.soundModes.currentNationalPreset[1]:
                 g = functions.rnd_choice(*nations.AVAILABLE_NAMES)
@@ -2118,7 +2137,13 @@ class AltVoicesSetting(StorageDumpSetting):
         if self.__previewSound is not None:
             self.__previewSound.stop()
             self.__previewSound = None
-        SoundGroups.g_instance.soundModes.setCurrentNation(SoundGroups.g_instance.soundModes.DEFAULT_NATION)
+        player = BigWorld.player()
+        if hasattr(player, 'vehicle'):
+            vehicle = player.vehicle
+            if vehicle is not None:
+                player.vehicle.refreshNationalVoice()
+        else:
+            SoundGroups.g_instance.soundModes.setCurrentNation(SoundGroups.g_instance.soundModes.DEFAULT_NATION)
         return
 
 

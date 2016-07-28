@@ -34,13 +34,11 @@ from vehicle_systems.tankStructure import TankPartNames
 from vehicle_systems.assembly_utility import ComponentSystem, ComponentDescriptor
 from vehicle_systems import model_assembler
 from CustomEffectManager import EffectSettings
-from components.TrackScroll import TrackScrollController
 _VEHICLE_APPEAR_TIME = 0.2
 _ROOT_NODE_NAME = 'V'
 _GUN_RECOIL_NODE_NAME = 'G'
 _PERIODIC_TIME = 0.25
 _PERIODIC_TIME_ENGINE = 0.1
-_PERIODIC_TIME_TRACK_SCROLL = 0.05
 _LOD_DISTANCE_EXHAUST = 200.0
 _LOD_DISTANCE_TRAIL_PARTICLES = 100.0
 _MOVE_THROUGH_WATER_SOUND = '/vehicles/tanks/water'
@@ -78,7 +76,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     isPillbox = property(lambda self: self.__isPillbox)
     rpm = property(lambda self: self.__rpm)
     gear = property(lambda self: self.__gear)
-    trackScrollController = property(lambda self: self.__trackScroll)
+    trackScrollController = property(lambda self: self.__trackScrollCtl)
+    gunLength = property(lambda self: self.__gunLength)
     detailedEngineState = ComponentDescriptor()
     engineAudition = ComponentDescriptor()
     trackCrashAudition = ComponentDescriptor()
@@ -143,7 +142,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.__customEffectManager = None
         self.__exhaustEffects = None
         self.__trailEffects = None
-        self.__trackScroll = TrackScrollController(self)
+        self.__trackScrollCtl = BigWorld.PyTrackScroll()
+        self.__gunLength = 0.0
         return
 
     def prerequisites(self, vehicle):
@@ -174,9 +174,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         return out
 
     def destroy(self):
-        if self.__trackScroll is not None:
-            self.__trackScroll.destroy()
-            self.__trackScroll = None
+        self.__trackScrollCtl = None
         if self.__vehicle is None:
             return
         else:
@@ -269,6 +267,9 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         toCrashedFashion = self.__fashion
         if self.__currentDamageState.isCurrentModelDamaged:
             toCrashedFashion = None
+            self.__trackScrollCtl = None
+        else:
+            self.__trackScrollCtl.setData(self.__vehicle.filter, self.fashions.chassis)
         self.__crashedTracksCtrl = CrashedTrackController(vehicle.typeDescriptor, vehicle, toCrashedFashion, self.__vehicle.isPlayerVehicle)
         if vehicle.isAlive() and self.__vehicle.isPlayerVehicle:
             self.__vibrationsCtrl = VibrationControllersManager()
@@ -280,17 +281,18 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             self.compoundModel.stipple = True
             self.delayCallback(_VEHICLE_APPEAR_TIME, self.__disableStipple)
         self.__vehicleMatrixProv = vehicle.model.matrix
-        self.__trackScroll.setVehicle(self.__vehicle)
         return
 
     def startSystems(self):
         self.__periodicTimerID = BigWorld.callback(_PERIODIC_TIME, self.__onPeriodicTimer)
-        self.delayCallback(_PERIODIC_TIME_TRACK_SCROLL, self.__onPeriodicTimerTrackStroll)
+        if self.__trackScrollCtl is not None:
+            self.__trackScrollCtl.start()
         if self.__vehicle.isPlayerVehicle:
             self.delayCallback(_PERIODIC_TIME_ENGINE, self.__onPeriodicTimerEngine)
         self.detailedEngineState.start(self.__vehicle)
         if self.__vehicle.isPlayerVehicle:
             self.highlighter.highlight(True)
+        return
 
     def set_gear(self, gear):
         self.__gear = gear
@@ -318,9 +320,12 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
 
     def changeDrawPassVisibility(self, visibilityMask):
         colorPassEnabled = visibilityMask & BigWorld.ColorPassBit != 0
+        self.compoundModel.visible = visibilityMask
         self.compoundModel.skipColorPass = not colorPassEnabled
         self.showStickers(colorPassEnabled)
-        self.__crashedTracksCtrl.setVisible(visibilityMask)
+        if self.__crashedTracksCtrl is not None:
+            self.__crashedTracksCtrl.setVisible(visibilityMask)
+        return
 
     def onVehicleHealthChanged(self):
         vehicle = self.__vehicle
@@ -371,6 +376,8 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         self.detailedEngineState.setMode(self.__engineMode[0])
         if self.exhaustEffects:
             self.__updateExhaust()
+        if self.__trackScrollCtl is not None:
+            self.__trackScrollCtl.setMode(self.__engineMode)
         if BattleReplay.isPlaying() and BattleReplay.g_replayCtrl.isTimeWarpInProgress:
             return
         else:
@@ -493,6 +500,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 self.exhaustEffects.destroy()
             self.__attachStickers(items.vehicles.g_cache.commonConfig['miscParams']['damageStickerAlpha'], True)
         self.__chassisShadowForwardDecal.attach(vehicle, self.__compoundModel)
+        _, self.__gunLength = self.__computeVehicleHeight()
         self.onModelChanged()
         if 'observer' in vehicle.typeDescriptor.type.tags:
             self.__compoundModel.visible = False
@@ -567,7 +575,19 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                  5: {'black': 56,
                      'gold': 54,
                      'red': 55,
-                     'silver': 57}}
+                     'silver': 57},
+                 6: {'black': 133,
+                     'gold': 134,
+                     'red': 135,
+                     'silver': 136},
+                 7: {'black': 141,
+                     'gold': 142,
+                     'red': 143,
+                     'silver': 144},
+                 8: {'black': 154,
+                     'gold': 155,
+                     'red': 156,
+                     'silver': 157}}
                 camouflIds = camouflIdsByNation.get(vDesc.type.customizationNationID)
                 if camouflIds is not None:
                     ret = camouflIds.get(camouflagePseudoname)
@@ -637,7 +657,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
     def updateTracksScroll(self, leftScroll, rightScroll):
         self.__leftTrackScroll = leftScroll
         self.__rightTrackScroll = rightScroll
-        self.__trackScroll.updateExtScroll(leftScroll, rightScroll)
+        self.__trackScrollCtl.setExternal(leftScroll, rightScroll)
 
     def __onPeriodicTimerEngine(self):
         if self.detailedEngineState is None or self.engineAudition is None:
@@ -658,7 +678,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
             if self.__isPillbox or self.__vehicle is None:
                 return
             vehicle = self.__vehicle
-            self.__speedInfo = vehicle.filter.speedInfo.value
+            self.__speedInfo = vehicle.speedInfo.value
             if not self.__vehicle.isPlayerVehicle:
                 self.detailedEngineState.refresh(_PERIODIC_TIME)
             try:
@@ -692,13 +712,6 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
                 LOG_CURRENT_EXCEPTION()
 
             return
-
-    def __onPeriodicTimerTrackStroll(self):
-        if self.__isPillbox or self.__fashion is None:
-            return
-        else:
-            self.__trackScroll.simulate(_PERIODIC_TIME_TRACK_SCROLL)
-            return _PERIODIC_TIME_TRACK_SCROLL
 
     def __updateEffectsLOD(self):
         enableExhaust = self.__distanceFromPlayer <= _LOD_DISTANCE_EXHAUST
@@ -853,7 +866,7 @@ class CompoundAppearance(ComponentSystem, CallbackDelayer):
         hullTopY = desc.chassis['hullPosition'][1] + hullBBox[1][1]
         turretTopY = desc.chassis['hullPosition'][1] + desc.hull['turretPositions'][0][1] + turretBBox[1][1]
         gunTopY = desc.chassis['hullPosition'][1] + desc.hull['turretPositions'][0][1] + desc.turret['gunPosition'][1] + gunBBox[1][1]
-        return max(hullTopY, max(turretTopY, gunTopY))
+        return (max(hullTopY, max(turretTopY, gunTopY)), math.fabs(gunBBox[1][2] - gunBBox[0][2]))
 
     def setupGunMatrixTargets(self, target = None):
         if target is None:

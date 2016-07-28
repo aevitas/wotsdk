@@ -9,13 +9,13 @@ import CommandMapping
 import GUI
 import Keys
 import Math
-from Math import Matrix, Vector2, Vector3
+from Math import Vector2, Vector3
 import weakref
 from AvatarInputHandler.control_modes import IControlMode, dumpStateEmpty
 from AvatarInputHandler import AimingSystems
 import SoundGroups
 from constants import SERVER_TICK_LENGTH
-from debug_utils import LOG_CURRENT_EXCEPTION, LOG_ERROR
+from debug_utils import LOG_ERROR
 from post_processing import g_postProcessing
 from items import vehicles, artefacts
 from constants import AIMING_MODE
@@ -317,7 +317,7 @@ class MapCaseControlMode(IControlMode, CallbackDelayer):
         CallbackDelayer.__init__(self)
         self.__preferredPos = Vector3(0, 0, 0)
         self.__aih = weakref.proxy(avatarInputHandler)
-        self.__cam = StrategicCamera.StrategicCamera(dataSection['camera'], None)
+        self.__cam = StrategicCamera.StrategicCamera(dataSection['camera'])
         self.__isEnabled = False
         self.__updateInterval = 0.1
         self.__activeSelector = _DefaultStrikeSelector(Vector3(0, 0, 0), None)
@@ -358,7 +358,7 @@ class MapCaseControlMode(IControlMode, CallbackDelayer):
             self.__activeSelector = _DefaultStrikeSelector(Vector3(0, 0, 0), None)
         else:
             self.activateEquipment(equipmentID)
-        self.setGUIVisible(BigWorld.player().isGuiVisible)
+        self.setGUIVisible(self.__aih.isGuiVisible)
         if BigWorld.player().gunRotator is not None:
             BigWorld.player().gunRotator.clientMode = False
         return
@@ -488,9 +488,6 @@ class MapCaseControlMode(IControlMode, CallbackDelayer):
     def onRecreateDevice(self):
         self.__activeSelector.onRecreateDevice()
 
-    def getAim(self):
-        return None
-
     def setGUIVisible(self, isVisible):
         self.__activeSelector.setGUIVisible(isVisible)
 
@@ -555,7 +552,6 @@ def activateMapCase(equipmentID, deactivateCallback):
             if pos is None:
                 pos = Vector3(0.0, 0.0, 0.0)
         MapCaseControlMode.prevCtlMode = [pos, inputHandler.ctrlModeName, inputHandler.ctrl.aimingMode]
-        MapCaseControlMode.getAim = inputHandler.ctrl.getAim
         inputHandler.onControlModeChanged('mapcase', preferredPos=pos, aimingMode=AIMING_MODE.USER_DISABLED, equipmentID=equipmentID)
     return
 

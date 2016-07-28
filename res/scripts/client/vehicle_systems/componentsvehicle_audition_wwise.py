@@ -1,18 +1,19 @@
 # Embedded file name: scripts/client/vehicle_systems/components/vehicle_audition_wwise.py
 import math
-from AvatarInputHandler.mathUtils import clamp
 import SoundGroups
+import material_kinds
+import BigWorld
+import WWISE
+import Math
+from AvatarInputHandler.mathUtils import clamp
 from constants import VEHICLE_PHYSICS_MODE
 from debug_utils import LOG_ERROR
 from helpers.EffectMaterialCalculation import calcEffectMaterialIndex
 from helpers.ValueTracker import ValueTracker
-import material_kinds
 from vehicle_systems import assembly_utility
 from vehicle_systems.assembly_utility import TypedProperty, LinkDescriptor
 from vehicle_systems.components.engine_state import DetailedEngineStateWWISE
-import BigWorld
-import WWISE
-import Math
+from items.vehicles import HP_TO_WATTS
 from vehicle_systems.tankStructure import TankPartNames
 
 class EngineAudition(assembly_utility.Component):
@@ -127,10 +128,15 @@ class EngineAuditionWWISE(EngineAudition):
             nodeMatrix.set(compoundModel.node(TankPartNames.GUN))
             node = nodeMatrix.translation - vehicleMatrix.translation
             self.__gunSound = SoundGroups.g_instance.WWgetSoundObject(self.__gunSoundHP, vehicleMProv, node)
+            if self.__gunSound is not None:
+                weaponEnergy = vehicle.appearance.gunLength * vehicle.typeDescriptor.shot['shell']['caliber']
+                self.__gunSound.setRTPC('RTPC_ext_weapon_energy', weaponEnergy)
             self.__engineSound = SoundGroups.g_instance.WWgetSoundObject(self.__engineSoundHP, vehicleMProv)
             if self.__engineSound is None:
                 LOG_ERROR('!!!self.__engineSound is None')
                 return
+            horsePower = self.__typeDesc.physics['enginePower'] / HP_TO_WATTS
+            WWISE.WW_setRTCPGlobal('RTPC_ext_engine_power', horsePower)
             self.__engineSound.setSwitch('SWITCH_ext_physics_state', 'SWITCH_ext_physics_state_off' if self.__physicsMode == VEHICLE_PHYSICS_MODE.STANDARD else 'SWITCH_ext_physics_state_on')
             nodeMatrix.set(compoundModel.node(TankPartNames.TURRET))
             node = nodeMatrix.translation - vehicleMatrix.translation
@@ -188,7 +194,7 @@ class EngineAuditionWWISE(EngineAudition):
 
     def onEngineStart(self):
         if SoundGroups.ENABLE_ENGINE_N_TRACKS:
-            if self.__engineSound is not None:
+            if self.__engineSound is not None and not self.__engineSound.isPlaying(self.__event):
                 self.__engineSound.play(self.__event)
             if self.__movementSound is not None:
                 self.__movementSound.play(self.__eventC)
@@ -208,7 +214,8 @@ class EngineAuditionWWISE(EngineAudition):
             if vehicleAttached is None:
                 return
             cameraUnit = vehicleAttached.id == self.__vehicleId
-            speed = self.vehicleFilter.speedInfo.value[0]
+            speedInfo = vehicleAttached.speedInfo.value
+            speed = speedInfo[0]
             soundEngine.setRTPC('RTPC_ext_rpm', clamp(0.0, 100.0, self.detailedEngineState.rpm))
             soundTrack.setRTPC('RTPC_ext_rpm', clamp(0.0, 100.0, self.detailedEngineState.rpm))
             soundEngine.setRTPC('RTPC_ext_engine_load', self.detailedEngineState.engineLoad)
@@ -255,9 +262,6 @@ class EngineAuditionWWISE(EngineAudition):
                     if self.detailedEngineState.gearUp:
                         soundTrack.setRTPC('RTPC_ext_physic_gear_' + str(gear), 100)
                         self.__engineSound.setRTPC('RTPC_ext_physic_gear_' + str(gear), 100)
-                    else:
-                        soundTrack.setRTPC('RTPC_ext_physic_gear_' + str(gear), 0)
-                        self.__engineSound.setRTPC('RTPC_ext_physic_gear_' + str(gear), 0)
             accelerationAbs = 0.0
             if self.__prevVelocity is not None and self.__prevTime is not None:
                 accelerationAbs = (speed - self.__prevVelocity) / (BigWorld.time() - self.__prevTime)
@@ -266,7 +270,7 @@ class EngineAuditionWWISE(EngineAudition):
             self.__prevTime = BigWorld.time()
             soundEngine.setRTPC('RTPC_ext_acc_abs', accelerationAbs)
             soundTrack.setRTPC('RTPC_ext_acc_abs', accelerationAbs)
-            moveValue = 100 if math.fabs(self.vehicleFilter.speedInfo.value[0]) > 1.0 else 0
+            moveValue = 100 if math.fabs(speed) > 1.0 else 0
             soundTrack.setRTPC('RTPC_ext_move', moveValue)
             soundEngine.setRTPC('RTPC_ext_move', moveValue)
             soundEngine.setRTPC('RTPC_ext_physic_load', self.detailedEngineState.physicLoad)
@@ -274,7 +278,7 @@ class EngineAuditionWWISE(EngineAudition):
             if cameraUnit:
                 WWISE.WW_setRTCPGlobal('RTPC_ext_physic_load_global', self.detailedEngineState.physicLoad)
                 WWISE.WW_setRTCPGlobal('RTPC_ext_speed_rel_global', clamp(-1.0, 1.0, self.detailedEngineState.relativeSpeed))
-                WWISE.WW_setRTCPGlobal('RTPC_ext_speed_abs_global', self.vehicleFilter.speedInfo.value[0])
+                WWISE.WW_setRTCPGlobal('RTPC_ext_speed_abs_global', speed)
             soundTrack.setRTPC('RTPC_ext_flying', self.isFlyingLink())
             if not cameraUnit:
                 return
@@ -321,18 +325,19 @@ class EngineAuditionWWISE(EngineAudition):
             soundEngine.setRTPC('RTPC_ext_roughness2', roughnessValue)
             soundTrack.setRTPC('RTPC_ext_roughness_eng', roughnessValue)
             soundEngine.setRTPC('RTPC_ext_roughness_eng', roughnessValue)
-            rotationSpeed = self.vehicleFilter.speedInfo.value[1]
+            rotationSpeed = speedInfo[1]
             roatationRelSpeed = rotationSpeed / self.__typeDesc.physics['rotationSpeedLimit']
             RTPC_ext_treads_sum_affect = math.fabs(roatationRelSpeed * 0.33) + math.fabs(roughnessValue * 0.33) + (clamp(0.5, 1.0, self.detailedEngineState.physicLoad) - 0.5) * 0.66
             soundTrack.setRTPC('RTPC_ext_treads_sum_affect', RTPC_ext_treads_sum_affect)
-            rightTrackScroll = self.rightTrackScrollLink()
-            leftTrackScroll = self.leftTrackScrollLink()
-            if math.fabs(rightTrackScroll) > math.fabs(leftTrackScroll):
+            rightTrackScroll = math.fabs(self.rightTrackScrollLink())
+            leftTrackScroll = math.fabs(self.leftTrackScrollLink())
+            if rightTrackScroll > leftTrackScroll:
                 trackScroll = rightTrackScroll
             else:
                 trackScroll = leftTrackScroll
             if self.__physicsMode == VEHICLE_PHYSICS_MODE.DETAILED and self.__isPlayerVehicle:
                 self.__commonTrackScroll += (trackScroll - self.__commonTrackScroll) * _PERIODIC_TIME / 0.2
+                self.__commonTrackScroll = self.__commonTrackScroll if self.__commonTrackScroll > 0.0 else 0.0
                 soundTrack.setRTPC('RTPC_ext_speed_scroll', self.__commonTrackScroll)
                 soundEngine.setRTPC('RTPC_ext_speed_scroll', self.__commonTrackScroll)
             if self.__vt is not None:

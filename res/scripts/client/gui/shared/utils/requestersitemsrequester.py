@@ -147,6 +147,7 @@ class REQ_CRITERIA(object):
         NATIVE_TANKS = staticmethod(lambda vehiclesList = []: RequestCriteria(PredicateCondition(lambda item: item.vehicleNativeDescr.type.compactDescr in vehiclesList)))
 
     class BOOSTER:
+        ENABLED = RequestCriteria(PredicateCondition(lambda item: item.enabled))
         IN_ACCOUNT = RequestCriteria(PredicateCondition(lambda item: item.count > 0))
         ACTIVE = RequestCriteria(PredicateCondition(lambda item: item.finishTime is not None and item.state == GOODIE_STATE.ACTIVE))
         IS_READY_TO_ACTIVATE = RequestCriteria(PredicateCondition(lambda item: item.isReadyToActivate))

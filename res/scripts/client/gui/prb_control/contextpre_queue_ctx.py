@@ -72,6 +72,18 @@ class FalloutQueueCtx(QueueCtx):
         return self.__canAddToSquad
 
 
+@ReprInjector.simple(('getVehicleInventoryIDs', 'vInvIDs'))
+
+class EventVehicleQueueCtx(QueueCtx):
+
+    def __init__(self, vehInvIDs, waitingID = ''):
+        super(EventVehicleQueueCtx, self).__init__(entityType=QUEUE_TYPE.EVENT_BATTLES, waitingID=waitingID)
+        self.__vehInvIDs = vehInvIDs
+
+    def getVehicleInventoryIDs(self):
+        return self.__vehInvIDs
+
+
 @ReprInjector.withParent()
 
 class JoinModeCtx(_PreQueueRequestCtx):

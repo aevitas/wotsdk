@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/PremiumWindow.py
 import BigWorld
-from debug_utils import LOG_DEBUG
 from gui.ClientUpdateManager import g_clientUpdateManager
 from gui.Scaleform.daapi.settings import BUTTON_LINKAGES
 from gui.Scaleform.daapi.view.meta.PremiumWindowMeta import PremiumWindowMeta
@@ -11,10 +10,14 @@ from gui.shared import g_itemsCache
 from gui.shared.events import LobbySimpleEvent
 from gui.shared.gui_items.processors.common import PremiumAccountBuyer
 from gui.shared.notifications import NotificationPriorityLevel
-from gui.shared.tooltips import ACTION_TOOLTIPS_STATE, ACTION_TOOLTIPS_TYPE
+from gui.shared.tooltips import ACTION_TOOLTIPS_TYPE
+from gui.shared.money import Money
+from gui.shared.tooltips.formatters import packActionTooltipData
 from gui import makeHtmlString, game_control, SystemMessages
 from gui.shared.utils.decorators import process
 from helpers import i18n, time_utils
+from gui.shared.formatters import text_styles, icons
+from gui.shared.tooltips import formatters
 BTN_WIDTH = 120
 PREMIUM_PACKET_LOCAL_KEY = '#menu:premium/packet/days%s'
 
@@ -62,9 +65,26 @@ class PremiumWindow(PremiumWindowMeta):
         return
 
     def __onUpdateHandler(self, *args):
-        premiumPackets, self._actualPremiumCost, selectedPacketID = self.__getPremiumPackets()
-        self.as_setRatesS(MENU.PREMIUM_TARIFFS_HEADER, premiumPackets, selectedPacketID)
-        self.as_setButtonsS(self.__getBtnData(), TEXT_ALIGN.RIGHT, BTN_WIDTH)
+        self.__updateData()
+
+    def __canUpdatePremium(self):
+        if self.__isPremiumAccount():
+            deltaInSeconds = float(time_utils.getTimeDeltaFromNow(time_utils.makeLocalServerTime(self._items.stats.premiumExpiryTime)))
+            return deltaInSeconds < time_utils.ONE_YEAR
+        return True
+
+    def __updateData(self):
+        canUpdatePremium = self.__canUpdatePremium()
+        premiumPackets, self._actualPremiumCost, selectedPacketID = self.__getPremiumPackets(canUpdatePremium)
+        cantUpgradeTooltip = '' if canUpdatePremium else formatters.getLimitExceededPremiumTooltip()
+        self.__setRates(self.__getHeaderText(canUpdatePremium), cantUpgradeTooltip, premiumPackets, selectedPacketID)
+        self.as_setButtonsS(self.__getBtnData(cantUpgradeTooltip), TEXT_ALIGN.RIGHT, BTN_WIDTH)
+
+    def __setRates(self, header, headerTooltip, premiumPackets, selectedPacketID):
+        self.as_setRatesS({'header': header,
+         'headerTooltip': headerTooltip,
+         'rates': premiumPackets,
+         'selectedRateId': selectedPacketID})
 
     @process('loadStats')
     def __premiumBuyRequest(self, days, cost):
@@ -88,9 +108,7 @@ class PremiumWindow(PremiumWindowMeta):
         self.as_setImageS(RES_ICONS.MAPS_ICONS_WINDOWS_PREM_PREMHEADER, 0)
         self.as_setWindowTitleS(self.__getTitle())
         self.as_setHeaderS(MENU.PREMIUM_PERCENTFACTOR, MENU.PREMIUM_BONUS1, MENU.PREMIUM_BONUS2)
-        premiumPackets, self._actualPremiumCost, selectedPacketID = self.__getPremiumPackets()
-        self.as_setRatesS(MENU.PREMIUM_TARIFFS_HEADER, premiumPackets, selectedPacketID)
-        self.as_setButtonsS(self.__getBtnData(), TEXT_ALIGN.RIGHT, BTN_WIDTH)
+        self.__updateData()
 
     def __getTitle(self):
         if self.__isPremiumAccount():
@@ -105,7 +123,7 @@ class PremiumWindow(PremiumWindowMeta):
     def __isPremiumAccount(self):
         return self._items.stats.isPremium
 
-    def __getPremiumPackets(self):
+    def __getPremiumPackets(self, canUpdatePremium):
         premiumCost = sorted(self._items.shop.getPremiumCostWithDiscount().items(), reverse=True)
         defaultPremiumCost = sorted(self._items.shop.defaults.premiumCost.items(), reverse=True)
         packetVOs = []
@@ -117,7 +135,7 @@ class PremiumWindow(PremiumWindowMeta):
             _, defaultCost = defaultPremiumCost[idx]
             packetVOs.append(self.__makePacketVO(period, cost, defaultCost, accGold, canBuyPremium))
             actualPremiumCost[period] = cost
-            if accGold >= cost:
+            if canUpdatePremium and accGold >= cost:
                 selectedPacket = max(selectedPacket, period)
 
         return (packetVOs, actualPremiumCost, str(selectedPacket))
@@ -135,12 +153,7 @@ class PremiumWindow(PremiumWindowMeta):
 
     def __getAction(self, cost, defaultCost, period):
         if cost != defaultCost:
-            return {'type': ACTION_TOOLTIPS_TYPE.ECONOMICS,
-             'key': 'premiumPacket%dCost' % period,
-             'isBuying': True,
-             'state': (None, ACTION_TOOLTIPS_STATE.DISCOUNT),
-             'newPrice': (0, cost),
-             'oldPrice': (0, defaultCost)}
+            return packActionTooltipData(ACTION_TOOLTIPS_TYPE.ECONOMICS, 'premiumPacket%dCost' % period, True, Money(gold=cost), Money(gold=defaultCost))
         else:
             return None
 
@@ -162,13 +175,20 @@ class PremiumWindow(PremiumWindowMeta):
          'price': priceStr}
         return makeHtmlString('html_templates:lobby/dialogs/premium', 'duration', ctx=ctx)
 
-    def __getBtnData(self):
+    def __getHeaderText(self, canUpdatePremium):
+        text = text_styles.highTitle(MENU.PREMIUM_TARIFFS_HEADER)
+        if not canUpdatePremium:
+            text += ' ' + icons.alert()
+        return text
+
+    def __getBtnData(self, submitBtnTooltip):
         return [{'label': self.__getSubmitBtnLabel(),
           'btnLinkage': BUTTON_LINKAGES.BUTTON_NORMAL,
           'action': 'buyAction',
           'isFocused': True,
-          'tooltip': '',
+          'tooltip': submitBtnTooltip,
           'enabled': self.__isBuyBtnEnabled(),
+          'mouseEnabledOnDisabled': True,
           'btnName': 'submitButton'}, {'label': MENU.PREMIUM_CANCEL,
           'btnLinkage': BUTTON_LINKAGES.BUTTON_BLACK,
           'action': 'closeAction',

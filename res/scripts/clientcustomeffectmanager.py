@@ -94,15 +94,15 @@ class CustomEffectManager(Component):
 
     def update(self):
         appearance = self.__vehicle.appearance
-        vehicleSpeed = self.__vehicle.filter.speedInfo.value[2]
+        vehicleSpeed = self.__vehicle.speedInfo.value[2]
         self.__variableArgs['speed'] = vehicleSpeed
         self.__variableArgs['isPC'] = self.__vehicle.isPlayerVehicle
         direction = 1 if vehicleSpeed >= 0.0 else -1
         self.__variableArgs['direction'] = direction
-        self.__variableArgs['rotSpeed'] = self.__vehicle.filter.speedInfo.value[1]
+        self.__variableArgs['rotSpeed'] = self.__vehicle.speedInfo.value[1]
         matKindsUnderTracks = getCorrectedMatKinds(appearance)
-        self.__variableArgs['deltaR'], self.__variableArgs['directionR'], self.__variableArgs['matkindR'] = self.__getScrollParams(appearance.trackScrollController.rightScroll, appearance.trackScrollController.rightContact, matKindsUnderTracks[CustomEffectManager._RIGHT_TRACK], direction)
-        self.__variableArgs['deltaL'], self.__variableArgs['directionL'], self.__variableArgs['matkindL'] = self.__getScrollParams(appearance.trackScrollController.leftScroll, appearance.trackScrollController.leftContact, matKindsUnderTracks[CustomEffectManager._LEFT_TRACK], direction)
+        self.__variableArgs['deltaR'], self.__variableArgs['directionR'], self.__variableArgs['matkindR'] = self.__getScrollParams(appearance.trackScrollController.rightScroll(), appearance.trackScrollController.rightContact(), matKindsUnderTracks[CustomEffectManager._RIGHT_TRACK], direction)
+        self.__variableArgs['deltaL'], self.__variableArgs['directionL'], self.__variableArgs['matkindL'] = self.__getScrollParams(appearance.trackScrollController.leftScroll(), appearance.trackScrollController.leftContact(), matKindsUnderTracks[CustomEffectManager._LEFT_TRACK], direction)
         matInv = Math.Matrix(self.__vehicle.matrix)
         matInv.invert()
         velocityLocal = matInv.applyVector(self.__vehicle.filter.velocity)

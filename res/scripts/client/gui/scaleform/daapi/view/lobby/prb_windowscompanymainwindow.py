@@ -6,15 +6,15 @@ from debug_utils import LOG_ERROR
 from gui.Scaleform.daapi.view.meta.CompanyMainWindowMeta import CompanyMainWindowMeta
 from gui.Scaleform.genConsts.PREBATTLE_ALIASES import PREBATTLE_ALIASES
 from gui.Scaleform.locale.CHAT import CHAT
-from gui.prb_control.context import prb_ctx
 from gui.prb_control import formatters
+from gui.prb_control.context import prb_ctx
 from gui.prb_control.context.prb_ctx import LeavePrbCtx
 from gui.prb_control.prb_helpers import PrbListener
 from gui.prb_control.settings import CTRL_ENTITY_TYPE
 from gui.shared import events
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.events import FocusEvent
-from messenger.gui.Scaleform.view import MESSENGER_VIEW_ALIAS
+from messenger.gui.Scaleform.view.lobby import MESSENGER_VIEW_ALIAS
 
 class CompanyMainWindow(CompanyMainWindowMeta, PrbListener):
 

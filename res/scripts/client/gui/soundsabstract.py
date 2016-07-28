@@ -59,6 +59,12 @@ class SoundSystemAbstract(object):
         """
         pass
 
+    def setBassBoost(self, isEnabled):
+        """
+        Enable/disable bass boost.
+        """
+        pass
+
     def sendGlobalEvent(self, eventName, **params):
         """
         This method is used to send global event to the currently
@@ -66,6 +72,24 @@ class SoundSystemAbstract(object):
         
         @param eventName: str
         @param params: key->value parameters
+        @return:
+        """
+        pass
+
+    def onEnvStart(self, environment):
+        """
+        This method is used to notify sound system about environment start
+        
+        @param environement: str
+        @return:
+        """
+        pass
+
+    def onEnvStop(self, environment):
+        """
+        This method is used to notify sound system about environment stop
+        
+        @param environement: str
         @return:
         """
         pass

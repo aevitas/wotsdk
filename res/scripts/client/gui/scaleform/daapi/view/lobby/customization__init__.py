@@ -6,6 +6,10 @@ from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.framework import GroupedViewSettings, ViewTypes, ScopeTemplates
 from gui.Scaleform.framework.package_layout import PackageBusinessHandler
 
+def getContextMenuHandlers():
+    return ()
+
+
 def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.customization.filter_popover import FilterPopover
     from gui.Scaleform.daapi.view.lobby.customization.purchase_window import PurchaseWindow

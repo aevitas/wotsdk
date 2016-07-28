@@ -24,7 +24,8 @@ from gui.shared.gui_items.Vehicle import VEHICLE_TABLE_TYPES_ORDER_INDICES_REVER
 from gui.shared.utils.functions import makeTooltip
 from helpers import i18n, int2roman
 from messenger import g_settings
-from messenger.m_constants import USER_GUI_TYPE
+from messenger.m_constants import USER_GUI_TYPE, PROTO_TYPE
+from messenger.proto import proto_getter
 from messenger.storage import storage_getter
 from nations import INDICES as NATIONS_INDICES, NAMES as NATIONS_NAMES
 
@@ -233,10 +234,8 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
     colorGetter = g_settings.getColorScheme('rosters').getColors
     vehicleGetter = g_itemsCache.items.getItemByCD
     canTakeSlot = not pInfo.isLegionary()
-    if app:
-        isPlayerSpeaking = app.voiceChatManager.isPlayerSpeaking
-    else:
-        isPlayerSpeaking = lambda dbID: False
+    bwPlugin = proto_getter(PROTO_TYPE.BW_CHAT2)(None)
+    isPlayerSpeaking = bwPlugin.voipController.isPlayerSpeaking
     falloutCtrl = getFalloutCtrl()
     isFallout = falloutCtrl.isEnabled()
     if isFallout:
@@ -284,7 +283,7 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
         else:
             isRequired = falloutBattleType == QUEUE_TYPE.FALLOUT_MULTITEAM
             slotLabel = makeSlotLabel(unitState, slotState, isPlayerCreator, vehCount, checkForVehicles, isRequired=isRequired)
-        if unit.isSquad() or unit.isFalloutSquad():
+        if unit.isPrebattlesSquad():
             playerStatus = getSquadPlayerStatus(slotState, player)
         else:
             playerStatus = getPlayerStatus(slotState, player)
@@ -347,6 +346,14 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
                  'additionalMsg': additionalMsg,
                  'slotNotificationIconTooltip': slotNotificationIconTooltip,
                  'slotNotificationIcon': slotNotificationIcon})
+        if unit.isEvent():
+            isVisibleAdtMsg = player and player.isCurrentPlayer() and not vehicle
+            additionMsg = ''
+            if isVisibleAdtMsg:
+                vehiclesNames = [ veh.userName for veh in g_eventsCache.getEventVehicles() ]
+                additionMsg = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_EVENTSQUAD_VEHICLE, vehName=', '.join(vehiclesNames)))
+            slot.update({'isVisibleAdtMsg': isVisibleAdtMsg,
+             'additionalMsg': additionMsg})
         if isFallout:
             vehiclesNotify = [None, None, None]
             selectedVehicles = [None, None, None]
@@ -356,7 +363,8 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
                 if isCurrentPlayer:
                     statusTemplate = None
                     if falloutBattleType == QUEUE_TYPE.FALLOUT_MULTITEAM:
-                        if len(falloutCtrl.getSelectedVehicles()) < falloutCfg.minVehiclesPerPlayer:
+                        minVehiclesPerPlayer = falloutCfg.minVehiclesPerPlayer
+                        if len(falloutCtrl.getSelectedVehicles()) < minVehiclesPerPlayer:
                             statusTemplate = i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFYMULTITEAM)
                     elif falloutCtrl.mustSelectRequiredVehicle():
                         statusTemplate = i18n.makeString(MESSENGER.DIALOGS_FALLOUTSQUADCHANNEL_VEHICLENOTIFY, level=text_styles.main(int2roman(falloutCfg.vehicleLevelRequired)))
@@ -425,10 +433,14 @@ def makeSortieShortVO(unitFunctional, unitIdx = None, app = None):
         division = getDivisionNameByType(unit.getRosterTypeID())
         divisionTypeStr = i18n.makeString(FORTIFICATIONS.sortie_division_name(division))
         unit, unitState, _, pInfo, slotsIter = fullData
+        if divisionTypeStr:
+            description = divisionTypeStr
+        else:
+            description = unitFunctional.getCensoredComment(unitIdx=unitIdx)
         return {'isFreezed': unitState.isLocked(),
          'hasRestrictions': unit.isRosterSet(ignored=settings.CREATOR_ROSTER_SLOT_INDEXES),
          'slots': _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app, unitFunctional.getRosterSettings().getLevelsRange()),
-         'description': divisionTypeStr if divisionTypeStr else unitFunctional.getCensoredComment(unitIdx=unitIdx)}
+         'description': description}
 
 
 def makeMsg(value):

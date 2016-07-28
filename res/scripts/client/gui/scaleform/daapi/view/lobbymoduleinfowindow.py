@@ -1,5 +1,6 @@
 # Embedded file name: scripts/client/gui/Scaleform/daapi/view/lobby/ModuleInfoWindow.py
 from gui.shared import g_itemsCache
+from gui.shared.formatters import text_styles
 from gui.shared.items_parameters import params_helper, formatters
 from gui.shared.utils import GUN_RELOADING_TYPE, GUN_CAN_BE_CLIP, GUN_CLIP, CLIP_ICON_PATH, EXTRA_MODULE_INFO
 from gui.Scaleform.locale.MENU import MENU
@@ -67,8 +68,8 @@ class ModuleInfoWindow(ModuleInfoMeta):
                 otherParamsInfoList = []
                 for paramName, paramValue in formattedModuleParameters:
                     if paramName in excludedParametersNames:
-                        otherParamsInfoList.append({'type': i18n.makeString(MENU.moduleinfo_params(paramName)) + '\n',
-                         'value': paramValue})
+                        otherParamsInfoList.append({'type': formatters.formatModuleParamName(paramName) + '\n',
+                         'value': text_styles.stats(paramValue)})
 
                 imgPathArr = CLIP_ICON_PATH.split('..')
                 imgPath = 'img://gui' + imgPathArr[1]
@@ -78,8 +79,8 @@ class ModuleInfoWindow(ModuleInfoMeta):
         paramsList = []
         for paramName, paramValue in formattedModuleParameters:
             if paramName not in excludedParametersNames:
-                paramsList.append({'type': i18n.makeString(MENU.moduleinfo_params(paramName)) + '\n',
-                 'value': paramValue})
+                paramsList.append({'type': formatters.formatModuleParamName(paramName) + '\n',
+                 'value': text_styles.stats(paramValue)})
 
         moduleData['parameters'] = {'headerText': i18n.makeString(MENU.MODULEINFO_PARAMETERSLABEL) if len(paramsList) > 0 else '',
          'params': paramsList}

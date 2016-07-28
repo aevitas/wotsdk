@@ -133,10 +133,14 @@ def _offlineLoadCheck():
     if BigWorld.spaceLoadStatus() > 0.5:
         BigWorld.worldDrawEnabled(True)
         _clearGUI()
-        if WWISE.enabled:
-            WWISE.LSstartAll()
+        BigWorld.callback(1.0, _enableSound)
     else:
         BigWorld.callback(1.0, _offlineLoadCheck)
+
+
+def _enableSound():
+    if WWISE.enabled:
+        WWISE.LSstartAll()
 
 
 g_spaceID = 0

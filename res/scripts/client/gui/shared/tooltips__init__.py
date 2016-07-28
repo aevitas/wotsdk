@@ -63,6 +63,7 @@ class TOOLTIP_COMPONENT(CONST_CONTAINER):
 class ACTION_TOOLTIPS_TYPE(CONST_CONTAINER):
     ECONOMICS = 'economics'
     ITEM = 'item'
+    BOOSTER = 'booster'
     CAMOUFLAGE = 'camouflage'
     EMBLEMS = 'emblems'
     AMMO = 'ammo'
@@ -261,49 +262,3 @@ def getUnlockPrice(compactDescr, parentCD = None):
             return (isAvailable, 0, 0)
         return getUnlockProps(isAvailable, minUnlockPriceVehCD)
         return
-
-
-def getItemActionTooltipData(item, isBuying = True):
-    creditsState = None
-    goldState = None
-    if isBuying:
-        price = item.altPrice or item.buyPrice
-        defaultPrice = item.defaultAltPrice or item.defaultPrice
-    else:
-        price = item.sellPrice
-        defaultPrice = item.defaultSellPrice
-    if defaultPrice[0] or price[0]:
-        creditsState = ACTION_TOOLTIPS_STATE.DISCOUNT if price[0] > defaultPrice[0] or isBuying else ACTION_TOOLTIPS_STATE.PENALTY
-    if defaultPrice[1] or price[1]:
-        goldState = ACTION_TOOLTIPS_STATE.DISCOUNT if price[1] > defaultPrice[1] or isBuying else ACTION_TOOLTIPS_STATE.PENALTY
-    return {'type': ACTION_TOOLTIPS_TYPE.ITEM,
-     'key': str(item.intCD),
-     'isBuying': isBuying,
-     'state': (creditsState, goldState),
-     'newPrice': price,
-     'oldPrice': defaultPrice}
-
-
-def getItemRentActionTooltipData(item, rentPackage):
-    goldState = creditsState = ACTION_TOOLTIPS_STATE.DISCOUNT
-    defaultPrice = rentPackage['defaultRentPrice']
-    price = rentPackage['rentPrice']
-    return {'type': ACTION_TOOLTIPS_TYPE.RENT,
-     'key': str(item.intCD),
-     'state': (creditsState, goldState),
-     'newPrice': price,
-     'oldPrice': defaultPrice,
-     'rentPackage': rentPackage['days']}
-
-
-def getActionPriceData(item):
-    price = item.altPrice or item.buyPrice
-    defaultPrice = item.defaultAltPrice or item.defaultPrice
-    minRentPricePackage = item.getRentPackage()
-    action = None
-    if price != defaultPrice and not minRentPricePackage:
-        action = getItemActionTooltipData(item)
-    elif minRentPricePackage:
-        if minRentPricePackage['rentPrice'] != minRentPricePackage['defaultRentPrice']:
-            action = getItemRentActionTooltipData(item, minRentPricePackage)
-    return action

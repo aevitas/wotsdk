@@ -41,7 +41,7 @@ class StartXpExchangeAspect(aop.Aspect):
 class BuySlotPointcut(aop.Pointcut):
 
     def __init__(self):
-        aop.Pointcut.__init__(self, 'gui.shared.gui_items.processors.vehicle', 'VehicleSlotBuyer', '_successHandler')
+        aop.Pointcut.__init__(self, 'gui.shared.gui_items.processors.vehicle', 'VehicleSlotBuyer', '_request')
 
 
 class StartXpExchangePointcut(aop.Pointcut):

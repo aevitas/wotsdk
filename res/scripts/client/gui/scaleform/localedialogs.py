@@ -216,6 +216,7 @@ class DIALOGS(object):
     RECRUITWINDOW_NATIONDROPDOWN_GERMANY = '#dialogs:recruitWindow/nationDropdown/germany'
     RECRUITWINDOW_NATIONDROPDOWN_USA = '#dialogs:recruitWindow/nationDropdown/usa'
     RECRUITWINDOW_NATIONDROPDOWN_CZECH = '#dialogs:recruitWindow/nationDropdown/czech'
+    RECRUITWINDOW_NATIONDROPDOWN_SWEDEN = '#dialogs:recruitWindow/nationDropdown/sweden'
     RECRUITWINDOW_SPECIALIZATION = '#dialogs:recruitWindow/specialization'
     RECRUITWINDOW_VEHICLECLASS = '#dialogs:recruitWindow/vehicleClass'
     RECRUITWINDOW_VEHICLECLASSDROPDOWN_ALL = '#dialogs:recruitWindow/vehicleClassDropdown/all'
@@ -1066,6 +1067,7 @@ class DIALOGS(object):
      RECRUITWINDOW_NATIONDROPDOWN_GERMANY,
      RECRUITWINDOW_NATIONDROPDOWN_USA,
      RECRUITWINDOW_NATIONDROPDOWN_CZECH,
+     RECRUITWINDOW_NATIONDROPDOWN_SWEDEN,
      RECRUITWINDOW_SPECIALIZATION,
      RECRUITWINDOW_VEHICLECLASS,
      RECRUITWINDOW_VEHICLETYPE,

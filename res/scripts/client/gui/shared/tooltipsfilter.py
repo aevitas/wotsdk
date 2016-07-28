@@ -114,8 +114,8 @@ class VehicleFilterTooltip(BlocksTooltipData):
 
     def __gatherData(self, tankCarousel):
         filters = tankCarousel.filter.getFilters()
-        self._currentVehiclesCount = tankCarousel.currentVehiclesCount
-        self._totalVehiclesCount = tankCarousel.totalVehiclesCount
+        self._currentVehiclesCount = tankCarousel.getCurrentVehiclesCount()
+        self._totalVehiclesCount = tankCarousel.getTotalVehiclesCount()
         self._nations = [ nation for nation in GUI_NATIONS if filters[nation] ]
         self._vehicleTypes = [ vehType for vehType in VEHICLE_TYPES_ORDER if filters[vehType] ]
         self._levels = []

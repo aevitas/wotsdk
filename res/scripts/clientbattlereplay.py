@@ -16,6 +16,7 @@ import Event
 import AreaDestructibles
 import gui.SystemMessages
 import gui.Scaleform.CursorDelegator
+from gui import GUI_SETTINGS
 from gui.app_loader import g_appLoader
 from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID
 from helpers import EffectsList, isPlayerAvatar, isPlayerAccount, getFullClientVersion
@@ -341,7 +342,7 @@ class BattleReplay():
         if cmdMap.isFiredList(xrange(CommandMapping.CMD_AMMO_CHOICE_1, CommandMapping.CMD_AMMO_CHOICE_0 + 1), key) and isDown:
             suppressCommand = True
         elif (key == Keys.KEY_RETURN or key == Keys.KEY_NUMPADENTER) and isDown and mods != 4:
-            suppressCommand = True
+            suppressCommand = not GUI_SETTINGS.useAS3Battle
         elif cmdMap.isFiredList((CommandMapping.CMD_CM_LOCK_TARGET,
          CommandMapping.CMD_CM_LOCK_TARGET_OFF,
          CommandMapping.CMD_CM_POSTMORTEM_NEXT_VEHICLE,
@@ -494,16 +495,15 @@ class BattleReplay():
                         self.__gunWasLockedBeforePause = player.gunRotator._VehicleGunRotator__isLocked
                         player.gunRotator.lock(True)
                     self.__showInfoMessage('replayPaused')
-                    g_replayEvents.onPause(True)
+                    isPaused = True
                 else:
                     if player.gunRotator is not None:
                         player.gunRotator.lock(self.__gunWasLockedBeforePause)
                     newSpeedStr = self.__playbackSpeedModifiersStr[self.__playbackSpeedIdx]
                     self.__showInfoMessage('replaySpeedChange', {'speed': newSpeedStr})
-                    g_replayEvents.onPause(False)
+                    isPaused = False
                 self.__replayCtrl.playbackSpeed = newSpeed
-            if self.__replayCtrl.playbackSpeed == 0:
-                BigWorld.callback(0, self.__updateAim)
+                g_replayEvents.onPause(isPaused)
             return
 
     def getPlaybackSpeedIdx(self):
@@ -601,8 +601,8 @@ class BattleReplay():
                 if IS_DEVELOPMENT:
                     LOG_CURRENT_EXCEPTION()
 
-        from gui.LobbyContext import g_lobbyContext
-        g_lobbyContext.setServerSettings(self.__serverSettings)
+            from gui.LobbyContext import g_lobbyContext
+            g_lobbyContext.setServerSettings(self.__serverSettings)
 
     def onCommonSwfLoaded(self):
         self.__enableTimeWarp = False
@@ -752,11 +752,8 @@ class BattleReplay():
         self.__replayCtrl.saveCurrMessage(True)
 
     def __showInfoMessage(self, msg, args = None):
-        from gui.battle_control import g_sessionProvider
         if not self.isTimeWarpInProgress:
-            ctrl = g_sessionProvider.getBattleMessagesCtrl()
-            if ctrl:
-                ctrl.showInfoMessage(msg, True, args)
+            g_replayEvents.onWatcherNotify(msg, args)
 
     def __startAutoRecord(self):
         if not self.__isAutoRecordingEnabled:
@@ -771,15 +768,6 @@ class BattleReplay():
     def __showLoginPage(self):
         g_appLoader.showLogin()
         connectionManager.onDisconnected -= self.__showLoginPage
-
-    def __updateAim(self):
-        if self.getPlaybackSpeedIdx() == 0:
-            player = BigWorld.player()
-            if isPlayerAvatar():
-                if player.inputHandler.aim is not None:
-                    player.inputHandler.aim._update()
-                BigWorld.callback(0, self.__updateAim)
-        return
 
     def setArenaStatisticsStr(self, arenaUniqueStr):
         self.__replayCtrl.setArenaStatisticsStr(arenaUniqueStr)

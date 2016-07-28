@@ -3,10 +3,17 @@ from gui.Scaleform.daapi.settings.views import VIEW_ALIAS
 from gui.Scaleform.framework import ViewSettings, GroupedViewSettings, ViewTypes, ScopeTemplates
 from gui.Scaleform.framework.managers.containers import POP_UP_CRITERIA
 from gui.Scaleform.framework.package_layout import PackageBusinessHandler
+from gui.Scaleform.genConsts.CONTEXT_MENU_HANDLER_TYPE import CONTEXT_MENU_HANDLER_TYPE
 from gui.app_loader.settings import APP_NAME_SPACE
 from gui.shared import EVENT_BUS_SCOPE
 from gui.shared.events import ShowDialogEvent
 from gui.Scaleform.genConsts.FALLOUT_ALIASES import FALLOUT_ALIASES
+
+def getContextMenuHandlers():
+    from gui.Scaleform.daapi.view.lobby import user_cm_handlers
+    from gui.Scaleform.daapi.view.lobby.rally.UnitUserCMHandler import UnitUserCMHandler
+    return ((CONTEXT_MENU_HANDLER_TYPE.APPEAL_USER, user_cm_handlers.AppealCMHandler), (CONTEXT_MENU_HANDLER_TYPE.BASE_USER, user_cm_handlers.BaseUserCMHandler), (CONTEXT_MENU_HANDLER_TYPE.UNIT_USER, UnitUserCMHandler))
+
 
 def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.SandboxQueueDialog import SandboxQueueDialog
@@ -15,6 +22,7 @@ def getViewSettings():
     from gui.Scaleform.daapi.view.battle_loading import FalloutMultiTeamBattleLoading
     from gui.Scaleform.daapi.view.dialogs.CheckBoxDialog import CheckBoxDialog
     from gui.Scaleform.daapi.view.dialogs.ConfirmModuleDialog import ConfirmModuleDialog
+    from gui.Scaleform.daapi.view.dialogs.ConfirmBoosterDialog import ConfirmBoosterDialog
     from gui.Scaleform.daapi.view.dialogs.DemountDeviceDialog import DemountDeviceDialog
     from gui.Scaleform.daapi.view.dialogs.DismissTankmanDialog import DismissTankmanDialog
     from gui.Scaleform.daapi.view.dialogs.FreeXPInfoWindow import FreeXPInfoWindow
@@ -62,6 +70,7 @@ def getViewSettings():
      ViewSettings(VIEW_ALIAS.VEHICLE_PREVIEW, VehiclePreview, 'vehiclePreview.swf', ViewTypes.LOBBY_SUB, VIEW_ALIAS.VEHICLE_PREVIEW, ScopeTemplates.LOBBY_SUB_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.CHECK_BOX_DIALOG, CheckBoxDialog, 'confirmDialog.swf', ViewTypes.TOP_WINDOW, 'confirmDialog', None, ScopeTemplates.DYNAMIC_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.CONFIRM_MODULE_DIALOG, ConfirmModuleDialog, 'confirmModuleWindow.swf', ViewTypes.TOP_WINDOW, 'confirmModuleDialog', None, ScopeTemplates.DEFAULT_SCOPE),
+     GroupedViewSettings(VIEW_ALIAS.CONFIRM_BOOSTER_DIALOG, ConfirmBoosterDialog, 'confirmBoostersWindow.swf', ViewTypes.TOP_WINDOW, 'confirmBoosterDialog', None, ScopeTemplates.DEFAULT_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.DEMOUNT_DEVICE_DIALOG, DemountDeviceDialog, 'demountDeviceDialog.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.DESTROY_DEVICE_DIALOG, IconDialog, 'destroyDeviceDialog.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
      GroupedViewSettings(VIEW_ALIAS.DISMISS_TANKMAN_DIALOG, DismissTankmanDialog, 'dismissTankmanDialog.swf', ViewTypes.TOP_WINDOW, '', None, ScopeTemplates.DYNAMIC_SCOPE),
@@ -146,6 +155,7 @@ class LobbyDialogsHandler(PackageBusinessHandler):
     def __init__(self):
         listeners = ((ShowDialogEvent.SHOW_CHECK_BOX_DIALOG, self.__checkBoxDialogHandler),
          (ShowDialogEvent.SHOW_CONFIRM_MODULE, self.__confirmModuleHandler),
+         (ShowDialogEvent.SHOW_CONFIRM_BOOSTER, self.__confirmBoosterHandler),
          (ShowDialogEvent.SHOW_DEMOUNT_DEVICE_DIALOG, self.__demountDeviceDialogHandler),
          (ShowDialogEvent.SHOW_DESTROY_DEVICE_DIALOG, self.__destroyDeviceDialogHandler),
          (ShowDialogEvent.SHOW_DISMISS_TANKMAN_DIALOG, self.__dismissTankmanHandler),
@@ -162,6 +172,9 @@ class LobbyDialogsHandler(PackageBusinessHandler):
 
     def __confirmModuleHandler(self, event):
         self.loadViewWithGenName(VIEW_ALIAS.CONFIRM_MODULE_DIALOG, event.meta, event.handler)
+
+    def __confirmBoosterHandler(self, event):
+        self.loadViewWithGenName(VIEW_ALIAS.CONFIRM_BOOSTER_DIALOG, event.meta, event.handler)
 
     def __demountDeviceDialogHandler(self, event):
         self.loadViewWithGenName(VIEW_ALIAS.DEMOUNT_DEVICE_DIALOG, event.meta, event.handler)

@@ -2,28 +2,29 @@
 import math
 from adisp import process
 from debug_utils import LOG_DEBUG
+from gui import SystemMessages
+from gui.LobbyContext import g_lobbyContext
+from gui.Scaleform.daapi.view.dialogs import I18nInfoDialogMeta
+from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
+from gui.Scaleform.framework.managers.context_menu import AbstractContextMenuHandler
+from gui.Scaleform.locale.MENU import MENU
+from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
+from gui.clans.clan_controller import g_clanCtrl
 from gui.clans.clan_helpers import showClanInviteSystemMsg
 from gui.clans.contexts import CreateInviteCtx
-from gui.prb_control.settings import PREBATTLE_ACTION_NAME
-from helpers import i18n
-from gui import SystemMessages
-from gui.clans.clan_controller import g_clanCtrl
-from gui.LobbyContext import g_lobbyContext
 from gui.prb_control.context import SendInvitesCtx, PrebattleAction
 from gui.prb_control.prb_helpers import prbDispatcherProperty, prbFunctionalProperty
+from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from gui.shared import g_itemsCache, event_dispatcher as shared_events, utils
 from gui.shared.ClanCache import ClanInfo
 from gui.shared.denunciator import LobbyDenunciator, DENUNCIATIONS
-from gui.Scaleform.locale.MENU import MENU
-from gui.Scaleform.locale.SYSTEM_MESSAGES import SYSTEM_MESSAGES
-from gui.Scaleform.daapi.view.dialogs import I18nInfoDialogMeta
-from gui.Scaleform.framework.entities.EventSystemEntity import EventSystemEntity
-from gui.Scaleform.managers.context_menu.AbstractContextMenuHandler import AbstractContextMenuHandler
+from helpers import i18n
 from helpers.i18n import makeString
 from messenger import g_settings
 from messenger.m_constants import PROTO_TYPE, USER_TAG
 from messenger.proto import proto_getter
 from messenger.storage import storage_getter
+from gui.server_events import g_eventsCache
 
 class USER(object):
     INFO = 'userInfo'
@@ -39,6 +40,7 @@ class USER(object):
     SET_MUTED = 'setMuted'
     UNSET_MUTED = 'unsetMuted'
     CREATE_SQUAD = 'createSquad'
+    CREATE_EVENT_SQUAD = 'createEventSquad'
     INVITE = 'invite'
     REQUEST_FRIENDSHIP = 'requestFriendship'
     VEHICLE_INFO = 'vehicleInfoEx'
@@ -134,6 +136,9 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
     def createSquad(self):
         self.prbDispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.SQUAD, accountsToInvite=(self.databaseID,)))
 
+    def createEventSquad(self):
+        self.prbDispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.EVENT_SQUAD, accountsToInvite=(self.databaseID,)))
+
     def invite(self):
         user = self.usersStorage.getUser(self.databaseID)
         for func in self.prbDispatcher.getFunctionalCollection().getIterator():
@@ -161,6 +166,7 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
          USER.SET_MUTED: 'setMuted',
          USER.UNSET_MUTED: 'unsetMuted',
          USER.CREATE_SQUAD: 'createSquad',
+         USER.CREATE_EVENT_SQUAD: 'createEventSquad',
          USER.INVITE: 'invite',
          USER.REQUEST_FRIENDSHIP: 'requestFriendship'}
 
@@ -229,6 +235,8 @@ class BaseUserCMHandler(AbstractContextMenuHandler, EventSystemEntity):
         if not isIgnored and not self.isSquadCreator():
             canCreate = self.prbDispatcher.getFunctionalCollection().canCreateSquad()
             options.append(self._makeItem(USER.CREATE_SQUAD, MENU.contextmenu(USER.CREATE_SQUAD), optInitData={'enabled': canCreate}))
+            if g_eventsCache.isEventEnabled():
+                options.append(self._makeItem(USER.CREATE_EVENT_SQUAD, MENU.contextmenu(USER.CREATE_EVENT_SQUAD), optInitData={'enabled': canCreate}))
         return options
 
     def _addPrebattleInfo(self, options, userCMInfo):
@@ -397,6 +405,7 @@ class UserContextMenuInfo(object):
         self.isIgnored = False
         self.isMuted = False
         self.hasClan = False
+        self.userName = userName
         self.displayName = userName
         self.isOnline = False
         self.isCurrentPlayer = False

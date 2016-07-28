@@ -11,6 +11,7 @@ import motivation_quests
 from Event import Event, EventManager
 from adisp import async, process
 from constants import EVENT_TYPE, EVENT_CLIENT_DATA, QUEUE_TYPE, ARENA_BONUS_TYPE
+import nations
 from potapov_quests import _POTAPOV_QUEST_XML_PATH
 from gui.shared.utils.requesters.QuestsProgressRequester import QuestsProgressRequester
 from helpers import isPlayerAccount
@@ -260,7 +261,7 @@ class _EventsCache(object):
             return None
 
     def isEventEnabled(self):
-        return len(self.__getEventBattles()) > 0
+        return len(self.__getEventBattles()) > 0 and len(self.getEventVehicles()) > 0
 
     def isGasAttackEnabled(self):
         return len(self.__getGasAttack()) > 0
@@ -313,6 +314,20 @@ class _EventsCache(object):
             result.append((value, actionID))
 
         result.extend(self.__actionsCache[ACTION_SECTION_TYPE.ITEM][type].get(itemTypeID, {}).get(intCD, tuple()))
+        return result
+
+    def getBoosterAction(self, booster, isBuying = True, forCredits = False):
+        result = []
+        type = ACTION_MODIFIER_TYPE.DISCOUNT if isBuying else ACTION_MODIFIER_TYPE.SELLING
+        boosterID = booster.boosterID
+        values = self.__actionsCache[ACTION_SECTION_TYPE.ALL_BOOSTERS][type].get(nations.NONE_INDEX, [])
+        for (key, value), actionID in values:
+            if forCredits and key == 'creditsPriceMultiplier':
+                result.append((value, actionID))
+            elif not forCredits and key == 'goldPriceMultiplier':
+                result.append((value, actionID))
+
+        result.extend(self.__actionsCache[ACTION_SECTION_TYPE.BOOSTER][type].get(boosterID, tuple()))
         return result
 
     def getRentAction(self, item, rentPackage):
@@ -621,11 +636,11 @@ class _EventsCache(object):
     def __getFallout(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.FALLOUT)
 
-    def __getGasAttack(self):
-        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('gasAttack', {})
-
     def __getUnitData(self):
         return self.__getEventsData(EVENT_CLIENT_DATA.SQUAD_BONUSES)
+
+    def __getGasAttack(self):
+        return self.__getEventsData(EVENT_CLIENT_DATA.INGAME_EVENTS).get('gasAttack', {})
 
     def __getCommonQuestsIterator(self):
         questsData = self.__getQuestsData()

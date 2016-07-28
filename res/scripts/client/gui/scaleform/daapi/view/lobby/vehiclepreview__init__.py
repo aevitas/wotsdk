@@ -5,6 +5,10 @@ from gui.Scaleform.framework.package_layout import PackageBusinessHandler
 from gui.app_loader.settings import APP_NAME_SPACE
 from gui.shared import EVENT_BUS_SCOPE
 
+def getContextMenuHandlers():
+    return ()
+
+
 def getViewSettings():
     from gui.Scaleform.daapi.view.lobby.hangar.VehicleParameters import VehiclePreviewParameters
     from gui.Scaleform.daapi.view.lobby.vehiclePreview.ModulesPanel import ModulesPanel

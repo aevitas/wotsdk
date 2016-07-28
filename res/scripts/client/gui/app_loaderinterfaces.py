@@ -30,7 +30,7 @@ class IAppFactory(object):
     def hideLobby(self):
         pass
 
-    def createBattle(self):
+    def createBattle(self, arenaGuiType):
         pass
 
     def destroyBattle(self):
@@ -74,3 +74,6 @@ class IAppFactory(object):
 
     def showDisconnectDialog(self, appNS, description):
         pass
+
+    def handleKeyInBattle(self, isDown, key, mods):
+        return False

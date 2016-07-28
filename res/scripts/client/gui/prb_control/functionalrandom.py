@@ -24,6 +24,7 @@ class _RandomEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueueRandomFailure += functional.onEnqueueError
         g_playerEvents.onKickedFromRandomQueue += functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena += functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure += functional.onArenaJoinFailure
 
     def unsubscribe(self, functional):
         g_playerEvents.onEnqueuedRandom -= functional.onEnqueued
@@ -31,6 +32,7 @@ class _RandomEventsSubscriber(prequeue.PlayersEventsSubscriber):
         g_playerEvents.onEnqueueRandomFailure -= functional.onEnqueueError
         g_playerEvents.onKickedFromRandomQueue -= functional.onKickedFromQueue
         g_playerEvents.onKickedFromArena -= functional.onKickedFromArena
+        g_playerEvents.onArenaJoinFailure -= functional.onArenaJoinFailure
 
 
 class RandomQueueFunctional(prequeue.AccountQueueFunctional):
@@ -51,6 +53,9 @@ class RandomQueueFunctional(prequeue.AccountQueueFunctional):
         name = action.actionName
         if name == PREBATTLE_ACTION_NAME.SQUAD:
             newEntry = unit.SquadEntry(accountsToInvite=action.accountsToInvite)
+            isProcessed = True
+        elif name == PREBATTLE_ACTION_NAME.EVENT_SQUAD:
+            newEntry = unit.EventSquadEntry(accountsToInvite=action.accountsToInvite)
             isProcessed = True
         elif name == PREBATTLE_ACTION_NAME.RANDOM_QUEUE:
             isProcessed = True
