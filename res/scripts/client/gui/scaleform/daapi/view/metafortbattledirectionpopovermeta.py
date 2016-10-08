@@ -7,20 +7,14 @@ class FortBattleDirectionPopoverMeta(SmartPopOverView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends SmartPopOverView
-    null
     """
 
     def requestToJoin(self, fortBattleID):
-        """
-        :param fortBattleID:
-        :return :
-        """
         self._printOverrideError('requestToJoin')
 
     def as_setDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by BattleDirectionPopoverVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)

@@ -1,8 +1,10 @@
 # Embedded file name: scripts/common/BWUtil.py
 import ResMgr
 from bwdebug import TRACE_MSG
-from functools import partial
+from functools import partial, wraps
 import sys, os
+from types import GeneratorType
+import BigWorld
 try:
     orig_open = __builtins__['open']
 except TypeError as e:
@@ -54,3 +56,48 @@ def extendPath(path, name):
             path.append(subdir)
 
     return path
+
+
+class AsyncReturn(StopIteration):
+    __slots__ = ['value']
+
+    def __init__(self, value):
+        self.value = value
+
+
+def async(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        gen = func(*args, **kwargs)
+        raise isinstance(gen, GeneratorType) or AssertionError
+        promise = BigWorld.Promise()
+
+        def stepGen(result):
+            raise isinstance(result, BigWorld.Future) or AssertionError
+            result.then(handleResult)
+
+        def handle(func, *args):
+            try:
+                stepGen(func(*args))
+            except AsyncReturn as r:
+                promise.set_value(r.value)
+            except StopIteration:
+                promise.set_value(None)
+            except BaseException as e:
+                promise.set_exception(*sys.exc_info())
+
+            return
+
+        def handleResult(result):
+            try:
+                result = result.get()
+            except BaseException as e:
+                handle(gen.throw, *sys.exc_info())
+            else:
+                handle(gen.send, result)
+
+        handle(gen.send, None)
+        return promise.get_future()
+
+    return wrapper

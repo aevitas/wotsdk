@@ -1,12 +1,12 @@
 # Embedded file name: scripts/client/MusicControllerWWISE.py
 import BigWorld
 import ResMgr
-import WWISE
 import SoundGroups
-from constants import ARENA_PERIOD
-from items import _xml
+import WWISE
 from PlayerEvents import g_playerEvents
+from constants import ARENA_PERIOD
 from helpers import isPlayerAvatar
+from items import _xml
 MUSIC_EVENT_NONE = 0
 MUSIC_EVENT_LOBBY = 2
 MUSIC_EVENT_COMBAT = 3

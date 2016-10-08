@@ -7,13 +7,7 @@ class WGNCDialogMeta(SimpleDialogMeta):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends SimpleDialogMeta
-    null
     """
 
     def doAction(self, actionId, isButtonClicked):
-        """
-        :param actionId:
-        :param isButtonClicked:
-        :return :
-        """
         self._printOverrideError('doAction')

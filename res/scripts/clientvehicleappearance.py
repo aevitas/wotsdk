@@ -1,23 +1,20 @@
 # Embedded file name: scripts/client/VehicleAppearance.py
 from collections import namedtuple
-import BigWorld
+import weakref
+import random
+import time
+from functools import partial
 import Math
 from debug_utils import *
-import weakref
-from VehicleEffects import VehicleTrailEffects, VehicleExhaustEffects
-from constants import IS_DEVELOPMENT, ARENA_GUI_TYPE, VEHICLE_PHYSICS_MODE
+from constants import IS_DEVELOPMENT, VEHICLE_PHYSICS_MODE
 import constants
 from OcclusionDecal import OcclusionDecal
 from ShadowForwardDecal import ShadowForwardDecal
 from helpers.CallbackDelayer import CallbackDelayer
-from helpers import bound_effects, DecalMap, isPlayerAvatar, newFakeModel
+from helpers import bound_effects, DecalMap
 from helpers.EffectsList import EffectsListPlayer, SpecialKeyPointNames
 import items.vehicles
-import random
-import math
-import time
 from Event import Event
-from functools import partial
 import material_kinds
 from VehicleStickers import VehicleStickers
 import AuxiliaryFx
@@ -29,7 +26,8 @@ import LightFx.LightManager
 import BattleReplay
 from vehicle_systems.tankStructure import TankPartNames
 from VehicleEffects import RepaintParams
-from vehicle_systems.assembly_utility import ComponentSystem, ComponentDescriptor
+from svarog_script.py_component_system import ComponentSystem
+from svarog_script.py_component_system import ComponentDescriptor, ComponentSystem
 _ENABLE_VEHICLE_VALIDATION = False
 _VEHICLE_DISAPPEAR_TIME = 0.2
 _VEHICLE_APPEAR_TIME = 0.2
@@ -66,8 +64,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
     leftTrackScroll = property(lambda self: self.__leftTrackScroll)
     gunSound = property(lambda self: self.__gunSound)
     isPillbox = property(lambda self: self.__isPillbox)
-    rpm = property(lambda self: self.__rpm)
-    gear = property(lambda self: self.__gear)
     detailedEngineState = ComponentDescriptor()
     engineAudition = ComponentDescriptor()
     trackCrashAudition = ComponentDescriptor()
@@ -153,8 +149,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
         self.__leftTrackScroll = 0.0
         self.__rightTrackScroll = 0.0
         self.__distanceFromPlayer = 0.0
-        self.__gear = 127
-        self.__rpm = 0.0
         return
 
     def prerequisites(self, vehicle):
@@ -212,14 +206,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
                 self.__auxiliaryFxCtrl.destroy()
                 self.__auxiliaryFxCtrl = None
             self.__stopEffects()
-            if vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-                if self.__trailEffects is not None:
-                    self.__trailEffects.destroy()
-                    self.__trailEffects = None
-                if self.__exhaustEffects is not None:
-                    self.__exhaustEffects.destroy()
-                    self.__exhaustEffects = None
-            vehicle.stopHornSound(True)
             for desc in self.modelsDesc.iteritems():
                 boundEffects = desc[1].get('boundEffects', None)
                 if boundEffects is not None:
@@ -278,8 +264,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
         self.__vehicle = vehicle
         player = BigWorld.player()
         modelsDesc = self.modelsDesc
-        if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-            self.__createExhaust()
         if prereqs is None:
             self.__typeDesc.chassis['hitTester'].loadBspModel()
             self.__typeDesc.hull['hitTester'].loadBspModel()
@@ -294,7 +278,7 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
         if vehicle.isPlayerVehicle:
             vehicle.filter.enableStabilisedMatrix(True)
         self.__createStickers(prereqs)
-        _setupVehicleFashion(self, self.__fashion, self.__vehicle)
+        _setupVehicleFashion(self.__fashion, self.__vehicle)
         currentModelState = self.__currentDamageState.modelState
         boundEffectNodes = {'chassis': '',
          'hull': '',
@@ -362,15 +346,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
         if self.__vehicle.isPlayerVehicle:
             self.delayCallback(_PERIODIC_TIME_ENGINE, self.__onPeriodicTimerEngine)
         self.detailedEngineState.start(self.__vehicle)
-
-    def set_gear(self, gear):
-        self.__gear = gear
-
-    def set_normalisedRPM(self, rpm):
-        self.__rpm = rpm
-
-    def getGunSoundObj(self):
-        return self.engineAudition.getGunSoundObj()
 
     def showStickers(self, show):
         self.__vehicleStickers.show = show
@@ -453,7 +428,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
         self.__engineMode = mode
         self.detailedEngineState.setMode(self.__engineMode[0])
         if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-            self.__updateExhaust()
             if forceSwinging:
                 flags = mode[1]
                 prevFlags = self.__swingMoveFlags
@@ -538,11 +512,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             if hasattr(gun['model'], 'wg_gunRecoil'):
                 delattr(gun['model'], 'wg_gunRecoil')
             self.__gunFireNode = None
-            if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED:
-                self.__customEffectManager.stop()
-            else:
-                self.__attachExhaust(False)
-                self.__trailEffects.stopEffects()
             self.__crashedTracksCtrl.reset()
             chassis['model'].stopSoundsOnDestroy = False
             hull['model'].stopSoundsOnDestroy = False
@@ -580,8 +549,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             except:
                 LOG_CURRENT_EXCEPTION()
 
-            if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-                self.__attachExhaust(True)
             gun['model'].wg_gunRecoil = self.__gunRecoil
             self.__createLampLights()
             self.__gunFireNode = gun['model'].node('HP_gunFire')
@@ -589,8 +556,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             if vehicle.isPlayerVehicle:
                 vehicle.drawEdge()
         else:
-            if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-                self.__destroyExhaust()
             filter = self.__vehicle.filter
             if not self.__isPillbox and filter.placingOnGround:
                 contactsWithGround = filter.numLeftTrackContacts + filter.numRightTrackContacts
@@ -890,11 +855,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
                     self.engineAudition.tick()
                 self.__updateEffectsLOD()
                 vehicle.filter.placingOnGround = not self.__fashion.suspensionWorking
-                if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED:
-                    self.__customEffectManager.update()
-                else:
-                    self.__trailEffects.update()
-                    self.__updateExhaust()
                 self.__vehicle.filter.placingOnGround = not self.__fashion.suspensionWorking
             except:
                 LOG_CURRENT_EXCEPTION()
@@ -902,19 +862,10 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             return
 
     def __updateEffectsLOD(self):
-        if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-            enableExhaust = self.__distanceFromPlayer <= _LOD_DISTANCE_EXHAUST
-            if enableExhaust != self.__exhaustEffects.enabled:
-                self.__exhaustEffects.enable(enableExhaust and not self.__isUnderWater)
-        enableTrails = self.__distanceFromPlayer <= _LOD_DISTANCE_TRAIL_PARTICLES and BigWorld.wg_isVehicleDustEnabled()
-        if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED:
-            self.__customEffectManager.enable(enableTrails)
-        else:
-            self.__trailEffects.enable(enableTrails)
+        pass
 
     def __setupTrailParticles(self):
-        if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-            self.__trailEffects = VehicleTrailEffects(self.__vehicle)
+        pass
 
     def __updateCurrTerrainMatKinds(self):
         if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED:
@@ -965,14 +916,9 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
             self.__vibrationsCtrl.executeCriticalHitVibrations(vehicle, extrasName)
         return
 
-    def deviceDestroyed(self, deviceName):
-        if self.engineAudition is not None:
-            self.engineAudition.deviceDestroyed(deviceName)
-        return
-
-    def deviceRepairedToCritical(self, deviceName):
-        if self.engineAudition is not None:
-            self.engineAudition.deviceRepairedToCritical(deviceName)
+    def deviceStateChanged(self, deviceName, state):
+        if self.detailedEngineState is not None and deviceName == 'engine':
+            self.detailedEngineState.deviceStateChanged(state)
         return
 
     def __updateVibrations(self):
@@ -1060,25 +1006,6 @@ class VehicleAppearance(CallbackDelayer, ComponentSystem):
         _validateCfgPos(hull, turret, vDesc.hull['turretPositions'][0], 'turretPosition', vehicle, state)
         _validateCfgPos(turret, gun, vDesc.turret['gunPosition'], 'gunPosition', vehicle, state)
         return
-
-    def __createExhaust(self):
-        self.__exhaustEffects = VehicleExhaustEffects(self.__typeDesc)
-
-    def __attachExhaust(self, attach):
-        if attach:
-            hullModel = self.modelsDesc['hull']['model']
-            self.__exhaustEffects.attach(hullModel, self.__vehicle.typeDescriptor.hull['exhaust'])
-        else:
-            self.__exhaustEffects.detach()
-
-    def __destroyExhaust(self):
-        self.__exhaustEffects.destroy()
-
-    def __updateExhaust(self):
-        if self.__vehicle.physicsMode == VEHICLE_PHYSICS_MODE.STANDARD:
-            if self.__exhaustEffects.enabled == self.__isUnderWater:
-                self.__exhaustEffects.enable(not self.__isUnderWater)
-        self.__exhaustEffects.changeExhaust(self.__engineMode[0], self.detailedEngineState.rpm)
 
     def __createGunRecoil(self):
         recoilDescr = self.__typeDesc.gun['recoil']
@@ -1396,7 +1323,7 @@ class _CrashedTrackController():
                 BigWorld.fetchModel(self.__va().modelsDesc['chassis']['_stateFunc'](self.__vehicle, 'destroyed'), self.__onModelLoaded)
             if self.__fashion is None:
                 self.__fashion = BigWorld.WGVehicleFashion(True, 1.0)
-                _setupVehicleFashion(self, self.__fashion, self.__vehicle, True)
+                _setupVehicleFashion(self.__fashion, self.__vehicle, True)
             self.__fashion.setCrashEffectCoeff(0.0)
             self.__setupTracksHiding()
             return
@@ -1538,15 +1465,11 @@ def _createWheelsListByTemplate(startIndex, template, count):
     return [ '%s%d' % (template, i) for i in range(startIndex, startIndex + count) ]
 
 
-def _setupVehicleFashion(self, fashion, vehicle, isCrashedTrack = False):
-    vDesc = vehicle.typeDescriptor
+def _setupVehicleFashion(fashion, vDesc, isCrashedTrack = False):
     tracesCfg = vDesc.chassis['traces']
+    isTrackFashionSet = False
     try:
-        isTrackFashionSet = setupTracksFashion(fashion, vehicle.typeDescriptor, isCrashedTrack)
-        if isinstance(vehicle.filter, BigWorld.WGVehicleFilter):
-            fashion.physicsInfo = vehicle.filter.physicsInfo
-            fashion.movementInfo = vehicle.filter.movementInfo
-            vehicle.filter.placingOnGround = vehicle.filter.placingOnGround if isTrackFashionSet else False
+        isTrackFashionSet = setupTracksFashion(fashion, vDesc, isCrashedTrack)
         textures = {}
         for matKindName, texId in DecalMap.g_instance.getTextureSet(tracesCfg['textureSet']).iteritems():
             if matKindName != 'bump':
@@ -1556,6 +1479,8 @@ def _setupVehicleFashion(self, fashion, vehicle, isCrashedTrack = False):
         fashion.setTrackTraces(tracesCfg['bufferPrefs'], textures, tracesCfg['centerOffset'], tracesCfg['size'])
     except:
         LOG_CURRENT_EXCEPTION()
+
+    return isTrackFashionSet
 
 
 def setupTracksFashion(fashion, vDesc, isCrashedTrack = False):

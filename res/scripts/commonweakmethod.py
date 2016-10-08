@@ -53,3 +53,27 @@ class WeakMethod(ref):
         return True
 
     __hash__ = ref.__hash__
+
+
+class WeakMethodProxy(object):
+
+    def __init__(self, method, callback = None):
+        self._methodRef = WeakMethod(method, callback)
+
+    def __call__(self, *args, **kwargs):
+        method = self._methodRef()
+        raise method is not None or AssertionError
+        return method(*args, **kwargs)
+
+    def __eq__(self, other):
+        if isinstance(other, WeakMethodProxy):
+            return self._methodRef == other._methodRef
+        return False
+
+    def __ne__(self, other):
+        if isinstance(other, WeakMethodProxy):
+            return self._methodRef != other._methodRef
+        return True
+
+    def __hash__(self):
+        return self._methodRef.__hash__()

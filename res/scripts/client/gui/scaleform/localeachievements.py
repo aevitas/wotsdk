@@ -1,13 +1,11 @@
 # Embedded file name: scripts/client/gui/Scaleform/locale/ACHIEVEMENTS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
+from debug_utils import LOG_WARNING
 
 class ACHIEVEMENTS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    null
-    """
     MARKSONGUN_DESCR_PARAM_LABEL = '#achievements:marksOnGun/descr/param/label'
     MARKSONGUN_DESCR_PARAM_VALUE = '#achievements:marksOnGun/descr/param/value'
     ACHIEVEMENT_RANK1 = '#achievements:achievement/rank1'
@@ -87,12 +85,14 @@ class ACHIEVEMENTS(object):
     STRATEGICOPERATIONS = '#achievements:strategicOperations'
     STRATEGICOPERATIONS_DESCR = '#achievements:strategicOperations_descr'
     STRATEGICOPERATIONS_CONDITION = '#achievements:strategicOperations_condition'
+    MARKI100YEARS = '#achievements:markI100Years'
+    MARKI100YEARS_DESCR = '#achievements:markI100Years_descr'
     MEDALCRUCIALCONTRIBUTION = '#achievements:medalCrucialContribution'
     MEDALCRUCIALCONTRIBUTION_DESCR = '#achievements:medalCrucialContribution_descr'
     MEDALCRUCIALCONTRIBUTION_CONDITION = '#achievements:medalCrucialContribution_condition'
     MEDALBROTHERSINARMS = '#achievements:medalBrothersInArms'
     MEDALBROTHERSINARMS_DESCR = '#achievements:medalBrothersInArms_descr'
-    MEDALBROTHERSINARMS_CONDITION_ = '#achievements:medalBrothersInArms_condition'
+    MEDALBROTHERSINARMS_CONDITION = '#achievements:medalBrothersInArms_condition'
     MEDALDELANGLADE = '#achievements:medalDeLanglade'
     MEDALDELANGLADE_DESCR = '#achievements:medalDeLanglade_descr'
     MEDALDELANGLADE_CONDITION = '#achievements:medalDeLanglade_condition'
@@ -557,6 +557,18 @@ class ACHIEVEMENTS(object):
     SAURONEYE = '#achievements:sauronEye'
     SAURONEYE_DESCR = '#achievements:sauronEye_descr'
     SAURONEYE_CONDITION = '#achievements:sauronEye_condition'
+    MARKIPROTECTOR = '#achievements:markIProtector'
+    MARKIPROTECTOR_DESCR = '#achievements:markIProtector_descr'
+    MARKIPROTECTOR_CONDITION = '#achievements:markIProtector_condition'
+    MARKIBASEPROTECTOR = '#achievements:markIBaseProtector'
+    MARKIBASEPROTECTOR_DESCR = '#achievements:markIBaseProtector_descr'
+    MARKIBASEPROTECTOR_CONDITION = '#achievements:markIBaseProtector_condition'
+    MARKIBOMBERMAN = '#achievements:markIBomberman'
+    MARKIBOMBERMAN_DESCR = '#achievements:markIBomberman_descr'
+    MARKIBOMBERMAN_CONDITION = '#achievements:markIBomberman_condition'
+    MARKIREPAIRER = '#achievements:markIRepairer'
+    MARKIREPAIRER_DESCR = '#achievements:markIRepairer_descr'
+    MARKIREPAIRER_CONDITION = '#achievements:markIRepairer_condition'
     HISTBATTLE1_HISTORYLESSONS = '#achievements:histBattle1_historyLessons'
     HISTBATTLE1_HISTORYLESSONS_DESCR = '#achievements:histBattle1_historyLessons_descr'
     HISTBATTLE1_HISTORYLESSONS_CONDITION = '#achievements:histBattle1_historyLessons_condition'
@@ -608,12 +620,12 @@ class ACHIEVEMENTS(object):
     MARKSONGUN2_DESCR = '#achievements:marksOnGun2_descr'
     MARKSONGUN3_DESCR = '#achievements:marksOnGun3_descr'
     MARKSONGUN_CONDITION = '#achievements:marksOnGun_condition'
-    MARKSONGUN_DESCR_PARAM_LABEL_1 = MARKSONGUN_DESCR_PARAM_LABEL + '/1'
-    MARKSONGUN_DESCR_PARAM_LABEL_2 = MARKSONGUN_DESCR_PARAM_LABEL + '/2'
-    MARKSONGUN_DESCR_PARAM_LABEL_3 = MARKSONGUN_DESCR_PARAM_LABEL + '/3'
-    MARKSONGUN_DESCR_PARAM_VALUE_1 = MARKSONGUN_DESCR_PARAM_VALUE + '/1'
-    MARKSONGUN_DESCR_PARAM_VALUE_2 = MARKSONGUN_DESCR_PARAM_VALUE + '/2'
-    MARKSONGUN_DESCR_PARAM_VALUE_3 = MARKSONGUN_DESCR_PARAM_VALUE + '/3'
+    MARKSONGUN_DESCR_PARAM_LABEL_1 = '#achievements:marksOnGun/descr/param/label/1'
+    MARKSONGUN_DESCR_PARAM_LABEL_2 = '#achievements:marksOnGun/descr/param/label/2'
+    MARKSONGUN_DESCR_PARAM_LABEL_3 = '#achievements:marksOnGun/descr/param/label/3'
+    MARKSONGUN_DESCR_PARAM_VALUE_1 = '#achievements:marksOnGun/descr/param/value/1'
+    MARKSONGUN_DESCR_PARAM_VALUE_2 = '#achievements:marksOnGun/descr/param/value/2'
+    MARKSONGUN_DESCR_PARAM_VALUE_3 = '#achievements:marksOnGun/descr/param/value/3'
     ACHIEVEMENT_ENUM = (ACHIEVEMENT_RANK1,
      ACHIEVEMENT_RANK2,
      ACHIEVEMENT_RANK3,
@@ -624,7 +636,17 @@ class ACHIEVEMENTS(object):
      ACHIEVEMENT_MASTER3,
      ACHIEVEMENT_MASTER4,
      ACHIEVEMENT_MAXMEDALVALUE)
-    all_ENUM = (GLOBALRATING,
+    ALL_ENUM = (ACHIEVEMENT_RANK1,
+     ACHIEVEMENT_RANK2,
+     ACHIEVEMENT_RANK3,
+     ACHIEVEMENT_RANK4,
+     ACHIEVEMENT_RANK,
+     ACHIEVEMENT_MASTER1,
+     ACHIEVEMENT_MASTER2,
+     ACHIEVEMENT_MASTER3,
+     ACHIEVEMENT_MASTER4,
+     ACHIEVEMENT_MAXMEDALVALUE,
+     GLOBALRATING,
      GLOBALRATING_DESCR,
      WARRIOR,
      WARRIOR_DESCR,
@@ -691,12 +713,14 @@ class ACHIEVEMENTS(object):
      STRATEGICOPERATIONS,
      STRATEGICOPERATIONS_DESCR,
      STRATEGICOPERATIONS_CONDITION,
+     MARKI100YEARS,
+     MARKI100YEARS_DESCR,
      MEDALCRUCIALCONTRIBUTION,
      MEDALCRUCIALCONTRIBUTION_DESCR,
      MEDALCRUCIALCONTRIBUTION_CONDITION,
      MEDALBROTHERSINARMS,
      MEDALBROTHERSINARMS_DESCR,
-     MEDALBROTHERSINARMS_CONDITION_,
+     MEDALBROTHERSINARMS_CONDITION,
      MEDALDELANGLADE,
      MEDALDELANGLADE_DESCR,
      MEDALDELANGLADE_CONDITION,
@@ -1161,6 +1185,18 @@ class ACHIEVEMENTS(object):
      SAURONEYE,
      SAURONEYE_DESCR,
      SAURONEYE_CONDITION,
+     MARKIPROTECTOR,
+     MARKIPROTECTOR_DESCR,
+     MARKIPROTECTOR_CONDITION,
+     MARKIBASEPROTECTOR,
+     MARKIBASEPROTECTOR_DESCR,
+     MARKIBASEPROTECTOR_CONDITION,
+     MARKIBOMBERMAN,
+     MARKIBOMBERMAN_DESCR,
+     MARKIBOMBERMAN_CONDITION,
+     MARKIREPAIRER,
+     MARKIREPAIRER_DESCR,
+     MARKIREPAIRER_CONDITION,
      HISTBATTLE1_HISTORYLESSONS,
      HISTBATTLE1_HISTORYLESSONS_DESCR,
      HISTBATTLE1_HISTORYLESSONS_CONDITION,
@@ -1219,24 +1255,20 @@ class ACHIEVEMENTS(object):
      MARKSONGUN_DESCR_PARAM_VALUE_2,
      MARKSONGUN_DESCR_PARAM_VALUE_3)
 
-    @staticmethod
-    def achievement(key):
-        """
-        :param key:
-        :return String:
-        """
-        outcome = '#achievements:achievement/%s' % key
-        if outcome not in ACHIEVEMENTS.ACHIEVEMENT_ENUM:
-            raise Exception('locale key "' + outcome + '" was not found')
-        return outcome
+    @classmethod
+    def achievement(cls, key0):
+        outcome = '#achievements:achievement/{}'.format(key0)
+        if outcome not in cls.ACHIEVEMENT_ENUM:
+            LOG_WARNING('Localization key "{}" not found'.format(outcome))
+            return None
+        else:
+            return outcome
 
-    @staticmethod
-    def all(key):
-        """
-        :param key:
-        :return String:
-        """
-        outcome = '#achievements:%s' % key
-        if outcome not in ACHIEVEMENTS.all_ENUM:
-            raise Exception('locale key "' + outcome + '" was not found')
-        return outcome
+    @classmethod
+    def all(cls, key0):
+        outcome = '#achievements:{}'.format(key0)
+        if outcome not in cls.ALL_ENUM:
+            LOG_WARNING('Localization key "{}" not found'.format(outcome))
+            return None
+        else:
+            return outcome

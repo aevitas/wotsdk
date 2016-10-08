@@ -163,7 +163,7 @@ class _EntityChatHandler(provider.ResponseSeqHandler):
                 g_messengerEvents.onErrorReceived(error)
 
     def __me_onUsersListReceived(self, tags):
-        if USER_TAG.IGNORED not in tags:
+        if USER_TAG.IGNORED not in tags and USER_TAG.IGNORED_TMP not in tags:
             return
         self.__isEnabled = True
         while self.__messagesQueue:

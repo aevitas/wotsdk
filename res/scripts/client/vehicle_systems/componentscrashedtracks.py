@@ -15,11 +15,11 @@ def testAllocate(spaceID):
 
 class CrashedTrackController:
 
-    def __init__(self, vehicleDesc, entity = None, trackFashion = None, triggerEvents = False):
+    def __init__(self, vehicleDesc, trackFashion = None):
         self.__vehicleDesc = vehicleDesc
-        self.__entity = weakref.proxy(entity)
+        self.__entity = None
         self.__baseTrackFashion = trackFashion
-        self.__triggerEvents = triggerEvents
+        self.__triggerEvents = False
         self.__flags = 0
         self.__model = None
         self.__fashion = None
@@ -33,7 +33,23 @@ class CrashedTrackController:
     def isRightTrackBroken(self):
         return self.__flags & 2
 
+    def setVehicle(self, entity):
+        self.__entity = weakref.proxy(entity)
+        self.__triggerEvents = entity.isPlayerVehicle
+
+    def activate(self):
+        if self.__entity is not None and self.__model is not None:
+            self.__entity.addModel(self.__model)
+        return
+
+    def deactivate(self):
+        if self.__entity is not None and self.__model is not None:
+            self.__entity.delModel(self.__model)
+        self.__loading = False
+        return
+
     def destroy(self):
+        self.__reset()
         self.__entity = None
         self.__model = None
         self.__loading = False
@@ -46,12 +62,12 @@ class CrashedTrackController:
         self.__applyVisibilityMask()
         self.__setupTracksHiding()
 
-    def __setupTrackAssembler(self):
+    def __setupTrackAssembler(self, entity):
         modelNames = getPartModelsFromDesc(self.__vehicleDesc, 'destroyed')
         compoundAssembler = BigWorld.CompoundAssembler()
-        compoundAssembler.addRootPart(modelNames.chassis, TankPartNames.CHASSIS, [('Tank', ''), ('V', 'Tank')], self.__entity.matrix)
+        compoundAssembler.addRootPart(modelNames.chassis, TankPartNames.CHASSIS, [('Tank', ''), ('V', 'Tank')], entity.matrix)
         compoundAssembler.assemblerName = TankPartNames.CHASSIS
-        compoundAssembler.spaceID = self.__entity.spaceID
+        compoundAssembler.spaceID = entity.spaceID
         return compoundAssembler
 
     def addTrack(self, isLeft):
@@ -73,9 +89,10 @@ class CrashedTrackController:
                 self.__flags |= 1
             else:
                 self.__flags |= 2
+            trackAssembler = self.__setupTrackAssembler(self.__entity)
             if self.__model is None and not flying:
                 if not self.__loading:
-                    BigWorld.loadResourceListBG((self.__setupTrackAssembler(),), self.__onModelLoaded)
+                    BigWorld.loadResourceListBG((trackAssembler,), self.__onModelLoaded)
                     self.__loading = True
             else:
                 self.__setupTracksHiding()
@@ -102,15 +119,14 @@ class CrashedTrackController:
     def receiveShotImpulse(self, dir, impulse):
         pass
 
-    def reset(self):
+    def __reset(self):
         if self.__entity is None:
             return
         else:
-            if self.__fashion is not None:
-                self.__fashion.setCrashEffectCoeff(-1.0)
             self.__flags = 0
             if self.__model is not None:
-                self.__entity.delModel(self.__model)
+                if self.__model.isInWorld:
+                    self.__entity.delModel(self.__model)
                 self.__model = None
                 self.__fashion = None
                 self.__baseTrackFashion = None

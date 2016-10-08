@@ -78,7 +78,7 @@ def getTurretYawGunPitch(vehTypeDescr, vehicleMatrix, targetPos, compensateGravi
     return BigWorld.wg_getShotAngles(turretOffs, gunOffs, vehicleMatrix, speed, gravity, 0.0, 0.0, targetPos, False)
 
 
-def getDesiredShotPoint(start, dir, onlyOnGround = False, isStrategicMode = False, terrainOnlyCheck = False):
+def _getDesiredShotPointUncached(start, dir, onlyOnGround, isStrategicMode, terrainOnlyCheck):
     end = start + dir.scale(10000.0)
     if isStrategicMode:
         if terrainOnlyCheck:
@@ -98,7 +98,20 @@ def getDesiredShotPoint(start, dir, onlyOnGround = False, isStrategicMode = Fals
         return shootInSkyPoint(start, dir)
     else:
         return
-        return
+
+
+g_desiredShotPoint = Vector3(0)
+g_frameStamp = -1
+
+def getDesiredShotPoint(start, dir, onlyOnGround = False, isStrategicMode = False, terrainOnlyCheck = False):
+    global g_desiredShotPoint
+    global g_frameStamp
+    currentFrameStamp = BigWorld.wg_getFrameTimestamp()
+    if g_frameStamp == currentFrameStamp:
+        return g_desiredShotPoint
+    g_frameStamp = currentFrameStamp
+    g_desiredShotPoint = _getDesiredShotPointUncached(start, dir, onlyOnGround, isStrategicMode, terrainOnlyCheck)
+    return g_desiredShotPoint
 
 
 def shootInSkyPoint(startPos, dir):

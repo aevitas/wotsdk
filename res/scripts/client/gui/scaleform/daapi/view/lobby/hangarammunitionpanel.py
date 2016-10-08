@@ -40,7 +40,7 @@ class AmmunitionPanel(AmmunitionPanelMeta):
     def toRentContinue(self):
         if g_currentVehicle.isPresent():
             vehicle = g_currentVehicle.item
-            canBuyOrRent, _ = vehicle.mayRentOrBuy(g_itemsCache.items.stats.money)
+            canBuyOrRent, _ = vehicle.mayObtainForMoney(g_itemsCache.items.stats.money)
             if vehicle.isRentable and vehicle.rentalIsOver and canBuyOrRent:
                 shared_events.showVehicleBuyDialog(vehicle)
 
@@ -72,7 +72,7 @@ class AmmunitionPanel(AmmunitionPanelMeta):
             statusId, msg, msgLvl = g_currentVehicle.getHangarMessage()
             rentAvailable = False
             if statusId == Vehicle.VEHICLE_STATE.RENTAL_IS_ORVER:
-                canBuyOrRent, _ = vehicle.mayRentOrBuy(g_itemsCache.items.stats.money)
+                canBuyOrRent, _ = vehicle.mayObtainForMoney(g_itemsCache.items.stats.money)
                 rentAvailable = vehicle.isRentable and canBuyOrRent
             isBackground = statusId == Vehicle.VEHICLE_STATE.NOT_PRESENT
             msgString = makeHtmlString('html_templates:vehicleStatus', msgLvl, {'message': i18n.makeString(msg)})
@@ -91,6 +91,8 @@ class AmmunitionPanel(AmmunitionPanelMeta):
             vehicle = g_currentVehicle.item
             stateWarning = vehicle.isBroken or not vehicle.isAmmoFull or not g_currentVehicle.isAutoLoadFull() or not g_currentVehicle.isAutoEquipFull()
             for shell in vehicle.shells:
+                if shell.isHidden:
+                    continue
                 shells.append({'id': str(shell.intCD),
                  'type': shell.type,
                  'label': ITEM_TYPES.shell_kindsabbreviation(shell.type),

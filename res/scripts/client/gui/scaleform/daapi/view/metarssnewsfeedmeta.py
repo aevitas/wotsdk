@@ -7,20 +7,11 @@ class RssNewsFeedMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def openBrowser(self, linkToOpen):
-        """
-        :param linkToOpen:
-        :return :
-        """
         self._printOverrideError('openBrowser')
 
     def as_updateFeedS(self, feed):
-        """
-        :param feed:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_updateFeed(feed)

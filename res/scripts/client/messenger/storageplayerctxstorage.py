@@ -6,7 +6,7 @@ from debug_utils import LOG_WARNING
 from messenger.storage import SimpleCachedStorage
 
 class PlayerCtxStorage(SimpleCachedStorage):
-    __slots__ = ('__accAttrs', '__clanInfo', '__banInfo', '__cachedItems', '__eManager', '__clubName', 'onAccountAttrsChanged', 'onClanInfoChanged')
+    __slots__ = ('__accAttrs', '__clanInfo', '__banInfo', '__cachedItems', '__eManager', '__clubName', '__denunciations', 'onAccountAttrsChanged', 'onClanInfoChanged')
 
     def __init__(self):
         super(PlayerCtxStorage, self).__init__()
@@ -15,6 +15,7 @@ class PlayerCtxStorage(SimpleCachedStorage):
         self.__banInfo = None
         self.__clubName = ''
         self.__cachedItems = {'lastVoipUri': ''}
+        self.__denunciations = set()
         self.__eManager = Event.EventManager()
         self.onAccountAttrsChanged = Event.Event(self.__eManager)
         self.onClanInfoChanged = Event.Event(self.__eManager)
@@ -28,6 +29,7 @@ class PlayerCtxStorage(SimpleCachedStorage):
         self.__clanInfo = None
         self.__clubName = ''
         self.__eManager.clear()
+        self.__denunciations.clear()
         return
 
     def getClanInfo(self):
@@ -41,6 +43,15 @@ class PlayerCtxStorage(SimpleCachedStorage):
     def getClanRole(self):
         if self.__clanInfo:
             return self.__clanInfo.role
+        return 0
+
+    def getClanDbID(self):
+        """Gets clan db id by for current player if he is in clan
+        :return: clan database id or 0
+        :rtype: int
+        """
+        if self.__clanInfo:
+            return self.__clanInfo.dbID
         return 0
 
     def setClanInfo(self, clanInfo):
@@ -76,6 +87,12 @@ class PlayerCtxStorage(SimpleCachedStorage):
 
     def setBanInfo(self, banInfo):
         self.__banInfo = banInfo
+
+    def hasDenunciationFor(self, violatorID, topicID, arenaUniqueID):
+        return (violatorID, topicID, arenaUniqueID) in self.__denunciations
+
+    def addDenunciationFor(self, violatorID, topicID, arenaUniqueID):
+        self.__denunciations.add((violatorID, topicID, arenaUniqueID))
 
     def setCachedItem(self, key, value):
         if not isinstance(key, types.StringType):

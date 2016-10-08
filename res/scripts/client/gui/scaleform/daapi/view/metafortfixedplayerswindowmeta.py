@@ -7,27 +7,18 @@ class FortFixedPlayersWindowMeta(AbstractWindowView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends AbstractWindowView
-    null
     """
 
     def assignToBuilding(self):
-        """
-        :return :
-        """
         self._printOverrideError('assignToBuilding')
 
     def as_setWindowTitleS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setWindowTitle(value)
 
     def as_setDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by FortFixedPlayersVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)

@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/messenger/gui/Scaleform/channels/__init__.py
+import chat_shared
 from debug_utils import LOG_ERROR, LOG_WARNING, LOG_DEBUG
 from messenger import g_settings
 from messenger.gui.Scaleform.channels import bw, bw_chat2, xmpp
@@ -134,6 +135,8 @@ class LobbyControllers(ControllersCollection):
         elif channel.getProtoType() == PROTO_TYPE.XMPP and not g_settings.server.XMPP.isEnabled():
             return None
         elif channel.getProtoType() == PROTO_TYPE.BW and channel.getName() == LAZY_CHANNEL.COMMON and g_settings.server.XMPP.isMucServiceAllowed(service=XMPP_MUC_CHANNEL_TYPE.STANDARD):
+            return None
+        elif channel.getProtoType() == PROTO_TYPE.BW and channel._data.flags == chat_shared.CHAT_CHANNEL_CLAN and g_settings.server.XMPP.isMucServiceAllowed(service=XMPP_MUC_CHANNEL_TYPE.CLANS):
             return None
         else:
             return super(LobbyControllers, self).factory(channel)

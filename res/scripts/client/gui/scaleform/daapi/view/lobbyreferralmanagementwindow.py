@@ -11,10 +11,12 @@ from gui.Scaleform.daapi.view.meta.ReferralManagementWindowMeta import ReferralM
 from gui.Scaleform.genConsts.TEXT_ALIGN import TEXT_ALIGN
 from gui.Scaleform.locale.MENU import MENU
 from gui.Scaleform.locale.TOOLTIPS import TOOLTIPS
-from gui.prb_control.context import unit_ctx, SendInvitesCtx
+from gui.prb_control.context import unit_ctx, SendInvitesCtx, PrebattleAction
 from gui.prb_control.prb_helpers import GlobalListener
+from gui.prb_control.settings import PREBATTLE_ACTION_NAME
 from gui.shared.utils.scheduled_notifications import Notifiable, PeriodicNotifier
 from helpers import i18n, time_utils
+from messenger.gui.Scaleform.data.contacts_vo_converter import ContactConverter
 from shared_utils import findFirst
 from gui.shared.events import OpenLinkEvent
 from gui.shared.formatters import icons, text_styles
@@ -22,6 +24,7 @@ from gui.Scaleform.locale.RES_ICONS import RES_ICONS
 from messenger.m_constants import USER_TAG
 from messenger.proto.events import g_messengerEvents
 from messenger.storage import storage_getter
+from gui.shared.utils.functions import showSentInviteMessage
 
 class ReferralManagementWindow(ReferralManagementWindowMeta, GlobalListener, Notifiable):
     MIN_REF_NUMBER = 4
@@ -128,7 +131,8 @@ class ReferralManagementWindow(ReferralManagementWindowMeta, GlobalListener, Not
             user = self.usersStorage.getUser(dbID)
             if not user:
                 raise AssertionError('User must be defined')
-                isOnline = user.isOnline()
+                contactConverter = ContactConverter()
+                contactData = contactConverter.makeVO(user)
                 xpIcon = RES_ICONS.MAPS_ICONS_LIBRARY_NORMALXPICON
                 icon = icons.makeImageTag(xpIcon, 16, 16, -3, 0)
                 bonus, timeLeft = item.getBonus()
@@ -157,7 +161,7 @@ class ReferralManagementWindow(ReferralManagementWindowMeta, GlobalListener, Not
                 btnEnabled = True
                 btnTooltip = TOOLTIPS.REFERRALMANAGEMENTWINDOW_CREATESQUADBTN_ENABLED
             result.append({'isEmpty': False,
-             'isOnline': isOnline,
+             'contactData': contactData,
              'referralNo': referralNumber,
              'referralVO': referralData,
              'exp': BigWorld.wg_getNiceNumberFormat(item.getXPPool()),
@@ -254,22 +258,14 @@ class ReferralManagementWindow(ReferralManagementWindowMeta, GlobalListener, Not
 
         return ''
 
-    @process
     def __inviteOrCreateSquad(self, referralID):
-        if self.prbFunctional.getEntityType() in (PREBATTLE_TYPE.NONE, PREBATTLE_TYPE.TRAINING) or self.prbFunctional.getEntityType() == PREBATTLE_TYPE.SQUAD and self.prbFunctional.getPermissions().canSendInvite():
-            user = self.usersStorage.getUser(referralID)
-            if self.prbFunctional.getEntityType() in (PREBATTLE_TYPE.NONE, PREBATTLE_TYPE.TRAINING):
-                result = yield self.prbDispatcher.create(unit_ctx.SquadSettingsCtx(waitingID='prebattle/create', accountsToInvite=[referralID], isForced=True))
-            else:
-                result = yield self.prbDispatcher.sendUnitRequest(SendInvitesCtx([referralID], ''))
-            if result:
-                self.__showInviteMessage(user)
+        """ Send invite to the target player if squad is already exist or
+        make the new one with invitation
+        """
+        self.prbDispatcher.doSelectAction(PrebattleAction(PREBATTLE_ACTION_NAME.SQUAD, accountsToInvite=(referralID,)))
 
     def __showInviteMessage(cls, user):
-        if user:
-            SystemMessages.pushI18nMessage('#system_messages:prebattle/invites/sendInvite/name', type=SystemMessages.SM_TYPE.Information, name=user.getFullName())
-        else:
-            SystemMessages.pushI18nMessage('#system_messages:prebattle/invites/sendInvite', type=SystemMessages.SM_TYPE.Information)
+        showSentInviteMessage(user)
 
     def __onUserStatusUpdated(self, *args):
         self.__makeTableData()

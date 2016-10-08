@@ -59,9 +59,18 @@ class TankNodeNames:
     HULL_FIRE_1 = 'HP_Fire_1'
     GUN_JOINT = 'HP_gunJoint'
     GUN_INCLINATION = 'Gun'
+    GUN_RECOIL = 'G'
     TRACK_LEFT_MID = 'DM_Track_LMid'
     TRACK_RIGHT_MID = 'DM_Track_RMid'
     CHASSIS_MID_TRAIL = 'DM_Mid_Trail'
+
+
+class TankSoundObjectsIndexes:
+    CHASSIS = 0
+    ENGINE = 1
+    GUN = 2
+    HIT = 3
+    COUNT = 4
 
 
 UNDAMAGED_SKELETON = VehiclePartsTuple(chassis=[('Tank', ''),
@@ -74,7 +83,7 @@ UNDAMAGED_SKELETON = VehiclePartsTuple(chassis=[('Tank', ''),
  (TankNodeNames.TRACK_LEFT_UP_FRONT, ''),
  (TankNodeNames.TRACK_LEFT_UP_REAR, ''),
  (TankNodeNames.TRACK_RIGHT_UP_FRONT, ''),
- (TankNodeNames.TRACK_RIGHT_UP_REAR, '')], turret=[('HP_gunJoint', '')], gun=[('Gun', ''), ('G', 'Gun'), ('HP_gunFire', 'G')])
+ (TankNodeNames.TRACK_RIGHT_UP_REAR, '')], turret=[('HP_gunJoint', '')], gun=[(TankNodeNames.GUN_INCLINATION, ''), (TankNodeNames.GUN_RECOIL, TankNodeNames.GUN_INCLINATION), ('HP_gunFire', TankNodeNames.GUN_RECOIL)])
 CRASHED_SKELETON = VehiclePartsTuple(chassis=[('Tank', ''), ('V', 'Tank'), ('HP_gui', '')], hull=[('HP_Fire_1', '')], turret=[('HP_gunJoint', '')], gun=[])
 
 def getUndamagedSkeleton(vehicleDesc):

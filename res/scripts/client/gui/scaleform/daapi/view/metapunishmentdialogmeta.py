@@ -7,13 +7,8 @@ class PunishmentDialogMeta(SimpleDialog):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends SimpleDialog
-    null
     """
 
     def as_setMsgTitleS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setMsgTitle(value)

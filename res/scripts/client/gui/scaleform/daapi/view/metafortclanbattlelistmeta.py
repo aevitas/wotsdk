@@ -7,21 +7,15 @@ class FortClanBattleListMeta(BaseRallyListView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseRallyListView
-    null
     """
 
     def as_setClanBattleDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by ClanBattleListVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setClanBattleData(data)
 
     def as_upateClanBattlesCountS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_upateClanBattlesCount(value)

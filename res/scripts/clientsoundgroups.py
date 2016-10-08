@@ -23,8 +23,6 @@ DSP_LOWPASS_HI = 20000
 DSP_SEEKSPEED = 200000
 SOUND_ENABLE_STATUS_DEFAULT = 0
 SOUND_ENABLE_STATUS_VALUES = range(3)
-LQ_RENDER_STATE_DEFAULT = 0
-LQ_RENDER_STATE_VALUES = range(3)
 _arenaPeriodState = {ARENA_PERIOD.WAITING: 'STATE_arenastate_waiting',
  ARENA_PERIOD.PREBATTLE: 'STATE_arenastate_counter',
  ARENA_PERIOD.BATTLE: 'STATE_arenastate_battle'}
@@ -280,7 +278,6 @@ class SoundGroups(object):
         self.__enableStatus = SOUND_ENABLE_STATUS_DEFAULT
         self.__volumeByCategory = {}
         self.__masterVolume = 1.0
-        self.__lqRenderState = LQ_RENDER_STATE_DEFAULT
         self.__isWindowVisible = BigWorld.isWindowVisible()
         self.__handleInside = None
         self.__handleOutside = None
@@ -319,8 +316,15 @@ class SoundGroups(object):
         else:
             ds = userPrefs[Settings.KEY_SOUND_PREFERENCES]
             self.__enableStatus = ds.readInt('enable', SOUND_ENABLE_STATUS_DEFAULT)
-            self.__lqRenderState = ds.readInt('LQ_render', LQ_RENDER_STATE_DEFAULT)
             self.__masterVolume = ds.readFloat('masterVolume', defMasterVolume)
+            self.__volumeByCategory['music_hangar'] = ds.readFloat('volume_music_hangar', 1.0)
+            self.__volumeByCategory['voice'] = ds.readFloat('volume_voice', 1.0)
+            self.__volumeByCategory['ev_ambient'] = ds.readFloat('volume_ev_ambient', 0.8)
+            self.__volumeByCategory['ev_effects'] = ds.readFloat('volume_ev_effects', 0.8)
+            self.__volumeByCategory['ev_gui'] = ds.readFloat('volume_ev_gui', 0.8)
+            self.__volumeByCategory['ev_music'] = ds.readFloat('volume_ev_music', 0.8)
+            self.__volumeByCategory['ev_vehicles'] = ds.readFloat('volume_ev_vehicles', 0.8)
+            self.__volumeByCategory['ev_voice'] = ds.readFloat('volume_ev_voice', 0.8)
             for categoryName in self.__categories.keys():
                 volume = ds.readFloat('volume_' + categoryName, defCategoryVolumes.get(categoryName, 1.0))
                 self.__volumeByCategory[categoryName] = volume
@@ -348,10 +352,6 @@ class SoundGroups(object):
             self.__soundModes.setNationalMappingByMode(soundModeName)
         self.applyPreferences()
         self.__muteCallbackID = BigWorld.callback(0.25, self.__muteByWindowVisibility)
-        self.defaultGroupList = ''
-        settings = ResMgr.openSection('scripts/arena_defs/_default_.xml/preloadSoundBanks')
-        if settings is not None:
-            self.defaultGroupList = settings.asString
         g_replayEvents.onMuteSound += self.__onReplayMute
         from gui.app_loader import g_appLoader
         g_appLoader.onGUISpaceEntered += self.__onGUISpaceEntered
@@ -460,6 +460,7 @@ class SoundGroups(object):
         masterVolume = (self.__muffledVolume if self.__muffled else self.__masterVolume) * 100.0
         WWISE.WW_setRTCPGlobal('RTPC_ext_menu_volume_master', masterVolume)
         self.savePreferences()
+        WWISE.WW_onMasterVolumeChanged(self.__masterVolume)
         self.onMusicVolumeChanged('music', self.__masterVolume, self.getVolume('music'))
         self.onMusicVolumeChanged('ambient', self.__masterVolume, self.getVolume('ambient'))
 
@@ -474,16 +475,8 @@ class SoundGroups(object):
         self.__enableStatus = status
         self.savePreferences()
 
-    def getLQRenderState(self):
-        return self.__lqRenderState
-
-    def setLQRenderState(self, state):
-        raise state in LQ_RENDER_STATE_VALUES or AssertionError
-        self.__lqRenderState = state
-        self.savePreferences()
-
     def setVolume(self, categoryName, volume, updatePrefs = True):
-        WWISE.WW_setRTCPGlobal('RTPC_ext_menu_volume_' + self.__getWWISECategoryName(categoryName), volume * 100.0)
+        WWISE.WW_setRTCPGlobal('RTPC_ext_menu_volume_{}'.format(categoryName), volume * 100.0)
         if updatePrefs:
             self.__volumeByCategory[categoryName] = volume
             self.savePreferences()
@@ -501,7 +494,6 @@ class SoundGroups(object):
             ds.writeFloat('volume_' + categoryName, self.__volumeByCategory[categoryName])
 
         ds.writeInt('enable', self.__enableStatus)
-        ds.writeInt('LQ_render', self.__lqRenderState)
         soundModeName = SoundModes.DEFAULT_MODE_NAME if self.__soundModes is None else self.__soundModes.currentMode
         ds.deleteSection('soundMode')
         if self.__soundModes is None:
@@ -568,13 +560,12 @@ class SoundGroups(object):
         MusicControllerWWISE.destroy()
 
     def preloadSoundGroups(self, arenaName):
-        xmlPath = 'scripts/arena_defs/' + arenaName + '.xml/soundRemapping'
         from Account import PlayerAccount
         isHangar = isinstance(BigWorld.player(), PlayerAccount)
         if isHangar:
-            WWISE.WG_loadBanks(xmlPath, self.defaultGroupList, True)
+            WWISE.WG_loadHangar()
         else:
-            WWISE.WG_loadBanks(xmlPath, ' ', False)
+            WWISE.WG_unloadHangar()
         MusicControllerWWISE.init(arenaName)
 
     def getSound3D(self, node, event):
@@ -710,11 +701,6 @@ class SoundGroups(object):
                 self.__activeTrack.stop()
             self.__activeTrack = self.playSound2D(event)
         return
-
-    def __getWWISECategoryName(self, categoryName):
-        if categoryName == 'gui':
-            return 'voice_gui'
-        return categoryName
 
     def setSwitch(self, group, switch):
         WWISE.WW_setSwitch(group, switch)

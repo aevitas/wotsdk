@@ -129,6 +129,16 @@ def makeVehicleVO(vehicle, levelsRange = None, vehicleTypes = None, isCurrentPla
         return vehicleVO
 
 
+def makeIntroVehicleVO(vehicle, isReadyVehicle, warnTooltip, levelsRange = None, vehicleTypes = None, isCurrentPlayer = True):
+    introVehicleVO = makeVehicleVO(vehicle)
+    if introVehicleVO is None:
+        return
+    else:
+        introVehicleVO['isReadyVehicle'] = isReadyVehicle
+        introVehicleVO['warnTooltip'] = warnTooltip
+        return introVehicleVO
+
+
 def makeFiltersVO(nationIDRange, vTypeRange, vLevelRange):
     return {'nationIDRange': nationIDRange,
      'vTypeRange': vTypeRange,
@@ -188,7 +198,7 @@ def makePlayerVO(pInfo, user, colorGetter, isPlayerSpeaking = False):
 def makeSortiePlayerVO(pInfo, user, colorGetter, isPlayerSpeaking = False):
     sortiePlayerVO = makePlayerVO(pInfo, user, colorGetter, isPlayerSpeaking)
     sortiePlayerVO['isLegionaries'] = pInfo.isLegionary()
-    sortiePlayerVO['clanAbbrev'] = None
+    sortiePlayerVO['clanAbbrev'] = pInfo.clanAbbrev
     sortiePlayerVO['isRatingAvailable'] = pInfo.isLegionary()
     return sortiePlayerVO
 
@@ -307,7 +317,7 @@ def _getSlotsData(unitIdx, unit, unitState, pInfo, slotsIter, app = None, levels
          'isFallout': isFallout}
         if unit.isSquad():
             if g_eventsCache.isBalancedSquadEnabled():
-                isVisibleAdtMsg = player and player.isCurrentPlayer() and not isPlayerCreator and not vehicle and unit and bool(unit.getMemberVehicles(unit.getCommanderDBID()))
+                isVisibleAdtMsg = player and player.isCurrentPlayer() and not isPlayerCreator and not vehicle and unit and bool(unit.getVehicles())
                 if isVisibleAdtMsg:
                     rangeString = toRomanRangeString(levelsRange, 1)
                     additionMsg = text_styles.main(i18n.makeString(MESSENGER.DIALOGS_SIMPLESQUAD_VEHICLELEVEL, level=rangeString))
@@ -627,11 +637,11 @@ def makeUnitRosterConditions(slots, isDefaultSlot, index = None, isSortie = Fals
                  'vLevelRange': tuple()}
                 isDefault = not isSortie and isDefaultSlot(rosterSlot)
                 if not isDefault:
-                    nationMask = rosterSlot.nationMask
-                    if nationMask != 255:
+                    if not rosterSlot.isNationMaskFull():
+                        nationMask = rosterSlot.nationMask
                         params['nationIDRange'] = filter(lambda k: 1 << NATIONS_INDICES[k] & nationMask, NATIONS_NAMES)
-                    vehClassMask = rosterSlot.vehClassMask
-                    if vehClassMask != 255:
+                    if not rosterSlot.isVehClassMaskFull():
+                        vehClassMask = rosterSlot.vehClassMask
                         params['vTypeRange'] = filter(lambda k: 1 << VEHICLE_CLASS_INDICES[k] & vehClassMask, VEHICLE_CLASSES)
                     levels = rosterSlot.levels
                     if levels != rosterSlot.DEFAULT_LEVELS or isSortie:

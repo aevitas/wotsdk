@@ -159,7 +159,10 @@ _ACHIEVEMENTS15X15_BLOCK_LAYOUT = ['fragsBeast',
  'testartilleryman',
  'maxEFC2016WinSeries',
  'EFC2016WinSeries',
- 'EFC2016Goleador']
+ 'EFC2016Goleador',
+ 'markIBomberman',
+ 'markIRepairer',
+ 'markI100Years']
 _achievements15x15PopUps = ['warrior',
  'invader',
  'sniper',
@@ -266,7 +269,10 @@ _achievements15x15PopUps = ['warrior',
  'readyForBattleATSPG',
  'readyForBattleALL',
  'testartilleryman',
- 'EFC2016Goleador']
+ 'EFC2016Goleador',
+ 'markIBomberman',
+ 'markIRepairer',
+ 'markI100Years']
 _achievements15x15BlockBuilder = StaticSizeBlockBuilder('achievements', _ACHIEVEMENTS15X15_BLOCK_LAYOUT, ACHIEVEMENT15X15_DEPENDENCIES, _achievements15x15PopUps)
 ACHIEVEMENTS7X7_BLOCK_LAYOUT = ['wolfAmongSheep',
  'wolfAmongSheepMedal',
@@ -363,7 +369,9 @@ _SINGLE_ACHIEVEMENTS_VALUES = ['titleSniper',
  'falloutSteelHunter',
  'falloutAlwaysInLine',
  'moonSphere',
- 'EFC2016']
+ 'EFC2016',
+ 'markIProtector',
+ 'markIBaseProtector']
 _singleAchievementsPopUps = ['titleSniper',
  'invincible',
  'diehard',
@@ -385,7 +393,9 @@ _singleAchievementsPopUps = ['titleSniper',
  'falloutSteelHunter',
  'falloutAlwaysInLine',
  'moonSphere',
- 'EFC2016']
+ 'EFC2016',
+ 'markIProtector',
+ 'markIBaseProtector']
 _singleAchievementsBlockBuilder = BinarySetDossierBlockBuilder('singleAchievements', _SINGLE_ACHIEVEMENTS_VALUES, {}, _singleAchievementsPopUps)
 FORT_ACHIEVEMENTS_BLOCK_LAYOUT = ['conqueror',
  'fireAndSword',

@@ -755,7 +755,7 @@ class StrategicControlMode(_GunControlMode):
     def __updateTrajectoryDrawer(self):
         replayCtrl = BattleReplay.g_replayCtrl
         if replayCtrl.isPlaying:
-            self.__trajectoryDrawerClbk = BigWorld.callback(0.0, self.__updateTrajectoryDrawer)
+            self.__trajectoryDrawerClbk = BigWorld.callback(0.1, self.__updateTrajectoryDrawer)
         else:
             self.__trajectoryDrawerClbk = BigWorld.callback(self.__updateInterval, self.__updateTrajectoryDrawer)
         try:
@@ -828,8 +828,10 @@ class SniperControlMode(_GunControlMode):
         self._cam.enable(args['preferredPos'], args['saveZoom'])
         self.__binoculars.enabled = True
         self.__binoculars.setEnableLensEffects(SniperControlMode._LENS_EFFECTS_ENABLED)
+        BigWorld.wg_setLowDetailedMode(True)
         BigWorld.wg_enableTreeHiding(True)
         BigWorld.wg_setTreeHidingRadius(15.0, 10.0)
+        BigWorld.wg_havokSetSniperMode(True)
         TriggersManager.g_manager.activateTrigger(TRIGGER_TYPE.SNIPER_MODE)
         g_postProcessing.enable('sniper')
         desc = BigWorld.player().vehicleTypeDescriptor
@@ -840,8 +842,10 @@ class SniperControlMode(_GunControlMode):
     def disable(self, isDestroy = False):
         super(SniperControlMode, self).disable()
         self.__binoculars.enabled = False
+        BigWorld.wg_havokSetSniperMode(False)
         BigWorld.wg_enableTreeHiding(False)
         g_postProcessing.disable()
+        BigWorld.wg_setLowDetailedMode(False)
         if TriggersManager.g_manager is not None:
             TriggersManager.g_manager.deactivateTrigger(TRIGGER_TYPE.SNIPER_MODE)
         return
@@ -1511,7 +1515,7 @@ class _SPGFlashGunMarker(Flash):
 
     def __init__(self, gunInfoFunc, dispersionUpdateFunc, key, isDebug = False, enableSmoothFiltering = False):
         Flash.__init__(self, self._SWF_FILE_NAME, self._FLASH_CLASS, None, SCALEFORM_SWF_PATH_V3)
-        self._displayRoot = self.movie.root
+        self._displayRoot = self.movie.root.crosshairMC
         self.__curShotInfoFunc = gunInfoFunc
         self.__dispersionUpdateFunc = dispersionUpdateFunc
         self.key = key
@@ -1772,7 +1776,7 @@ class _FlashGunMarker(Flash):
             mode = 'color_blind' if diff['isColorBlind'] else 'default'
             self._curColors = self._colorsByPiercing[mode]
 
-    def setAimSettings(self, mode):
+    def setAimSettings(self, mode, skipReloading = False):
         settings = self._aim[mode]
         current = settings.get('gunTag', None)
         currentType = settings.get('gunTagType', None)
@@ -1785,7 +1789,7 @@ class _FlashGunMarker(Flash):
         if current is not None and currentType is not None:
             self._displayRoot.setReloadingType(current / 100.0, currentType)
         isReloading = self.__reload.get('isReloading', False)
-        if isReloading:
+        if isReloading and not skipReloading:
             startTime = self.__reload.get('startTime', 0.0)
             duration = self.__reload.get('duration', 0.0)
             self.setReloading(duration, startTime, isReloading, switched=True)
@@ -1800,7 +1804,7 @@ class _FlashGunMarker(Flash):
         return
 
     def enable(self, state):
-        self.setAimSettings(self.mode)
+        self.setAimSettings(self.mode, skipReloading=True)
         if state is not None:
             ammoCtrl = g_sessionProvider.shared.ammo
             reloading = ammoCtrl.getGunReloadingState()
@@ -1839,7 +1843,8 @@ class _FlashGunMarker(Flash):
             current = BigWorld.time()
             rs['correction'] = {'timeRemaining': duration,
              'startTime': current,
-             'startPosition': (current - _startTime) / _duration}
+             'startPosition': min(1.0, (current - _startTime) / _duration)}
+            rs['startTime'] = BigWorld.time()
             self._displayRoot.correctReloadingTime(duration)
         else:
             rs['startTime'] = BigWorld.time() if startTime is None else startTime
@@ -1966,6 +1971,9 @@ class _FlashGunMarker(Flash):
         else:
             delta = BigWorld.time() - cStartTime
             currentPosition = cStartPosition + delta / cTimeRemaining * (1 - cStartPosition)
+            if currentPosition > 1.0:
+                LOG_ERROR('Current position is invalid, position is set to 0.0', currentPosition, cStartPosition, delta, cTimeRemaining)
+                currentPosition = 0.0
             return [cTimeRemaining - delta,
              cStartTime,
              True,

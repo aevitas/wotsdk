@@ -7,28 +7,21 @@ class FortSettingsPeripheryPopoverMeta(SmartPopOverView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends SmartPopOverView
-    null
     """
 
     def onApply(self, server):
-        """
-        :param server:
-        :return :
-        """
         self._printOverrideError('onApply')
 
     def as_setDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by PeripheryPopoverVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)
 
     def as_setTextsS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by PeripheryPopoverVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setTexts(data)

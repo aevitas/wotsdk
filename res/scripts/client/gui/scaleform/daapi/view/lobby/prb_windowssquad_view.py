@@ -56,7 +56,7 @@ class SquadView(SquadViewMeta):
                     needToUpdateSlots = True
             elif vehicleVO is None:
                 needToUpdateSlots = True
-        if g_eventsCache.isSquadXpFactorsEnabled():
+        if g_eventsCache.isSquadXpFactorsEnabled() or g_eventsCache.isBalancedSquadEnabled():
             self.as_setActionButtonStateS(self.__getActionButtonStateVO())
         if needToUpdateSlots:
             self._updateMembersData()

@@ -7,51 +7,38 @@ class RetrainCrewWindowMeta(AbstractWindowView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends AbstractWindowView
-    null
     """
 
     def submit(self, operationId):
-        """
-        :param operationId:
-        :return :
-        """
         self._printOverrideError('submit')
 
     def changeRetrainType(self, retrainTypeIndex):
-        """
-        :param retrainTypeIndex:
-        :return :
-        """
         self._printOverrideError('changeRetrainType')
 
     def as_setCrewDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by RetrainCrewBlockVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setCrewData(data)
 
     def as_setVehicleDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by RetrainVehicleBlockVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setVehicleData(data)
 
     def as_setCrewOperationDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by RetrainCrewOperationVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setCrewOperationData(data)
 
     def as_setAllCrewDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by RetrainCrewBlockVOBase (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setAllCrewData(data)

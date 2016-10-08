@@ -25,6 +25,8 @@ class _BrowseActionParser(SectionParser):
             action = actions.OpenInternalBrowser(name, url)
         elif target == 'external':
             action = actions.OpenExternalBrowser(name, url)
+        elif target == 'promo':
+            action = actions.OpenPromoBrowser(name, url)
         else:
             raise ParseError('The target of action "{0}" is not valid: {1}.'.format(self.getTagName(), target))
         return action

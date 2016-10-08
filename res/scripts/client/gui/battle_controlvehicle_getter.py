@@ -2,7 +2,7 @@
 from collections import defaultdict
 from gui import TANKMEN_ROLES_ORDER_DICT
 from gui.battle_control import avatar_getter
-from gui.battle_control.battle_constants import VEHICLE_DEVICES, VEHICLE_GUI_ITEMS, VEHICLE_COMPLEX_ITEMS, VEHICLE_INDICATOR_TYPE
+from gui.battle_control.battle_constants import VEHICLE_DEVICES, VEHICLE_GUI_ITEMS, VEHICLE_COMPLEX_ITEMS, VEHICLE_INDICATOR_TYPE, AUTO_ROTATION_FLAG
 
 def hasTurretRotator(vDesc):
     if vDesc is None:
@@ -41,14 +41,19 @@ def getVehicleIndicatorType(vDesc):
         return iType
 
 
-def isAutoRotationOn(vDesc):
-    isOn = None
+def getAutoRotationFlag(vDesc):
+    """ Gets auto rotation flag. Auto rotation means hull is tuned if yaw limit is reached.
+    :param vDesc: instance of vehicles.VehicleDescr.
+    :return: one of AUTO_ROTATION_FLAG.*.
+    """
+    flag = AUTO_ROTATION_FLAG.IGNORE_IN_UI
     if hasYawLimits(vDesc):
         aih = avatar_getter.getInputHandler()
-        isOn = False
-        if aih is not None:
-            isOn = aih.getAutorotation()
-    return isOn
+        if aih is None or aih.getAutorotation():
+            flag = AUTO_ROTATION_FLAG.TURN_ON
+        else:
+            flag = AUTO_ROTATION_FLAG.TURN_OFF
+    return flag
 
 
 def getCrewMainRolesWoIndexes(crewRoles):

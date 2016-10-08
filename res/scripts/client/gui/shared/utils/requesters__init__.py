@@ -3,7 +3,7 @@ from ShopRequester import ShopRequester
 from InventoryRequester import InventoryRequester
 from StatsRequester import StatsRequester
 from DossierRequester import DossierRequester
-from ItemsRequester import ItemsRequester, REQ_CRITERIA
+from ItemsRequester import REQ_CRITERIA
 from TokenRequester import TokenRequester
 from TokenResponse import TokenResponse
 from abstract import RequestCtx

@@ -7,33 +7,26 @@ class TweenManagerMeta(BaseDAAPIModule):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIModule
-    null
     """
 
     def createTween(self, tween):
         """
-        :param tween:
-        :return :
+        :param tween: Represented by ITween (AS)
         """
         self._printOverrideError('createTween')
 
     def disposeTween(self, tween):
         """
-        :param tween:
-        :return :
+        :param tween: Represented by ITween (AS)
         """
         self._printOverrideError('disposeTween')
 
     def disposeAll(self):
-        """
-        :return :
-        """
         self._printOverrideError('disposeAll')
 
     def as_setDataFromXmlS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by TweenConstraintsVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setDataFromXml(data)

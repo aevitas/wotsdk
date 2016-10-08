@@ -12,8 +12,9 @@ from ConnectionManager import connectionManager, CONNECTION_METHOD
 from Preferences import Preferences
 from Servers import Servers, DevelopmentServers
 from helpers.i18n import makeString as _ms
+from helpers.time_utils import ONE_MINUTE
 from predefined_hosts import g_preDefinedHosts, AUTO_LOGIN_QUERY_ENABLED, AUTO_LOGIN_QUERY_URL
-_PERIPHERY_DEFAULT_LIFETIME = 900
+_PERIPHERY_DEFAULT_LIFETIME = 15 * ONE_MINUTE
 
 class Manager(object):
 
@@ -55,9 +56,7 @@ class Manager(object):
          'auth_method': authMethod}
         if isToken2Login:
             loginParams['token2'] = self._preferences['token2']
-        if isSocialToken2Login:
-            self._preferences['login_type'] = self._preferences['login_type']
-        else:
+        if not isSocialToken2Login:
             self._preferences['login_type'] = 'credentials'
         connectionManager.initiateConnection(loginParams, password, serverName)
 
@@ -105,7 +104,6 @@ class Manager(object):
             if not AUTO_LOGIN_QUERY_ENABLED:
                 self._preferences['server_name'] = serverName
             self._preferences['session'] = session
-        self.writePeripheryLifetime()
         self._preferences.writeLoginInfo()
         self.__dumpUserName(name)
         self._showSecurityMessage(responseData)
@@ -123,6 +121,7 @@ class Manager(object):
     def writePeripheryLifetime(self):
         if AUTO_LOGIN_QUERY_ENABLED and connectionManager.peripheryID:
             self._preferences['peripheryLifetime'] = pickle.dumps((connectionManager.peripheryID, time.time() + _PERIPHERY_DEFAULT_LIFETIME))
+            self._preferences.writeLoginInfo()
 
     def _getHost(self, authMethod, hostName):
         if hostName != AUTO_LOGIN_QUERY_URL:

@@ -14,9 +14,7 @@ import constants
 import Keys
 import Event
 import AreaDestructibles
-import gui.SystemMessages
-import gui.Scaleform.CursorDelegator
-from gui import GUI_SETTINGS
+from gui import GUI_CTRL_MODE_FLAG
 from gui.app_loader import g_appLoader
 from gui.app_loader.settings import GUI_GLOBAL_SPACE_ID
 from helpers import EffectsList, isPlayerAvatar, isPlayerAccount, getFullClientVersion
@@ -54,6 +52,7 @@ class BattleReplay():
     isTimeWarpInProgress = property(lambda self: self.__replayCtrl.isTimeWarpInProgress or self.__timeWarpCleanupCb is not None)
     isServerAim = property(lambda self: self.__replayCtrl.isServerAim)
     playerVehicleID = property(lambda self: self.__replayCtrl.playerVehicleID)
+    isLoading = property(lambda self: self.__replayCtrl.getAutoStartFileName() is not None and self.__replayCtrl.getAutoStartFileName() != '')
     fps = property(lambda self: self.__replayCtrl.fps)
     ping = property(lambda self: self.__replayCtrl.ping)
     compressed = property(lambda self: self.__replayCtrl.isFileCompressed())
@@ -119,10 +118,15 @@ class BattleReplay():
         self.replayTimeout = 0
         self.__arenaPeriod = -1
         self.enableAutoRecordingBattles(True)
-        gui.Scaleform.CursorDelegator.g_cursorDelegator.detachCursor()
         self.onCommandReceived = Event.Event()
         self.onAmmoSettingChanged = Event.Event()
         self.onStopped = Event.Event()
+        if IS_DEVELOPMENT:
+            try:
+                import development.replay_override
+            except:
+                pass
+
         return
 
     def destroy(self):
@@ -269,11 +273,11 @@ class BattleReplay():
     def handleKeyEvent(self, isDown, key, mods, isRepeat, event):
         if not self.isPlaying:
             return False
-        if self.isTimeWarpInProgress:
+        elif self.isTimeWarpInProgress:
             return True
-        if key == Keys.KEY_F1:
+        elif key == Keys.KEY_F1:
             return True
-        if not self.isClientReady:
+        elif not self.isClientReady:
             return False
         cmdMap = CommandMapping.g_instance
         player = BigWorld.player()
@@ -291,7 +295,11 @@ class BattleReplay():
         finishReplayTime = self.__replayCtrl.getTimeMark(REPLAY_TIME_MARK_REPLAY_FINISHED)
         if currReplayTime > finishReplayTime:
             currReplayTime = finishReplayTime
-        isCursorVisible = gui.Scaleform.CursorDelegator.g_cursorDelegator._CursorDelegator__activated
+        app = g_appLoader.getDefBattleApp()
+        if app is not None:
+            isCursorVisible = app.ctrlModeFlags & GUI_CTRL_MODE_FLAG.CURSOR_ATTACHED > 0
+        else:
+            isCursorVisible = False
         fastForwardStep = FAST_FORWARD_STEP * (2.0 if mods == 2 else 1.0)
         if (key == Keys.KEY_LEFTMOUSE or cmdMap.isFired(CommandMapping.CMD_CM_SHOOT, key)) and isDown and not isCursorVisible:
             if self.isControllingCamera:
@@ -314,24 +322,24 @@ class BattleReplay():
             else:
                 self.setPlaybackSpeedIdx(self.__savedPlaybackSpeedIdx if self.__savedPlaybackSpeedIdx != 0 else self.__playbackSpeedModifiers.index(1.0))
             return True
-        if key == Keys.KEY_DOWNARROW and isDown and not self.__isFinished:
+        elif key == Keys.KEY_DOWNARROW and isDown and not self.__isFinished:
             if self.__playbackSpeedIdx > 0:
                 self.setPlaybackSpeedIdx(self.__playbackSpeedIdx - 1)
             return True
-        if key == Keys.KEY_UPARROW and isDown and not self.__isFinished:
+        elif key == Keys.KEY_UPARROW and isDown and not self.__isFinished:
             if self.__playbackSpeedIdx < len(self.__playbackSpeedModifiers) - 1:
                 self.setPlaybackSpeedIdx(self.__playbackSpeedIdx + 1)
             return True
-        if key == Keys.KEY_RIGHTARROW and isDown and not self.__isFinished:
+        elif key == Keys.KEY_RIGHTARROW and isDown and not self.__isFinished:
             self.__timeWarp(currReplayTime + fastForwardStep)
             return True
-        if key == Keys.KEY_LEFTARROW:
+        elif key == Keys.KEY_LEFTARROW:
             self.__timeWarp(currReplayTime - fastForwardStep)
             return True
-        if key == Keys.KEY_HOME and isDown:
+        elif key == Keys.KEY_HOME and isDown:
             self.__timeWarp(0.0)
             return True
-        if key == Keys.KEY_END and isDown and not self.__isFinished:
+        elif key == Keys.KEY_END and isDown and not self.__isFinished:
             self.__timeWarp(finishReplayTime)
             return True
         if key == Keys.KEY_C and isDown:
@@ -341,8 +349,6 @@ class BattleReplay():
         suppressCommand = False
         if cmdMap.isFiredList(xrange(CommandMapping.CMD_AMMO_CHOICE_1, CommandMapping.CMD_AMMO_CHOICE_0 + 1), key) and isDown:
             suppressCommand = True
-        elif (key == Keys.KEY_RETURN or key == Keys.KEY_NUMPADENTER) and isDown and mods != 4:
-            suppressCommand = not GUI_SETTINGS.useAS3Battle
         elif cmdMap.isFiredList((CommandMapping.CMD_CM_LOCK_TARGET,
          CommandMapping.CMD_CM_LOCK_TARGET_OFF,
          CommandMapping.CMD_CM_POSTMORTEM_NEXT_VEHICLE,
@@ -364,7 +370,8 @@ class BattleReplay():
             if isVideoCamera:
                 playerControlMode.handleKeyEvent(isDown, key, mods, event)
             return True
-        return False
+        else:
+            return False
 
     def handleMouseEvent(self, dx, dy, dz):
         if not (self.isPlaying and self.isClientReady):
@@ -874,6 +881,9 @@ class BattleReplay():
         else:
             return False
 
+    def isFinishedNoPlayCheck(self):
+        return self.__isFinished
+
     def onSetCruiseMode(self, mode):
         from gui.battle_control import g_sessionProvider
         from gui.battle_control.battle_constants import VEHICLE_VIEW_STATE
@@ -962,3 +972,11 @@ def _JSON_Encode(obj):
 
 def isPlaying():
     return g_replayCtrl.isPlaying or g_replayCtrl.isTimeWarpInProgress
+
+
+def isLoading():
+    return g_replayCtrl.isLoading
+
+
+def isFinished():
+    return g_replayCtrl.isFinishedNoPlayCheck()

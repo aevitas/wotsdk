@@ -7,36 +7,19 @@ class CheckBoxDialogMeta(BaseDAAPIModule):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIModule
-    null
     """
 
     def onCheckBoxChange(self, isSelected):
-        """
-        :param isSelected:
-        :return :
-        """
         self._printOverrideError('onCheckBoxChange')
 
     def as_setCheckBoxLabelS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setCheckBoxLabel(value)
 
     def as_setCheckBoxSelectedS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setCheckBoxSelected(value)
 
     def as_setCheckBoxEnabledS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setCheckBoxEnabled(value)

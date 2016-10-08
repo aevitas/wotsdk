@@ -7,20 +7,12 @@ class AbstractRallyViewMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def as_setPyAliasS(self, alias):
-        """
-        :param alias:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setPyAlias(alias)
 
     def as_getPyAliasS(self):
-        """
-        :return String:
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_getPyAlias()

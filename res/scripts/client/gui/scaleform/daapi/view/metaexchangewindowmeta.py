@@ -7,21 +7,12 @@ class ExchangeWindowMeta(BaseExchangeWindow):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseExchangeWindow
-    null
     """
 
     def as_setSecondaryCurrencyS(self, credits):
-        """
-        :param credits:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setSecondaryCurrency(credits)
 
     def as_setWalletStatusS(self, walletStatus):
-        """
-        :param walletStatus:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setWalletStatus(walletStatus)

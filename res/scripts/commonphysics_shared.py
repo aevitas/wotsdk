@@ -284,7 +284,16 @@ g_defaultXPhysicsCfg = {'gravity': 9.81,
            'tankBoardAngle': 0.0,
            'auxClearance': 0.8},
  'flatSideFriction': True,
- 'wheelDetachOnRoll': False}
+ 'wheelDetachOnRoll': False,
+ 'smplEnginePower': 1.0,
+ 'powerFactor': 1.0,
+ 'angVelocityFactor': 1.0,
+ 'angVelocityFactor0': 1.0,
+ 'gimletGoalWOnSpot': 0.0,
+ 'gimletGoalWOnMove': 0.0,
+ 'gimletGoalWOnSpot': 0.0,
+ 'powerFactor': 1.0,
+ 'rotationFactor': 1.0}
 if IS_CELLAPP:
 
     def _booleanFromString(stringValue):
@@ -407,7 +416,11 @@ def computeRotationalCohesion(rotSpeedLimit, mass, length, width, enginePower):
 
 def configureXPhysics(physics, baseCfg, typeDesc, useSimplifiedGearbox, gravityFactor):
     cfg = copy.copy(g_defaultXPhysicsCfg)
-    cfg['fakegearbox'] = typeDesc.type.xphysics['detailed']['fakegearbox']
+    try:
+        cfg['fakegearbox'] = typeDesc.type.xphysics['detailed']['fakegearbox']
+    except:
+        cfg['fakegearbox'] = False
+
     if baseCfg:
         if typeDesc.type.xphysics['detailed'] != baseCfg:
             typeDesc.type.xphysics['detailed'].update(baseCfg)
@@ -516,6 +529,11 @@ def initVehiclePhysics(physics, typeDesc, forcedCfg, saveTransform, IS_EDITOR = 
             if saveTransform:
                 physics.matrix = m
             physics.isFrozen = False
+    elif IS_EDITOR:
+        baseCfg = None
+        useSimplifiedGearbox = True
+        gravityFactor = 1.0
+        cfg = configureXPhysics(physics, baseCfg, typeDesc, useSimplifiedGearbox, gravityFactor)
     hullMin, hullMax, _ = typeDesc.hull['hitTester'].bbox
     hullCenter = (hullMin + hullMax) * 0.5
     hullY = hullCenter.y + typeDesc.chassis['hullPosition'].y
@@ -862,6 +880,7 @@ def initVehiclePhysicsFromParams(physics, params):
     typeDesc.hull['hitTester'].bbox = (params['hullHitTesterMin'], params['hullHitTesterMax'], None)
     typeDesc.hull['turretPositions'] = (params['turretPosition'],)
     typeDesc.chassis = {}
+    typeDesc.chassis['name'] = 'Chassis'
     typeDesc.chassis['hullPosition'] = params['hullPosition']
     typeDesc.chassis['hitTester'] = _SimpleObject()
     typeDesc.chassis['hitTester'].bbox = (params['chassisHitTesterMin'], params['chassisHitTesterMax'], None)
@@ -869,6 +888,9 @@ def initVehiclePhysicsFromParams(physics, params):
     typeDesc.turret['hitTester'] = _SimpleObject()
     typeDesc.turret['hitTester'].bbox = (params['turretHitTesterMin'], params['turretHitTesterMax'], None)
     typeDesc.turret['gunPosition'] = params['gunPosition']
+    typeDesc.type = _SimpleObject()
+    typeDesc.type.xphysics = {}
+    typeDesc.type.xphysics['detailed'] = {'chassis': {'Chassis': typeDesc.chassis}}
     initVehiclePhysics(physics, typeDesc, None, False, True)
     physics.visibilityMask = 4294967295L
     return

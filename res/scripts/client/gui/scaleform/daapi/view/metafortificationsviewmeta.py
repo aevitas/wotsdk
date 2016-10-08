@@ -7,48 +7,31 @@ class FortificationsViewMeta(View):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends View
-    null
     """
 
     def onFortCreateClick(self):
-        """
-        :return :
-        """
         self._printOverrideError('onFortCreateClick')
 
     def onDirectionCreateClick(self):
-        """
-        :return :
-        """
         self._printOverrideError('onDirectionCreateClick')
 
     def onEscapePress(self):
-        """
-        :return :
-        """
         self._printOverrideError('onEscapePress')
 
     def as_loadViewS(self, flashAlias, pyAlias):
-        """
-        :param flashAlias:
-        :param pyAlias:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_loadView(flashAlias, pyAlias)
 
     def as_setCommonDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by FortificationVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setCommonData(data)
 
     def as_waitingDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by FortWaitingVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_waitingData(data)

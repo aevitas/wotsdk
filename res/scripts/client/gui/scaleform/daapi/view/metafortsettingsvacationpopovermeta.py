@@ -7,28 +7,24 @@ class FortSettingsVacationPopoverMeta(SmartPopOverView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends SmartPopOverView
-    null
     """
 
     def onApply(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by VacationPopoverVO (AS)
         """
         self._printOverrideError('onApply')
 
     def as_setTextsS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by VacationPopoverVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setTexts(data)
 
     def as_setDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by VacationPopoverVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)

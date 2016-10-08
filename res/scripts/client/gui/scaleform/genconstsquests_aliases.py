@@ -6,7 +6,6 @@ class QUESTS_ALIASES(object):
     DO NOT MODIFY!
     Generated with yaml.
     __author__ = 'yaml_processor'
-    null
     """
     TAB_PERSONAL_QUESTS = 'tabPersonalQuests'
     TAB_COMMON_QUESTS = 'tabCommonQuests'
@@ -43,3 +42,5 @@ class QUESTS_ALIASES(object):
     TUTORIAL_HANGAR_QUEST_DETAILS_PY_ALIAS = 'tutorialHangarQuestDetails'
     TUTORIAL_HANGAR_MOTIVE_QUEST_DETAILS_PY_ALIAS = 'tutorialHangarMotiveQuestDetails'
     BEGINNER_DETAILS_PY_ALIASES = [TUTORIAL_HANGAR_QUEST_DETAILS_PY_ALIAS, TUTORIAL_HANGAR_MOTIVE_QUEST_DETAILS_PY_ALIAS]
+    QUEST_RENDERER_ALIAS = 'QuestRenderer_UI'
+    QUEST_RENDERER_BZ_ALIAS = 'QuestBattleTaskRenderer_UI'

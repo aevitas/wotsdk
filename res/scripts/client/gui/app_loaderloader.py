@@ -216,8 +216,8 @@ class _AppLoader(object):
     def syncCursor(self, appNS, flags = _CTRL_FLAG.CURSOR_VISIBLE):
         self.__appFactory.syncCursor(appNS, flags=flags)
 
-    def handleKeyInBattle(self, isDown, key, mods):
-        return self.__appFactory.handleKeyInBattle(isDown, key, mods)
+    def handleKey(self, appNS, isDown, key, mods):
+        return self.__appFactory.handleKey(appNS, isDown, key, mods)
 
     def __updateState(self):
         result = False

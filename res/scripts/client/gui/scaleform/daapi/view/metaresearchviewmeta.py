@@ -7,78 +7,43 @@ class ResearchViewMeta(View):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends View
-    null
     """
 
     def request4Unlock(self, itemCD, parentID, unlockIdx, xpCost):
-        """
-        :param itemCD:
-        :param parentID:
-        :param unlockIdx:
-        :param xpCost:
-        :return :
-        """
         self._printOverrideError('request4Unlock')
 
     def request4Buy(self, itemCD):
-        """
-        :param itemCD:
-        :return :
-        """
         self._printOverrideError('request4Buy')
 
     def request4Info(self, itemCD, rootCD):
-        """
-        :param itemCD:
-        :param rootCD:
-        :return :
-        """
         self._printOverrideError('request4Info')
 
+    def request4Restore(self, itemCD):
+        self._printOverrideError('request4Restore')
+
     def showSystemMessage(self, typeString, message):
-        """
-        :param typeString:
-        :param message:
-        :return :
-        """
         self._printOverrideError('showSystemMessage')
 
     def as_setNodesStatesS(self, primary, data):
-        """
-        :param primary:
-        :param data:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setNodesStates(primary, data)
 
     def as_setNext2UnlockS(self, data):
-        """
-        :param data:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setNext2Unlock(data)
 
     def as_setVehicleTypeXPS(self, xps):
-        """
-        :param xps:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setVehicleTypeXP(xps)
 
     def as_setInventoryItemsS(self, data):
-        """
-        :param data:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setInventoryItems(data)
 
     def as_useXMLDumpingS(self):
-        """
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_useXMLDumping()
+
+    def as_setNodeVehCompareDataS(self, data):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setNodeVehCompareData(data)

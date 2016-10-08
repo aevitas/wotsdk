@@ -29,7 +29,7 @@ def prepareFashions(vDesc, isCurrentModelDamaged, camouflageId = None, newPhysic
     useCamouflage = camouflagePresent and texture
     for fashionIdx, descId in enumerate(TankPartNames.ALL):
         fashion = fashions[fashionIdx]
-        forceFashion = fashion is None and (useCamouflage or hasattr(vDesc.type, 'repaintParameters'))
+        forceFashion = not isCurrentModelDamaged and fashion is None and (useCamouflage or hasattr(vDesc.type, 'repaintParameters'))
         if forceFashion:
             fashions[fashionIdx] = BigWorld.WGBaseFashion()
 

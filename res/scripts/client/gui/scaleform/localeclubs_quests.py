@@ -1,13 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/locale/CLUBS_QUESTS.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class CLUBS_QUESTS(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    null
-    """
     DIVISION_0_NAME = '#clubs_quests:division/0/name'
     DIVISION_0_DESCRIPTION = '#clubs_quests:division/0/description'
     DIVISION_1_NAME = '#clubs_quests:division/1/name'

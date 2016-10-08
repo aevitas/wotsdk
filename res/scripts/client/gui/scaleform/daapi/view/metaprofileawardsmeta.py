@@ -7,12 +7,7 @@ class ProfileAwardsMeta(ProfileAchievementSection):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends ProfileAchievementSection
-    null
     """
 
     def setFilter(self, data):
-        """
-        :param data:
-        :return :
-        """
         self._printOverrideError('setFilter')

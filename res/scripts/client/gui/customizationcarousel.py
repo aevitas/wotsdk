@@ -56,10 +56,14 @@ class Carousel(object):
         for item in self.__carouselItems:
             item['duration'] = self.__currentDuration
 
+        if self.__currentType == CUSTOMIZATION_TYPE.CAMOUFLAGE:
+            unfilteredLength = len(self.__carouselItems)
+        else:
+            unfilteredLength = len(self.__displayedElements[self.__currentType])
         self.__events.onCarouselUpdated({'items': self.__carouselItems,
          'rendererWidth': _RENDERER_WIDTH[self.__currentType],
          'goToIndex': self.__goToIndex,
-         'unfilteredLength': len(self.__displayedElements[self.__currentType]),
+         'unfilteredLength': unfilteredLength,
          'hasAppliedItem': self.__hasAppliedItem})
 
     def __saveDisplayedElements(self, displayedElements, displayedGroups):

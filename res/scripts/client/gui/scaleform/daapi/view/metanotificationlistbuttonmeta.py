@@ -7,19 +7,11 @@ class NotificationListButtonMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def handleClick(self):
-        """
-        :return :
-        """
         self._printOverrideError('handleClick')
 
-    def as_setStateS(self, isBlinking):
-        """
-        :param isBlinking:
-        :return :
-        """
+    def as_setStateS(self, isBlinking, counterValue):
         if self._isDAAPIInited():
-            return self.flashObject.as_setState(isBlinking)
+            return self.flashObject.as_setState(isBlinking, counterValue)

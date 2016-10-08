@@ -213,7 +213,7 @@ class _FriendsCategory(_Category):
         checkIsEmptyNeeded = False
         if actionID == _ACTION_ID.FRIEND_REMOVED:
             result = self.removeContact(contact)
-        elif actionID == _ACTION_ID.IGNORED_ADDED:
+        elif actionID in (_ACTION_ID.IGNORED_ADDED, _ACTION_ID.TMP_IGNORED_ADDED):
             result = self.removeContact(contact)
             checkIsEmptyNeeded = True
         elif actionID == _ACTION_ID.FRIEND_ADDED:
@@ -352,6 +352,7 @@ class _OthersCategory(_Category):
 
     def getTags(self):
         return {_TAG.IGNORED,
+         _TAG.IGNORED_TMP,
          _TAG.REFERRER,
          _TAG.REFERRAL,
          _TAG.SUB_PENDING_IN}
@@ -377,7 +378,7 @@ class _OthersCategory(_Category):
     def addContact(self, contact):
         result = False
         tags = contact.getTags()
-        if _TAG.IGNORED in tags:
+        if _TAG.IGNORED in tags or _TAG.IGNORED_TMP in tags:
             result = self._ignored.setContact(contact)
         if not contact.isFriend() and _TAG.SUB_PENDING_IN in tags:
             result = self._pending.setContact(contact)
@@ -419,9 +420,9 @@ class _OthersCategory(_Category):
         dbID = contact.getID()
         tags = contact.getTags()
         result = False
-        if actionID == _ACTION_ID.IGNORED_ADDED:
+        if actionID in (_ACTION_ID.IGNORED_ADDED, _ACTION_ID.TMP_IGNORED_ADDED):
             result = self._ignored.setContact(contact)
-        elif actionID in (_ACTION_ID.IGNORED_REMOVED, _ACTION_ID.FRIEND_ADDED):
+        elif actionID in (_ACTION_ID.IGNORED_REMOVED, _ACTION_ID.TMP_IGNORED_REMOVED, _ACTION_ID.FRIEND_ADDED):
             result = self._ignored.removeContact(dbID)
         elif actionID == _ACTION_ID.SUBSCRIPTION_CHANGED:
             if not contact.isFriend() and _TAG.SUB_PENDING_IN in contact.getTags():

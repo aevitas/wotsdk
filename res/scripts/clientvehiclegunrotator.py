@@ -826,7 +826,8 @@ class _PlayerTurretRotationSoundEffectWWISE(CallbackDelayer):
     def lockSoundMatrix(self):
         if self.__manualSound is not None:
             provider = self.__manualSound.matrixProvider
-            self.__manualSound.matrixProvider = Math.Matrix(provider)
+            if provider is not None:
+                self.__manualSound.matrixProvider = Math.Matrix(provider)
         return
 
     def destroy(self):

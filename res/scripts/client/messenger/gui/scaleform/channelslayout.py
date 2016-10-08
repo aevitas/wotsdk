@@ -221,7 +221,7 @@ class BattleLayout(IChannelController):
                 fillColor = FILL_COLORS.BROWN
             else:
                 fillColor = FILL_COLORS.BLACK
-            self._view.addMessage(text, fillColor=fillColor)
+            self._view.addMessage(text, fillColor=fillColor, accountDBID=message.accountDBID)
         return True
 
     def addCommand(self, command):
@@ -231,7 +231,7 @@ class BattleLayout(IChannelController):
                 fillColor = FILL_COLORS.BROWN
             else:
                 fillColor = FILL_COLORS.BLACK
-            self._view.addMessage(text, fillColor=fillColor)
+            self._view.addMessage(text, fillColor=fillColor, accountDBID=command.getSenderID())
 
     def _broadcast(self, message):
         raise NotImplementedError

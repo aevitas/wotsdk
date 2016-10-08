@@ -7,28 +7,18 @@ class BaseExchangeWindowMeta(AbstractWindowView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends AbstractWindowView
-    null
     """
 
     def exchange(self, data):
-        """
-        :param data:
-        :return :
-        """
         self._printOverrideError('exchange')
 
     def as_setPrimaryCurrencyS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setPrimaryCurrency(value)
 
     def as_exchangeRateS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by BaseExchangeWindowRateVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_exchangeRate(data)

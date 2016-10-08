@@ -131,9 +131,6 @@ class VehicleTypeInfoVO(object):
             vName = vehicleType.name
             self.iconName = settings.makeVehicleIconName(vName)
             self.iconPath = settings.makeContourIconSFPath(vName)
-            if not settings.addContourIconToCache(vName):
-                self.iconName = settings.UNKNOWN_CONTOUR_ICON_NAME
-                self.iconPath = settings.UNKNOWN_CONTOUR_ICON_SF_PATH
         else:
             self.compactDescr = 0
             self.classTag = None

@@ -14,6 +14,7 @@ from gui.prb_control.items.sortie_items import getDivisionsOrderData
 from gui.prb_control.prb_helpers import unitFunctionalProperty
 from gui.shared.formatters import icons, text_styles
 from gui.shared.fortifications.fort_seqs import BATTLE_ITEM_TYPE, getDivisionSettings
+from gui.shared.fortifications.fort_listener import FortListener
 from gui.shared.utils import sortByFields
 from helpers import i18n, time_utils
 from shared_utils import CONST_CONTAINER
@@ -218,7 +219,7 @@ class SortiesDataProvider(SortableDAAPIDataProvider):
          'color': color}
 
 
-class IntelligenceDataProvider(SortableDAAPIDataProvider):
+class IntelligenceDataProvider(SortableDAAPIDataProvider, FortListener):
 
     def __init__(self):
         super(IntelligenceDataProvider, self).__init__()
@@ -317,6 +318,8 @@ class IntelligenceDataProvider(SortableDAAPIDataProvider):
         defenceStart = time_utils.getTimeForLocal(timestamp, defHour, defMin)
         defenceFinish = defenceStart + time_utils.ONE_HOUR
         defenceTime = '%s - %s' % (BigWorld.wg_getShortTimeFormat(defenceStart), BigWorld.wg_getShortTimeFormat(defenceFinish))
+        fortCtrl = self.fortCtrl
+        isAttackAvailable = fortCtrl is not None and fortCtrl.getFort().isAttackAvaliableByLevel(item.getLevel())
         return {'clanID': item.getClanDBID(),
          'levelIcon': getIconLevel(item.getLevel()),
          'clanTag': '[%s]' % item.getClanAbbrev(),
@@ -324,7 +327,8 @@ class IntelligenceDataProvider(SortableDAAPIDataProvider):
          'defenceStartTime': int('%02d%02d' % (defHour, defMin)),
          'avgBuildingLvl': round(item.getAvgBuildingLevel(), 1),
          'isFavorite': item.getClanDBID() in favorites,
-         'clanLvl': item.getLevel()}
+         'clanLvl': item.getLevel(),
+         'isAttackAvailable': isAttackAvailable}
 
 
 class FortBattlesDataProvider(SortableDAAPIDataProvider):

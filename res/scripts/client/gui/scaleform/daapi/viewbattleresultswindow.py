@@ -16,6 +16,7 @@ from gui.prb_control.dispatcher import g_prbLoader
 from gui.shared.event_bus import EVENT_BUS_SCOPE
 from gui.shared.event_dispatcher import showResearchView, showPersonalCase, showBattleResultsFromData
 from gui.shared.utils.functions import getArenaSubTypeName
+from gui.shared.crits_mask_parser import critsParserGenerator, CRIT_MASK_SUB_TYPES
 import nations
 import potapov_quests
 from account_helpers.AccountSettings import AccountSettings
@@ -50,12 +51,13 @@ from gui.Scaleform.daapi.view.meta.BattleResultsMeta import BattleResultsMeta
 from messenger.storage import storage_getter
 from gui.Scaleform.genConsts.CYBER_SPORT_ALIASES import CYBER_SPORT_ALIASES
 from gui.Scaleform.locale.CYBERSPORT import CYBERSPORT
-from gui.shared.formatters import text_styles, icons
+from gui.shared.formatters import text_styles, icons, numbers
 from gui.battle_results import formatters as battle_res_fmts
 from gui.shared.utils.functions import makeTooltip
 from gui.sounds.ambients import BattleResultsEnv
 from gui.shared.money import Money, ZERO_MONEY
 from gui.Scaleform.daapi.view.AchievementsUtils import AchievementsUtils
+from gui.Scaleform.genConsts.BATTLE_EFFICIENCY_TYPES import BATTLE_EFFICIENCY_TYPES
 
 def _wrapEmblemUrl(emblemUrl):
     return ' <IMG SRC="img://%s" width="24" height="24" vspace="-10"/>' % emblemUrl
@@ -734,9 +736,6 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             xpData.append(self.__getStatsLine(label, xpCellStr, freeXpBaseStr, xpCellPremStr, freeXpBasePremStr))
             if isNoPenalty:
                 xpData.append(self.__getStatsLine(self.__resultLabel('noPenalty'), self.__makeXpLabel(achievementXP, not isPostBattlePremium), self.__makeFreeXpLabel(achievementFreeXP, not isPostBattlePremium), self.__makeXpLabel(int(round(achievementXP * premXpFactor)), isPostBattlePremium), self.__makeFreeXpLabel(int(round(achievementFreeXP * premXpFactor)), isPostBattlePremium)))
-            if fairPlayViolationName is not None:
-                penaltyXPVal = self.__makePercentLabel(int(-100))
-                xpData.append(self.__getStatsLine(self.__resultLabel('fairPlayViolation/' + fairPlayViolationName), penaltyXPVal, penaltyXPVal, penaltyXPVal, penaltyXPVal))
             xpPenaltyStr = self.__makeXpLabel(-xpPenalty, not isPostBattlePremium)
             xpPenaltyPremStr = self.__makeXpLabel(int(round(-xpPenalty * premXpFactor)), isPostBattlePremium)
             xpData.append(self.__getStatsLine(self.__resultLabel('friendlyFirePenalty'), xpPenaltyStr, None, xpPenaltyPremStr, None))
@@ -801,6 +800,9 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 xpData.append(self.__getStatsLine())
             if len(xpData) < 7:
                 xpData.append(self.__getStatsLine())
+            if fairPlayViolationName is not None:
+                penaltyXPVal = self.__makePercentLabel(int(-100))
+                xpData.append(self.__getStatsLine(self.__resultLabel('fairPlayViolation/' + fairPlayViolationName), penaltyXPVal, penaltyXPVal, penaltyXPVal, penaltyXPVal))
             xpWithoutPremTotal = sourceData['xpWithoutPremTotal']
             xpTotal = self.__makeXpLabel(xpWithoutPremTotal, not isPostBattlePremium and not hasViolation)
             xpWithPremTotal = sourceData['xpWithPremTotal']
@@ -1034,7 +1036,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
 
         return
 
-    def __populateEfficiency(self, pData, pCommonData, playersData, commonData, personalDataOutput):
+    def __populateEfficiency(self, pData, pCommonData, playersData, commonData, totalStatValues, personalDataOutput):
         valsStr = makeHtmlString('html_templates:lobby/battle_results', 'tooltip_params_style', {'text': i18n.makeString(BATTLE_RESULTS.COMMON_TOOLTIP_PARAMS_VAL)})
         bots = commonData.get('bots', {})
         details = []
@@ -1077,8 +1079,45 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             enemies = sorted(enemies, cmp=self.__vehiclesComparator)
             details.append(techniquesGroup + enemies + basesGroup)
 
+        personalDataOutput['efficiencyHeader'] = self.__makeEfficiencyHeader(totalStatValues)
         personalDataOutput['details'] = details
         return
+
+    @classmethod
+    def __makeEfficiencyHeader(cls, totalStatValues):
+        """
+        Prepare a dict containing header and its tooltips for Header with sum.
+        :param totalStatValues: dict with total info
+        :return: dict with result
+        """
+        return {BATTLE_EFFICIENCY_TYPES.DESTRUCTION: numbers.formatInt(totalStatValues['kills'], '-'),
+         BATTLE_EFFICIENCY_TYPES.DAMAGE: numbers.makeStringWithThousandSymbol(totalStatValues['damageDealt']),
+         BATTLE_EFFICIENCY_TYPES.CRITS: numbers.formatInt(totalStatValues['criticalDamages'], '-'),
+         BATTLE_EFFICIENCY_TYPES.ARMOR: numbers.makeStringWithThousandSymbol(totalStatValues['damageBlockedByArmor']),
+         BATTLE_EFFICIENCY_TYPES.ASSIST: numbers.makeStringWithThousandSymbol(totalStatValues['damageAssisted']),
+         BATTLE_EFFICIENCY_TYPES.DETECTION: numbers.formatInt(totalStatValues['spotted'], '-'),
+         'killTooltip': cls.__makeEfficiencyHeaderTooltip('summKill', totalStatValues['kills']),
+         'damageTooltip': cls.__makeEfficiencyHeaderTooltip('summDamage', totalStatValues['damageDealt']),
+         'critsTooltip': cls.__makeEfficiencyHeaderTooltip('summCrits', totalStatValues['criticalDamages']),
+         'armorTooltip': cls.__makeEfficiencyHeaderTooltip('summArmor', totalStatValues['damageBlockedByArmor']),
+         'assistTooltip': cls.__makeEfficiencyHeaderTooltip('summAssist', totalStatValues['damageAssisted']),
+         'spottedTooltip': cls.__makeEfficiencyHeaderTooltip('summSpotted', totalStatValues['spotted'])}
+
+    @classmethod
+    def __makeEfficiencyHeaderTooltip(cls, key, value):
+        """
+        Makes a tooltip for header efficiency (sum for damage, spotted, etc)
+        :param key: tooltip key, see BATTLERESULTS_EFFICIENCYHEADER_ENUM
+        :param value: value to display
+        :return: prepared tooltip with necessary tags, for <=0 - return None
+        """
+        if value > 0:
+            header = TOOLTIPS.battleresults_efficiencyheader(key)
+            body = BigWorld.wg_getIntegralFormat(value)
+            return makeTooltip(header, body)
+        else:
+            return None
+            return None
 
     def __getDamageInfo(self, iInfo, valsStr):
         piercings = iInfo['piercings']
@@ -1116,30 +1155,46 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         return assistInfo
 
     def __getCritsInfo(self, iInfo):
-        destroyedTankmen = iInfo['crits'] >> 24 & 255
-        destroyedDevices = iInfo['crits'] >> 12 & 4095
-        criticalDevices = iInfo['crits'] & 4095
+        """
+        Prepare a dict with tooltips with critical damages info for one enemy.
+        :param iInfo: enemyInfo, it is one record from 'details' section
+                      for example: 'details': {(523, 0): {'spotted': 1, 'crits': 65536, 'damageReceived': 78...}
+        :return: dict with tooltips
+        """
+        crits = self.__makeCritsInfo(iInfo['crits'])
+        criticalDeviceTooltips = []
+        destroyedDeviceTooltips = []
+        destroyedTankmenTooltips = []
+        for criticalDevice in crits[CRIT_MASK_SUB_TYPES.CRITICAL_DEVICES]:
+            criticalDeviceTooltips.append(self.__makeTooltipModuleLabel(criticalDevice, 'Critical'))
+
+        for destroyedDevice in crits[CRIT_MASK_SUB_TYPES.DESTROYED_DEVICES]:
+            destroyedDeviceTooltips.append(self.__makeTooltipModuleLabel(destroyedDevice, 'Destroyed'))
+
+        for destroyedTankmen in crits[CRIT_MASK_SUB_TYPES.DESTROYED_TANKMENS]:
+            destroyedTankmenTooltips.append(self.__makeTooltipTankmenLabel(destroyedTankmen))
+
+        return {'critsCount': BigWorld.wg_getIntegralFormat(crits['critsCount']),
+         'criticalDevices': LINE_BRAKE_STR.join(criticalDeviceTooltips),
+         'destroyedDevices': LINE_BRAKE_STR.join(destroyedDeviceTooltips),
+         'destroyedTankmen': LINE_BRAKE_STR.join(destroyedTankmenTooltips)}
+
+    def __makeCritsInfo(self, critValue):
+        """
+        Creates a dict with info about critical damages for one enemy.
+        :param critValue: value from 'crits' key for one enemy in 'details' section
+        :return: a dict with results
+        """
+        rv = {CRIT_MASK_SUB_TYPES.DESTROYED_DEVICES: [],
+         CRIT_MASK_SUB_TYPES.CRITICAL_DEVICES: [],
+         CRIT_MASK_SUB_TYPES.DESTROYED_TANKMENS: []}
         critsCount = 0
-        criticalDevicesList = []
-        destroyedDevicesList = []
-        destroyedTankmenList = []
-        for shift in range(len(vehicles.VEHICLE_DEVICE_TYPE_NAMES)):
-            if 1 << shift & criticalDevices:
-                critsCount += 1
-                criticalDevicesList.append(self.__makeTooltipModuleLabel(vehicles.VEHICLE_DEVICE_TYPE_NAMES[shift], 'Critical'))
-            if 1 << shift & destroyedDevices:
-                critsCount += 1
-                destroyedDevicesList.append(self.__makeTooltipModuleLabel(vehicles.VEHICLE_DEVICE_TYPE_NAMES[shift], 'Destroyed'))
+        for subType, critType in critsParserGenerator(critValue):
+            critsCount += 1
+            rv[subType].append(critType)
 
-        for shift in range(len(vehicles.VEHICLE_TANKMAN_TYPE_NAMES)):
-            if 1 << shift & destroyedTankmen:
-                critsCount += 1
-                destroyedTankmenList.append(self.__makeTooltipTankmenLabel(vehicles.VEHICLE_TANKMAN_TYPE_NAMES[shift]))
-
-        return {'critsCount': BigWorld.wg_getIntegralFormat(critsCount),
-         'criticalDevices': LINE_BRAKE_STR.join(criticalDevicesList),
-         'destroyedDevices': LINE_BRAKE_STR.join(destroyedDevicesList),
-         'destroyedTankmen': LINE_BRAKE_STR.join(destroyedTankmenList)}
+        rv.update({'critsCount': critsCount})
+        return rv
 
     def __getBasesInfo(self, pData, commonData, enemies):
         capturePoints = pData.get('capturePoints', 0)
@@ -1308,6 +1363,8 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         commonDataOutput['arenaCreateTimeStr'] = BigWorld.wg_getShortDateFormat(createTime) + ' ' + BigWorld.wg_getShortTimeFormat(createTime)
         commonDataOutput['arenaCreateTimeOnlyStr'] = BigWorld.wg_getShortTimeFormat(createTime)
         commonDataOutput['arenaIcon'] = self.__arenaVisitor.getArenaIcon(ARENA_SCREEN_FILE)
+        clientArenaIdx = self.dataProvider.getArenaUniqueID()
+        commonDataOutput['clientArenaIdx'] = g_lobbyContext.getClientIDByArenaUniqueID(clientArenaIdx)
         duration = commonData.get('duration', 0)
         minutes = int(duration / 60)
         seconds = int(duration % 60)
@@ -1634,6 +1691,12 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
         return (team1, team2)
 
     def __addOrderDataToTotalValue(self, avatarData, resultDict):
+        """
+        Adds damage, kills from Avatar to Total Stats dictionary.
+        This damage and kills are performed by Avatar order (NOT vehicle) using Air-strike, etc.
+        :param avatarData: avatar data
+        :param resultDict: total stats dictionary, result will be here
+        """
         if 'avatarDamageDealt' in avatarData and 'avatarKills' in avatarData:
             damageByOrder = avatarData['avatarDamageDealt']
             killsByOrder = avatarData['avatarKills']
@@ -1771,6 +1834,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             avatarsData = results.pop('avatars', {})
             personalCommonData = personalDataSource.values()[0]
             playerID = personalCommonData['accountDBID']
+            playerTeam = personalCommonData['team']
 
             def comparator(x, y):
                 _, xData = x
@@ -1825,6 +1889,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                 commonDataOutput['sortDirection'] = statsSorting.get('sortDirection')
             damageAssisted = []
             totalDamageAssisted = 0
+            totalCriticalDamages = 0
             statValues = []
             totalStatValues = defaultdict(int)
             for _, data in personalData:
@@ -1841,8 +1906,20 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
                     totalStatValues.setdefault(k, d)
                     totalStatValues[k] = func(totalStatValues[k], v)
 
+                for (vId, vIntCD), iInfo in data.get('details', dict()).iteritems():
+                    accountDBID = self.dataProvider.getAccountDBID(vId)
+                    pInfo = playersData.get(accountDBID, dict())
+                    if accountDBID == playerID:
+                        continue
+                    team = pInfo.get('team', data.get('team') % 2 + 1)
+                    if team == playerTeam:
+                        continue
+                    critsInfo = self.__makeCritsInfo(iInfo['crits'])
+                    totalCriticalDamages += critsInfo['critsCount']
+
             damageAssisted.insert(0, totalDamageAssisted)
             totalStatValues['damageAssisted'] = totalDamageAssisted
+            totalStatValues['criticalDamages'] = totalCriticalDamages
             if playerID in avatarsData:
                 self.__addOrderDataToTotalValue(avatarsData[playerID], totalStatValues)
             statValues.insert(0, self.__populateStatValues(totalStatValues, True))
@@ -1852,7 +1929,7 @@ class BattleResultsWindow(BattleResultsMeta, ClubListener):
             self.__populateArenaData(commonData, personalCommonData, commonDataOutput, isMultiTeamMode, isResource)
             self.__populateAccounting(commonData, personalCommonData, personalData, playersData, personalDataOutput, playerAvatarData)
             self.__populateTankSlot(commonDataOutput, personalData, personalCommonData, commonData)
-            self.__populateEfficiency(personalData, personalCommonData, playersData, commonData, personalDataOutput)
+            self.__populateEfficiency(personalData, personalCommonData, playersData, commonData, totalStatValues, personalDataOutput)
             team1, team2 = self.__populateTeamsData(personalCommonData, playersData, commonData, commonDataOutput, avatarsData, isMultiTeamMode, isFlags)
             resultingVehicles = []
             falloutMode = ''

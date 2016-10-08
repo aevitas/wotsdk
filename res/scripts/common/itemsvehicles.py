@@ -3,7 +3,7 @@ import BigWorld
 import ResMgr
 from Math import Vector2, Vector3
 from collections import namedtuple
-from math import radians, cos, atan, pi
+from math import radians, cos, atan, pi, isnan
 from functools import partial
 import struct
 import itertools
@@ -26,6 +26,8 @@ if IS_CLIENT:
     import ReloadEffect
 elif IS_WEB:
     from web_stubs import *
+if IS_CELLAPP:
+    from vehicle_constants import OVERMATCH_MECHANICS_VER
 VEHICLE_CLASS_TAGS = frozenset(('lightTank',
  'mediumTank',
  'heavyTank',
@@ -1048,6 +1050,7 @@ class VehicleType(object):
         xmlCtx = (None, xmlPath)
         self.tags = basicInfo['tags']
         self.level = basicInfo['level']
+        self.hasCustomDefaultCamouflage = section.readBool('customDefaultCamouflage', False)
         customizationNation = section.readString('customizationNation')
         if not customizationNation:
             self.customizationNationID = nationID
@@ -1149,12 +1152,18 @@ class VehicleType(object):
         self.unlocksDescrs = self.__convertAndValidateUnlocksDescrs(unlocksDescrs)
         self.autounlockedItems = self.__collectDefaultUnlocks()
         if IS_CELLAPP:
+            overmatchVer = _xml.readIntOrNone(xmlCtx, section, 'overmatchMechanicsVer')
+            if overmatchVer is None:
+                overmatchVer = OVERMATCH_MECHANICS_VER.DEFAULT
+            self.overmatchMechanicsVer = overmatchVer
             try:
                 self.xphysics = _readXPhysics(xmlCtx, section, 'physics')
             except:
                 LOG_CURRENT_EXCEPTION()
                 self.xphysics = None
 
+        elif IS_CLIENT:
+            self.xphysics = _readXPhysicsClient(xmlCtx, section, 'physics')
         else:
             self.xphysics = None
         if IS_CLIENT and section.has_key('repaintParameters'):
@@ -1775,6 +1784,18 @@ def getUnlocksSources():
     return res
 
 
+def isRestorable(vehTypeCD, gameParams):
+    if vehTypeCD in gameParams['items']['vehiclesToSellForGold']:
+        return False
+    vehicleTags = getVehicleType(vehTypeCD).tags
+    isUnrecoverable = bool('unrecoverable' in vehicleTags)
+    if isUnrecoverable:
+        return False
+    isPremium = bool('premium' in vehicleTags)
+    notInShop = bool(vehTypeCD in gameParams['items']['notInShopItems'])
+    return isPremium or notInShop
+
+
 def _readComponents(xmlPath, reader, nationID, itemTypeName):
     section = ResMgr.openSection(xmlPath)
     if section is None:
@@ -2379,7 +2400,7 @@ def _parseFloatArrList(ctx, sec, floatArrList):
     return dict(((pn, _xml.readTupleOfFloats(ctx, sec, pn, sz)) for pn, sz in floatArrList))
 
 
-def _xphysicsParse_engine(ctx, sec):
+def _xphysicsParseEngine(ctx, sec):
     res = {}
     floatParamsCommon = ('startRPM',)
     res.update(_parseFloatList(ctx, sec, floatParamsCommon))
@@ -2396,9 +2417,9 @@ def _xphysicsParse_engine(ctx, sec):
     return res
 
 
-def _xphysicsParse_ground(ctx, sec):
+def _xphysicsParseGround(ctx, sec):
     if 'medium' in sec.keys():
-        return _parseSectionList(ctx, sec, _xphysicsParse_ground)
+        return _parseSectionList(ctx, sec, _xphysicsParseGround)
     floatParams = ('dirtCumulationRate', 'dirtReleaseRate', 'dirtSideVelocity', 'maxDirt', 'sideFriction', 'fwdFriction', 'rollingFriction')
     res = _parseFloatList(ctx, sec, floatParams)
     res['dirtSideVelocity'] *= KMH_TO_MS
@@ -2409,9 +2430,9 @@ def _xphysicsParse_ground(ctx, sec):
     return res
 
 
-def _xphysicsParse_chassis(ctx, sec):
+def _xphysicsParseChassis(ctx, sec):
     res = {}
-    res['grounds'] = _parseSectionList(ctx, sec, _xphysicsParse_ground, 'grounds')
+    res['grounds'] = _parseSectionList(ctx, sec, _xphysicsParseGround, 'grounds')
     floatParamsCommon = ('chassisMassFraction', 'hullCOMShiftY', 'wheelRadius', 'bodyHeight', 'clearance', 'wheelStroke', 'stiffness0', 'stiffness1', 'damping', 'movementRevertSpeed', 'comSideFriction', 'wheelInertiaFactor', 'rotationBrake', 'brake', 'angVelocityFactor')
     res.update(_parseFloatList(ctx, sec, floatParamsCommon))
     res['movementRevertSpeed'] *= KMH_TO_MS
@@ -2435,9 +2456,20 @@ def _xphysicsParse_chassis(ctx, sec):
     res['wPushedSoftFactor'] = sec.readFloat('wPushedSoftFactor', 1.0)
     res['sideFrictionConstantRatio'] = sec.readFloat('sideFrictionConstantRatio', 0.0)
     res['angVelocityFactor0'] = sec.readFloat('angVelocityFactor0', 1.0)
+    axleCount = sec.readInt('axleCount', -1)
+    if axleCount != -1:
+        subsec = sec['wheels']
+        if subsec is not None:
+            res['wheels'] = {'steeringLockAngle': 0.7,
+             'steeringSpeed': 0.2}
+            res['wheels']['steeringLockAngle'] = subsec.readFloat('steeringLockAngle', 0.7)
+            res['wheels']['steeringSpeed'] = subsec.readFloat('steeringSpeed', 0.2)
+    else:
+        axleCount = 5
+    res['axleCount'] = axleCount
     floatArrParamsCommon = (('hullCOM', 3),
-     ('roadWheelPositions', 5),
-     ('stiffnessFactors', 5),
+     ('roadWheelPositions', axleCount),
+     ('stiffnessFactors', axleCount),
      ('hullInertiaFactors', 3))
     res.update(_parseFloatArrList(ctx, sec, floatArrParamsCommon))
     floatParamsDetailed = ('centerRotationFwdSpeed', 'rotationByLockChoker', 'fwLagRatio', 'bkLagRatio')
@@ -2455,8 +2487,8 @@ def _readXPhysicsMode(xmlCtx, sec, subsectionName):
         res = {}
         res['gravityFactor'] = subsec.readFloat('gravityFactor', 1.0)
         res['fakegearbox'] = _readFakeGearBox(ctx, subsec)
-        res['engines'] = _parseSectionList(ctx, subsec, _xphysicsParse_engine, 'engines')
-        res['chassis'] = _parseSectionList(ctx, subsec, _xphysicsParse_chassis, 'chassis')
+        res['engines'] = _parseSectionList(ctx, subsec, _xphysicsParseEngine, 'engines')
+        res['chassis'] = _parseSectionList(ctx, subsec, _xphysicsParseChassis, 'chassis')
         return res
 
 
@@ -2471,6 +2503,42 @@ def _readXPhysics(xmlCtx, section, subsectionName):
         res['useSimplifiedGearbox'] = _xml.readBool(ctx, xsec, 'useSimplifiedGearbox')
         res['detailed'] = _readXPhysicsMode(ctx, xsec, 'detailed')
         return res
+
+
+def _xphysicsParseGroundClient(ctx, sec):
+    res = {}
+    if 'medium' in sec.keys():
+        res['rollingFriction'] = sec.readFloat('medium/rollingFriction', float('nan'))
+    else:
+        res['rollingFriction'] = sec.readFloat('rollingFriction', float('nan'))
+    if isnan(res['rollingFriction']):
+        _xml.raiseWrongXml(ctx, '', "'rollingFriction' is missing")
+    return res
+
+
+def _xphysicsParseChassisClient(ctx, sec):
+    res = {}
+    res['grounds'] = _parseSectionList(ctx, sec, _xphysicsParseGroundClient, 'grounds')
+    return res
+
+
+def _xphysicsParseEngineClient(ctx, sec):
+    res = {}
+    res['smplEnginePower'] = sec.readFloat('smplEnginePower', float('nan'))
+    if isnan(res['smplEnginePower']):
+        _xml.raiseWrongXml(ctx, '', "'smplEnginePower' is missing")
+    return res
+
+
+def _readXPhysicsClient(xmlCtx, section, subsectionName):
+    xsec = section[subsectionName]
+    if xsec is None:
+        _xml.raiseWrongXml(xmlCtx, '', "subsection '%s' is missing" % subsectionName)
+    ctx = (xmlCtx, subsectionName)
+    res = {}
+    res['engines'] = _parseSectionList(ctx, xsec, _xphysicsParseEngineClient, 'detailed/engines')
+    res['chassis'] = _parseSectionList(ctx, xsec, _xphysicsParseChassisClient, 'detailed/chassis')
+    return res
 
 
 def _readTurret(xmlCtx, section, compactDescr, unlocksDescrs = None, parentItem = None):
@@ -4268,8 +4336,6 @@ def _readClientAdjustmentFactors(xmlCtx, section):
      'mobility': section.readFloat('clientAdjustmentFactors/mobility', 1.0),
      'visibility': section.readFloat('clientAdjustmentFactors/visibility', 1.0),
      'camouflage': section.readFloat('clientAdjustmentFactors/camouflage', 1.0),
-     'chassis': _readClientAdjustmentSection(xmlCtx, section, 'clientAdjustmentFactors/chassis', 'rollingFriction', 'alpha', True),
-     'engines': _readClientAdjustmentSection(xmlCtx, section, 'clientAdjustmentFactors/engines', 'smplEnginePower', 'bravo', True),
      'guns': _readClientAdjustmentSection(xmlCtx, section, 'clientAdjustmentFactors/guns', 'caliberCorrection', 'delta', False)}
 
 

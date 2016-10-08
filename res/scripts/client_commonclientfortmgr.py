@@ -18,7 +18,6 @@ class ClientFortMgr(object):
         self._fort = ClientFortifiedRegion()
         self.__requestID = 0
         self.state = None
-        self.__lockedForSubscribe = {}
         return
 
     def __callFortMethod(self, *args):
@@ -46,8 +45,6 @@ class ClientFortMgr(object):
 
     def onFortReply(self, reqID, resultCode, resultString):
         LOG_DEBUG('onFortReply: reqID=%s, resultCode=%s, resultString=%r' % (reqID, resultCode, resultString))
-        if reqID in self.__lockedForSubscribe:
-            del self.__lockedForSubscribe[reqID]
         self.onFortResponseReceived(reqID, resultCode, resultString)
 
     def onFortUpdate(self, packedOps, packedUpdate):
@@ -74,9 +71,6 @@ class ClientFortMgr(object):
         return self.__callFortMethod(FORT_CLIENT_METHOD.DELETE, 0, 0, 0)
 
     def subscribe(self):
-        if not (self.__lockedForSubscribe and len(self.__lockedForSubscribe) > 1):
-            raise AssertionError('multiple createOrJoinFortBattle call')
-            return self.__lockedForSubscribe.keys()[0]
         return self.__callFortMethod(FORT_CLIENT_METHOD.SUBSCRIBE, 0, 0, 0)
 
     def unsubscribe(self):
@@ -125,9 +119,7 @@ class ClientFortMgr(object):
         return self.__callFortMethod(FORT_CLIENT_METHOD.CREATE_SORTIE, divisionLevel, 0, 0)
 
     def createOrJoinFortBattle(self, battleID, slotIdx = -1):
-        requestID = self.__callFortMethod(FORT_CLIENT_METHOD.CREATE_JOIN_FORT_BATTLE, battleID, slotIdx, 0)
-        self.__lockedForSubscribe[requestID] = FORT_CLIENT_METHOD.CREATE_JOIN_FORT_BATTLE
-        return requestID
+        return self.__callFortMethod(FORT_CLIENT_METHOD.CREATE_JOIN_FORT_BATTLE, battleID, slotIdx, 0)
 
     def _scheduleBattle(self, battleID, direction, isDefence, attackTime):
         if direction <= 0:
@@ -161,11 +153,16 @@ class ClientFortMgr(object):
     def changeVacation(self, timeVacationStart, timeVacationDuration):
         return self.__callFortMethod(FORT_CLIENT_METHOD.CHANGE_VACATION, timeVacationStart, timeVacationDuration, 0)
 
-    def setDevMode(self, isOn = True, fortBattleMgrDevMode = False):
-        return self.__callFortMethod(FORT_CLIENT_METHOD.SET_DEV_MODE, int(isOn), int(fortBattleMgrDevMode), 0)
+    def setDevMode(self, isOn = True, fortBattleMgrDevMode = False, applySettingsDevPatch = False):
+        return self.__callFortMethod(FORT_CLIENT_METHOD.SET_DEV_MODE, int(isOn), int(fortBattleMgrDevMode), int(applySettingsDevPatch))
 
     def addTimeShift(self, timeShiftSeconds = 3600):
         return self.__callFortMethod(FORT_CLIENT_METHOD.ADD_TIME_SHIFT, timeShiftSeconds, 0, 0)
+
+    def addTimeShiftToNearestBattle(self, isAttacker, timeShiftMinutes = 15):
+        battles = self._fort.attacks if isAttacker else self._fort.defences
+        minStartTime = min((key[0] for key in battles.iterkeys()))
+        return self.addTimeShift(minStartTime - time.time() - timeShiftMinutes * 60)
 
     def keepalive(self):
         return self.__callFortMethod(FORT_CLIENT_METHOD.KEEPALIVE, 0, 0, 0)

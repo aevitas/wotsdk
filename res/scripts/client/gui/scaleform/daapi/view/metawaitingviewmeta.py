@@ -7,21 +7,12 @@ class WaitingViewMeta(View):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends View
-    null
     """
 
     def showS(self, data):
-        """
-        :param data:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.show(data)
 
     def hideS(self, data):
-        """
-        :param data:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.hide(data)

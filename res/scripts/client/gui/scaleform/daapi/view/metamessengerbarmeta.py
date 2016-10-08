@@ -7,25 +7,29 @@ class MessengerBarMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def channelButtonClick(self):
-        """
-        :return :
-        """
         self._printOverrideError('channelButtonClick')
-
-    def contactsButtonClick(self):
-        """
-        :return :
-        """
-        self._printOverrideError('contactsButtonClick')
 
     def as_setInitDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by MessegerBarInitVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setInitData(data)
+
+    def as_setVehicleCompareCartButtonVisibleS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_setVehicleCompareCartButtonVisible(value)
+
+    def as_openVehicleCompareCartPopoverS(self, value):
+        if self._isDAAPIInited():
+            return self.flashObject.as_openVehicleCompareCartPopover(value)
+
+    def as_showAddVehicleCompareAnimS(self, data):
+        """
+        :param data: Represented by VehicleCompareAnimVO (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_showAddVehicleCompareAnim(data)

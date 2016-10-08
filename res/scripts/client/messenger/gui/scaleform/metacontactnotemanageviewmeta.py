@@ -7,20 +7,11 @@ class ContactNoteManageViewMeta(BaseManageContactViewMeta):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseManageContactViewMeta
-    null
     """
 
     def sendData(self, data):
-        """
-        :param data:
-        :return :
-        """
         self._printOverrideError('sendData')
 
     def as_setUserPropsS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setUserProps(value)

@@ -7,22 +7,11 @@ class GoldFishWindowMeta(SimpleWindowMeta):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends SimpleWindowMeta
-    null
     """
 
     def eventHyperLinkClicked(self):
-        """
-        :return :
-        """
         self._printOverrideError('eventHyperLinkClicked')
 
     def as_setWindowTextsS(self, header, eventTitle, eventText, eventLink):
-        """
-        :param header:
-        :param eventTitle:
-        :param eventText:
-        :param eventLink:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setWindowTexts(header, eventTitle, eventText, eventLink)

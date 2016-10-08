@@ -58,12 +58,14 @@ class ModelBoundEffects(object):
         self._effects = list()
 
     def destroy(self):
+        self.stop()
+        self.__model = None
+        return
+
+    def stop(self):
         for elem in self._effects[:]:
             elem.stop()
             self._effects.remove(elem)
-
-        self.__model = None
-        return
 
     def addNew(self, matProv, effectsList, keyPoints, waitForKeyOff = False, **args):
         return self.addNewToNode('', matProv, effectsList, keyPoints, waitForKeyOff, **args)

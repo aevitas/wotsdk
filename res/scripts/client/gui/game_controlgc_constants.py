@@ -6,6 +6,7 @@ class CONTROLLER(CONST_CONTAINER):
     AOGAS = 'aogas'
     GAME_SESSION = 'gameSession'
     RENTALS = 'rentals'
+    RESTORE = 'restore'
     IGR = 'igr'
     WALLET = 'wallet'
     LANGUAGE = 'language'
@@ -22,7 +23,10 @@ class CONTROLLER(CONST_CONTAINER):
     AWARD = 'award'
     BOOSTERS = 'boosters'
     FALLOUT = 'fallout'
+    SCREENCAST = 'screencastController'
     CLAN_LOCK = 'clanLock'
+    VEH_COMPARISON_BASKET = 'vehComparisonBasket'
+    ENCYCLOPEDIA = 'encyclopedia'
 
 
 class BROWSER(CONST_CONTAINER):

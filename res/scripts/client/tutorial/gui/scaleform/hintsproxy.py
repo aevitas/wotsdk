@@ -1,4 +1,5 @@
 # Embedded file name: scripts/client/tutorial/gui/Scaleform/hints/proxy.py
+import weakref
 import Event
 from gui.Scaleform.genConsts.TUTORIAL_TRIGGER_TYPES import TUTORIAL_TRIGGER_TYPES
 from gui.shared import g_eventBus, events
@@ -25,10 +26,17 @@ class HintsProxy(SfLobbyProxy):
         addListener(events.TutorialEvent.ON_COMPONENT_FOUND, self.__onItemFound, scope=EVENT_BUS_SCOPE.GLOBAL)
         addListener(events.TutorialEvent.ON_COMPONENT_LOST, self.__onItemLost, scope=EVENT_BUS_SCOPE.GLOBAL)
         addListener(events.TutorialEvent.ON_TRIGGER_ACTIVATED, self.__onTriggerActivated, scope=EVENT_BUS_SCOPE.GLOBAL)
+        if self.app is not None:
+            proxy = weakref.proxy(self.app)
+            for _, effect in self.effects.iterEffects():
+                effect.setApplication(proxy)
+
+        return
 
     def fini(self):
         self.__eManager.clear()
         self.effects.stopAll()
+        self.effects.clear()
         removeListener = g_eventBus.removeListener
         removeListener(events.TutorialEvent.ON_COMPONENT_FOUND, self.__onItemFound, scope=EVENT_BUS_SCOPE.GLOBAL)
         removeListener(events.TutorialEvent.ON_COMPONENT_LOST, self.__onItemLost, scope=EVENT_BUS_SCOPE.GLOBAL)

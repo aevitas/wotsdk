@@ -2,12 +2,13 @@
 import weakref
 from functools import partial
 import BigWorld
+from debug_utils import LOG_DEBUG
 import gui
 from gui.Scaleform.locale.WAITING import WAITING
 from gui.clans.clan_controller import g_clanCtrl
 from gui.clans.clan_helpers import ClanListener
 from gui.clans import formatters
-from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_INVITE_STATES, CLAN_CONTROLLER_STATES
+from gui.clans.settings import CLAN_REQUESTED_DATA_TYPE, CLAN_INVITE_STATES
 from gui.clans.contexts import ClanApplicationsCtx, ClanInvitesCtx
 from gui.clans.items import formatField
 from gui.Scaleform.daapi.view.meta.ClanInvitesWindowMeta import ClanInvitesWindowMeta
@@ -23,14 +24,12 @@ from gui.shared.events import CoolDownEvent
 from gui.shared.view_helpers import CooldownHelper
 from helpers import i18n
 from helpers.i18n import makeString as _ms
-from debug_utils import LOG_DEBUG
 
 class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
     __coolDownRequests = [CLAN_REQUESTED_DATA_TYPE.CLAN_APPLICATIONS, CLAN_REQUESTED_DATA_TYPE.CLAN_INVITES]
 
     def __init__(self, *args):
         super(ClanInvitesWindow, self).__init__()
-        self.__actualRequestsCount = '0'
         self.__processedInvitesCount = '0'
         self._cooldown = CooldownHelper(self.__coolDownRequests, self._onCooldownHandle, CoolDownEvent.CLAN)
         self.__clanDbID = self.clanProfile.getClanDbID()
@@ -54,6 +53,9 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
 
     def onInvitesButtonClick(self):
         showClanSendInviteWindow(self.clanProfile.getClanDbID())
+
+    def onClanAppsCountReceived(self, clanDbID, appsCount):
+        self.__updateTabsState()
 
     def onWindowClose(self):
         self.destroy()
@@ -88,7 +90,10 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
     def _populate(self):
         self.showWaiting(True)
         super(ClanInvitesWindow, self)._populate()
-        self.__initControls()
+        self.__updateTabsState()
+        self._updateHeaderState()
+        self._updateClanInfo()
+        self._updateClanEmblem()
         self._cooldown.start()
         self.startClanListening()
         self.__pagiatorsController.setCallback(self._onPaginatorListChanged)
@@ -117,8 +122,7 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
         paginator = self.__pagiatorsController.getPanginator(alias, filter)
         if alias == CLANS_ALIASES.CLAN_PROFILE_REQUESTS_VIEW_ALIAS:
             if filter == CLANS_ALIASES.INVITE_WINDOW_FILTER_ACTUAL:
-                self.__actualRequestsCount = self.formatInvitesCount(paginator)
-                self._updateTabsState()
+                pass
             elif filter == CLANS_ALIASES.INVITE_WINDOW_FILTER_EXPIRED:
                 pass
             elif filter == CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED:
@@ -134,7 +138,7 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
                 pass
             elif filter == CLANS_ALIASES.INVITE_WINDOW_FILTER_PROCESSED:
                 self.__processedInvitesCount = self.formatInvitesCount(paginator)
-                self._updateTabsState()
+                self.__updateTabsState()
             else:
                 LOG_DEBUG('Unexpected behaviour: unknown filter {} for alias {}'.format(filter, alias))
         else:
@@ -164,16 +168,11 @@ class ClanInvitesWindow(ClanInvitesWindowMeta, ClanListener, ClanEmblemsHelper):
          'inviteButtonTooltip': makeTooltip(body=inviteButtonTooltip),
          'freePlacesInClanText': freePlacesInClanText})
 
-    def _updateTabsState(self):
-        self.as_setDataS({'tabDataProvider': [{'label': i18n.makeString(CLANS.CLANINVITESWINDOW_TABREQUESTS, value=self.__actualRequestsCount),
+    def __updateTabsState(self):
+        clanDossier = g_clanCtrl.getClanDossier(g_clanCtrl.getClanDbID())
+        self.as_setDataS({'tabDataProvider': [{'label': i18n.makeString(CLANS.CLANINVITESWINDOW_TABREQUESTS, value=str(clanDossier.getAppsCount() or '0')),
                               'linkage': CLANS_ALIASES.CLAN_PROFILE_REQUESTS_VIEW_LINKAGE}, {'label': i18n.makeString(CLANS.CLANINVITESWINDOW_TABINVITES, value=self.__processedInvitesCount),
                               'linkage': CLANS_ALIASES.CLAN_PROFILE_INVITES_VIEW_LINKAGE}]})
-
-    def __initControls(self):
-        self._updateTabsState()
-        self._updateHeaderState()
-        self._updateClanInfo()
-        self._updateClanEmblem()
 
 
 class _PaginatorsController(object):

@@ -7,19 +7,11 @@ class ColorSchemeManagerMeta(BaseDAAPIModule):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIModule
-    null
     """
 
     def getColorScheme(self, schemeName):
-        """
-        :param schemeName:
-        :return Object:
-        """
         self._printOverrideError('getColorScheme')
 
     def as_updateS(self):
-        """
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_update()

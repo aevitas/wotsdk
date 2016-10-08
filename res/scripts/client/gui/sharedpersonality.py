@@ -112,6 +112,7 @@ def onAvatarBecomePlayer():
     g_prbLoader.onAvatarBecomePlayer()
     game_control.g_instance.onAvatarBecomePlayer()
     g_clanCache.onAvatarBecomePlayer()
+    g_loginManager.writePeripheryLifetime()
     guiModsSendEvent('onAvatarBecomePlayer')
     Waiting.cancelCallback()
 
@@ -271,7 +272,6 @@ def onConnected():
 
 def onDisconnected():
     g_statistics.noteHangarLoadingState(HANGAR_LOADING_STATE.DISCONNECTED)
-    g_loginManager.writePeripheryLifetime()
     guiModsSendEvent('onDisconnected')
     g_prbLoader.onDisconnected()
     g_clanCache.onDisconnected()

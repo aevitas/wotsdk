@@ -13,6 +13,7 @@ from PlayerEvents import g_playerEvents
 from debug_utils import *
 from CTFManager import g_ctfManager
 from helpers.EffectsList import FalloutDestroyEffect
+import arena_components.client_arena_component_assembler as assembler
 
 class ClientArena(object):
     __onUpdate = {ARENA_UPDATE.VEHICLE_LIST: '_ClientArena__onVehicleListUpdate',
@@ -78,6 +79,7 @@ class ClientArena(object):
         self.extraData = arenaExtraData
         self.__arenaBBCollider = None
         self.__spaceBBCollider = None
+        self.componentSystem = assembler.createComponentSystem(self.bonusType)
         return
 
     vehicles = property(lambda self: self.__vehicles)
@@ -90,11 +92,13 @@ class ClientArena(object):
 
     def destroy(self):
         self.__eventManager.clear()
+        assembler.destroyComponentSystem(self.componentSystem)
 
     def update(self, updateType, argStr):
         delegateName = self.__onUpdate.get(updateType, None)
         if delegateName is not None:
             getattr(self, delegateName)(argStr)
+        self.componentSystem.update(updateType, argStr)
         return
 
     def updatePositions(self, indices, positions):

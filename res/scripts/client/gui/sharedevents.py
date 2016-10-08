@@ -115,6 +115,13 @@ class LoadViewEvent(HasCtxEvent):
         return
 
 
+class BrowserEvent(HasCtxEvent):
+    BROWSER_CREATED = 'onBrowserCreated'
+
+    def __init__(self, alias = None, ctx = None):
+        super(BrowserEvent, self).__init__(alias, ctx)
+
+
 class ShowDialogEvent(SharedEvent):
     SHOW_SIMPLE_DLG = 'showSimpleDialog'
     SHOW_ICON_DIALOG = 'showIconDialog'
@@ -125,6 +132,7 @@ class ShowDialogEvent(SharedEvent):
     SHOW_CONFIRM_BOOSTER = 'showConfirmBooster'
     SHOW_SYSTEM_MESSAGE_DIALOG = 'showSystemMessageDialog'
     SHOW_DISMISS_TANKMAN_DIALOG = 'showDismissTankmanDialog'
+    SHOW_RESTORE_TANKMAN_DIALOG = 'showRestoreTankmanDialog'
     SHOW_CYBER_SPORT_DIALOG = 'showCyberSportDialog'
     SHOW_CONFIRM_ORDER_DIALOG = 'showConfirmOrderDialog'
     SHOW_PUNISHMENT_DIALOG = 'showPunishmentDialog'
@@ -373,6 +381,7 @@ class FortEvent(HasCtxEvent):
     CHOICE_DIVISION = 'testChoiceDivision'
     REQUEST_TRANSPORTATION = 'requestTransportation'
     IS_IN_TRANSPORTING_MODE = 'isInTransportingMode'
+    SHOW_DISABLED_POPUP = 'showPopupDlgIfDisabled'
 
     class TRANSPORTATION_STEPS(CONST_CONTAINER):
         NONE = 0
@@ -413,6 +422,7 @@ class OpenLinkEvent(SharedEvent):
     GLOBAL_MAP_PROMO_SUMMARY = 'globalMapPromoSummary'
     GLOBAL_MAP_CAP = 'globalMapCap'
     GLOBAL_MAP_PROMO = 'globalMapPromo'
+    PREM_SHOP = 'premShopURL'
 
     def __init__(self, eventType, url = '', title = ''):
         super(OpenLinkEvent, self).__init__(eventType)
@@ -462,7 +472,3 @@ class WGNCShowItemEvent(SharedEvent):
 
     def getTarget(self):
         return self.__target
-
-
-class ScoreEvent(HasCtxEvent):
-    FRAGS_UPDATED = 'score/frags'

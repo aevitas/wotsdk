@@ -7,25 +7,27 @@ class VehicleInfoMeta(AbstractWindowView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends AbstractWindowView
-    null
     """
 
     def getVehicleInfo(self):
-        """
-        :return :
-        """
         self._printOverrideError('getVehicleInfo')
 
     def onCancelClick(self):
-        """
-        :return :
-        """
         self._printOverrideError('onCancelClick')
 
-    def as_setVehicleInfoS(self, vehicleInfo):
+    def addToCompare(self):
+        self._printOverrideError('addToCompare')
+
+    def as_setVehicleInfoS(self, data):
         """
-        :param vehicleInfo:
-        :return :
+        :param data: Represented by VehicleInfoDataVO (AS)
         """
         if self._isDAAPIInited():
-            return self.flashObject.as_setVehicleInfo(vehicleInfo)
+            return self.flashObject.as_setVehicleInfo(data)
+
+    def as_setCompareButtonDataS(self, data):
+        """
+        :param data: Represented by VehCompareButtonDataVO (AS)
+        """
+        if self._isDAAPIInited():
+            return self.flashObject.as_setCompareButtonData(data)

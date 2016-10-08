@@ -1,13 +1,10 @@
 # Embedded file name: scripts/client/gui/Scaleform/locale/VEHICLE_CUSTOMIZATION.py
-
+"""
+This file was generated using the wgpygen.
+Please, don't edit this file manually.
+"""
 
 class VEHICLE_CUSTOMIZATION(object):
-    """
-    DO NOT MODIFY!
-    Generated with yaml.
-    __author__ = 'yaml_processor'
-    null
-    """
     CAMOUFLAGE = '#vehicle_customization:camouflage'
     CAMOUFLAGE_DEFAULT = '#vehicle_customization:camouflage/default'
     CAMOUFLAGE_HISTORICAL = '#vehicle_customization:camouflage/historical'
@@ -598,6 +595,12 @@ class VEHICLE_CUSTOMIZATION(object):
     EMBLEM_GROUP7_CLAN_CONTENT_14 = '#vehicle_customization:emblem/group7/clan_content_14'
     EMBLEM_GROUP7_CLAN_CONTENT_15 = '#vehicle_customization:emblem/group7/clan_content_15'
     EMBLEM_GROUP7_CLAN_CONTENT_16 = '#vehicle_customization:emblem/group7/clan_content_16'
+    EMBLEM_GROUP7_CLAN_CONTENT_17 = '#vehicle_customization:emblem/group7/clan_content_17'
+    EMBLEM_GROUP7_CLAN_CONTENT_18 = '#vehicle_customization:emblem/group7/clan_content_18'
+    EMBLEM_GROUP7_CLAN_CONTENT_19 = '#vehicle_customization:emblem/group7/clan_content_19'
+    EMBLEM_GROUP7_CLAN_CONTENT_20 = '#vehicle_customization:emblem/group7/clan_content_20'
+    EMBLEM_GROUP7_CLAN_CONTENT_21 = '#vehicle_customization:emblem/group7/clan_content_21'
+    EMBLEM_GROUP7_CLAN_CONTENT_22 = '#vehicle_customization:emblem/group7/clan_content_22'
     EMBLEM_GROUP8_SPECIAL_01 = '#vehicle_customization:emblem/group8/special_01'
     EMBLEM_GROUP9_SPECIAL_11 = '#vehicle_customization:emblem/group9/special_11'
     EMBLEM_GROUP10_SPECIAL_21 = '#vehicle_customization:emblem/group10/special_21'
@@ -610,6 +613,13 @@ class VEHICLE_CUSTOMIZATION(object):
     EMBLEM_GROUP16_SPECIAL_45 = '#vehicle_customization:emblem/group16/special_45'
     EMBLEM_GROUP22_SPECIAL_80 = '#vehicle_customization:emblem/group22/special_80'
     EMBLEM_GROUP22_SPECIAL_81 = '#vehicle_customization:emblem/group22/special_81'
+    EMBLEM_GROUP23_SPECIAL_90 = '#vehicle_customization:emblem/group23/special_90'
+    EMBLEM_GROUP23_SPECIAL_91 = '#vehicle_customization:emblem/group23/special_91'
+    EMBLEM_GROUP23_SPECIAL_92 = '#vehicle_customization:emblem/group23/special_92'
+    EMBLEM_GROUP24_SPECIAL_93 = '#vehicle_customization:emblem/group24/special_93'
+    EMBLEM_GROUP24_SPECIAL_94 = '#vehicle_customization:emblem/group24/special_94'
+    EMBLEM_GROUP24_SPECIAL_95 = '#vehicle_customization:emblem/group24/special_95'
+    EMBLEM_GROUP24_SPECIAL_96 = '#vehicle_customization:emblem/group24/special_96'
     EMBLEM_M41_ASIA = '#vehicle_customization:emblem/M41_asia'
     EMBLEM_GROUP9_ASIA_11 = '#vehicle_customization:emblem/group9/asia_11'
     INSCRIPTION = '#vehicle_customization:inscription'
@@ -621,6 +631,7 @@ class VEHICLE_CUSTOMIZATION(object):
     INSCRIPTION_SENTENCE = '#vehicle_customization:inscription/sentence'
     INSCRIPTION_OTHER = '#vehicle_customization:inscription/other'
     INSCRIPTION_IGR = '#vehicle_customization:inscription/IGR'
+    INSCRIPTION_MARKIEVENT = '#vehicle_customization:inscription/markIevent'
     INSCRIPTION_CLAN_CONTENT = '#vehicle_customization:inscription/clan_content'
     INSCRIPTION_SPECIAL = '#vehicle_customization:inscription/special'
     INSCRIPTION_CLAN_CONTENT_INSCRIPTION_01 = '#vehicle_customization:inscription/clan_content/inscription_01'
@@ -682,8 +693,8 @@ class VEHICLE_CUSTOMIZATION(object):
     INSCRIPTION_SWEDEN_GAMLA_BETTAN = '#vehicle_customization:inscription/sweden/gamla_bettan'
     INSCRIPTION_SWEDEN_GITTAN = '#vehicle_customization:inscription/sweden/gittan'
     INSCRIPTION_SWEDEN_HEJA_SVERIGE = '#vehicle_customization:inscription/sweden/heja_sverige'
-    INSCRIPTION_SWEDEN_KUNGLIG_HOVLEVERANTOR_ = '#vehicle_customization:inscription/sweden/kunglig_hovleverantor'
-    INSCRIPTION_SWEDEN_LISA_ = '#vehicle_customization:inscription/sweden/lisa'
+    INSCRIPTION_SWEDEN_KUNGLIG_HOVLEVERANTOR = '#vehicle_customization:inscription/sweden/kunglig_hovleverantor'
+    INSCRIPTION_SWEDEN_LISA = '#vehicle_customization:inscription/sweden/lisa'
     INSCRIPTION_SWEDEN_LOLLO = '#vehicle_customization:inscription/sweden/lollo'
     INSCRIPTION_SWEDEN_LOTTA = '#vehicle_customization:inscription/sweden/lotta'
     INSCRIPTION_SWEDEN_MAGGAN = '#vehicle_customization:inscription/sweden/maggan'
@@ -980,6 +991,15 @@ class VEHICLE_CUSTOMIZATION(object):
     INSCRIPTION_USA_LAXATIVE = '#vehicle_customization:inscription/usa/laxative'
     INSCRIPTION_USA_AVANT = '#vehicle_customization:inscription/usa/avant'
     INSCRIPTION_USA_JUNE = '#vehicle_customization:inscription/usa/june'
+    INSCRIPTION_USA_INSCRIPTION_09 = '#vehicle_customization:inscription/usa/inscription_09'
+    INSCRIPTION_USA_INSCRIPTION_10 = '#vehicle_customization:inscription/usa/inscription_10'
+    INSCRIPTION_USA_INSCRIPTION_11 = '#vehicle_customization:inscription/usa/inscription_11'
+    INSCRIPTION_USA_INSCRIPTION_12 = '#vehicle_customization:inscription/usa/inscription_12'
+    INSCRIPTION_USA_INSCRIPTION_13 = '#vehicle_customization:inscription/usa/inscription_13'
+    INSCRIPTION_USA_INSCRIPTION_14 = '#vehicle_customization:inscription/usa/inscription_14'
+    INSCRIPTION_USA_INSCRIPTION_15 = '#vehicle_customization:inscription/usa/inscription_15'
+    INSCRIPTION_USA_INSCRIPTION_16 = '#vehicle_customization:inscription/usa/inscription_16'
+    INSCRIPTION_USA_INSCRIPTION_17 = '#vehicle_customization:inscription/usa/inscription_17'
     INSCRIPTION_USSR_DEFENDER = '#vehicle_customization:inscription/ussr/defender'
     INSCRIPTION_USSR_RUTHLESS = '#vehicle_customization:inscription/ussr/ruthless'
     INSCRIPTION_USSR_WARLIKE = '#vehicle_customization:inscription/ussr/warlike'
@@ -1061,6 +1081,10 @@ class VEHICLE_CUSTOMIZATION(object):
     INSCRIPTION_IGR_FORWARD = '#vehicle_customization:inscription/IGR/forward'
     INSCRIPTION_IGR_UNITY = '#vehicle_customization:inscription/IGR/unity'
     INSCRIPTION_IGR_TANKS = '#vehicle_customization:inscription/IGR/tanks'
+    INSCRIPTION_SPECIAL_MARK = '#vehicle_customization:inscription/special/mark'
+    INSCRIPTION_SPECIAL_NOW_IS_THE_TIME = '#vehicle_customization:inscription/special/now_is_the_time'
+    INSCRIPTION_SPECIAL_IRON_DUKE = '#vehicle_customization:inscription/special/iron_duke'
+    INSCRIPTION_SPECIAL_THE_FIRST_TANK = '#vehicle_customization:inscription/special/the_first_tank'
     INSCRIPTION_ASIA = '#vehicle_customization:inscription/ASIA'
     INSCRIPTION_ASIA_651 = '#vehicle_customization:inscription/ASIA/651'
     INSCRIPTION_ASIA_66 = '#vehicle_customization:inscription/ASIA/66'

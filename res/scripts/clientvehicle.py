@@ -27,7 +27,8 @@ from TriggersManager import TRIGGER_TYPE
 from ModelHitTester import segmentMayHitVehicle, SegmentCollisionResult
 from gun_rotation_shared import decodeGunAngles
 from constants import SPT_MATKIND
-from material_kinds import EFFECT_MATERIAL_INDEXES_BY_NAMES, EFFECT_MATERIALS
+from material_kinds import EFFECT_MATERIAL_INDEXES_BY_NAMES, EFFECT_MATERIALS, EFFECT_MATERIAL_NAMES_BY_INDEXES
+from vehicle_systems import appearance_cache
 LOW_ENERGY_COLLISION_D = 0.3
 HIGH_ENERGY_COLLISION_D = 0.6
 _g_waitingVehicle = dict()
@@ -61,7 +62,6 @@ class _VehicleSpeedProvider(object):
 
 
 class Vehicle(BigWorld.Entity):
-    hornMode = property(lambda self: self.__hornMode)
     isEnteringWorld = property(lambda self: self.__isEnteringWorld)
     isTurretDetached = property(lambda self: constants.SPECIAL_VEHICLE_HEALTH.IS_TURRET_DETACHED(self.health) and self.__turretDetachmentConfirmed)
     isTurretMarkedForDetachment = property(lambda self: constants.SPECIAL_VEHICLE_HEALTH.IS_TURRET_DETACHED(self.health))
@@ -82,10 +82,6 @@ class Vehicle(BigWorld.Entity):
         self.appearance = None
         self.isPlayerVehicle = False
         self.isStarted = False
-        self.__prereqs = None
-        self.__hornSounds = (None,)
-        self.__hornMode = ''
-        self.__stopHornSoundCallback = None
         self.__isEnteringWorld = False
         self.__turretDetachmentConfirmed = False
         self.__speedInfo = _VehicleSpeedProvider()
@@ -99,7 +95,6 @@ class Vehicle(BigWorld.Entity):
             del _g_waitingVehicle[self.id]
 
     def reload(self):
-        wasStarted = self.isStarted
         if self.isStarted:
             self.stopVisual()
         vehicles.reload()
@@ -113,22 +108,18 @@ class Vehicle(BigWorld.Entity):
         if respawnCompactDescr is None and self.typeDescriptor is not None:
             return ()
         else:
-            prereqs = []
-            if respawnCompactDescr is not None:
-                descr = vehicles.VehicleDescr(respawnCompactDescr)
-                self.health = descr.maxHealth
-            else:
-                descr = vehicles.VehicleDescr(compactDescr=_stripVehCompDescrIfRoaming(self.publicInfo.compDescr))
-            self.typeDescriptor = descr
-            prereqs += descr.prerequisites(self.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED)
-            for hitTester in descr.getHitTesters():
-                if hitTester.bspModelName is not None and not hitTester.isBspModelLoaded():
-                    prereqs.append(hitTester.bspModelName)
-
-            self.assembler = vehicle_assembler.createAssembler(self)
-            self.appearance = self.assembler.appearance
-            prereqs += self.assembler.prerequisites()
+            self.typeDescriptor = self.getDescr(respawnCompactDescr)
+            self.appearance, compoundAssembler, prereqs = appearance_cache.createAppearance(self.id, self.typeDescriptor, self.health, self.isCrewActive, self.isTurretDetached)
             return prereqs
+
+    def getDescr(self, respawnCompactDescr):
+        if respawnCompactDescr is not None:
+            descr = vehicles.VehicleDescr(respawnCompactDescr)
+            self.health = descr.maxHealth
+            return descr
+        else:
+            return vehicles.VehicleDescr(compactDescr=_stripVehCompDescrIfRoaming(self.publicInfo.compDescr))
+            return
 
     @staticmethod
     def respawnVehicle(id, compactDescr):
@@ -141,16 +132,13 @@ class Vehicle(BigWorld.Entity):
         return
 
     def onEnterWorld(self, prereqs):
-        self.__isEnteringWorld = True
-        descr = self.typeDescriptor
-        descr.keepPrereqs(prereqs, self.physicsMode == VEHICLE_PHYSICS_MODE.DETAILED)
         self.__prereqs = prereqs
+        self.__isEnteringWorld = True
         self.__prevDamageStickers = frozenset()
         self.__prevPublicStateModifiers = frozenset()
         self.targetFullBounds = True
         player = BigWorld.player()
-        for hitTester in descr.getHitTesters():
-            hitTester.loadBspModel()
+        for hitTester in self.typeDescriptor.getHitTesters():
             player.hitTesters.add(hitTester)
 
         player.initSpace()
@@ -234,19 +222,21 @@ class Vehicle(BigWorld.Entity):
     def showVehicleCollisionEffect(self, pos, delta_spd):
         if not self.isStarted:
             return
-        if delta_spd < 3:
-            self.showCollisionEffect(pos, 'collisionVehicleLight')
         else:
-            mass = self.typeDescriptor.physics['weight']
-            if mass < 18000:
-                self.showCollisionEffect(pos, 'collisionVehicleHeavy1')
-            elif mass < 46000:
-                self.showCollisionEffect(pos, 'collisionVehicleHeavy2')
+            if delta_spd >= 3:
+                effectName = 'collisionVehicleHeavy2'
+                mass = self.typeDescriptor.physics['weight']
+                if mass < 18000:
+                    effectName = 'collisionVehicleHeavy1'
+                elif mass > 46000:
+                    effectName = 'collisionVehicleHeavy3'
             else:
-                self.showCollisionEffect(pos, 'collisionVehicleHeavy3')
-        self.appearance.executeRammingVibrations()
+                effectName = 'collisionVehicleLight'
+            self.showCollisionEffect(pos, effectName, None, False)
+            self.appearance.executeRammingVibrations()
+            return
 
-    def showCollisionEffect(self, hitPos, collisionEffectName = 'collisionVehicle', collisionNormal = None):
+    def showCollisionEffect(self, hitPos, collisionEffectName = 'collisionVehicle', collisionNormal = None, isTracks = False, damageFactor = 0, impulse = None):
         invWorldMatrix = Math.Matrix(self.matrix)
         invWorldMatrix.invert()
         rot = Math.Matrix()
@@ -261,7 +251,7 @@ class Vehicle(BigWorld.Entity):
         effectsList = self.typeDescriptor.type.effects.get(collisionEffectName, [])
         if effectsList:
             keyPoints, effects, _ = random.choice(effectsList)
-            self.appearance.boundEffects.addNewToNode(TankPartNames.HULL, mat, effects, keyPoints, entity=self, surfaceNormal=collisionNormal)
+            self.appearance.boundEffects.addNewToNode(TankPartNames.HULL, mat, effects, keyPoints, entity=self, surfaceNormal=collisionNormal, isTracks=isTracks, impulse=impulse, damageFactor=damageFactor)
         return
 
     def showSplashHitEffect(self, effectsIndex, damageFactor):
@@ -292,7 +282,7 @@ class Vehicle(BigWorld.Entity):
             self.__updateModifiers(curr.difference(prev), prev.difference(curr))
 
     def set_engineMode(self, prev):
-        if self.isStarted:
+        if self.isStarted and self.isAlive():
             self.appearance.changeEngineMode(self.engineMode, True)
 
     def set_physicsMode(self, prev):
@@ -365,7 +355,7 @@ class Vehicle(BigWorld.Entity):
         else:
             self.showCollisionEffect(point, 'rammingCollisionHeavy')
 
-    def onStaticCollision(self, energy, point, normal, miscFlags):
+    def onStaticCollision(self, energy, point, normal, miscFlags, damageHull, damageLeftTrack, damageRightTrack):
         if not self.isStarted:
             return
         self.appearance.stopSwinging()
@@ -373,18 +363,21 @@ class Vehicle(BigWorld.Entity):
         isTrackCollision = bool(miscFlags & 1)
         isSptCollision = bool(miscFlags >> 1 & 1)
         isSptDestroyed = bool(miscFlags >> 2 & 1)
-        hitPoint = point
+        hitPoint = point + self.position if isTrackCollision else point
         surfNormal = normal
         if not isSptCollision:
-            surfaceMaterial = calcSurfaceMaterialNearPoint(point, normal, self.spaceID)
+            surfaceMaterial = calcSurfaceMaterialNearPoint(hitPoint, normal, self.spaceID)
             hitPoint, surfNormal, matKind, effectIdx = surfaceMaterial
         else:
             if isSptDestroyed:
                 return
-            hitPoint = point
             matKind = SPT_MATKIND.SOLID
             effectIdx = EFFECT_MATERIAL_INDEXES_BY_NAMES['wood']
-        self.__showStaticCollisionEffect(energy, matKind, effectIdx, hitPoint, surfNormal, isTrackCollision)
+        if isTrackCollision:
+            damageFactor = damageLeftTrack if damageLeftTrack > damageRightTrack else damageRightTrack
+        else:
+            damageFactor = damageHull
+        self.__showStaticCollisionEffect(energy, matKind, effectIdx, hitPoint, surfNormal, isTrackCollision, damageFactor * 100.0)
 
     def getComponents(self):
         res = []
@@ -416,28 +409,86 @@ class Vehicle(BigWorld.Entity):
     def segmentMayHitVehicle(self, startPoint, endPoint):
         return segmentMayHitVehicle(self.typeDescriptor, startPoint, endPoint, self.position)
 
-    def collideSegment(self, startPoint, endPoint, skipGun = False):
+    def collideSegment(self, startPoint, endPoint, skipGun = False, optimized = True):
         filterMethod = getattr(self.filter, 'segmentMayHitEntity', self.segmentMayHitVehicle)
         if not filterMethod(startPoint, endPoint, 0):
             return
         else:
-            worldToVehMatrix = Math.Matrix(self.model.matrix)
-            worldToVehMatrix.invert()
-            startPoint = worldToVehMatrix.applyPoint(startPoint)
-            endPoint = worldToVehMatrix.applyPoint(endPoint)
             res = None
-            for compDescr, compMatrix, isAttached in self.getComponents():
-                if not isAttached:
-                    continue
-                if skipGun and compDescr.get('itemTypeName') == 'vehicleGun':
-                    continue
-                collisions = compDescr['hitTester'].localHitTest(compMatrix.applyPoint(startPoint), compMatrix.applyPoint(endPoint))
-                if collisions is None:
-                    continue
-                for dist, _, hitAngleCos, matKind in collisions:
-                    if res is None or res[0] >= dist:
-                        matInfo = compDescr['materials'].get(matKind)
-                        res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
+            if optimized:
+                worldToVehMatrix = Math.Matrix(self.model.matrix)
+                worldToVehMatrix.invert()
+                startPoint = worldToVehMatrix.applyPoint(startPoint)
+                endPoint = worldToVehMatrix.applyPoint(endPoint)
+                vehicleDescr = self.typeDescriptor
+                chassis = vehicleDescr.chassis
+                hull = vehicleDescr.hull
+                compMatrix = Math.Matrix()
+                compMatrix.setIdentity()
+                tempCol = chassis['hitTester'].localHitTest(compMatrix.applyPoint(startPoint), compMatrix.applyPoint(endPoint))
+                if tempCol is not None:
+                    for dist, _, hitAngleCos, matKind in tempCol:
+                        if res is None or res[0] >= dist:
+                            matInfo = chassis['materials'].get(matKind)
+                            res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
+
+                hullOffset = chassis['hullPosition']
+                compMatrix.setIdentity()
+                compMatrix.setTranslate(-hullOffset)
+                tempCol = hull['hitTester'].localHitTest(compMatrix.applyPoint(startPoint), compMatrix.applyPoint(endPoint))
+                if tempCol is not None:
+                    for dist, _, hitAngleCos, matKind in tempCol:
+                        if res is None or res[0] >= dist:
+                            matInfo = hull['materials'].get(matKind)
+                            res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
+
+                if not self.isTurretDetached:
+                    turret = vehicleDescr.turret
+                    turretYaw = Math.Matrix(self.appearance.turretMatrix).yaw
+                    turretMatrix = Math.Matrix()
+                    turretMatrix.setTranslate(-hullOffset - hull['turretPositions'][0])
+                    compMatrix.setIdentity()
+                    compMatrix.setRotateY(-turretYaw)
+                    turretMatrix.postMultiply(compMatrix)
+                    tempCol = turret['hitTester'].localHitTest(turretMatrix.applyPoint(startPoint), turretMatrix.applyPoint(endPoint))
+                    if tempCol is not None:
+                        for dist, _, hitAngleCos, matKind in tempCol:
+                            if res is None or res[0] >= dist:
+                                matInfo = turret['materials'].get(matKind)
+                                res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
+
+                    if not skipGun:
+                        gunPitch = Math.Matrix(self.appearance.gunMatrix).pitch
+                        gunMatrix = Math.Matrix()
+                        gunMatrix.setTranslate(-turret['gunPosition'])
+                        compMatrix.setIdentity()
+                        compMatrix.setRotateX(-gunPitch)
+                        gunMatrix.postMultiply(compMatrix)
+                        gunMatrix.preMultiply(turretMatrix)
+                        tempCol = vehicleDescr.gun['hitTester'].localHitTest(gunMatrix.applyPoint(startPoint), gunMatrix.applyPoint(endPoint))
+                        if tempCol is not None:
+                            for dist, _, hitAngleCos, matKind in tempCol:
+                                if res is None or res[0] >= dist:
+                                    matInfo = vehicleDescr.gun['materials'].get(matKind)
+                                    res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
+
+            else:
+                worldToVehMatrix = Math.Matrix(self.model.matrix)
+                worldToVehMatrix.invert()
+                startPoint = worldToVehMatrix.applyPoint(startPoint)
+                endPoint = worldToVehMatrix.applyPoint(endPoint)
+                for compDescr, compMatrix, isAttached in self.getComponents():
+                    if not isAttached:
+                        continue
+                    if skipGun and compDescr.get('itemTypeName') == 'vehicleGun':
+                        continue
+                    collisions = compDescr['hitTester'].localHitTest(compMatrix.applyPoint(startPoint), compMatrix.applyPoint(endPoint))
+                    if collisions is None:
+                        continue
+                    for dist, _, hitAngleCos, matKind in collisions:
+                        if res is None or res[0] >= dist:
+                            matInfo = compDescr['materials'].get(matKind)
+                            res = SegmentCollisionResult(dist, hitAngleCos, matInfo.armor if matInfo is not None else 0)
 
             return res
 
@@ -448,12 +499,9 @@ class Vehicle(BigWorld.Entity):
         if not not self.isStarted:
             raise AssertionError
             avatar = BigWorld.player()
-            self.appearance.preStart(self.typeDescriptor)
-            self.appearance.start(self, self.__prereqs)
-            self.assembler.constructAppearance(self.__prereqs)
-            del self.assembler
-            self.appearance.startSystems()
-            self.__prereqs = None
+            self.appearance = appearance_cache.getAppearance(self.id, self.__prereqs)
+            self.appearance.setVehicle(self)
+            self.appearance.activate()
             self.appearance.changeEngineMode(self.engineMode)
             self.appearance.onVehicleHealthChanged()
             if self.isPlayerVehicle:
@@ -470,6 +518,7 @@ class Vehicle(BigWorld.Entity):
             self.isTurretMarkedForDetachment and self.confirmTurretDetachment()
         self.__startWGPhysics()
         self.refreshNationalVoice()
+        self.__prereqs = None
         return
 
     def refreshNationalVoice(self):
@@ -478,15 +527,19 @@ class Vehicle(BigWorld.Entity):
             LOG_DEBUG("Refreshing current vehicle's national voices", nationId)
             SoundGroups.g_instance.soundModes.setCurrentNation(nations.NAMES[nationId])
 
-    def stopVisual(self):
-        raise self.isStarted or AssertionError
+    def stopVisual(self, showStipple = False):
+        if not self.isStarted:
+            raise AssertionError
+            stippleModel = None
+            showStipple = False
+            showStipple and self.appearance.assembleStipple()
         self.__stopExtras()
         g_sessionProvider.stopVehicleVisual(self.id, self.isPlayerVehicle)
-        self.appearance.destroy()
+        self.appearance.deactivate()
         self.appearance = None
         self.isStarted = False
-        self.__stopWGPhysics()
-        return
+        self.__speedInfo.reset()
+        return stippleModel
 
     def show(self, show):
         if show:
@@ -532,7 +585,7 @@ class Vehicle(BigWorld.Entity):
                 refHealth = desc['health']
             return DestructiblesCache.scaledDestructibleHealth(itemScale, refHealth) < instantDamage
 
-    def __showStaticCollisionEffect(self, energy, matKind, effectIdx, hitPoint, normal, isTrackCollision):
+    def __showStaticCollisionEffect(self, energy, matKind, effectIdx, hitPoint, normal, isTrackCollision, damageFactor):
         heavyVelocities = self.typeDescriptor.type.heavyCollisionEffectVelocities
         heavyEnergy = heavyVelocities['track'] if isTrackCollision else heavyVelocities['hull']
         heavyEnergy = 0.5 * heavyEnergy * heavyEnergy
@@ -542,7 +595,7 @@ class Vehicle(BigWorld.Entity):
             effectName = EFFECT_MATERIALS[effectIdx]
         effectName = postfix % effectName
         if effectName in self.typeDescriptor.type.effects:
-            self.showCollisionEffect(hitPoint, effectName, normal)
+            self.showCollisionEffect(hitPoint, effectName, normal, isTrackCollision, damageFactor, self.__getImpulse(self.getSpeed()))
         if self.isPlayerVehicle:
             self.appearance.executeRammingVibrations(matKind)
 
@@ -571,6 +624,11 @@ class Vehicle(BigWorld.Entity):
     def __stopWGPhysics(self):
         self.__speedInfo.reset()
 
+    def __getImpulse(self, speed):
+        mass = self.typeDescriptor.physics['weight']
+        maxSpeed = self.typeDescriptor.physics['speedLimits'][0]
+        return math.fabs(speed * mass / (maxSpeed * mass))
+
     def __stopExtras(self):
         extraTypes = self.typeDescriptor.extras
         for index, data in self.extras.items():
@@ -595,62 +653,11 @@ class Vehicle(BigWorld.Entity):
             ctrl = g_sessionProvider.shared.feedback
             if ctrl is not None:
                 ctrl.setVehicleState(self.id, _GUI_EVENT_ID.VEHICLE_DEAD, isDeadStarted)
-        self.stopHornSound(True)
         TriggersManager.g_manager.fireTrigger(TRIGGER_TYPE.VEHICLE_DESTROYED, vehicleId=self.id)
         bwfilter = self.filter
         if hasattr(bwfilter, 'velocityErrorCompensation'):
             bwfilter.velocityErrorCompensation = 100.0
         return
-
-    def playHornSound(self, hornID):
-        return
-        hornDesc = vehicles.g_cache.horns().get(hornID)
-        if hornDesc is None:
-            return
-        else:
-            self.stopHornSound(True)
-            self.__hornSounds = []
-            self.__hornMode = hornDesc['mode']
-            model = self.appearance.modelsDesc['turret']['model']
-            for sndEventId in hornDesc['sounds']:
-                snd = SoundGroups.g_instance.getSound3D(model.root, sndEventId)
-                snd.volume *= self.typeDescriptor.type.hornVolumeFactor
-                self.__hornSounds.append(snd)
-
-            if self.__hornSounds[0] is not None:
-                self.__hornSounds[0].play()
-                if self.__hornMode == 'continuous' and hornDesc['maxDuration'] > 0:
-                    self.__stopHornSoundCallback = BigWorld.callback(hornDesc['maxDuration'], self.stopHornSound)
-            return
-
-    def stopHornSound(self, forceSilence = False):
-        if not forceSilence and self.__hornMode == 'twoSounds':
-            if self.__hornSounds[1] is not None:
-                self.__hornSounds[1].play()
-        else:
-            for snd in self.__hornSounds:
-                if snd is not None:
-                    snd.stop()
-
-            self.__hornSounds = (None,)
-        if self.__stopHornSoundCallback is not None:
-            BigWorld.cancelCallback(self.__stopHornSoundCallback)
-            self.__stopHornSoundCallback = None
-        self.__hornMode = ''
-        return
-
-    def isHornActive(self):
-        if self.__hornMode == 'twoSounds':
-            return True
-        else:
-            anySoundPlaying = False
-            for snd in self.__hornSounds:
-                if snd is not None:
-                    state = snd.state
-                    if state is not None and state.find('playing') != -1:
-                        return True
-
-            return False
 
     def confirmTurretDetachment(self):
         self.__turretDetachmentConfirmed = True

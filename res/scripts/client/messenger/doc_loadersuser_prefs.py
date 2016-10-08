@@ -1,6 +1,6 @@
 # Embedded file name: scripts/client/messenger/doc_loaders/user_prefs.py
-from messenger.doc_loaders import _xml_helpers
 import types
+from messenger.doc_loaders import _xml_helpers
 _userProps = {'datetimeIdx': ('readInt',
                  'writeInt',
                  lambda value: value in xrange(0, 4),

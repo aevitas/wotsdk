@@ -6,7 +6,6 @@ class HANGAR_ALIASES(object):
     DO NOT MODIFY!
     Generated with yaml.
     __author__ = 'yaml_processor'
-    null
     """
     TANK_CAROUSEL = 'tankCarousel'
     FALLOUT_TANK_CAROUSEL = 'falloutTankCarousel'
@@ -15,6 +14,7 @@ class HANGAR_ALIASES(object):
     RESEARCH_PANEL = 'researchPanel'
     TMEN_XP_PANEL = 'tmenXpPanel'
     VEHICLE_PARAMETERS = 'params'
+    HEADER = 'header'
     VEH_PARAMS_LNK = 'VehicleParametersUI'
     VEH_PARAMS_RENDERER_BASE_UI = 'VehParamRendererBaseUI'
     VEH_PARAMS_RENDERER_UI = 'VehParamRendererUI'

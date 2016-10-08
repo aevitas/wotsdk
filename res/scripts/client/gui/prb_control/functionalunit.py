@@ -18,7 +18,7 @@ from messenger.ext import passCensor
 from account_helpers.AccountSettings import AccountSettings
 from adisp import process
 from constants import PREBATTLE_TYPE, REQUEST_COOLDOWN, QUEUE_TYPE
-from debug_utils import LOG_ERROR, LOG_DEBUG, LOG_CURRENT_EXCEPTION
+from debug_utils import LOG_ERROR, LOG_DEBUG, LOG_CURRENT_EXCEPTION, LOG_WARNING
 from gui.clubs import contexts as clubs_ctx
 from gui.clubs.club_helpers import ClubListener
 from gui.Scaleform.daapi.view.dialogs import rally_dialog_meta
@@ -41,6 +41,7 @@ from items import vehicles as core_vehicles
 from gui.prb_control.events_dispatcher import g_eventDispatcher
 from gui.prb_control.items.unit_items import DynamicRosterSettings, BalancedSquadDynamicRosterSettings
 from shared_utils import findFirst
+from PlayerEvents import g_playerEvents
 
 class UnitIntro(interfaces.IPrbEntry):
 
@@ -461,12 +462,17 @@ class _UnitFunctional(ListenersCollection, interfaces.IUnitFunctional):
     def getSelectedVehicles(self, section, useAll = True):
         accSettings = dict(AccountSettings.getSettings('unitWindow'))
         vehicles = accSettings.get(section, [])
+        items = g_itemsCache.items
         if vehicles or not useAll:
             selectedVehicles = []
             for vehCD in vehicles:
-                vehicle = g_itemsCache.items.getItemByCD(int(vehCD))
-                if vehicle.isInInventory:
-                    selectedVehicles.append(int(vehCD))
+                vehCD = int(vehCD)
+                if items.doesVehicleExist(vehCD):
+                    vehicle = g_itemsCache.items.getItemByCD(vehCD)
+                    if vehicle.isInInventory:
+                        selectedVehicles.append(vehCD)
+                else:
+                    LOG_WARNING('There is invalid vehicle compact descriptor in the stored unit seelected vehicles data', vehCD)
 
         else:
             criteria = REQ_CRITERIA.INVENTORY
@@ -1492,7 +1498,8 @@ class UnitFunctional(_UnitFunctional):
                 listener.onUnitPlayerBecomeCreator(pInfo)
             if inArenaChanged:
                 listener.onUnitPlayerEnterOrLeaveArena(pInfo)
-            listener.onUnitPlayerRolesChanged(pInfo, pPermissions)
+            if not g_playerEvents.isPlayerEntityChanging:
+                listener.onUnitPlayerRolesChanged(pInfo, pPermissions)
 
         g_eventDispatcher.updateUI()
 
@@ -1536,7 +1543,8 @@ class UnitFunctional(_UnitFunctional):
         self._invokeListeners('onUnitPlayerVehDictChanged', pInfo)
 
     def unit_onUnitExtraChanged(self, extras):
-        self._invokeListeners('onUnitExtraChanged', extras)
+        if not g_playerEvents.isPlayerEntityChanging:
+            self._invokeListeners('onUnitExtraChanged', extras)
 
     def _addClientUnitListeners(self):
         unit = prb_getters.getUnit(self.getUnitIdx())
@@ -1744,6 +1752,7 @@ class SquadUnitFunctional(UnitFunctional):
             self.invalidateVehicleStates()
             self._vehiclesWatcher.validate()
             self._invokeListeners('onUnitRosterChanged')
+            g_eventDispatcher.updateUI()
 
     def unit_onUnitVehicleChanged(self, dbID, vehInvID, vehTypeCD):
         super(SquadUnitFunctional, self).unit_onUnitVehicleChanged(dbID, vehInvID, vehTypeCD)
@@ -1756,6 +1765,11 @@ class SquadUnitFunctional(UnitFunctional):
     def unit_onUnitPlayerRoleChanged(self, playerID, prevRoleFlags, nextRoleFlags):
         super(SquadUnitFunctional, self).unit_onUnitPlayerRoleChanged(playerID, prevRoleFlags, nextRoleFlags)
         if self._isBalancedSquad and playerID == account_helpers.getAccountDatabaseID():
+            self.unit_onUnitRosterChanged()
+
+    def unit_onUnitPlayerRemoved(self, playerID, playerData):
+        super(SquadUnitFunctional, self).unit_onUnitPlayerRemoved(playerID, playerData)
+        if playerID != account_helpers.getAccountDatabaseID():
             self.unit_onUnitRosterChanged()
 
     def rejoin(self):
@@ -1792,9 +1806,7 @@ class SquadUnitFunctional(UnitFunctional):
 
     def _onUnitMemberVehiclesChanged(self, accoundDbID):
         if self._isBalancedSquad and accoundDbID != account_helpers.getAccountDatabaseID():
-            unitIdx, unit = self.getUnit()
-            if unit.getCommanderDBID() == accoundDbID:
-                self.unit_onUnitRosterChanged()
+            self.unit_onUnitRosterChanged()
 
     def _updateVehicleState(self, vehicle, state, condition):
         invalid = not condition(vehicle)

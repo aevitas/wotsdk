@@ -7,13 +7,11 @@ class FortCalendarWindowMeta(AbstractWindowView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends AbstractWindowView
-    null
     """
 
     def as_updatePreviewDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by FortCalendarPreviewBlockVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_updatePreviewData(data)

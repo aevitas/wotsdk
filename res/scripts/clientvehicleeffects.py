@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/VehicleEffects.py
 from collections import namedtuple
-from functools import partial
 import BigWorld
 import Math
 import Pixie
@@ -14,7 +13,7 @@ from CustomEffect import RangeTable
 from helpers import PixieBG
 from vehicle_systems.stricted_loading import restrictBySpaceAndNode, restrictBySpace
 from vehicle_systems.tankStructure import TankNodeNames, TankPartNames
-from vehicle_systems.assembly_utility import Component
+from svarog_script.py_component import Component
 DUMMY_NODE_PREFIX = 'DM'
 
 class VehicleTrailEffects(Component):

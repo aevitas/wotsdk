@@ -1,6 +1,5 @@
 # Embedded file name: scripts/client/ProjectileMover.py
 from collections import namedtuple
-from DetachedTurret import DetachedTurret
 import Math
 import constants
 import TriggersManager
@@ -130,7 +129,7 @@ class ProjectileMover(object):
         FlockManager.getManager().onProjectile(hitPosition)
 
     def __addExplosionEffect(self, position, proj, velocityDir):
-        effectTypeStr = proj['effectMaterial'] + 'Hit'
+        effectTypeStr = proj.get('effectMaterial', '') + 'Hit'
         p0 = Math.Vector3(position.x, 1000, position.z)
         p1 = Math.Vector3(position.x, -1000, position.z)
         waterDist = BigWorld.wg_collideWater(p0, p1, False)
@@ -254,10 +253,10 @@ def getCollidableEntities(exceptIDs, startPoint = None, endPoint = None):
             continue
         vehicles.append(vehicle)
 
-    for turret in DetachedTurret.allTurrets:
-        if segmentTest and not segmentMayHitEntity(turret, startPoint, endPoint):
+    for entity in ProjectileAwareEntities.entities:
+        if segmentTest and not segmentMayHitEntity(entity, startPoint, endPoint):
             continue
-        vehicles.append(turret)
+        vehicles.append(entity)
 
     return vehicles
 
@@ -268,3 +267,15 @@ def collideDynamic(startPoint, endPoint, exceptIDs, skipGun = False):
 
 def collideDynamicAndStatic(startPoint, endPoint, exceptIDs, collisionFlags = 128, skipGun = False):
     return collideVehiclesAndStaticScene(startPoint, endPoint, getCollidableEntities(exceptIDs, startPoint, endPoint), collisionFlags, skipGun)
+
+
+class ProjectileAwareEntities(object):
+    entities = list()
+
+    @staticmethod
+    def addEntity(entity):
+        ProjectileAwareEntities.entities.append(entity)
+
+    @staticmethod
+    def removeEntity(entity):
+        ProjectileAwareEntities.entities.remove(entity)

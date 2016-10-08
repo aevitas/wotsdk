@@ -6,7 +6,6 @@ class BATTLE_VIEW_ALIASES(object):
     DO NOT MODIFY!
     Generated with yaml.
     __author__ = 'yaml_processor'
-    null
     """
     TEAM_BASES_PANEL = 'teamBasesPanel'
     VEHICLE_MESSAGES = 'battleVehicleMessages'
@@ -23,6 +22,7 @@ class BATTLE_VIEW_ALIASES(object):
     BATTLE_MESSENGER = 'battleMessenger'
     BATTLE_TUTORIAL = 'battleTutorial'
     CONSUMABLES_PANEL = 'consumablesPanel'
+    DAMAGE_INDICATOR = 'damageIndicator'
     DESTROY_TIMERS_PANEL = 'destroyTimersPanel'
     FALLOUT_DESTROY_TIMERS_PANEL = 'falloutDestroyTimersPanel'
     REPORT_BUG = 'reportBug'
@@ -41,3 +41,5 @@ class BATTLE_VIEW_ALIASES(object):
     FALLOUT_SCORE_PANEL = 'falloutScorePanel'
     BATTLE_END_WARNING_PANEL = 'battleEndWarningPanel'
     CROSSHAIR_PANEL = 'crosshairPanel'
+    POSTMORTEM_PANEL = 'postmortemPanel'
+    BATTLE_DAMAGE_LOG_PANEL = 'battleDamageLogPanel'

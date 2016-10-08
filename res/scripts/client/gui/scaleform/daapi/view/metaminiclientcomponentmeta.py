@@ -7,11 +7,7 @@ class MiniClientComponentMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def onHyperlinkClick(self):
-        """
-        :return :
-        """
         self._printOverrideError('onHyperlinkClick')

@@ -7,55 +7,41 @@ class ClanProfileSummaryViewMeta(ClanProfileBaseView):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends ClanProfileBaseView
-    null
     """
 
     def hyperLinkGotoMap(self):
-        """
-        :return :
-        """
         self._printOverrideError('hyperLinkGotoMap')
 
     def hyperLinkGotoDetailsMap(self):
-        """
-        :return :
-        """
         self._printOverrideError('hyperLinkGotoDetailsMap')
 
     def sendRequestHandler(self):
-        """
-        :return :
-        """
         self._printOverrideError('sendRequestHandler')
 
     def as_updateStatusS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by ClanProfileSummaryViewStatusVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_updateStatus(data)
 
     def as_updateGeneralBlockS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by ClanProfileSummaryBlockVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_updateGeneralBlock(data)
 
     def as_updateFortBlockS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by ClanProfileSummaryBlockVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_updateFortBlock(data)
 
     def as_updateGlobalMapBlockS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by ClanProfileSummaryBlockVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_updateGlobalMapBlock(data)

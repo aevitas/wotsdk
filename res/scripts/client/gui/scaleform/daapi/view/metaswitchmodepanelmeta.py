@@ -7,34 +7,21 @@ class SwitchModePanelMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def switchMode(self):
-        """
-        :return :
-        """
         self._printOverrideError('switchMode')
 
     def onSelectCheckBoxAutoSquad(self, isSelected):
-        """
-        :param isSelected:
-        :return :
-        """
         self._printOverrideError('onSelectCheckBoxAutoSquad')
 
     def as_setDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by SwitchModePanelVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)
 
     def as_setVisibleS(self, value):
-        """
-        :param value:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setVisible(value)

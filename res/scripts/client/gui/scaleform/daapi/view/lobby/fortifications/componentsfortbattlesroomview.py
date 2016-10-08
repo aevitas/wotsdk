@@ -39,6 +39,7 @@ class FortBattlesRoomView(FortRoomMeta, FortViewHelper, UnitListener):
 
     def onUnitPlayerRolesChanged(self, pInfo, pPermissions):
         self.__updateOrdersBg()
+        super(FortBattlesRoomView, self).onUnitPlayerRolesChanged(pInfo, pPermissions)
 
     def onConsumablesChanged(self, unitMgrID):
         self.__updateOrdersBg()

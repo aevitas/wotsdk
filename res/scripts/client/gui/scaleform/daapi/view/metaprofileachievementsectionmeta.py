@@ -7,14 +7,8 @@ class ProfileAchievementSectionMeta(ProfileSection):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends ProfileSection
-    null
     """
 
     def as_setRareAchievementDataS(self, rareID, rareIconId):
-        """
-        :param rareID:
-        :param rareIconId:
-        :return :
-        """
         if self._isDAAPIInited():
             return self.flashObject.as_setRareAchievementData(rareID, rareIconId)

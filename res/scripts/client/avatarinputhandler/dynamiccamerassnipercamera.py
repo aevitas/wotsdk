@@ -3,6 +3,7 @@ import BattleReplay
 import BigWorld
 import Settings
 import constants
+import GUI
 from AvatarInputHandler import mathUtils, cameras
 from AvatarInputHandler.AimingSystems.SniperAimingSystem import SniperAimingSystem
 from AvatarInputHandler.DynamicCameras import CameraDynamicConfig
@@ -61,7 +62,7 @@ class SniperCamera(ICamera, CallbackDelayer):
             self.__prevTime = BigWorld.time()
             self.__autoUpdateDxDyDz = Vector3(0, 0, 0)
             if BattleReplay.g_replayCtrl.isPlaying:
-                BattleReplay.g_replayCtrl.setDataCallback('applyZoom', self.__applyZoom)
+                BattleReplay.g_replayCtrl.setDataCallback('applyZoom', self.__applySerializedZoom)
             return
 
     def __onSettingsChanged(self, diff):
@@ -210,6 +211,11 @@ class SniperCamera(ICamera, CallbackDelayer):
         self.__showVehicle(False)
         return
 
+    def __applySerializedZoom(self, zoomFactor):
+        if BattleReplay.g_replayCtrl.isPlaying:
+            if BattleReplay.g_replayCtrl.isControllingCamera:
+                self.__applyZoom(zoomFactor)
+
     def __applyZoom(self, zoomFactor):
         self.__zoomFactor = zoomFactor
         if BattleReplay.g_replayCtrl.isRecording:
@@ -266,6 +272,8 @@ class SniperCamera(ICamera, CallbackDelayer):
         if replayCtrl.isPlaying and replayCtrl.isControllingCamera:
             aimOffset = replayCtrl.getAimClipPosition()
             binocularsOffset = aimOffset
+            if not BigWorld.player().isForcedGuiControlMode() and GUI.mcursor().inFocus:
+                GUI.mcursor().position = aimOffset
         else:
             aimOffset = self.__calcAimOffset(impulseTransform)
             binocularsOffset = self.__calcAimOffset()
@@ -339,9 +347,9 @@ class SniperCamera(ICamera, CallbackDelayer):
         zoomExposure = self.__zoom * self.__dynamicCfg['zoomExposure'][curZoomIdx]
         deviation /= zoomExposure
         impulseDeviation = (self.__impulseOscillator.deviation + noiseDeviation) / zoomExposure
-        self.__impulseOscillator.externalForce.set(0, 0, 0)
-        self.__movementOscillator.externalForce.set(0, 0, 0)
-        self.__noiseOscillator.externalForce.set(0, 0, 0)
+        self.__impulseOscillator.externalForce = Vector3(0)
+        self.__movementOscillator.externalForce = Vector3(0)
+        self.__noiseOscillator.externalForce = Vector3(0)
         return (mathUtils.createRotationMatrix(Vector3(deviation.x, deviation.y, deviation.z)), mathUtils.createRotationMatrix(impulseDeviation))
 
     def __isPositionUnderwater(self, position):

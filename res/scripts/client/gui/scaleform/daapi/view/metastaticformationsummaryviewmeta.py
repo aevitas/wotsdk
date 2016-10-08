@@ -7,13 +7,11 @@ class StaticFormationSummaryViewMeta(BaseDAAPIComponent):
     Generated with yaml.
     __author__ = 'yaml_processor'
     @extends BaseDAAPIComponent
-    null
     """
 
     def as_setDataS(self, data):
         """
-        :param data:
-        :return :
+        :param data: Represented by StaticFormationSummaryVO (AS)
         """
         if self._isDAAPIInited():
             return self.flashObject.as_setData(data)
